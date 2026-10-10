@@ -1,4 +1,6 @@
 //! Keep production integrations outside the simulator and shared controller contracts.
+use std::collections::{BTreeMap, BTreeSet};
+
 #[test]
 fn simulator_and_scheduler_do_not_link_cloud_or_model_serving_integrations() {
     let output = std::process::Command::new(env!("CARGO"))
@@ -18,20 +20,37 @@ fn simulator_and_scheduler_do_not_link_cloud_or_model_serving_integrations() {
         "minijinja",
         "dotenvy",
     ];
-    for package in metadata["packages"].as_array().unwrap() {
-        let name = package["name"].as_str().unwrap();
-        if pure.contains(&name) {
-            for dep in package["dependencies"]
+    let dependencies: BTreeMap<_, Vec<_>> = metadata["packages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|package| {
+            let deps = package["dependencies"]
                 .as_array()
                 .unwrap()
                 .iter()
                 .filter(|d| d["kind"].is_null())
-            {
+                .map(|d| d["name"].as_str().unwrap())
+                .collect();
+            (package["name"].as_str().unwrap(), deps)
+        })
+        .collect();
+    for root in pure {
+        let mut pending = vec![(root, vec![root])];
+        let mut visited = BTreeSet::new();
+        while let Some((name, path)) = pending.pop() {
+            if !visited.insert(name) {
+                continue;
+            }
+            for &dep in dependencies.get(name).into_iter().flatten() {
+                let mut next_path = path.clone();
+                next_path.push(dep);
                 assert!(
-                    !integrations.contains(&dep["name"].as_str().unwrap()),
-                    "{name} must not link {}",
-                    dep["name"]
+                    !integrations.contains(&dep),
+                    "{root} must not link production integrations: {}",
+                    next_path.join(" -> ")
                 );
+                pending.push((dep, next_path));
             }
         }
     }

@@ -258,3 +258,161 @@ fn schema_round_trip_and_all_example_profiles_validate() {
         assert_eq!(s.name, parsed.name);
     }
 }
+
+#[test]
+fn zero_adapter_slots_serve_base_requests_and_reject_unsupported_work() {
+    let mut profile = hardware();
+    profile.adapter_cache_slots = 0;
+    let mut trace = workload(2);
+    trace.requests[1].adapter = Some("custom-adapter".into());
+    // An unsupported request is a valid workload input; the fleet rejects it on arrival.
+    validate(std::slice::from_ref(&profile), &trace).unwrap();
+    assert!(profile.compatible(&trace.requests[0]));
+    assert!(!profile.compatible(&trace.requests[1]));
+    let planned = scheduler::PlannedRequest::from(&trace.requests[1]);
+    assert!(!profile.compatible(&planned));
+    for policy in POLICIES {
+        let result = run(std::slice::from_ref(&profile), &trace, policy);
+        assert_eq!(result.summary.completed, 1, "{policy}");
+        assert_eq!(result.summary.rejected, 1, "{policy}");
+        assert_eq!(result.summary.invalid_decisions, 0, "{policy}");
+        assert_eq!(result.summary.launched, 0, "{policy}");
+        assert_eq!(result.summary.attempts, 1, "{policy}");
+        assert_eq!(result.summary.output_tokens, 100, "{policy}");
+        assert!(result.requests[1].rejected, "{policy}");
+        assert_eq!(result.requests[1].started_s, None, "{policy}");
+        assert!(
+            (result.nodes[0].emitted_tokens - 100.0).abs() < 1e-6,
+            "{policy}"
+        );
+    }
+}
+
+#[test]
+fn adapter_requests_choose_capable_profiles_in_a_mixed_fleet() {
+    let mut base = hardware();
+    base.adapter_cache_slots = 0;
+    let mut capable = base.clone();
+    capable.id = "adapter-gpu".into();
+    capable.adapter_cache_slots = 1;
+    let profiles = [base, capable];
+    let mut trace = workload(2);
+    trace.warm.push(WarmNode {
+        profile: "adapter-gpu".into(),
+        copies: 1,
+    });
+    trace.requests[1].adapter = Some("custom-adapter".into());
+    for policy in POLICIES {
+        let result = run(&profiles, &trace, policy);
+        assert_eq!(result.summary.completed, 2, "{policy}");
+        assert_eq!(result.summary.invalid_decisions, 0, "{policy}");
+        assert_eq!(result.summary.launched, 0, "{policy}");
+        assert_eq!(result.summary.output_tokens, 200, "{policy}");
+        assert!(
+            (result.nodes[0].emitted_tokens - 100.0).abs() < 1e-6,
+            "{policy}"
+        );
+        assert!(
+            (result.nodes[1].emitted_tokens - 100.0).abs() < 1e-6,
+            "{policy}"
+        );
+    }
+}
+
+#[test]
+fn physical_admission_refuses_an_unsupported_adapter_route() {
+    struct FaultyRouter {
+        decided: bool,
+    }
+    impl Scheduler for FaultyRouter {
+        fn name(&self) -> &str {
+            "unsupported-adapter-test-router"
+        }
+        fn decide(&mut self, _view: &FleetView<'_>) -> Vec<Action> {
+            if self.decided {
+                return vec![];
+            }
+            self.decided = true;
+            vec![
+                Action::Route {
+                    request: 0,
+                    node: 0,
+                    service_weight: 1.0,
+                },
+                Action::Route {
+                    request: 1,
+                    node: 0,
+                    service_weight: 1.0,
+                },
+                Action::Route {
+                    request: 1,
+                    node: 1,
+                    service_weight: 1.0,
+                },
+            ]
+        }
+    }
+    let mut base = hardware();
+    base.adapter_cache_slots = 0;
+    let mut capable = base.clone();
+    capable.id = "adapter-gpu".into();
+    capable.adapter_cache_slots = 1;
+    let mut trace = workload(2);
+    trace.warm.push(WarmNode {
+        profile: capable.id.clone(),
+        copies: 1,
+    });
+    trace.requests[1].adapter = Some("custom-adapter".into());
+    let result = simulate_with_scheduler(
+        &[base, capable],
+        &trace,
+        &mut FaultyRouter { decided: false },
+        7,
+    )
+    .unwrap();
+    assert_eq!(result.summary.invalid_decisions, 1);
+    assert_eq!(result.summary.completed, 2);
+    assert_eq!(result.summary.attempts, 2);
+    assert_eq!(result.summary.output_tokens, 200);
+    assert!((result.nodes[0].emitted_tokens - 100.0).abs() < 1e-6);
+    assert!((result.nodes[1].emitted_tokens - 100.0).abs() < 1e-6);
+}
+
+#[test]
+fn zero_adapter_slots_refuse_pinned_and_routed_provider_requests() {
+    use engine::{CloudSimulator, InferenceSpec};
+    let mut profile = hardware();
+    profile.adapter_cache_slots = 0;
+    let mut cloud = CloudSimulator::new(vec![profile], 7).unwrap();
+    let node = cloud.provision("generic-gpu").unwrap();
+    cloud.advance(5.0).unwrap();
+    let request = InferenceSpec {
+        model: "custom-model".into(),
+        input_tokens: 10,
+        planned_output: 100,
+        max_output: 100,
+        upload_bytes: 0,
+        workload: Workload::Text,
+        image_megapixels: 0.0,
+        adapter: Some("custom-adapter".into()),
+        class: "standard".into(),
+        cached_fraction: 0.0,
+    };
+    assert!(cloud.submit(node, request.clone()).is_err());
+    assert!(cloud.enqueue(node, request.clone()).is_err());
+    assert!(cloud.route(request.clone()).is_err());
+    assert!(cloud.snapshot()["requests"].as_array().unwrap().is_empty());
+    assert_eq!(cloud.snapshot()["instances"].as_array().unwrap().len(), 1);
+    let id = cloud
+        .submit(
+            node,
+            InferenceSpec {
+                adapter: None,
+                ..request
+            },
+        )
+        .unwrap();
+    cloud.advance(2.0).unwrap();
+    assert_eq!(cloud.request(id).unwrap()["status"], "completed");
+    assert_eq!(cloud.snapshot()["requests"].as_array().unwrap().len(), 1);
+}

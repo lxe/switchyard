@@ -34,7 +34,7 @@ pub async fn reconcile<P: Provider>(
                 if provider
                     .get(&pod.id)
                     .await?
-                    .is_some_and(|p| p.status != "TERMINATED")
+                    .is_some_and(|p| !p.status.is_terminated())
                 {
                     confirmed = false;
                 }

@@ -33,8 +33,12 @@ pub trait Provider: Send + Sync {
     fn endpoint_url(&self, pod: &Pod, port: u16) -> String;
     fn offers(&self) -> impl Future<Output = Result<Vec<Offering>>> + Send;
     fn create(&self, launch: Launch) -> impl Future<Output = Result<Pod>> + Send;
+    /// `None` means the allocation is authoritatively absent. Transport errors and
+    /// unrecognized lifecycle states must never be reported as an absent allocation.
     fn get(&self, id: &str) -> impl Future<Output = Result<Option<Pod>>> + Send;
     fn list(&self) -> impl Future<Output = Result<Vec<Pod>>> + Send;
+    /// Accept termination of an allocation. Callers confirm completion with `get`;
+    /// a stopped or failed container can still retain cloud resources and incur charges.
     fn terminate(&self, id: &str) -> impl Future<Output = Result<()>> + Send;
 }
 
@@ -54,16 +58,50 @@ impl Offering {
     }
 }
 
+/// Provider-independent lifecycle observation, separate from model-serving readiness.
+///
+/// Only `Terminated` confirms that an allocation has been permanently released.
+/// `Stopped`, `Failed`, and `Unknown` do not establish that cloud resources or charges
+/// have ended. Providers translate their wire values at the adapter boundary.
+///
+/// Serialization uses snake_case names. Uppercase aliases preserve v0.2 ownership
+/// journals written before vendor statuses were normalized; they are a read-only
+/// compatibility layer, not the wire contract for new provider adapters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PodStatus {
+    #[serde(alias = "PROVISIONING", alias = "STARTING")]
+    Starting,
+    #[serde(alias = "RUNNING")]
+    Running,
+    #[serde(alias = "EXITED")]
+    Stopped,
+    #[serde(alias = "ERROR")]
+    Failed,
+    #[serde(alias = "TERMINATED", alias = "DELETED")]
+    Terminated,
+    #[serde(other)]
+    Unknown,
+}
+
+impl PodStatus {
+    /// True only when the provider confirms permanent release of the allocation.
+    pub const fn is_terminated(self) -> bool {
+        matches!(self, Self::Terminated)
+    }
+}
+
 /// Sanitized pod metadata. Environment, start commands, and credentials are never retained.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Pod {
     pub id: String,
     pub name: String,
-    pub status: String,
+    pub status: PodStatus,
     /// Provider-reported hourly quote. This is not a settled billing charge.
     /// Providers can include storage differently; billing reconciliation remains separate.
     pub cost: f64,
-    #[serde(rename = "dataCenterId", default)]
+    /// New journals use `data_center`; the alias reads legacy v0.2 ownership journals.
+    #[serde(alias = "dataCenterId", default)]
     pub data_center: Option<String>,
 }
 

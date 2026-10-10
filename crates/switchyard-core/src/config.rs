@@ -92,6 +92,7 @@ pub struct Profile {
     pub image_work_per_megapixel: f64,
     pub adapter_load_s: f64,
     pub multi_adapter_factor: f64,
+    /// Zero supports base-model requests only; positive values bound adapter residency.
     pub adapter_cache_slots: usize,
     pub minimum_bill_s: f64,
     pub curve: Vec<CapacityPoint>,
@@ -156,6 +157,7 @@ impl Profile {
     pub fn compatible(&self, r: &impl InferenceInput) -> bool {
         self.model == r.model()
             && self.workload == r.workload()
+            && (r.adapter().is_none() || self.adapter_cache_slots > 0)
             && r.input_tokens()
                 .checked_add(r.max_output())
                 .is_some_and(|tokens| tokens <= self.kv_tokens)
@@ -174,6 +176,10 @@ pub trait InferenceInput {
     fn max_output(&self) -> u64;
     fn cached_fraction(&self) -> f64;
     fn image_megapixels(&self) -> f64;
+    /// Requested serving adapter, if any. Existing base-model callers can use the default.
+    fn adapter(&self) -> Option<&str> {
+        None
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -218,6 +224,9 @@ impl InferenceInput for Request {
     }
     fn image_megapixels(&self) -> f64 {
         self.image_megapixels
+    }
+    fn adapter(&self) -> Option<&str> {
+        self.adapter.as_deref()
     }
 }
 
@@ -409,15 +418,8 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
         if !profile_ids.insert(&p.id) {
             return Err(format!("duplicate profile {}", p.id));
         }
-        if p.curve.is_empty()
-            || p.max_in_flight == 0
-            || p.kv_tokens == 0
-            || p.adapter_cache_slots == 0
-        {
-            return Err(format!(
-                "{} has empty capacity, memory, or adapter cache",
-                p.id
-            ));
+        if p.curve.is_empty() || p.max_in_flight == 0 || p.kv_tokens == 0 {
+            return Err(format!("{} has empty capacity or memory", p.id));
         }
         let numbers = [
             p.usd_per_hour,

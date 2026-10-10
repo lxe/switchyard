@@ -14,7 +14,7 @@ use std::{
 use switchyard_core::Policy;
 use switchyard_live::config::DeploymentConfig;
 use switchyard_live::{LiveRuntime, WorkCall, planner::Message};
-use switchyard_provider::{Launch, Offering, Pod, Provider, storage::Storage};
+use switchyard_provider::{Launch, Offering, Pod, PodStatus, Provider, storage::Storage};
 
 #[derive(Clone)]
 struct MockProvider {
@@ -42,7 +42,7 @@ impl Provider for MockProvider {
         let pod = Pod {
             id: format!("pod{}", pods.len()),
             name: launch.name.clone(),
-            status: "RUNNING".into(),
+            status: PodStatus::Running,
             cost: 1.0,
             data_center: Some("local".into()),
         };
@@ -72,7 +72,7 @@ impl Provider for MockProvider {
             .iter_mut()
             .find(|p| p.id == id)
             .unwrap()
-            .status = "TERMINATED".into();
+            .status = PodStatus::Terminated;
         Ok(())
     }
 }
@@ -242,7 +242,7 @@ async fn single_call_does_not_duplicate_cold_capacity_and_hot_burst_conserves_us
             .lock()
             .unwrap()
             .iter()
-            .all(|p| p.status == "TERMINATED")
+            .all(|p| p.status.is_terminated())
     );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
@@ -264,7 +264,7 @@ async fn incorrect_usage_is_rejected_and_owned_resources_are_released() {
             .lock()
             .unwrap()
             .iter()
-            .all(|p| p.status == "TERMINATED")
+            .all(|p| p.status.is_terminated())
     );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
@@ -286,7 +286,7 @@ async fn uncertain_allocation_is_journaled_before_creation_and_cleaned_by_exact_
             .lock()
             .unwrap()
             .iter()
-            .all(|p| p.status == "TERMINATED")
+            .all(|p| p.status.is_terminated())
     );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
@@ -305,6 +305,45 @@ fn checked_in_fleet_and_workloads_deserialize_and_validate() {
             .unwrap();
     assert!(cases.cases.iter().any(|c| c.calls == 1000));
     assert_eq!(config.models.len(), 3);
+}
+
+#[test]
+fn legacy_ownership_journals_recover_with_normalized_lifecycle_and_field_names() {
+    let quote = Offering {
+        gpu: "fixture".into(),
+        gpu_memory_gb: 48,
+        data_center: "local".into(),
+        availability: "HIGH".into(),
+        gpu_usd_per_hour: 1.0,
+        disk_usd_per_hour: 0.01,
+        quoted_at_unix_s: 0,
+    };
+    for (legacy, expected) in [
+        ("PROVISIONING", PodStatus::Starting),
+        ("STARTING", PodStatus::Starting),
+        ("RUNNING", PodStatus::Running),
+        ("EXITED", PodStatus::Stopped),
+        ("ERROR", PodStatus::Failed),
+        ("TERMINATED", PodStatus::Terminated),
+        ("DELETED", PodStatus::Terminated),
+        ("UNRECOGNIZED", PodStatus::Unknown),
+    ] {
+        let journal = json!([{
+            "pod": {"id":"legacy123","name":"switchyard-legacy-owned","status":legacy,"cost":1.0,"dataCenterId":"local"},
+            "allocated_s":0.0,"ended_s":null,"profile":0,"quoted":quote,
+        }]);
+        let recovered: Vec<switchyard_live::runtime::OwnedPod> =
+            serde_json::from_value(journal).unwrap();
+        assert_eq!(recovered[0].pod.status, expected);
+        assert_eq!(recovered[0].pod.data_center.as_deref(), Some("local"));
+        let serialized = serde_json::to_value(recovered).unwrap();
+        assert_eq!(serialized[0]["pod"]["data_center"], "local");
+        assert!(serialized[0]["pod"].get("dataCenterId").is_none());
+        assert_eq!(
+            serialized[0]["pod"]["status"],
+            serde_json::to_value(expected).unwrap()
+        );
+    }
 }
 
 struct AllocateTwo(bool);
@@ -343,7 +382,7 @@ async fn receipt_filesystem_failure_cannot_interrupt_gpu_termination() {
             .lock()
             .unwrap()
             .iter()
-            .all(|p| p.status == "TERMINATED")
+            .all(|p| p.status.is_terminated())
     );
     server.abort();
     std::fs::remove_file(out).unwrap();
@@ -375,7 +414,7 @@ async fn expired_workload_does_not_leave_stale_admission_reservations() {
             .lock()
             .unwrap()
             .iter()
-            .all(|p| p.status == "TERMINATED")
+            .all(|p| p.status.is_terminated())
     );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();

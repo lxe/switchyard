@@ -78,6 +78,13 @@ impl RunPod {
             .await
             .map_err(|_| Error::Response(path.into()))
     }
+    async fn pod(&self, method: Method, path: &str, body: Option<Value>) -> Result<Pod> {
+        self.call::<PodResponse>(method, path, body)
+            .await?
+            .try_into()
+    }
+    /// RunPod-specific hourly billing records over an RFC 3339 time window.
+    /// Returned vendor JSON remains separate from the generic lifecycle contract.
     pub async fn billing(&self, start: &str, end: &str) -> Result<Value> {
         let url = format!("{}/billing/pods", self.base);
         let response = self
@@ -87,7 +94,6 @@ impl RunPod {
                 ("startTime", start),
                 ("endTime", end),
                 ("bucketSize", "hour"),
-                ("grouping", "podId"),
             ])
             .send()
             .await
@@ -124,7 +130,49 @@ struct DataCenter {
 }
 #[derive(Deserialize)]
 struct Pods {
-    pods: Vec<Pod>,
+    pods: Vec<PodResponse>,
+}
+
+/// RunPod wire metadata stays inside the adapter; ignored fields may contain credentials.
+#[derive(Deserialize)]
+struct PodResponse {
+    id: String,
+    name: String,
+    status: String,
+    cost: f64,
+    #[serde(rename = "dataCenterId", default)]
+    data_center: Option<String>,
+}
+
+impl TryFrom<PodResponse> for Pod {
+    type Error = Error;
+
+    fn try_from(response: PodResponse) -> Result<Self> {
+        if response.status.is_empty() {
+            return Err(Error::Response("pod metadata".into()));
+        }
+        // https://docs.runpod.io/api-reference-v2/pods/get-a-pod
+        let status = match response.status.as_str() {
+            "PROVISIONING" | "STARTING" => PodStatus::Starting,
+            "RUNNING" => PodStatus::Running,
+            "EXITED" => PodStatus::Stopped,
+            "ERROR" => PodStatus::Failed,
+            "TERMINATED" | "DELETED" => PodStatus::Terminated,
+            _ => PodStatus::Unknown,
+        };
+        let pod = Self {
+            id: response.id,
+            name: response.name,
+            status,
+            cost: response.cost,
+            data_center: response.data_center,
+        };
+        if valid_pod(&pod) {
+            Ok(pod)
+        } else {
+            Err(Error::Response("pod metadata".into()))
+        }
+    }
 }
 
 impl Provider for RunPod {
@@ -235,7 +283,7 @@ impl Provider for RunPod {
         if !launch.container.command.is_empty() {
             body["cmd"] = json!(launch.container.command);
         }
-        match self.call::<Pod>(Method::POST, "/pods", Some(body)).await {
+        match self.pod(Method::POST, "/pods", Some(body)).await {
             Ok(pod) if pod.name == launch.name && valid_pod(&pod) => Ok(pod),
             // A malformed success can also follow allocation. Do not lose ownership.
             Ok(_)
@@ -254,10 +302,9 @@ impl Provider for RunPod {
                     let Ok(pods) = self.list().await else {
                         continue;
                     };
-                    let mut found = pods.into_iter().filter(|pod| {
-                        pod.name == launch.name
-                            && !matches!(pod.status.as_str(), "TERMINATED" | "DELETED")
-                    });
+                    let mut found = pods
+                        .into_iter()
+                        .filter(|pod| pod.name == launch.name && !pod.status.is_terminated());
                     match (found.next(), found.next()) {
                         (Some(pod), None) => return Ok(pod),
                         (Some(_), Some(_)) => break,
@@ -271,10 +318,7 @@ impl Provider for RunPod {
     }
     async fn get(&self, id: &str) -> Result<Option<Pod>> {
         validate_pod_id(id)?;
-        match self
-            .call::<Pod>(Method::GET, &format!("/pods/{id}"), None)
-            .await
-        {
+        match self.pod(Method::GET, &format!("/pods/{id}"), None).await {
             Ok(pod) if pod.id == id && valid_pod(&pod) => Ok(Some(pod)),
             Ok(_) => Err(Error::Response("pod metadata".into())),
             Err(Error::Http { status: 404, .. }) => Ok(None),
@@ -282,12 +326,12 @@ impl Provider for RunPod {
         }
     }
     async fn list(&self) -> Result<Vec<Pod>> {
-        let pods = self.call::<Pods>(Method::GET, "/pods", None).await?.pods;
-        if pods.iter().all(valid_pod) {
-            Ok(pods)
-        } else {
-            Err(Error::Response("pod inventory".into()))
-        }
+        self.call::<Pods>(Method::GET, "/pods", None)
+            .await?
+            .pods
+            .into_iter()
+            .map(Pod::try_from)
+            .collect()
     }
     async fn terminate(&self, id: &str) -> Result<()> {
         validate_pod_id(id)?;
@@ -320,7 +364,6 @@ fn valid_pod(pod: &Pod) -> bool {
     valid_component(&pod.id)
         && !pod.name.is_empty()
         && !pod.name.chars().any(char::is_control)
-        && !pod.status.is_empty()
         && pod.cost.is_finite()
         && pod.cost >= 0.0
 }

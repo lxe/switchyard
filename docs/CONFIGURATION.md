@@ -14,10 +14,12 @@ Each profile identifies one model, workload kind (`text` or `vision`), accelerat
 | `curve` | Ordered concurrency points containing `in_flight` and aggregate `work_units_per_s` |
 | `input_work_per_token`, `image_work_per_megapixel` | Input processing cost in output-equivalent work units |
 | `network_s`, `network_bytes_per_s` | One-way latency and per-request upload/egress bandwidth |
-| `adapter_load_s`, `adapter_cache_slots`, `multi_adapter_factor` | Adapter miss delay, residency slots, and mixed-adapter capacity multiplier |
+| `adapter_load_s`, `adapter_cache_slots`, `multi_adapter_factor` | Adapter miss delay, residency slots (`0` supports the base model only), and mixed-adapter capacity multiplier |
 | `evidence`, `source` | Calibration status and provenance; these fields are carried into exported profiles |
 
 One output token consumes one work unit. Input work is `input_tokens × (1 − cached_fraction) × input_work_per_token + image_megapixels × image_work_per_megapixel`. The curve is linearly interpolated between configured points and bounded above its last point. GPU-ready requests share aggregate work capacity according to their service weights. Uploaded or adapter-loading requests reserve memory and a slot, but do not contribute to the ready batch's capacity.
+
+`adapter_cache_slots: 0` declares that the serving configuration supports requests without an adapter. A request selecting an adapter requires a profile with positive adapter slots. The scheduler and physical admission use the same compatibility rule, so unsupported adapter requests cannot occupy a slot or add GPU work. In an offline trace, an unsupported request is rejected on arrival; the provider API refuses it during admission.
 
 `network_bytes_per_s` is an independent per-request link approximation. Output uses four synthetic bytes per token; delivery follows the slower of generation and wire transfer, plus one-way latency. This does not model shared NIC contention, packet loss, or network topology. Input token counts do not imply payload bytes: provide `upload_bytes` when that cost matters.
 

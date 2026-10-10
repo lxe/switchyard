@@ -348,7 +348,7 @@ async fn recover<P: Provider>(provider: &P, storage: &Storage, out: &Path) -> Re
                 if provider
                     .get(&pod.id)
                     .await?
-                    .is_some_and(|p| p.status != "TERMINATED")
+                    .is_some_and(|p| !p.status.is_terminated())
                 {
                     return Err(Error::Request(
                         "termination awaiting confirmation; rerun recovery".into(),

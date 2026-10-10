@@ -65,6 +65,9 @@ impl InferenceInput for PlannedRequest {
     fn image_megapixels(&self) -> f64 {
         self.image_megapixels
     }
+    fn adapter(&self) -> Option<&str> {
+        self.adapter.as_deref()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

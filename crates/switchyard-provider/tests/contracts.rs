@@ -456,13 +456,15 @@ async fn direct_rejected_creation_does_not_reconcile_or_repeat_paid_mutation() {
 #[tokio::test]
 async fn billing_request_keeps_provider_credentials_in_headers() {
     let mock = Mock::start(vec![Reply::ok(
-        json!({"data":[{"podId":"owned123","totalAmount":0.01}]}),
+        json!({"records":[{"podId":"owned123","totalAmount":0.01}]}),
     )])
     .await;
     let api = provider(&mock.url);
-    api.billing("2026-10-10T00:00:00Z", "2026-10-11T00:00:00Z")
+    let billing = api
+        .billing("2026-10-10T00:00:00Z", "2026-10-11T00:00:00Z")
         .await
         .unwrap();
+    assert_eq!(billing["records"][0]["podId"], "owned123");
     let captured = mock.state.captured.lock().unwrap();
     let url = reqwest::Url::parse(&format!("{}{}", mock.url, captured[0].uri)).unwrap();
     let pairs: std::collections::BTreeMap<_, _> = url
@@ -470,7 +472,7 @@ async fn billing_request_keeps_provider_credentials_in_headers() {
         .map(|(k, v)| (k.into_owned(), v.into_owned()))
         .collect();
     assert_eq!(url.path(), "/billing/pods");
-    assert_eq!(pairs["grouping"], "podId");
+    assert!(!pairs.contains_key("grouping"));
     assert_eq!(pairs["bucketSize"], "hour");
     assert_eq!(pairs["startTime"], "2026-10-10T00:00:00Z");
     assert!(!captured[0].uri.contains("FAKE_PRIVATE"));
@@ -556,6 +558,92 @@ fn capacity_and_storage_validate_their_own_configuration_fields() {
     let mut bad = storage("https://objects.example.test");
     bad.url_lifetime_s = 59;
     assert!(bad.validate().is_err());
+}
+
+#[tokio::test]
+async fn vendor_lifecycle_states_are_normalized_before_leaving_the_adapter() {
+    let cases = [
+        ("PROVISIONING", PodStatus::Starting),
+        ("STARTING", PodStatus::Starting),
+        ("RUNNING", PodStatus::Running),
+        ("EXITED", PodStatus::Stopped),
+        ("ERROR", PodStatus::Failed),
+        ("TERMINATED", PodStatus::Terminated),
+        ("DELETED", PodStatus::Terminated),
+        ("FUTURE_VENDOR_STATE", PodStatus::Unknown),
+    ];
+    let replies = cases
+        .iter()
+        .map(|(status, _)| {
+            let mut wire = pod("owned123", "owned-name");
+            wire["status"] = json!(status);
+            Reply::ok(wire)
+        })
+        .collect();
+    let mock = Mock::start(replies).await;
+    let api = provider(&mock.url);
+    for (_, expected) in cases {
+        let observed = api.get("owned123").await.unwrap().unwrap();
+        assert_eq!(observed.status, expected);
+        assert_eq!(
+            observed.status.is_terminated(),
+            expected == PodStatus::Terminated
+        );
+        let serialized = serde_json::to_value(observed).unwrap();
+        assert_eq!(serialized["data_center"], "US-KS-2");
+        assert!(serialized.get("dataCenterId").is_none());
+        assert_eq!(
+            serialized["status"],
+            serde_json::to_value(expected).unwrap()
+        );
+    }
+    mock.assert_finished();
+}
+
+#[test]
+fn generic_status_serialization_and_legacy_aliases_are_unambiguous() {
+    let cases = [
+        (PodStatus::Starting, "starting", "PROVISIONING"),
+        (PodStatus::Running, "running", "RUNNING"),
+        (PodStatus::Stopped, "stopped", "EXITED"),
+        (PodStatus::Failed, "failed", "ERROR"),
+        (PodStatus::Terminated, "terminated", "TERMINATED"),
+        (PodStatus::Unknown, "unknown", "FUTURE_VENDOR_STATE"),
+    ];
+    for (expected, normal, legacy) in cases {
+        assert_eq!(serde_json::to_value(expected).unwrap(), json!(normal));
+        assert_eq!(
+            serde_json::from_value::<PodStatus>(json!(normal)).unwrap(),
+            expected
+        );
+        let mut wire = pod("legacy123", "legacy-name");
+        wire["status"] = json!(legacy);
+        let recovered: Pod = serde_json::from_value(wire).unwrap();
+        assert_eq!(recovered.status, expected);
+        assert_eq!(recovered.data_center.as_deref(), Some("US-KS-2"));
+    }
+    for status in [
+        PodStatus::Starting,
+        PodStatus::Running,
+        PodStatus::Stopped,
+        PodStatus::Failed,
+        PodStatus::Unknown,
+    ] {
+        assert!(!status.is_terminated());
+    }
+    assert!(serde_json::from_str::<Pod>(r#"{"id":"x","name":"x","status":"running","cost":0,"data_center":"a","dataCenterId":"b"}"#).is_err());
+}
+
+#[tokio::test]
+async fn empty_vendor_status_is_invalid_rather_than_confirmed_termination() {
+    let mut wire = pod("owned123", "owned-name");
+    wire["status"] = json!("");
+    let mock = Mock::start(vec![Reply::ok(wire)]).await;
+    assert!(matches!(
+        provider(&mock.url).get("owned123").await,
+        Err(Error::Response(_))
+    ));
+    mock.assert_finished();
 }
 
 #[tokio::test]

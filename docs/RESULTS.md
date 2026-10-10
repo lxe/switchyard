@@ -33,7 +33,7 @@ HTTP was also exercised over a real loopback TCP listener in manual-clock mode. 
 
 The Switchyard workspace refactor was revalidated on October 10: all 51 tests passed, along with strict workspace Clippy and rustdoc. The 1,000-seed corpus again passed all 5,000 simulations. One repetition per policy and size passed a two-second software execution budget, with the slowest 10,000-request run taking 1.107 seconds on the local host. This is a software timing receipt, not GPU performance evidence.
 
-GitHub Actions runs the local checks and a smaller generated/performance corpus. The workflow has been added but has not been executed on GitHub.
+GitHub Actions runs the local checks and a smaller generated/performance corpus. The [v0.2 integration checkpoint](https://github.com/lxe/switchyard/actions/runs/38094061673) passed on October 10, 2026.
 
 ## Policy comparisons
 
@@ -90,5 +90,7 @@ The default catalog includes boundary-adjusted and documented historical text me
 The v0.2 integration checkpoint passes 95 workspace tests, strict Clippy, formatting, and rustdoc with warnings denied. Provider contracts cover opaque container launch, catalog filtering, lost allocation responses, signed storage, and sanitized metadata. Agent tests cover archive integrity, transfer retries, cache verification, authenticated streaming, and lifetime handling. Live contracts cover usage conservation, a single cold allocation, bounded bursts, uncertain ownership, cancellation reuse, and GPU cleanup despite receipt failures. A dependency test keeps cloud and model-serving integrations outside the simulator and shared scheduler.
 
 The updated simulator passed 1,000 seeded workloads across five policies (5,000 runs) with no invariant failures. A local one-repetition performance pass covered 1, 100, 1,000, and 10,000 requests; the slowest 10,000-request run took 1.299 seconds. These are software execution measurements on the development host.
+
+The subsequent architecture review passed 103 workspace tests. Zero adapter slots now represent base-model-only serving, and scheduler compatibility and physical admission both enforce that capability. Provider lifecycle observations use normalized states, with conservative termination confirmation and recovery of older ownership journals. The dependency guard follows normal workspace dependency paths to detect indirect links from core, scheduler, or simulator to production integrations.
 
 The [RunPod recipe](../configs/runpod) preserves the actual fleet and workload definitions, timestamped quotes, pinned model revisions and archive identities, and the checksum-pinned serving bootstrap. Preflight validated all three manifests and planned a sample prompt as 21 input tokens. Real GPU outcomes are recorded separately from these offline checks.

@@ -93,7 +93,9 @@ Every admitted request reserves `input_tokens + max_output` against `kv_tokens`.
 
 This rule intentionally favors conservative admission. It does not model paged-cache allocation, prefix sharing, growing reservations, cache fragmentation, sliding-window attention, or different KV sizes across layers. A measured token budget must include activation, graph, adapter, and safety headroom for the exact serving configuration. Lower memory admission can reduce throughput even when the service curve predicts spare compute capacity.
 
-Adapters occupy a bounded cache with recency ordering. An adapter used by active work cannot be evicted. A miss adds load time before service; multiple requests can wait for the same in-progress load. The model approximates adapter residency and a mixed-adapter penalty, without estimating adapter bytes or validating a particular engine's adapter support.
+`adapter_cache_slots` declares adapter capability as well as residency capacity. A zero-slot profile serves the base model only; a request selecting an adapter is compatible only with a positive-slot profile. Both scheduler planning and physical admission enforce this rule. Unsupported adapter requests add no GPU work or adapter capacity.
+
+Supported adapters occupy a bounded cache with recency ordering. An adapter used by active work cannot be evicted. A miss adds load time before service; multiple requests can wait for the same in-progress load. The model approximates adapter residency and a mixed-adapter penalty, without estimating adapter bytes or detecting a particular engine's adapter support automatically.
 
 ## Scheduling and objectives
 
