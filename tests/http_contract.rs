@@ -729,3 +729,74 @@ async fn frontdoor_routes_a_multi_model_burst_to_compatible_instances() {
     assert!(entries.iter().any(|node| node["profile_id"] == "test-gpu"));
     assert!(entries.iter().any(|node| node["profile_id"] == "other-gpu"));
 }
+
+#[tokio::test]
+async fn sse_follows_delivered_tokens_when_gpu_generation_finishes_before_egress() {
+    let mut profile = hardware();
+    profile.network_s = 1.0;
+    profile.network_bytes_per_s = 40.0; // Ten synthetic tokens per second.
+    let app = api_with(profile);
+    let id = provision(&app).await;
+    let mut body = chat();
+    body["stream"] = json!(true);
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/v1/instances/{id}/openai/v1/chat/completions"))
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let mut stream = response.into_body().into_data_stream();
+    advance(&app, 4.5).await;
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), stream.next())
+            .await
+            .is_err()
+    );
+    advance(&app, 0.75).await;
+    let receipt = call(&app, "GET", "/v1/requests/0", None).await.body;
+    assert_eq!(receipt["status"], "active");
+    let delivered = receipt["generated_tokens"].as_u64().unwrap();
+    assert!((1..20).contains(&delivered));
+    let role = tokio::time::timeout(Duration::from_secs(1), stream.next())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert!(std::str::from_utf8(&role).unwrap().contains("assistant"));
+    let content = tokio::time::timeout(Duration::from_secs(1), stream.next())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let event = std::str::from_utf8(&content)
+        .unwrap()
+        .trim()
+        .strip_prefix("data: ")
+        .unwrap();
+    let chunk: Value = serde_json::from_str(event).unwrap();
+    assert_eq!(
+        chunk["choices"][0]["delta"]["content"]
+            .as_str()
+            .unwrap()
+            .matches(" tok")
+            .count() as u64,
+        delivered
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), stream.next())
+            .await
+            .is_err()
+    );
+    advance(&app, 10.0).await;
+    while tokio::time::timeout(Duration::from_secs(1), stream.next())
+        .await
+        .unwrap()
+        .is_some()
+    {}
+}

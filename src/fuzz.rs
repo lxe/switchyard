@@ -52,7 +52,22 @@ pub fn case(seed: u64) -> (Vec<Profile>, Scenario) {
         point.work_units_per_s *= 2.0;
     }
     fast.startup.engine_s *= 0.5;
-    let profiles = vec![p, fast];
+    let mut profiles = vec![p, fast];
+    let templates = [profiles[0].clone(), profiles[1].clone()];
+    let model_count = rng.next(4) + 1;
+    for index in 1..model_count {
+        for template in &templates {
+            let mut profile = template.clone();
+            profile.id = format!("{}-{index}", profile.id);
+            profile.model = format!("example-model-{index}");
+            profile.workload = if index.is_multiple_of(2) {
+                Workload::Vision
+            } else {
+                Workload::Text
+            };
+            profiles.push(profile);
+        }
+    }
     let arrival = rng.next(60) as f64;
     let requests = (rng.next(60) + 1) as usize;
     let mut scenario = Scenario {
@@ -90,11 +105,21 @@ pub fn case(seed: u64) -> (Vec<Profile>, Scenario) {
     };
     for id in 0..requests {
         let class = if rng.next(4) == 0 { "latency" } else { "batch" };
+        let model = rng.next(model_count);
+        let vision = model > 0 && model.is_multiple_of(2);
         scenario.requests.push(Request {
             id,
             job: 0,
-            model: "example-model".into(),
-            workload: Workload::Text,
+            model: if model == 0 {
+                "example-model".into()
+            } else {
+                format!("example-model-{model}")
+            },
+            workload: if vision {
+                Workload::Vision
+            } else {
+                Workload::Text
+            },
             class: class.into(),
             arrival_s: arrival
                 + if rng.next(2) == 0 {
@@ -106,12 +131,20 @@ pub fn case(seed: u64) -> (Vec<Profile>, Scenario) {
             planned_output: rng.next(450) + 50,
             max_output: 1000,
             actual_output: rng.next(1000) + 1,
-            image_megapixels: 0.0,
+            image_megapixels: if vision {
+                rng.next(800) as f64 / 100.0
+            } else {
+                0.0
+            },
             upload_bytes: rng.next(1_000_000),
             cached_fraction: rng.next(50) as f64 / 100.0,
             adapter: (rng.next(2) == 0).then(|| format!("adapter-{}", rng.next(4))),
             latency_target_s: 5.0,
-            depends_on: vec![],
+            depends_on: if id > 0 && rng.next(8) == 0 {
+                vec![rng.next(id as u64) as usize]
+            } else {
+                vec![]
+            },
         });
     }
     if !scenario.warm.is_empty() && rng.next(4) == 0 {

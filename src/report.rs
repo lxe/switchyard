@@ -4,7 +4,7 @@ use std::fmt::Write;
 
 pub fn markdown(runs: &[Run]) -> String {
     let mut text = String::from(
-        "# Fleet simulation results\n\nThese are simulated outcomes, not live cloud benchmarks. Read profile provenance before interpreting a hardware comparison. Cost includes baseline rent over the entire observation window, startup, minimum billing, and elastic idle timeout.\n\n| Scenario | Policy | Completed | Eval seconds | Eval output TPS | Interactive p95 seconds | Interactive SLO | USD | Idle USD | Elastic launches | Target jobs met |\n|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n",
+        "# Fleet simulation results\n\nThese are simulated outcomes, not live cloud benchmarks. Read profile provenance before interpreting a hardware comparison. Cost includes baseline rent over the entire observation window, startup, minimum billing, and elastic idle timeout.\n\n| Scenario | Policy | Completed | Batch seconds | Batch output TPS | Class response p95 seconds | Class completion SLO | USD | Idle USD | Elastic launches | Target jobs met |\n|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n",
     );
     for run in runs {
         let s = &run.summary;
@@ -39,6 +39,6 @@ pub fn markdown(runs: &[Run]) -> String {
         )
         .expect("writing into String cannot fail");
     }
-    text.push_str("\nEval rate divides completed output tokens by the interval from the first eval arrival to the last completed eval response. Check `unfinished` and per-job completion before interpreting partial runs. The interactive SLO denominator includes unfinished arrived requests. JSON includes request timing, instance costs, failures, and a one-second fleet timeline.\n");
+    text.push_str("\nBatch rate divides completed output tokens by the interval from the first batch arrival to the last completed batch response. Check `unfinished` and per-job completion before interpreting partial runs. The class SLO denominator includes unfinished arrived requests. JSON includes request timing, instance costs, failures, and a one-second fleet timeline.\n");
     text
 }

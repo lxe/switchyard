@@ -44,7 +44,7 @@ curl -s http://127.0.0.1:8080/v1/chat/completions \
 
 The model name must match the catalog. The client submits model and workload inputs; it does not need a profile or instance ID. The runtime observes model-loading progress, delivered requests, and completed host probes when choosing provider actions. It does not receive sampled future output lengths or actual future readiness times.
 
-Supported chat fields are `model`, `messages`, `max_completion_tokens` or `max_tokens`, `stream`, `stream_options.include_usage`, and `n` with a value of `1`. `max_completion_tokens` takes precedence when both limits are present; the default limit is `512`, and limits range from `1` to `65536`. Messages may contain string content, content-part arrays, or null content. Image content selects a vision offering when one is available.
+Supported chat fields are `model`, `messages`, `max_completion_tokens` or `max_tokens`, `stream`, `stream_options.include_usage`, and `n` with a value of `1`. `max_completion_tokens` takes precedence when both limits are present; the default limit is `512`, and limits range from `1` to `65536`. Messages may contain string content, content-part arrays, or null content. Image content requires a configured vision offering; submitting images to an instance configured only for text returns `422`.
 
 The simulator accepts ordinary sampling/metadata fields such as `temperature`, `top_p`, `seed`, `stop`, penalties, log-probability options, `response_format`, `metadata`, `store`, `reasoning_effort`, and `service_tier`. These fields do not alter the synthetic text or its sampled length. Tool execution and multiple completions are unsupported. The simulator evaluates capacity and timing rather than answer quality.
 
@@ -66,11 +66,17 @@ A JSON chat response waits for delivered completion. It has `object: "chat.compl
 
 With `"stream":true`, the server returns `text/event-stream`. No data event is emitted until the receipt reports a delivered first token. The first event supplies the assistant role; subsequent events supply synthetic content in chunks of at most 128 tokens. A finish event follows delivered completion, followed by `[DONE]`. Set `"stream_options":{"include_usage":true}` to receive the standard final usage chunk with an empty `choices` array before `[DONE]`.
 
+HTTP response headers can arrive before the first stream event. Measure inference TTFT from the first content delivery or the virtual receipt, rather than header arrival. Automatic clock advancement runs every 50 ms, and waiting handlers poll every 10 ms; wall-clock stream timings therefore include HTTP runtime overhead. A disconnected client does not automatically cancel admitted physical work.
+
 Each chat response ID has the form `chatcmpl-sim-42`. The numeric suffix identifies `GET /v1/requests/42`, which supplies virtual timestamps and delivered token counts for measurements. A failed or cancelled JSON request returns HTTP `503` with a structured error. A stream that has already begun emits an error event and then `[DONE]`.
+
+When the server receives Ctrl-C, pending JSON requests return a shutdown error and pending streams emit a shutdown event followed by `[DONE]`. This also applies in manual mode, where no clock driver may remain to complete the work.
 
 ## Provider lifecycle routes
 
 The provider routes are available independently of the stable client endpoint. An external scheduler can provision, observe, probe, submit to, and release its own instances.
+
+The stable client endpoint activates a bundled controller for the same fleet. Run external-controller experiments through the provider and pinned serving routes in a fresh session so that one controller owns provisioning and release decisions. The library also supports replacing the bundled controller with `CloudSimulator::set_router(RoutingRuntime::with_scheduler(controller))`.
 
 | Method and path | Result |
 | --- | --- |
@@ -106,7 +112,7 @@ Generic inference input is explicit:
 
 Instances expose `starting`, `ready`, or `released` status. The actual readiness timestamp is absent until the instance becomes ready. Host probe results become available only after the probe duration has elapsed. Releasing a loading instance cancels its pending pinned requests and prevents pending probes from publishing a result. Releasing an instance with active inference returns `409`.
 
-Request status is `queued`, `active`, `completed`, or `failed`. `generated_tokens` counts tokens delivered to the client after egress delay; it does not expose future GPU work. Completed `usage` contains prompt and completion token counts. Polling before completion does not disclose sampled final output length.
+Request status is `queued`, `active`, `completed`, or `failed`. `submitted_at_s` records receipt of the request, so first-token latency is `first_token_at_s - submitted_at_s`, including queue and loading delays. `generated_tokens` counts tokens delivered to the client after egress delay; it does not expose future GPU work. Completed `usage` contains prompt and completion token counts. Polling before completion does not disclose sampled final output length.
 
 ## Errors and resource bounds
 

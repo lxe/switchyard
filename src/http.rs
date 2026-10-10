@@ -9,22 +9,35 @@ use crate::engine::{CloudSimulator, InferenceSpec};
 use axum::extract::rejection::{JsonRejection, PathRejection};
 use axum::extract::{DefaultBodyLimit, Path, State};
 use axum::http::{StatusCode, header};
-use axum::response::sse::{Event, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
-use axum::{Json, Router};
+use axum::{Extension, Json, Router};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
 use std::error::Error;
 use std::future::IntoFuture;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::sync::Mutex;
 
+mod openai;
+use openai::{
+    add_endpoint, catalog_models, chat_completion, endpoint, models, routed_chat_completion,
+};
+
 type SharedCloud = Arc<Mutex<CloudSimulator>>;
 type ApiResult = Result<Response, ApiError>;
+
+#[derive(Clone, Default)]
+struct Shutdown(Arc<AtomicBool>);
+
+impl Shutdown {
+    fn requested(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+}
 
 /// Construct the provider API without opening a socket or advancing time.
 ///
@@ -33,6 +46,10 @@ type ApiResult = Result<Response, ApiError>;
 /// receipt. `POST /control/advance` accepts `{ "seconds": 1.0 }` and returns
 /// `{ "time_s": 1.0 }`; advancing by zero is valid.
 pub fn router(cloud: SharedCloud) -> Router {
+    router_with_shutdown(cloud, Shutdown::default())
+}
+
+fn router_with_shutdown(cloud: SharedCloud, shutdown: Shutdown) -> Router {
     Router::new()
         .route("/v1/offerings", get(offerings))
         .route("/v1/instances", get(instances).post(provision))
@@ -52,6 +69,7 @@ pub fn router(cloud: SharedCloud) -> Router {
         .fallback(not_found)
         .method_not_allowed_fallback(method_not_allowed)
         .layer(DefaultBodyLimit::max(64 * 1024))
+        .layer(Extension(shutdown))
         .with_state(cloud)
 }
 
@@ -88,11 +106,16 @@ pub async fn serve_with_config(
         .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidInput, message))?;
     let cloud = Arc::new(Mutex::new(simulator));
     let listener = tokio::net::TcpListener::bind(bind).await?;
-    let server = axum::serve(listener, router(cloud.clone()))
-        .with_graceful_shutdown(async {
-            let _ = tokio::signal::ctrl_c().await;
-        })
-        .into_future();
+    let shutdown = Shutdown::default();
+    let server = axum::serve(
+        listener,
+        router_with_shutdown(cloud.clone(), shutdown.clone()),
+    )
+    .with_graceful_shutdown(async move {
+        let _ = tokio::signal::ctrl_c().await;
+        shutdown.0.store(true, Ordering::Relaxed);
+    })
+    .into_future();
     if clock_rate == 0.0 {
         server.await?;
     } else {
@@ -386,408 +409,4 @@ async fn method_not_allowed() -> ApiError {
         "method_not_allowed",
         "method is not supported for this route",
     )
-}
-
-fn endpoint(id: usize) -> String {
-    format!("/v1/instances/{id}/openai/v1")
-}
-
-fn add_endpoint(instance: &mut Value) {
-    if let Some(id) = instance.get("id").and_then(Value::as_u64) {
-        instance["openai_base_path"] = json!(endpoint(id as usize));
-    }
-}
-
-fn instance_profile(cloud: &CloudSimulator, id: usize) -> Result<(String, Workload), ApiError> {
-    let instance = visible_instance(&cloud.snapshot(), id)?;
-    let offerings = cloud.offerings();
-    let profile = offerings["offerings"]
-        .as_array()
-        .and_then(|profiles| {
-            profiles
-                .iter()
-                .find(|profile| profile["id"] == instance["profile_id"])
-        })
-        .ok_or_else(|| {
-            ApiError::new(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "internal_error",
-                "instance offering is unavailable",
-            )
-        })?;
-    let model = profile["model"].as_str().ok_or_else(|| {
-        ApiError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "internal_error",
-            "offering has no model",
-        )
-    })?;
-    let workload = serde_json::from_value(profile["workload"].clone()).map_err(|_| {
-        ApiError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "internal_error",
-            "offering has no workload",
-        )
-    })?;
-    Ok((model.to_owned(), workload))
-}
-
-async fn models(
-    State(cloud): State<SharedCloud>,
-    path: Result<Path<usize>, PathRejection>,
-) -> ApiResult {
-    let Path(id) = path.map_err(ApiError::path)?;
-    let model = {
-        let simulator = cloud.lock().await;
-        instance_profile(&simulator, id)?.0
-    };
-    Ok(Json(json!({ "object": "list", "data": [{ "id": model, "object": "model", "created": 0, "owned_by": "simulator" }] })).into_response())
-}
-
-async fn catalog_models(State(cloud): State<SharedCloud>) -> Response {
-    let offerings = cloud.lock().await.offerings();
-    let models: std::collections::BTreeSet<_> = offerings["offerings"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|profile| profile["model"].as_str())
-        .collect();
-    let data: Vec<_> = models.into_iter().map(|model| json!({ "id": model, "object": "model", "created": 0, "owned_by": "simulator" })).collect();
-    Json(json!({ "object": "list", "data": data })).into_response()
-}
-
-fn catalog_workload(
-    cloud: &CloudSimulator,
-    model: &str,
-    vision: bool,
-) -> Result<Workload, ApiError> {
-    let offerings = cloud.offerings();
-    let matching: Vec<_> = offerings["offerings"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter(|profile| profile["model"] == model)
-        .collect();
-    let preferred = if vision { "vision" } else { "text" };
-    let profile = matching
-        .iter()
-        .find(|profile| profile["workload"] == preferred)
-        .or_else(|| matching.first())
-        .ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found", "unknown model"))?;
-    serde_json::from_value(profile["workload"].clone()).map_err(|_| {
-        ApiError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "internal_error",
-            "offering has no workload",
-        )
-    })
-}
-
-#[derive(Deserialize, Default)]
-#[serde(deny_unknown_fields)]
-struct SimulatorInputs {
-    input_tokens: Option<u64>,
-    planned_output: Option<u64>,
-    #[serde(default)]
-    upload_bytes: u64,
-    #[serde(default)]
-    cached_fraction: f64,
-    #[serde(default)]
-    image_megapixels: f64,
-}
-
-#[derive(Deserialize, Default)]
-#[serde(deny_unknown_fields)]
-struct StreamOptions {
-    #[serde(default)]
-    include_usage: bool,
-}
-
-#[derive(Deserialize)]
-struct ChatBody {
-    model: String,
-    messages: Vec<Value>,
-    max_completion_tokens: Option<u64>,
-    max_tokens: Option<u64>,
-    #[serde(default)]
-    stream: bool,
-    #[serde(default)]
-    stream_options: Option<StreamOptions>,
-    #[serde(default)]
-    simulator: SimulatorInputs,
-    n: Option<u64>,
-    #[serde(flatten)]
-    extra: BTreeMap<String, Value>,
-}
-
-impl ChatBody {
-    fn validate(&self) -> Result<u64, ApiError> {
-        let invalid =
-            |message| ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_request", message);
-        let max_output = self
-            .max_completion_tokens
-            .or(self.max_tokens)
-            .unwrap_or(512);
-        if !(1..=65_536).contains(&max_output) {
-            return Err(invalid("max completion tokens must be between 1 and 65536"));
-        }
-        if self.messages.is_empty()
-            || self.messages.iter().any(|message| {
-                !message.is_object()
-                    || !message["role"].is_string()
-                    || !(message["content"].is_string()
-                        || message["content"].is_array()
-                        || message["content"].is_null())
-            })
-        {
-            return Err(invalid(
-                "messages must contain objects with a role and string, content-part array, or null content",
-            ));
-        }
-        if self.n.is_some_and(|n| n != 1) {
-            return Err(invalid("the simulator supports one completion per request"));
-        }
-        for name in self.extra.keys() {
-            if !matches!(
-                name.as_str(),
-                "temperature"
-                    | "top_p"
-                    | "seed"
-                    | "stop"
-                    | "user"
-                    | "frequency_penalty"
-                    | "presence_penalty"
-                    | "logprobs"
-                    | "top_logprobs"
-                    | "response_format"
-                    | "metadata"
-                    | "store"
-                    | "reasoning_effort"
-                    | "service_tier"
-            ) {
-                return Err(ApiError::new(
-                    StatusCode::UNPROCESSABLE_ENTITY,
-                    "invalid_request",
-                    format!("unsupported chat field: {name}"),
-                ));
-            }
-        }
-        Ok(max_output)
-    }
-}
-
-async fn chat_completion(
-    State(cloud): State<SharedCloud>,
-    path: Result<Path<usize>, PathRejection>,
-    body: Result<Json<ChatBody>, JsonRejection>,
-) -> ApiResult {
-    let Path(node) = path.map_err(ApiError::path)?;
-    let Json(body) = body.map_err(ApiError::json)?;
-    handle_chat(cloud, Some(node), body).await
-}
-
-async fn routed_chat_completion(
-    State(cloud): State<SharedCloud>,
-    body: Result<Json<ChatBody>, JsonRejection>,
-) -> ApiResult {
-    let Json(body) = body.map_err(ApiError::json)?;
-    handle_chat(cloud, None, body).await
-}
-
-async fn handle_chat(cloud: SharedCloud, node: Option<usize>, body: ChatBody) -> ApiResult {
-    let max_output = body.validate()?;
-    let estimated_input = serde_json::to_vec(&body.messages)
-        .expect("JSON values serialize")
-        .len()
-        .div_ceil(4)
-        .max(1) as u64;
-    let (id, created) = {
-        let mut simulator = cloud.lock().await;
-        let workload = match node {
-            Some(node) => instance_profile(&simulator, node)?.1,
-            None => {
-                let vision = body.simulator.image_megapixels > 0.0
-                    || body.messages.iter().any(|message| {
-                        message["content"].as_array().is_some_and(|parts| {
-                            parts.iter().any(|part| part["type"] == "image_url")
-                        })
-                    });
-                catalog_workload(&simulator, &body.model, vision)?
-            }
-        };
-        let spec = InferenceSpec {
-            model: body.model.clone(),
-            input_tokens: body.simulator.input_tokens.unwrap_or(estimated_input),
-            planned_output: body.simulator.planned_output.unwrap_or(max_output),
-            max_output,
-            upload_bytes: body.simulator.upload_bytes,
-            workload,
-            image_megapixels: body.simulator.image_megapixels,
-            adapter: None,
-            class: "standard".into(),
-            cached_fraction: body.simulator.cached_fraction,
-        };
-        let created = simulator.clock().floor() as u64;
-        let id = match node {
-            Some(node) => simulator.enqueue(node, spec),
-            None => simulator.route(spec),
-        }
-        .map_err(ApiError::engine)?;
-        (id, created)
-    };
-    if body.stream {
-        let state = ChatStream {
-            cloud,
-            id,
-            model: body.model,
-            created,
-            max_output,
-            include_usage: body.stream_options.unwrap_or_default().include_usage,
-            emitted: 0,
-            role_sent: false,
-            phase: StreamPhase::Tokens,
-            usage: Value::Null,
-        };
-        let stream = futures_util::stream::unfold(state, next_chat_event);
-        Ok(Sse::new(stream).into_response())
-    } else {
-        let receipt = wait_for_completion(&cloud, id).await?;
-        let count = receipt["generated_tokens"].as_u64().unwrap_or(0);
-        Ok(Json(json!({
-            "id": format!("chatcmpl-sim-{id}"), "object": "chat.completion", "created": created,
-            "model": body.model,
-            "choices": [{ "index": 0, "message": { "role": "assistant", "content": synthetic_text(count) }, "finish_reason": finish_reason(count, max_output) }],
-            "usage": openai_usage(&receipt["usage"]),
-        })).into_response())
-    }
-}
-
-async fn wait_for_completion(cloud: &SharedCloud, id: usize) -> Result<Value, ApiError> {
-    loop {
-        let receipt = cloud.lock().await.request(id).map_err(ApiError::engine)?;
-        match receipt["status"].as_str() {
-            Some("completed") => return Ok(receipt),
-            Some("failed" | "cancelled") => {
-                return Err(ApiError::new(
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    "inference_failed",
-                    "inference request failed or was cancelled",
-                ));
-            }
-            _ => tokio::time::sleep(Duration::from_millis(10)).await,
-        }
-    }
-}
-
-fn synthetic_text(tokens: u64) -> String {
-    // Both completion handlers are bounded by the validated max_output ceiling.
-    " tok".repeat(tokens.min(65_536) as usize)
-}
-
-fn finish_reason(tokens: u64, max_output: u64) -> &'static str {
-    if tokens >= max_output {
-        "length"
-    } else {
-        "stop"
-    }
-}
-
-fn openai_usage(usage: &Value) -> Value {
-    let prompt = usage["prompt_tokens"].as_u64().unwrap_or(0);
-    let completion = usage["completion_tokens"].as_u64().unwrap_or(0);
-    json!({ "prompt_tokens": prompt, "completion_tokens": completion, "total_tokens": prompt.saturating_add(completion) })
-}
-
-enum StreamPhase {
-    Tokens,
-    Usage,
-    Done,
-    End,
-}
-
-struct ChatStream {
-    cloud: SharedCloud,
-    id: usize,
-    model: String,
-    created: u64,
-    max_output: u64,
-    include_usage: bool,
-    emitted: u64,
-    role_sent: bool,
-    phase: StreamPhase,
-    usage: Value,
-}
-
-fn chat_chunk(state: &ChatStream, delta: Value, finish: Value) -> Value {
-    json!({ "id": format!("chatcmpl-sim-{}", state.id), "object": "chat.completion.chunk", "created": state.created,
-        "model": state.model, "choices": [{ "index": 0, "delta": delta, "finish_reason": finish }] })
-}
-
-async fn next_chat_event(
-    mut state: ChatStream,
-) -> Option<(Result<Event, std::convert::Infallible>, ChatStream)> {
-    loop {
-        match state.phase {
-            StreamPhase::End => return None,
-            StreamPhase::Done => {
-                state.phase = StreamPhase::End;
-                return Some((Ok(Event::default().data("[DONE]")), state));
-            }
-            StreamPhase::Usage => {
-                let value = json!({ "id": format!("chatcmpl-sim-{}", state.id), "object": "chat.completion.chunk", "created": state.created,
-                    "model": state.model, "choices": [], "usage": state.usage });
-                state.phase = StreamPhase::Done;
-                return Some((Ok(Event::default().data(value.to_string())), state));
-            }
-            StreamPhase::Tokens => {}
-        }
-        let receipt = state.cloud.lock().await.request(state.id);
-        let receipt = match receipt {
-            Ok(receipt) if !matches!(receipt["status"].as_str(), Some("failed" | "cancelled")) => {
-                receipt
-            }
-            _ => {
-                state.phase = StreamPhase::Done;
-                return Some((Ok(Event::default().data(json!({ "error": { "code": "inference_failed", "message": "inference request failed or was cancelled" } }).to_string())), state));
-            }
-        };
-        if !state.role_sent && receipt["first_token_at_s"].is_number() {
-            state.role_sent = true;
-            let chunk = chat_chunk(
-                &state,
-                json!({ "role": "assistant", "content": "" }),
-                Value::Null,
-            );
-            return Some((Ok(Event::default().data(chunk.to_string())), state));
-        }
-        let generated = receipt["generated_tokens"]
-            .as_u64()
-            .unwrap_or(0)
-            .min(state.max_output);
-        if state.role_sent && generated > state.emitted {
-            let count = (generated - state.emitted).min(128);
-            state.emitted += count;
-            let chunk = chat_chunk(
-                &state,
-                json!({ "content": synthetic_text(count) }),
-                Value::Null,
-            );
-            return Some((Ok(Event::default().data(chunk.to_string())), state));
-        }
-        if receipt["status"] == "completed" {
-            state.usage = openai_usage(&receipt["usage"]);
-            state.phase = if state.include_usage {
-                StreamPhase::Usage
-            } else {
-                StreamPhase::Done
-            };
-            let chunk = chat_chunk(
-                &state,
-                json!({}),
-                json!(finish_reason(generated, state.max_output)),
-            );
-            return Some((Ok(Event::default().data(chunk.to_string())), state));
-        }
-        tokio::time::sleep(Duration::from_millis(10)).await;
-    }
 }

@@ -6,18 +6,14 @@ use std::collections::BTreeMap;
 impl SchedulerWorld<'_> {
     fn estimated_remaining(&self, id: usize, profile: &Profile) -> f64 {
         let request = &self.scenario.requests[&(id)];
-        self.nodes
-            .iter()
-            .flat_map(|n| &n.active)
-            .find(|a| a.id == id)
-            .map_or_else(
-                || profile.prefill_work(request) + request.planned_output as f64,
-                |a| {
-                    a.prefill
-                        + (request.planned_output as f64 - a.generated)
-                            .max(self.scenario.scheduling.replan_output_floor)
-                },
-            )
+        self.progress.get(&id).map_or_else(
+            || profile.prefill_work(request) + request.planned_output as f64,
+            |(remaining_fraction, generated)| {
+                profile.prefill_work(request) * remaining_fraction
+                    + (request.planned_output as f64 - generated)
+                        .max(self.scenario.scheduling.replan_output_floor)
+            },
+        )
     }
 
     pub(super) fn predicted_start(&self, profile: &Profile) -> f64 {
@@ -32,7 +28,24 @@ impl SchedulerWorld<'_> {
         );
         let build = percentile(profile.startup.build_samples_s.clone(), quantile)
             .unwrap_or(profile.startup.total() * 8.0);
-        restore * (1.0 - self.scenario.build_probability) + build * self.scenario.build_probability
+        let measured = self
+            .profiles
+            .iter()
+            .position(|p| p.id == profile.id)
+            .and_then(|i| self.startup_extra.get(&i))
+            .copied();
+        let mean_bandwidth = profile
+            .host
+            .volume_bandwidth_bytes_per_s
+            .iter()
+            .sum::<f64>()
+            / profile.host.volume_bandwidth_bytes_per_s.len() as f64;
+        let expected_bytes = profile.host.container_image_bytes as f64
+            * (1.0 - profile.host.image_cache_probability)
+            + profile.host.model_bytes as f64 * (1.0 - profile.host.model_cache_probability);
+        restore * (1.0 - self.scenario.build_probability)
+            + build * self.scenario.build_probability
+            + measured.unwrap_or(expected_bytes / mean_bandwidth)
     }
 
     pub(super) fn plan(&mut self) {
@@ -40,12 +53,16 @@ impl SchedulerWorld<'_> {
             return;
         }
         let mut pools: BTreeMap<(String, Workload), Vec<usize>> = BTreeMap::new();
+        let mut job_outputs: HashMap<usize, f64> = HashMap::new();
+        for r in self.scenario.requests.values() {
+            *job_outputs.entry(r.job).or_default() += r.planned_output as f64;
+        }
         for request in self.scenario.requests.values() {
             if !request.routing_allowed {
                 continue;
             }
             let state = self.states[&request.id].state;
-            if matches!(state, State::Done | State::Rejected) {
+            if matches!(state, State::Done | State::Rejected | State::Delivering) {
                 continue;
             }
             let job = &self.scenario.jobs[&(request.job)];
@@ -95,13 +112,7 @@ impl SchedulerWorld<'_> {
                 .iter()
                 .map(|id| {
                     let job = &self.scenario.jobs[&self.scenario.requests[id].job];
-                    let output: f64 = self
-                        .scenario
-                        .requests
-                        .values()
-                        .filter(|r| r.job == job.id)
-                        .map(|r| r.planned_output as f64)
-                        .sum();
+                    let output = job_outputs[&job.id];
                     job.arrival_s
                         + job
                             .completion_budget_s
@@ -131,13 +142,24 @@ impl SchedulerWorld<'_> {
                     .max(1e-8)
             };
             let capacity_for = |profile: &Profile| {
+                let mean_reservation = ids
+                    .iter()
+                    .map(|id| {
+                        let r = &self.scenario.requests[id];
+                        (r.input_tokens + r.max_output) as f64
+                    })
+                    .sum::<f64>()
+                    / ids.len() as f64;
+                let memory_slots = (profile.kv_tokens as f64 / mean_reservation.max(1.0))
+                    .floor()
+                    .max(1.0) as usize;
                 let has_adapters = ids
                     .iter()
                     .filter_map(|id| self.scenario.requests[id].adapter.as_deref())
                     .collect::<std::collections::HashSet<_>>()
                     .len()
                     > 1;
-                profile.capacity(ids.len().min(profile.max_in_flight)) * 1.0 * work
+                profile.capacity(ids.len().min(profile.max_in_flight).min(memory_slots)) * work
                     / work_for(profile)
                     * if has_adapters {
                         profile.multi_adapter_factor
@@ -202,7 +224,9 @@ impl SchedulerWorld<'_> {
                                 1e6 + startup / capacity_for(p).max(1e-8)
                             }
                         };
-                        score(*a).total_cmp(&score(*b)).then(a.cmp(b))
+                        score(*a)
+                            .total_cmp(&score(*b))
+                            .then_with(|| self.profiles[*a].id.cmp(&self.profiles[*b].id))
                     })
                     .expect("nonempty candidates");
                 let p = &self.profiles[best];
@@ -290,7 +314,8 @@ impl SchedulerWorld<'_> {
                     .or_default() += 1;
             }
         }
-        let mut groups: BTreeMap<(u32, usize), VecDeque<usize>> = BTreeMap::new();
+        let mut groups: BTreeMap<(u32, usize, String, String, Workload), VecDeque<usize>> =
+            BTreeMap::new();
         for (&id, state) in &self.states {
             if state.state != State::Queued {
                 continue;
@@ -300,8 +325,9 @@ impl SchedulerWorld<'_> {
                 continue;
             }
             if !r.depends_on.iter().all(|dependency| {
-                self.states[dependency]
-                    .completed_s
+                self.states
+                    .get(dependency)
+                    .and_then(|state| state.completed_s)
                     .is_some_and(|t| t <= self.now)
             }) {
                 continue;
@@ -313,15 +339,75 @@ impl SchedulerWorld<'_> {
             } else {
                 0
             };
-            groups.entry((priority, r.job)).or_default().push_back(id);
+            groups
+                .entry((
+                    priority,
+                    r.job,
+                    r.class.clone(),
+                    r.model.clone(),
+                    r.workload,
+                ))
+                .or_default()
+                .push_back(id);
         }
         loop {
+            let mut available_pools = std::collections::BTreeSet::new();
+            for node in &self.nodes {
+                if !node.is_ready || node.ended_s.is_some() {
+                    continue;
+                }
+                let profile = &self.profiles[node.profile];
+                let used: u64 = node
+                    .active
+                    .iter()
+                    .map(|a| {
+                        let r = &self.scenario.requests[&a.id];
+                        r.input_tokens + r.max_output
+                    })
+                    .sum();
+                if used >= profile.kv_tokens {
+                    continue;
+                }
+                for (name, class) in &self.scenario.scheduling.classes {
+                    let reserve = if self.policy.plans_ahead()
+                        && node.warm
+                        && !class.can_use_reserved_warm_slots
+                    {
+                        self.scenario
+                            .scheduling
+                            .reserve_warm_slots
+                            .min(profile.max_in_flight.saturating_sub(1))
+                    } else {
+                        0
+                    };
+                    if node.active.len() < profile.max_in_flight - reserve {
+                        available_pools.insert((
+                            profile.model.clone(),
+                            profile.workload,
+                            name.clone(),
+                        ));
+                    }
+                }
+            }
+            if available_pools.is_empty() {
+                break;
+            }
             let selection = groups
                 .iter()
                 .filter_map(|(key, queue)| {
-                    let id = *queue.front()?;
-                    let node = self.node_for(id)?;
-                    Some((*key, id, node))
+                    if !available_pools.contains(&(key.3.clone(), key.4, key.2.clone())) {
+                        return None;
+                    }
+                    let candidates = if self.scenario.scheduling.allow_queue_overtaking {
+                        queue.len()
+                    } else {
+                        1
+                    };
+                    let (id, node) = queue
+                        .iter()
+                        .take(candidates)
+                        .find_map(|id| self.node_for(*id).map(|node| (*id, node)))?;
+                    Some((key.clone(), id, node))
                 })
                 .min_by(|(a, ia, _), (b, ib, _)| {
                     let fair = |job| {
@@ -343,7 +429,12 @@ impl SchedulerWorld<'_> {
             let Some((key, id, node_index)) = selection else {
                 break;
             };
-            groups.get_mut(&key).expect("selected group").pop_front();
+            let queue = groups.get_mut(&key).expect("selected group");
+            let position = queue
+                .iter()
+                .position(|entry| *entry == id)
+                .expect("selected request");
+            queue.remove(position);
             let request = &self.scenario.requests[&(id)];
             let node = &mut self.nodes[node_index];
             let p = &self.profiles[node.profile];
@@ -380,6 +471,17 @@ impl SchedulerWorld<'_> {
                 generated: 0.0,
                 available_s: (self.now + p.network_s + upload_s).max(adapter_ready),
             });
+            self.progress.insert(
+                id,
+                (
+                    if p.prefill_work(request) > 0.0 {
+                        1.0
+                    } else {
+                        0.0
+                    },
+                    0.0,
+                ),
+            );
             node.last_used_s = self.now;
             self.states.get_mut(&id).expect("known request").state = State::Active;
             self.actions.push(Action::Route {

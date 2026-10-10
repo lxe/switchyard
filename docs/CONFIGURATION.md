@@ -1,0 +1,60 @@
+# Simulator configuration
+
+Configuration is JSON loaded into Rust types in `config.rs`. `init` writes a hardware catalog, an HTTP environment, and sixteen workload traces. The catalog describes public hardware priors; a trace or HTTP environment can override physical conditions to test a scheduler with stale priors. Unknown configuration fields are rejected so spelling mistakes do not silently change an experiment.
+
+## Hardware profiles
+
+Each profile identifies one model, workload kind (`text` or `vision`), accelerator, and serving configuration. Different quantization, parallelism, adapter settings, or engine settings should have separate IDs and measured capacity curves.
+
+| Fields | Units and meaning |
+| --- | --- |
+| `id`, `model`, `gpu`, `workload` | Offering identity, exact model identity, accelerator label, and supported workload |
+| `usd_per_hour`, `minimum_bill_s` | Rental price and minimum billable allocation duration |
+| `max_in_flight`, `kv_tokens` | Serving slots and conservative total input-plus-maximum-output reservation budget |
+| `curve` | Ordered concurrency points containing `in_flight` and aggregate `work_units_per_s` |
+| `input_work_per_token`, `image_work_per_megapixel` | Input processing cost in output-equivalent work units |
+| `network_s`, `network_bytes_per_s` | One-way latency and per-request upload/egress bandwidth |
+| `adapter_load_s`, `adapter_cache_slots`, `multi_adapter_factor` | Adapter miss delay, residency slots, and mixed-adapter capacity multiplier |
+| `evidence`, `source` | Calibration status and provenance; these fields are carried into exported profiles |
+
+One output token consumes one work unit. Input work is `input_tokens × (1 − cached_fraction) × input_work_per_token + image_megapixels × image_work_per_megapixel`. The curve is linearly interpolated between configured points and bounded above its last point. GPU-ready requests share aggregate work capacity according to their service weights. Uploaded or adapter-loading requests reserve memory and a slot, but do not contribute to the ready batch's capacity.
+
+`network_bytes_per_s` is an independent per-request link approximation. Output uses four synthetic bytes per token; delivery follows the slower of generation and wire transfer, plus one-way latency. This does not model shared NIC contention, packet loss, or network topology. Input token counts do not imply payload bytes: provide `upload_bytes` when that cost matters.
+
+## Startup and host reality
+
+`startup` contains `allocation_s`, `container_s`, `weights_s`, and `engine_s`, plus symmetric fractional `jitter`. Optional `restore_samples_s` and `build_samples_s` are end-to-end startup samples and override the component sum for their respective path. `build_probability` belongs to the experiment environment; selected priming runs do not establish a production build probability. Without build samples, the reference fixture uses eight times the component sum as an explicit fallback assumption.
+
+A profile's `host` supplies a discrete `volume_bandwidth_bytes_per_s` distribution, image/model byte sizes, cache-hit probabilities, `probe_duration_s`, and `measurement_noise`. Every new instance samples a private bandwidth and cache state. Warm instances have loaded caches. Missing image and model bytes add hydration time to the startup baseline.
+
+Host byte sizes represent additional hydration beyond the configured baseline. Keep them zero when an end-to-end startup sample already describes the environment being replayed. To construct a component model of downloads, exclude those downloads from the fixed component times. The configuration cannot detect duplicated calibration costs.
+
+The provider reports booting, hydrating, initializing, ready, or ended phases. Download progress becomes visible after the fixed boot/setup phase, which this approximation places at one quarter of the startup baseline. A probe takes configured virtual time and reports a noisy bandwidth measurement plus discovered cache state. The actual future readiness timestamp is not published before readiness. Cancelled hosts do not later publish pending probe results.
+
+## Workload traces
+
+A `Scenario` defines the observation horizon, scheduling tick, initial warm instances, jobs, requests, optional failures, and physical stress factors. Ticks must be between `0.001` and `1` seconds. GPU completions are calculated within ticks; admission and periodic planning use event opportunities. Events at the same instant are applied before one controller decision, so a simultaneous burst is observed as a set of requests.
+
+Jobs have an `announced_s`, an `arrival_s`, a `completion_budget_s`, and a desired aggregate `desired_output_tps`. An announcement permits planning before arrival. A throughput goal of zero disables the rate constraint. Request IDs and job IDs are dense array indices in trace files; dependencies must refer to earlier request IDs. A dependency becomes satisfied after its response reaches the client.
+
+Each request contains model and workload identity, a user-defined service `class`, arrival time, input tokens and bytes, image size, cache estimate, optional adapter, and output planning fields. `planned_output` is an estimate; `max_output` is the hard generation and memory bound. `actual_output` is fixture truth read only by the physical engine. It must be positive and no greater than the hard bound, and does not appear in scheduler views or accepted HTTP inputs. `latency_target_s` measures full response latency; TTFT is reported separately.
+
+`capacity_scale`, `startup_scale`, and optional `host_reality` override the experiment's physical environment. The scheduler continues to receive catalog priors and observations. `faults` identify allocated instance IDs and failure times; failed unpinned streams restart their full work when rerouted. The reference model does not transfer active KV state between hosts.
+
+## HTTP environment and routing controls
+
+`CloudConfig`, exported as `environment.json`, configures initial warm instances, faults, physical stress factors, build and launch-failure probabilities, `tick_s`, `max_instances_per_model`, idle retention, per-instance queue capacity, global router queue capacity, and the default router policy. `request_completion_budget_s` supplies the convenience front door's default completion objective. `--clock-rate` controls virtual time independently of that file.
+
+The generic provider interface does not autonomously provision or release externally managed instances. Sending to the stable client endpoint attaches the bundled routing runtime; its controller can then operate the shared fleet. Use separate server processes when comparing independent controllers whose decisions should not interact.
+
+`Scheduling` controls planning cadence, reactive drain targets, minimum planning windows, reserved warm slots, priority aging, output-estimate floors, slow-start cancellation thresholds, retry cooldown, learning rate, and whether queued requests may overtake a memory-blocked request. Reactive delay and idle retention belong to the enclosing scenario or HTTP environment. The `classes` map defines priority (smaller values first), relative warm-node service weight, permission to use reserved warm slots, and eligibility for planning announced future work. Classes are scheduling controls rather than application roles.
+
+The adaptive controller records each completed cold-host probe once and updates profile bandwidth, hydration bytes, and cache-hit estimates with an exponentially weighted moving average. Its configurable `learning_rate` is the weight of a new observation. These estimates influence later startup forecasts; a slow host can also trigger cancellation and profile cooldown. This is a baseline learning heuristic, and cannot promise optimal placement when a profile contains several very different host populations.
+
+## Reproducibility and output
+
+Replay requires the same simulator version, catalog, trace, policy, and seed. Startup/host draws, probe noise, and HTTP output sampling use separate random streams. Rejected immediate-admission requests do not consume output samples. Automatic HTTP clock mode follows wall time and concurrent arrival order, so exact replay uses the manual clock and a fixed request order.
+
+JSON results include completion and rejection counts, unfinished work, client TTFT and class response latency, job throughput and target satisfaction, costs, failure/retry waste, useful output still unfinished at cutoff, and controller diagnostics. Warm rent spans the entire configured observation horizon. Fuzz failures save the exact catalog, trace, and run for replay.
+
+Adaptive diagnostics key `host_beliefs` by zero-based catalog index and `probed_hosts` by allocated instance ID. The suite's `profiles-used.json` preserves catalog order, allowing belief entries to be matched to profile IDs and model configurations.

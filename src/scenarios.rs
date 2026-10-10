@@ -1,4 +1,4 @@
-//! Repeatable workloads: independent requests, eval bursts, and chained judging.
+//! Repeatable workloads: independent requests, large bursts, and dependency chains.
 use crate::config::*;
 
 const MODELS: [&str; 5] = [
@@ -103,14 +103,14 @@ fn add_job(
 /// Built-in synthetic workloads mirror recorded shapes without private data.
 pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
     let mut quiet = base(
-        "interactive_only",
+        "sparse_calls",
         "Sparse turn-by-turn requests, one warm base; 15-minute rent included.",
         profiles,
         1,
     );
     add_job(
         &mut quiet,
-        "chat",
+        "short-calls",
         MODELS[0],
         Workload::Text,
         "latency",
@@ -127,14 +127,14 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
     );
 
     let mut small = base(
-        "small_eval_200_tps",
-        "72-row eval; aggregate desired output throughput 200 TPS, not per-stream decode.",
+        "small_burst_200_tps",
+        "72-request burst; aggregate desired output throughput 200 TPS, not per-stream decode.",
         profiles,
         1,
     );
     add_job(
         &mut small,
-        "small-eval",
+        "small-burst",
         MODELS[0],
         Workload::Text,
         "batch",
@@ -151,14 +151,14 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
     );
 
     let mut mixed = base(
-        "mixed_eval_burst",
-        "1,200 Qwen2B eval rows arrive at30s; chat and judges share its base. Output bound420, actual~328.",
+        "mixed_request_burst",
+        "1,200 Qwen2B requests arrive at 30 s; short calls and dependent calls share its base. Output bound420, actual~328.",
         profiles,
         2,
     );
     add_job(
         &mut mixed,
-        "chat",
+        "short-calls",
         MODELS[1],
         Workload::Text,
         "latency",
@@ -175,7 +175,7 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
     );
     add_job(
         &mut mixed,
-        "eval",
+        "request-burst",
         MODELS[1],
         Workload::Text,
         "batch",
@@ -192,7 +192,7 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
     );
     add_job(
         &mut mixed,
-        "judge",
+        "dependent-call",
         MODELS[1],
         Workload::Text,
         "standard",
@@ -213,7 +213,7 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
 
     let mut five = base(
         "five_model_burst",
-        "Five independent1,000-row evals; last two vision profiles are uncalibrated hypotheses.",
+        "Five independent 1,000-request workloads; last two vision profiles are uncalibrated hypotheses.",
         profiles,
         5,
     );
@@ -244,7 +244,7 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
 
     let mut receipts = base(
         "receipt_vision_burst",
-        "Qwen4B image eval,64 rows and32-client historical shape represented with an assumed per-node vision curve.",
+        "Qwen4B image burst, 64 requests and 32-client historical shape represented with an assumed per-node vision curve.",
         profiles,
         0,
     );
@@ -301,7 +301,7 @@ pub fn suite(profiles: &[Profile]) -> Vec<Scenario> {
     let mut underestimate = mixed.clone();
     underestimate.name = "output_underestimate".into();
     underestimate.notes =
-        "Actual eval outputs exceed planning estimates by50%; the runtime replans remaining work."
+        "Actual burst outputs exceed planning estimates by 50%; the runtime replans remaining work."
             .into();
     for r in &mut underestimate.requests {
         if r.class == "batch" {

@@ -346,63 +346,70 @@ impl Simulation {
 
     fn run_until(&mut self, until: f64, mut controller: Option<&mut dyn Scheduler>) {
         while self.events.peek().is_some_and(|event| event.at <= until) {
-            let event = self.events.pop().expect("peeked event");
-            self.advance(event.at);
-            self.now = event.at;
+            let at = self.events.peek().expect("peeked event").at;
+            self.advance(at);
+            self.now = at;
             let mut allow_scale = false;
-            match event.kind {
-                EventKind::Arrival(id) => {
-                    if self
-                        .profiles
-                        .iter()
-                        .any(|p| p.compatible(&self.scenario.requests[id]))
-                    {
-                        self.states[id].state = State::Queued;
-                    } else {
-                        self.states[id].state = State::Rejected;
-                        self.states[id].result.rejected = true;
-                    }
-                }
-                EventKind::Ready(id) => {
-                    if self.nodes[id].ended_s.is_none() {
-                        self.nodes[id].last_used_s = self.now;
-                        if self.random.unit() < self.scenario.launch_fail_probability {
-                            self.fail(id);
-                            self.failed_launches += 1;
+            // A burst at one instant is one observed arrival set. Calling a
+            // controller for each row would repeatedly copy the entire plan
+            // and introduce allocation-order bias before time has advanced.
+            while self.events.peek().is_some_and(|event| event.at == at) {
+                let event = self.events.pop().expect("same-time event");
+                match event.kind {
+                    EventKind::Arrival(id) => {
+                        if self
+                            .profiles
+                            .iter()
+                            .any(|p| p.compatible(&self.scenario.requests[id]))
+                        {
+                            self.states[id].state = State::Queued;
                         } else {
-                            self.nodes[id].initialized = true;
+                            self.states[id].state = State::Rejected;
+                            self.states[id].result.rejected = true;
                         }
                     }
-                }
-                EventKind::Fault(id) => {
-                    if id < self.nodes.len() {
-                        self.fail(id);
+                    EventKind::Ready(id) => {
+                        if self.nodes[id].ended_s.is_none() {
+                            self.nodes[id].last_used_s = self.now;
+                            if self.random.unit() < self.scenario.launch_fail_probability {
+                                self.fail(id);
+                                self.failed_launches += 1;
+                            } else {
+                                self.nodes[id].initialized = true;
+                            }
+                        }
                     }
-                }
-                EventKind::ProbeDone(id) => {
-                    let node = &mut self.nodes[id];
-                    node.host.probe_pending = false;
-                    if node.ended_s.is_none() {
-                        node.host.probe = Some(HostProbe {
-                            at_s: self.now,
-                            volume_bytes_per_s: node.host.bandwidth
-                                * (1.0 + (self.probe_random.unit() * 2.0 - 1.0) * node.host.noise),
-                            image_cached: node.host.image_cached,
-                            model_cached: node.host.model_cached,
-                            hydration_bytes: node.host.bytes,
-                        });
+                    EventKind::Fault(id) => {
+                        if id < self.nodes.len() {
+                            self.fail(id);
+                        }
                     }
-                }
-                EventKind::Tick => {
-                    if self.now >= self.next_plan {
-                        allow_scale = true;
-                        self.next_plan = self.now + self.scenario.scheduling.plan_interval_s;
+                    EventKind::ProbeDone(id) => {
+                        let node = &mut self.nodes[id];
+                        node.host.probe_pending = false;
+                        if node.ended_s.is_none() {
+                            node.host.probe = Some(HostProbe {
+                                at_s: self.now,
+                                volume_bytes_per_s: node.host.bandwidth
+                                    * (1.0
+                                        + (self.probe_random.unit() * 2.0 - 1.0) * node.host.noise),
+                                image_cached: node.host.image_cached,
+                                model_cached: node.host.model_cached,
+                                hydration_bytes: node.host.bytes,
+                            });
+                        }
                     }
-                    if controller.is_some() && self.now >= self.next_sample {
-                        self.sample();
-                        self.next_sample = self.now + 1.0;
+                    EventKind::Tick => {
+                        if self.now >= self.next_plan {
+                            allow_scale = true;
+                            self.next_plan = self.now + self.scenario.scheduling.plan_interval_s;
+                        }
+                        if controller.is_some() && self.now >= self.next_sample {
+                            self.sample();
+                            self.next_sample = self.now + 1.0;
+                        }
+                        self.push(self.now + self.scenario.tick_s, EventKind::Tick);
                     }
-                    self.push(self.now + self.scenario.tick_s, EventKind::Tick);
                 }
             }
             self.dispatch_pinned();
@@ -569,7 +576,7 @@ impl Simulation {
                                     if s.result.completed_s.is_some_and(|t| t <= self.now) {
                                         RequestStatus::Done
                                     } else {
-                                        RequestStatus::Active
+                                        RequestStatus::Delivering
                                     }
                                 }
                                 State::Rejected => RequestStatus::Rejected,
@@ -822,7 +829,7 @@ impl Simulation {
             completed: self
                 .states
                 .iter()
-                .filter(|s| s.state == State::Done)
+                .filter(|s| s.result.completed_s.is_some_and(|t| t <= self.now))
                 .count(),
             emitted_tokens: self.nodes.iter().map(|n| n.emitted).sum(),
         });

@@ -46,12 +46,14 @@ impl Policy {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CapacityPoint {
     pub in_flight: usize,
     pub work_units_per_s: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Startup {
     pub allocation_s: f64,
     pub container_s: f64,
@@ -72,6 +74,7 @@ impl Startup {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Profile {
     pub id: String,
     pub model: String,
@@ -101,7 +104,7 @@ pub struct Profile {
 
 /// Host priors describe possible realities, never the state of a sampled host.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct HostProfile {
     pub volume_bandwidth_bytes_per_s: Vec<f64>,
     pub container_image_bytes: u64,
@@ -174,6 +177,7 @@ pub trait InferenceInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Request {
     pub id: usize,
     pub job: usize,
@@ -218,6 +222,7 @@ impl InferenceInput for Request {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Job {
     pub id: usize,
     pub name: String,
@@ -229,6 +234,7 @@ pub struct Job {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct WarmNode {
     pub profile: String,
     pub copies: usize,
@@ -245,6 +251,7 @@ pub struct CloudConfig {
     pub request_completion_budget_s: f64,
     pub idle_timeout_s: f64,
     pub launch_fail_probability: f64,
+    pub reactive_delay_s: f64,
     pub build_probability: f64,
     pub capacity_scale: f64,
     pub startup_scale: f64,
@@ -264,6 +271,7 @@ impl Default for CloudConfig {
             request_completion_budget_s: 60.0,
             idle_timeout_s: 30.0,
             launch_fail_probability: 0.0,
+            reactive_delay_s: 0.0,
             build_probability: 0.0,
             capacity_scale: 1.0,
             startup_scale: 1.0,
@@ -277,6 +285,7 @@ impl Default for CloudConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Fault {
     pub at_s: f64,
     /// Zero-based allocated instance; one simulated failure, no real GPU.
@@ -284,6 +293,7 @@ pub struct Fault {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Scenario {
     pub name: String,
     pub notes: String,
@@ -310,8 +320,11 @@ pub struct Scenario {
 
 /// Policy controls are exposed in trace configuration for sensitivity studies.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Scheduling {
+    /// EWMA update weight for newly measured cold-host observations.
+    pub learning_rate: f64,
+    pub allow_queue_overtaking: bool,
     pub plan_interval_s: f64,
     pub reactive_drain_s: f64,
     pub minimum_plan_window_s: f64,
@@ -325,6 +338,7 @@ pub struct Scheduling {
     pub retry_cooldown_s: f64,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ServiceClass {
     /// Lower priority numbers are admitted first.
     pub priority: u32,
@@ -336,6 +350,8 @@ pub struct ServiceClass {
 impl Default for Scheduling {
     fn default() -> Self {
         Self {
+            learning_rate: 0.25,
+            allow_queue_overtaking: true,
             plan_interval_s: 2.0,
             reactive_drain_s: 30.0,
             minimum_plan_window_s: 5.0,
@@ -495,20 +511,11 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
         }
     }
     for (id, r) in scenario.requests.iter().enumerate() {
+        validate_request_inputs(r, &scenario.scheduling)?;
         if r.id != id
             || r.job >= scenario.jobs.len()
             || !finite_nonnegative(r.arrival_s)
             || r.arrival_s < scenario.jobs[r.job].arrival_s
-            || r.input_tokens.checked_add(r.max_output).is_none()
-            || r.actual_output == 0
-            || r.planned_output == 0
-            || r.actual_output > r.max_output
-            || r.planned_output > r.max_output
-            || !finite_nonnegative(r.image_megapixels)
-            || !r.cached_fraction.is_finite()
-            || !(0.0..=1.0).contains(&r.cached_fraction)
-            || !r.latency_target_s.is_finite()
-            || r.latency_target_s <= 0.0
         {
             return Err(format!("invalid request {}", r.id));
         }
@@ -558,6 +565,12 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
         validate_host(host)?;
     }
     let s = &scenario.scheduling;
+    if !s.learning_rate.is_finite()
+        || !(0.0..=1.0).contains(&s.learning_rate)
+        || s.learning_rate == 0.0
+    {
+        return Err("invalid host learning rate".into());
+    }
     if [
         s.plan_interval_s,
         s.reactive_drain_s,
@@ -581,9 +594,6 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
     for r in &scenario.requests {
         if r.depends_on.iter().any(|id| *id >= r.id) {
             return Err("dependencies must reference earlier requests (acyclic)".into());
-        }
-        if !s.classes.contains_key(&r.class) {
-            return Err(format!("unknown service class {}", r.class));
         }
     }
     Ok(())
@@ -610,6 +620,29 @@ fn validate_host(host: &HostProfile) -> Result<(), String> {
             .is_none()
     {
         return Err("invalid host distribution".into());
+    }
+    Ok(())
+}
+
+/// Validate an individual accepted request without copying the experiment's
+/// accumulated history. Identity and dependency checks remain trace-level.
+pub(crate) fn validate_request_inputs(r: &Request, scheduling: &Scheduling) -> Result<(), String> {
+    if r.input_tokens.checked_add(r.max_output).is_none()
+        || r.actual_output == 0
+        || r.planned_output == 0
+        || r.actual_output > r.max_output
+        || r.planned_output > r.max_output
+        || !r.image_megapixels.is_finite()
+        || r.image_megapixels < 0.0
+        || !r.cached_fraction.is_finite()
+        || !(0.0..=1.0).contains(&r.cached_fraction)
+        || !r.latency_target_s.is_finite()
+        || r.latency_target_s <= 0.0
+    {
+        return Err(format!("invalid request {}", r.id));
+    }
+    if !scheduling.classes.contains_key(&r.class) {
+        return Err(format!("unknown service class {}", r.class));
     }
     Ok(())
 }

@@ -10,13 +10,17 @@ The same event engine supports offline trace replay and an incremental provider 
 | --- | --- |
 | `config.rs` | Serializable profiles, requests, jobs, scenarios, service classes, and validation |
 | `engine.rs` | Private physical state, deterministic events, fluid GPU service, delivery, and accounting |
+| `engine/cloud.rs`, `engine/service.rs`, `engine/results.rs` | Incremental provider facade, GPU and delivery physics, and result accounting |
 | `scheduler.rs` | Scheduler observations, actions, and the public `Scheduler` trait |
 | `scheduler/policy.rs` | Built-in provisioning and routing heuristics |
+| `runtime.rs` | Convenience routing runtime composed with an independent scheduler |
 | `scenarios.rs` | Editable example workloads and profiles |
 | `calibration.rs` | Explicitly scoped historical calibration of selected example fields |
 | `http.rs` | Provider lifecycle routes and virtual-clock controls |
+| `http/openai.rs` | Synthetic chat completion and streaming handlers |
 | `report.rs` | JSON-derived comparison tables |
 | `fuzz.rs` | Seeded generated workloads and accounting checks |
+| `performance.rs` | Analytical workloads and wall-clock execution measurements |
 
 Profiles describe one serving configuration: a model, workload type, accelerator label, price, startup distribution, network behavior, batch capacity, memory budget, and adapter behavior. A profile does not automatically infer capacity from GPU specifications. Two profiles can describe different engines or settings on the same GPU by using distinct identifiers and provenance.
 
@@ -41,9 +45,9 @@ In offline traces, `actual_output` is supplied to the physical engine as a fixtu
 
 ## Event timing
 
-The event queue contains request arrivals, node readiness, node failures, probe completion, and controller ticks. Events have a timestamp and serial number, making equal-time ordering repeatable. GPU work advances up to each event time. A configurable tick supplies recurring planning and admission opportunities; service completions inside an interval are calculated from remaining work rather than rounded up to a full tick.
+The event queue contains request arrivals, node readiness, node failures, probe completion, and controller ticks. Events have a timestamp and serial number, making equal-time ordering repeatable. GPU work advances up to each event time. All events at that timestamp are applied before one controller decision, so a simultaneous burst produces one complete observation rather than repeatedly copying its growing queue. A configurable tick supplies recurring planning and admission opportunities; service completions inside an interval are calculated from remaining work rather than rounded up to a full tick.
 
-A request can run after its arrival and after every `depends_on` request has delivered its complete response. Dependencies reference earlier request indices, which makes traces acyclic. Generation completion and response delivery are distinct: the engine adds response network delay before recording `completed_s`. A judge depending on an answer therefore waits for delivered output. Admission of newly runnable work may still wait until the next event or controller tick.
+A request can run after its arrival and after every `depends_on` request has delivered its complete response. Dependencies reference earlier request indices, which makes traces acyclic. Generation completion and response delivery are distinct: per-request egress bandwidth and network delay determine `completed_s`. A dependent request therefore waits for delivered output. Admission of newly runnable work may still wait until the next event or controller tick. The controller sees a `Delivering` state after GPU service has finished, preventing unnecessary replacement capacity for output already in transit.
 
 Warm nodes begin ready at simulated time zero and remain billable over the observation window. Elastic nodes are billable from allocation, including startup and idle time. Failed active requests return to the queue and restart their input and output work. Previously emitted tokens remain in node accounting but do not count as a second successful completion.
 
@@ -65,7 +69,7 @@ The host-byte term is an additional hydration perturbation beyond the baseline. 
 
 The visible phase sequence is booting, hydrating, initializing, ready, or ended. Hydration progress starts after one quarter of the sampled baseline. These phases are a coarse observation model, not a reconstruction of the configured component timings. A probe becomes available after that setup interval and returns bandwidth with bounded noise plus sampled cache and hydration information after `probe_duration_s`. Probe duration consumes elapsed rental time; probes currently do not compete for GPU or transfer capacity.
 
-The adaptive built-in controller can probe starting hosts, cancel starts that exceed configured delay thresholds, and temporarily avoid the affected profile. It learns from observations rather than reading the hidden host sample. Its thresholds and retry cooldown are configurable, and cancellation does not establish that another host will be faster.
+The adaptive built-in controller can probe starting hosts, cancel starts that exceed configured delay thresholds, and temporarily avoid the affected profile. It updates per-profile bandwidth, uncached-byte, and cache-hit beliefs using an exponentially weighted moving average with configurable `learning_rate`. Subsequent startup forecasts use these observations. Its thresholds and retry cooldown are configurable, and cancellation does not establish that another host will be faster.
 
 ## Bounded fluid GPU service
 
@@ -107,6 +111,8 @@ Fleet throughput, client first-token latency, and rental expense measure differe
 Client TTFT is the first delivered token time minus arrival time. It includes queue or dependency delay, cold startup when relevant, request network and upload time, adapter wait, prefill service, the first generated token, and response network delay. Queue delay ends at first admission, so it does not include every later wait or retry. Class latency targets apply to full response latency rather than TTFT.
 
 Node cost is its allocated duration, bounded below by `minimum_bill_s`, multiplied by its hourly rate. Idle cost includes billable time without modeled GPU service, including startup, upload waits, and idle retention. Storage, egress, control-plane fees, discounts, quality, and real cloud availability are outside this calculation.
+
+Accounting distinguishes output discarded by failed attempts (`wasted_output_tokens`) from useful partial or undelivered output at the observation cutoff (`incomplete_output_tokens`). Only client-delivered completions enter successful throughput. TTFT samples also stop at the cutoff; future delivery timestamps cannot enter the reported percentile.
 
 Job throughput divides successful output tokens by the interval from job arrival to its last delivered response, including startup and queues. A job meets its target only when all its requests finish, its completion budget is met, and its requested aggregate throughput is met. The summary's batch rate can describe a partially finished workload; read unfinished counts and per-job results before interpreting it. Empty latency samples remain absent, and class SLO denominators include unfinished arrived requests.
 

@@ -11,7 +11,7 @@ Run the relevant checks from the project root:
 ```sh
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
-cargo test
+cargo test --all-targets
 ```
 
 Export examples and run a repeatable comparison with:
@@ -20,6 +20,7 @@ Export examples and run a repeatable comparison with:
 cargo run -- init --out data
 cargo run -- suite --seed 7 --seeds 3 --out results
 cargo run -- fuzz --cases 1000 --seed 42 --out results/fuzz
+cargo run --release -- bench --sizes 1,100,1000,10000 --repetitions 3
 ```
 
 Generated profiles are editable examples. Results are simulated outcomes, and their provenance must remain visible. Keep generated runs and local experiment data separate from source changes.

@@ -52,7 +52,7 @@ impl CloudSimulator {
             idle_timeout_s: config.idle_timeout_s,
             max_nodes_per_model: config.max_instances_per_model,
             launch_fail_probability: config.launch_fail_probability,
-            reactive_delay_s: 0.0,
+            reactive_delay_s: config.reactive_delay_s,
             capacity_scale: config.capacity_scale,
             startup_scale: config.startup_scale,
             build_probability: config.build_probability,
@@ -260,7 +260,6 @@ impl CloudSimulator {
             latency_target_s: self.config.request_completion_budget_s,
             depends_on: vec![],
         };
-        let mut check = sim.scenario.clone();
         let intent = Job {
             id: 0,
             name: format!("request-{id}"),
@@ -269,9 +268,16 @@ impl CloudSimulator {
             completion_budget_s: self.config.request_completion_budget_s,
             desired_output_tps: 0.0,
         };
-        check.requests = vec![request.clone()];
-        check.jobs = vec![intent.clone()];
-        validate(&sim.profiles, &check)?;
+        validate_request_inputs(&request, &sim.scenario.scheduling)?;
+        if sim.profiles.iter().any(|p| {
+            p.compatible(&request)
+                && !(p.prefill_work(&request)
+                    + request.upload_bytes as f64 / p.network_bytes_per_s
+                    + request.max_output as f64 * 4.0 / p.network_bytes_per_s)
+                    .is_finite()
+        }) {
+            return Err("invalid request: derived work or transfer time overflows".into());
+        }
         let compatible = instance.map_or_else(
             || sim.profiles.iter().any(|p| p.compatible(&request)),
             |instance| sim.profiles[instance.profile].compatible(&request),

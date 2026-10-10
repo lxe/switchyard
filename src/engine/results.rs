@@ -64,20 +64,20 @@ impl Simulation {
             .collect();
         let is_batch =
             |id: usize| self.scenario.jobs[self.scenario.requests[id].job].desired_output_tps > 0.0;
-        let eval: Vec<_> = completed.iter().filter(|r| is_batch(r.id)).collect();
-        let eval_start = self
+        let batch: Vec<_> = completed.iter().filter(|r| is_batch(r.id)).collect();
+        let batch_start = self
             .scenario
             .requests
             .iter()
             .filter(|r| is_batch(r.id))
             .map(|r| r.arrival_s)
             .min_by(f64::total_cmp);
-        let eval_end = eval
+        let batch_end = batch
             .iter()
             .filter_map(|r| r.completed_s)
             .max_by(f64::total_cmp);
-        let eval_elapsed = eval_start.zip(eval_end).map(|(a, b)| b - a);
-        let eval_out: u64 = eval
+        let batch_elapsed = batch_start.zip(batch_end).map(|(a, b)| b - a);
+        let batch_output: u64 = batch
             .iter()
             .map(|r| self.scenario.requests[r.id].actual_output)
             .sum();
@@ -169,10 +169,10 @@ impl Simulation {
                     .collect(),
                 0.95,
             ),
-            batch_elapsed_s: eval_elapsed,
-            batch_output_tps: eval_elapsed
+            batch_elapsed_s: batch_elapsed,
+            batch_output_tps: batch_elapsed
                 .filter(|t| *t > 0.0)
-                .map_or(0.0, |t| eval_out as f64 / t),
+                .map_or(0.0, |t| batch_output as f64 / t),
             launched: self.launches,
             peak_nodes: self.peak_nodes,
             failed_launches: self.failed_launches,

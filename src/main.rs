@@ -16,6 +16,18 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Measure wall-clock software overhead on analytical workloads.
+    Bench {
+        #[arg(long, value_delimiter = ',', default_value = "1,100,1000,10000")]
+        sizes: Vec<usize>,
+        #[arg(long, default_value_t = 3)]
+        repetitions: usize,
+        /// Optional host-specific regression budget per full run.
+        #[arg(long)]
+        max_seconds: Option<f64>,
+        #[arg(long, default_value = "results/performance.json")]
+        out: PathBuf,
+    },
     /// Serve a generic GPU-cloud API backed by the incremental event simulator.
     Serve {
         #[arg(long)]
@@ -93,6 +105,43 @@ fn save<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), Box<dyn Error
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     match Cli::parse().command {
+        Command::Bench {
+            sizes,
+            repetitions,
+            max_seconds,
+            out,
+        } => {
+            if max_seconds.is_some_and(|t| !t.is_finite() || t <= 0.0) {
+                return Err("--max-seconds must be finite and positive".into());
+            }
+            let mut records = vec![];
+            for count in sizes {
+                for policy in POLICIES {
+                    records.push(inference_fleet_sim::performance::measure(
+                        count,
+                        policy,
+                        repetitions,
+                    )?);
+                }
+            }
+            save(&out, &records)?;
+            for r in &records {
+                println!(
+                    "{} requests, {}: p50 {:.2} ms, p95 {:.2} ms, {:.0} simulated requests/wall second",
+                    r.requests,
+                    r.policy,
+                    r.wall_ms_p50,
+                    r.wall_ms_p95,
+                    r.simulated_requests_per_wall_second
+                );
+            }
+            if records
+                .iter()
+                .any(|r| max_seconds.is_some_and(|limit| r.wall_ms_p95 > limit * 1000.0))
+            {
+                return Err("performance budget exceeded; measurement receipt saved".into());
+            }
+        }
         Command::Serve {
             profiles,
             environment,
@@ -147,6 +196,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::Init { out } => {
             let profiles = scenarios::default_profiles();
             save(&out.join("profiles.json"), &profiles)?;
+            save(
+                &out.join("environment.json"),
+                &inference_fleet_sim::CloudConfig::default(),
+            )?;
             for scenario in scenarios::suite(&profiles) {
                 save(&out.join(format!("{}.json", scenario.name)), &scenario)?;
             }

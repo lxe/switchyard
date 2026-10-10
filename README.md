@@ -31,6 +31,7 @@ Use the exact model identifiers returned by `/v1/models`. For an independent sch
 cargo run --release -- init --out data
 cargo run --release -- suite --seeds 3 --out results/suite
 cargo run --release -- fuzz --cases 1000 --out results/fuzz
+cargo run --release -- bench --sizes 1,100,1000,10000 --repetitions 3
 cargo test --all-targets
 cargo clippy --all-targets -- -D warnings
 ```
@@ -38,6 +39,19 @@ cargo clippy --all-targets -- -D warnings
 `init` exports editable JSON hardware profiles and workload traces. `run` replays a custom trace with a selected policy; `validate` checks its configuration. Each run records request timings, per-instance costs, unfinished work, controller diagnostics, and a fleet timeline. Policies currently include warm-only, reactive scaling, cheapest elastic capacity, planned hybrid, and adaptive probing. Their tradeoffs depend on the workload and profile assumptions.
 
 Implement `Scheduler::decide(&FleetView)` to test another controller. The view includes model identity, input tokens and bytes, output estimates and hard limits, observed progress, and announced workload plans. Actual future output and sampled host reality stay inside the engine. [Architecture](docs/ARCHITECTURE.md) explains the physical model and scheduling contract. [Calibration](docs/CALIBRATION.md) explains how to build useful profiles from measurements.
+
+```mermaid
+flowchart TD
+    C[OpenAI-style client] --> R[Scheduler / router]
+    R -->|provision, observe, probe, release| P[Fleet provider]
+    P --> Q[Instance serving queue]
+    R -->|route request| Q
+    Q --> G[Input processing and shared GPU service]
+    G --> D[Token delivery and usage receipt]
+    D --> C
+```
+
+[Configuration](docs/CONFIGURATION.md) defines the knobs for each layer. [Validation and results](docs/RESULTS.md) records reproducible policy comparisons and the test gauntlet. The `bench` command measures simulator CPU execution time separately from virtual GPU throughput; `--max-seconds` optionally enforces a host-specific regression budget. Seeded fuzzing saves any failing configuration for replay.
 
 ## Model boundaries
 

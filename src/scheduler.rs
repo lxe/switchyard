@@ -75,6 +75,7 @@ pub enum RequestStatus {
     Future,
     Queued,
     Active,
+    Delivering,
     Done,
     Rejected,
 }
@@ -178,6 +179,26 @@ pub struct BuiltinScheduler {
     observations: std::collections::BTreeMap<usize, HostProbe>,
     blocked_profiles: HashMap<usize, f64>,
     cancellations: usize,
+    beliefs: BTreeMap<usize, HostBelief>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct HostBelief {
+    samples: usize,
+    volume_bytes_per_s: f64,
+    hydration_bytes: f64,
+    image_cache_hit_rate: f64,
+    model_cache_hit_rate: f64,
+}
+impl HostBelief {
+    fn observe(&mut self, probe: &HostProbe, alpha: f64) {
+        let blend = |old, value| (1.0 - alpha) * old + alpha * value;
+        self.volume_bytes_per_s = blend(self.volume_bytes_per_s, probe.volume_bytes_per_s);
+        self.hydration_bytes = blend(self.hydration_bytes, probe.hydration_bytes as f64);
+        self.image_cache_hit_rate = blend(self.image_cache_hit_rate, f64::from(probe.image_cached));
+        self.model_cache_hit_rate = blend(self.model_cache_hit_rate, f64::from(probe.model_cached));
+        self.samples += 1;
+    }
 }
 impl BuiltinScheduler {
     pub fn new(policy: Policy) -> Self {
@@ -186,6 +207,7 @@ impl BuiltinScheduler {
             observations: Default::default(),
             blocked_profiles: Default::default(),
             cancellations: 0,
+            beliefs: BTreeMap::new(),
         }
     }
 }
@@ -200,6 +222,25 @@ impl Scheduler for BuiltinScheduler {
         }
     }
     fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<Action> {
+        if self.policy == Policy::Adaptive {
+            for (id, node) in fleet.nodes.iter().enumerate() {
+                if let Some(probe) = &node.host.probe
+                    && !self.observations.contains_key(&id)
+                {
+                    self.observations.insert(id, probe.clone());
+                    self.beliefs
+                        .entry(node.profile)
+                        .and_modify(|belief| belief.observe(probe, fleet.scheduling.learning_rate))
+                        .or_insert(HostBelief {
+                            samples: 1,
+                            volume_bytes_per_s: probe.volume_bytes_per_s,
+                            hydration_bytes: probe.hydration_bytes as f64,
+                            image_cache_hit_rate: f64::from(probe.image_cached),
+                            model_cache_hit_rate: f64::from(probe.model_cached),
+                        });
+                }
+            }
+        }
         let mut world = SchedulerWorld {
             profiles: fleet.profiles,
             scenario: fleet,
@@ -209,12 +250,29 @@ impl Scheduler for BuiltinScheduler {
             nodes: fleet.nodes.clone(),
             actions: vec![],
             avoided_profiles: vec![],
+            startup_extra: self
+                .beliefs
+                .iter()
+                .map(|(profile, belief)| {
+                    (
+                        *profile,
+                        belief.hydration_bytes / belief.volume_bytes_per_s.max(1.0),
+                    )
+                })
+                .collect(),
+            progress: fleet
+                .nodes
+                .iter()
+                .flat_map(|n| {
+                    n.active.iter().map(move |a| {
+                        let work = fleet.profiles[n.profile].prefill_work(&fleet.requests[&a.id]);
+                        (a.id, (a.prefill / work.max(1e-8), a.generated))
+                    })
+                })
+                .collect(),
         };
         if self.policy == Policy::Adaptive {
             for (id, node) in world.nodes.iter_mut().enumerate() {
-                if let Some(probe) = &node.host.probe {
-                    self.observations.entry(id).or_insert_with(|| probe.clone());
-                }
                 if node.ended_s.is_some() || node.is_ready {
                     continue;
                 }
@@ -270,7 +328,7 @@ impl Scheduler for BuiltinScheduler {
         world.actions
     }
     fn diagnostics(&self) -> serde_json::Value {
-        serde_json::json!({"probed_hosts": self.observations, "cancelled_slow_starts": self.cancellations})
+        serde_json::json!({"probed_hosts": self.observations, "host_beliefs": self.beliefs, "cancelled_slow_starts": self.cancellations})
     }
 }
 
@@ -285,6 +343,8 @@ struct SchedulerWorld<'a> {
     nodes: Vec<ObservedNode>,
     actions: Vec<Action>,
     avoided_profiles: Vec<usize>,
+    startup_extra: BTreeMap<usize, f64>,
+    progress: HashMap<usize, (f64, f64)>,
 }
 impl SchedulerWorld<'_> {
     fn launch(&mut self, profile: usize, warm: bool) {

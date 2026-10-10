@@ -2,7 +2,7 @@
 
 A calibrated profile connects a simulated serving configuration to observations from that configuration. It should preserve which values were measured, which were derived, and which remain assumptions. A GPU name or a single throughput headline is insufficient to establish a model's capacity curve, startup distribution, and memory limit.
 
-The example catalog combines several evidence types. It is useful for demonstrating sensitivity and controller behavior, but it does not establish a production capacity guarantee. Read each profile's `evidence` and `source` fields before comparing hardware. The historical examples are described in [the measurement memo](../evidence/bullettrain-measurements.md); that evidence is separate from the simulator's generic interfaces.
+The example catalog combines several evidence types. It is useful for demonstrating sensitivity and controller behavior, but it does not establish a production capacity guarantee. Read each profile's `evidence` and `source` fields before comparing hardware. Historical observations are summarized below and encoded in `calibration.rs`; private raw measurement notes are excluded from the repository.
 
 ## Configuration identity
 

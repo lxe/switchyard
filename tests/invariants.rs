@@ -82,7 +82,7 @@ fn workload(n: usize) -> Scenario {
         }],
         jobs: vec![Job {
             id: 0,
-            name: "eval".into(),
+            name: "request-burst".into(),
             announced_s: 0.0,
             arrival_s: 0.0,
             completion_budget_s: 20.0,
@@ -159,7 +159,7 @@ fn memory_admission_uses_hard_output_limit_not_estimate() {
     assert!(result.summary.max_reserved_kv_tokens <= 150);
 }
 #[test]
-fn judge_waits_for_delivered_answer() {
+fn dependent_request_waits_for_delivered_response() {
     let mut p = hardware();
     p.network_s = 0.2;
     let mut s = workload(2);
@@ -224,7 +224,7 @@ fn completion_precision_does_not_depend_on_large_quantum() {
     assert!((result.requests[0].completed_s.unwrap() - 0.25).abs() < 1e-8);
 }
 #[test]
-fn unfinished_interactive_requests_count_as_slo_misses() {
+fn unfinished_requests_count_as_slo_misses() {
     let mut s = workload(1);
     s.warm.clear();
     s.requests[0].class = "latency".into();
