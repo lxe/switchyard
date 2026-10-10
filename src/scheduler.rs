@@ -1,0 +1,311 @@
+//! Pluggable scheduling contract. No trace output lengths cross this boundary.
+use crate::config::*;
+use crate::engine::percentile;
+use serde::Serialize;
+use std::collections::{BTreeMap, HashMap, VecDeque};
+
+mod policy;
+
+/// Scheduler-visible request, deliberately lacking actual or remaining output.
+#[derive(Debug, Clone)]
+pub struct PlannedRequest {
+    /// False for requests already bound to a provider endpoint by another router.
+    pub routing_allowed: bool,
+    pub id: usize,
+    pub job: usize,
+    pub model: String,
+    pub workload: Workload,
+    pub class: String,
+    pub arrival_s: f64,
+    pub input_tokens: u64,
+    pub planned_output: u64,
+    pub max_output: u64,
+    pub image_megapixels: f64,
+    pub upload_bytes: u64,
+    pub cached_fraction: f64,
+    pub adapter: Option<String>,
+    pub latency_target_s: f64,
+    pub depends_on: Vec<usize>,
+}
+impl From<&Request> for PlannedRequest {
+    fn from(r: &Request) -> Self {
+        Self {
+            routing_allowed: true,
+            id: r.id,
+            job: r.job,
+            model: r.model.clone(),
+            workload: r.workload,
+            class: r.class.clone(),
+            arrival_s: r.arrival_s,
+            input_tokens: r.input_tokens,
+            planned_output: r.planned_output,
+            max_output: r.max_output,
+            image_megapixels: r.image_megapixels,
+            upload_bytes: r.upload_bytes,
+            cached_fraction: r.cached_fraction,
+            adapter: r.adapter.clone(),
+            latency_target_s: r.latency_target_s,
+            depends_on: r.depends_on.clone(),
+        }
+    }
+}
+impl InferenceInput for PlannedRequest {
+    fn model(&self) -> &str {
+        &self.model
+    }
+    fn workload(&self) -> Workload {
+        self.workload
+    }
+    fn input_tokens(&self) -> u64 {
+        self.input_tokens
+    }
+    fn max_output(&self) -> u64 {
+        self.max_output
+    }
+    fn cached_fraction(&self) -> f64 {
+        self.cached_fraction
+    }
+    fn image_megapixels(&self) -> f64 {
+        self.image_megapixels
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RequestStatus {
+    Future,
+    Queued,
+    Active,
+    Done,
+    Rejected,
+}
+#[derive(Debug, Clone)]
+pub struct ObservedRequest {
+    pub state: RequestStatus,
+    pub completed_s: Option<f64>,
+}
+#[derive(Debug, Clone)]
+pub struct ObservedActive {
+    pub id: usize,
+    pub prefill: f64,
+    pub generated: f64,
+    pub available_s: f64,
+}
+#[derive(Debug, Clone)]
+pub struct ObservedNode {
+    pub profile: usize,
+    pub warm: bool,
+    pub allocated_s: f64,
+    pub ready_s: f64,
+    pub ended_s: Option<f64>,
+    pub active: Vec<ObservedActive>,
+    pub adapters: VecDeque<(String, f64)>,
+    pub last_used_s: f64,
+    pub is_ready: bool,
+    pub host: HostObservation,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum StartupPhase {
+    Booting,
+    Hydrating,
+    Initializing,
+    Ready,
+    Ended,
+}
+#[derive(Debug, Clone, Serialize)]
+pub struct HostProbe {
+    pub at_s: f64,
+    pub volume_bytes_per_s: f64,
+    pub image_cached: bool,
+    pub model_cached: bool,
+    pub hydration_bytes: u64,
+}
+#[derive(Debug, Clone, Serialize)]
+pub struct HostObservation {
+    pub phase: StartupPhase,
+    pub bytes_downloaded: u64,
+    pub bytes_total: u64,
+    pub probe_pending: bool,
+    pub probe: Option<HostProbe>,
+}
+
+/// Snapshot borrows immutable plans and contains only observable runtime state.
+#[derive(Debug, Clone)]
+pub struct FleetView<'a> {
+    pub now: f64,
+    pub allow_scale: bool,
+    pub profiles: &'a [Profile],
+    pub requests: BTreeMap<usize, PlannedRequest>,
+    pub states: BTreeMap<usize, ObservedRequest>,
+    pub nodes: Vec<ObservedNode>,
+    pub jobs: BTreeMap<usize, Job>,
+    pub scheduling: &'a Scheduling,
+    pub max_nodes_per_model: usize,
+    pub idle_timeout_s: f64,
+    pub reactive_delay_s: f64,
+    pub build_probability: f64,
+}
+
+#[derive(Debug, Clone)]
+pub enum Action {
+    Provision {
+        profile: usize,
+    },
+    Route {
+        request: usize,
+        node: usize,
+        service_weight: f64,
+    },
+    Release {
+        node: usize,
+    },
+    ProbeHost {
+        node: usize,
+    },
+}
+
+/// Implement this trait to test an independent scheduler against the same fleet.
+pub trait Scheduler {
+    fn name(&self) -> &str;
+    fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<Action>;
+    fn diagnostics(&self) -> serde_json::Value {
+        serde_json::Value::Null
+    }
+}
+
+pub struct BuiltinScheduler {
+    pub policy: Policy,
+    observations: std::collections::BTreeMap<usize, HostProbe>,
+    blocked_profiles: HashMap<usize, f64>,
+    cancellations: usize,
+}
+impl BuiltinScheduler {
+    pub fn new(policy: Policy) -> Self {
+        Self {
+            policy,
+            observations: Default::default(),
+            blocked_profiles: Default::default(),
+            cancellations: 0,
+        }
+    }
+}
+impl Scheduler for BuiltinScheduler {
+    fn name(&self) -> &str {
+        match self.policy {
+            Policy::WarmOnly => "warm_only",
+            Policy::Reactive => "reactive",
+            Policy::CheapestElastic => "cheapest_elastic",
+            Policy::PlannedHybrid => "planned_hybrid",
+            Policy::Adaptive => "adaptive",
+        }
+    }
+    fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<Action> {
+        let mut world = SchedulerWorld {
+            profiles: fleet.profiles,
+            scenario: fleet,
+            policy: self.policy,
+            now: fleet.now,
+            states: fleet.states.clone(),
+            nodes: fleet.nodes.clone(),
+            actions: vec![],
+            avoided_profiles: vec![],
+        };
+        if self.policy == Policy::Adaptive {
+            for (id, node) in world.nodes.iter_mut().enumerate() {
+                if let Some(probe) = &node.host.probe {
+                    self.observations.entry(id).or_insert_with(|| probe.clone());
+                }
+                if node.ended_s.is_some() || node.is_ready {
+                    continue;
+                }
+                if matches!(
+                    node.host.phase,
+                    StartupPhase::Hydrating | StartupPhase::Initializing
+                ) && node.host.probe.is_none()
+                    && !node.host.probe_pending
+                {
+                    world.actions.push(Action::ProbeHost { node: id });
+                }
+                let slow = node.host.probe.as_ref().is_some_and(|probe| {
+                    probe.hydration_bytes > 0
+                        && probe.volume_bytes_per_s < fleet.scheduling.minimum_hydration_bytes_per_s
+                        && (node
+                            .host
+                            .bytes_total
+                            .saturating_sub(node.host.bytes_downloaded))
+                            as f64
+                            / probe.volume_bytes_per_s
+                            > fleet.scheduling.maximum_startup_s
+                });
+                if slow || fleet.now - node.allocated_s > fleet.scheduling.maximum_startup_s {
+                    node.ended_s = Some(fleet.now);
+                    world.actions.push(Action::Release { node: id });
+                    self.cancellations += 1;
+                    self.blocked_profiles
+                        .insert(node.profile, fleet.now + fleet.scheduling.retry_cooldown_s);
+                }
+            }
+            world.avoided_profiles = self
+                .blocked_profiles
+                .iter()
+                .filter(|(_, until)| **until > fleet.now)
+                .map(|(profile, _)| *profile)
+                .collect();
+        }
+        if fleet.allow_scale {
+            for (id, node) in world.nodes.iter_mut().enumerate() {
+                if !node.warm
+                    && node.ended_s.is_none()
+                    && node.is_ready
+                    && node.active.is_empty()
+                    && fleet.now - node.last_used_s >= fleet.idle_timeout_s
+                {
+                    node.ended_s = Some(fleet.now);
+                    world.actions.push(Action::Release { node: id });
+                }
+            }
+            world.plan();
+        }
+        world.dispatch();
+        world.actions
+    }
+    fn diagnostics(&self) -> serde_json::Value {
+        serde_json::json!({"probed_hosts": self.observations, "cancelled_slow_starts": self.cancellations})
+    }
+}
+
+type State = RequestStatus;
+type Active = ObservedActive;
+struct SchedulerWorld<'a> {
+    profiles: &'a [Profile],
+    scenario: &'a FleetView<'a>,
+    policy: Policy,
+    now: f64,
+    states: BTreeMap<usize, ObservedRequest>,
+    nodes: Vec<ObservedNode>,
+    actions: Vec<Action>,
+    avoided_profiles: Vec<usize>,
+}
+impl SchedulerWorld<'_> {
+    fn launch(&mut self, profile: usize, warm: bool) {
+        self.nodes.push(ObservedNode {
+            profile,
+            warm,
+            allocated_s: self.now,
+            ready_s: self.now + self.predicted_start(&self.profiles[profile]),
+            ended_s: None,
+            active: vec![],
+            adapters: VecDeque::new(),
+            last_used_s: self.now,
+            is_ready: false,
+            host: HostObservation {
+                phase: StartupPhase::Booting,
+                bytes_downloaded: 0,
+                bytes_total: 0,
+                probe_pending: false,
+                probe: None,
+            },
+        });
+        self.actions.push(Action::Provision { profile });
+    }
+}
