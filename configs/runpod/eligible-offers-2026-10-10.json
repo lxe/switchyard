@@ -1,0 +1,47 @@
+{
+  "source": "https://api.runpod.io/v2/catalog/gpus",
+  "query": {
+    "include": "AVAILABILITY",
+    "product": "POD",
+    "cloud": "SECURE",
+    "count": 1,
+    "minCudaVersion": "12.9"
+  },
+  "configured_region_filter": [
+    "US-KS-2",
+    "US-IL-1",
+    "US-NC-1",
+    "US-TX-3",
+    "US-TX-4"
+  ],
+  "offers": [
+    {
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "gpu_memory_gb": 24,
+      "data_center": "US-IL-1",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 0.89,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791673531
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "gpu_memory_gb": 24,
+      "data_center": "US-NC-1",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 0.89,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791673531
+    },
+    {
+      "gpu": "NVIDIA L40S",
+      "gpu_memory_gb": 48,
+      "data_center": "US-TX-4",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 1.09,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791673531
+    }
+  ],
+  "availability_is_a_snapshot": true
+}

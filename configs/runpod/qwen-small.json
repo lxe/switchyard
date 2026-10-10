@@ -1,0 +1,133 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA RTX A6000",
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA L40S"
+    ],
+    "data_centers": [
+      "US-KS-2",
+      "US-IL-1",
+      "US-NC-1",
+      "US-TX-3",
+      "US-TX-4"
+    ],
+    "min_cuda": "12.9",
+    "disk_gb": 80,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "archive_prefix": "models/Qwen__Qwen3.5-0.8B/2fc06364715b967f1860aea9cf38778875588b17/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--enforce-eager",
+          "--no-enable-prefix-caching",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}"
+        ]
+      },
+      "prior": {
+        "single_output_tps": 180,
+        "aggregate_output_tps": 2500,
+        "input_work_per_token": 0.05,
+        "startup_s": 180,
+        "kv_tokens": 32768
+      },
+      "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178"
+    },
+    {
+      "id": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "archive_prefix": "models/Qwen__Qwen3.5-2B/15852e8c16360a2fea060d615a32b45270f8a8fc/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--enforce-eager",
+          "--no-enable-prefix-caching",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}"
+        ]
+      },
+      "prior": {
+        "single_output_tps": 120,
+        "aggregate_output_tps": 1800,
+        "input_work_per_token": 0.05,
+        "startup_s": 180,
+        "kv_tokens": 32768
+      },
+      "archive_sha256": "5b145c1b5c2abcdc178afecec1ff9e32ecdece67e78010ffcb0fa7a95dfb56b7"
+    },
+    {
+      "id": "qwen3.5-4b",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "archive_prefix": "models/Qwen__Qwen3.5-4B/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--enforce-eager",
+          "--no-enable-prefix-caching",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}"
+        ]
+      },
+      "prior": {
+        "single_output_tps": 80,
+        "aggregate_output_tps": 1200,
+        "input_work_per_token": 0.05,
+        "startup_s": 180,
+        "kv_tokens": 32768
+      },
+      "archive_sha256": "b2e9df73151107b3b8188eff3dc6393b010eccd8adcee15f76c153a3a5bea3ca"
+    }
+  ],
+  "limits": {
+    "max_instances": 2,
+    "max_usd_per_hour": 2.5,
+    "max_run_usd": 2.0,
+    "run_timeout_s": 1800,
+    "startup_timeout_s": 900,
+    "request_timeout_s": 180,
+    "hydration_concurrency": 32,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 5.0,
+    "experiment_timeout_s": 5400
+  },
+  "bootstrap": {
+    "image": "vllm/vllm-openai:v0.31.0-cu129@sha256:ff29e51a9457f191deb332b96fa6440584fa941aa2a548449b604e2b1e5e1eeb",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.2.0/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "47545dda0c1fb4a146ced56e98d7c0cb6a448288a11d13ef025d2aa9662d5774",
+    "ticket_prefix": "switchyard/bootstrap"
+  }
+}

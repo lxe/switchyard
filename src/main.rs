@@ -16,6 +16,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Discover, check, execute, or recover a real RunPod experiment.
+    #[cfg(feature = "live")]
+    Live {
+        #[command(subcommand)]
+        command: switchyard_live::cli::Command,
+    },
     /// Measure wall-clock software overhead on analytical workloads.
     Bench {
         #[arg(long, value_delimiter = ',', default_value = "1,100,1000,10000")]
@@ -105,6 +111,8 @@ fn save<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), Box<dyn Error
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     match Cli::parse().command {
+        #[cfg(feature = "live")]
+        Command::Live { command } => switchyard_live::cli::run(command).await?,
         Command::Bench {
             sizes,
             repetitions,

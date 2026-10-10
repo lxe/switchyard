@@ -1,0 +1,26 @@
+[package]
+name = "switchyard-provider"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+readme = "README.md"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+reqwest.workspace = true
+aws-sigv4.workspace = true
+aws-credential-types.workspace = true
+http.workspace = true
+thiserror.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+percent-encoding = "2.3"
+
+[dev-dependencies]
+axum.workspace = true
+
+[lints]
+workspace = true

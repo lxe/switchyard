@@ -1,0 +1,124 @@
+{
+  "cases": [
+    {
+      "name": "cold-single",
+      "policy": "adaptive",
+      "calls": 1,
+      "prompt": "Explain why GPU inference batches improve throughput. Use roughly 60 words.",
+      "planned_output": 64,
+      "max_output": 96,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 900,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-single",
+      "policy": "warm_only",
+      "calls": 1,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 32,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 60,
+      "serial_dependencies": false
+    },
+    {
+      "name": "burst-1000",
+      "policy": "adaptive",
+      "calls": 1000,
+      "prompt": "Explain why GPU inference batches improve throughput. Use roughly 50 words.",
+      "planned_output": 48,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 2000,
+      "completion_budget_s": 300,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-cheapest",
+      "policy": "cheapest_elastic",
+      "calls": 100,
+      "prompt": "Explain GPU inference batching in two sentences.",
+      "planned_output": 48,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-reactive",
+      "policy": "reactive",
+      "calls": 100,
+      "prompt": "Explain GPU inference batching in two sentences.",
+      "planned_output": 48,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-planned",
+      "policy": "planned_hybrid",
+      "calls": 100,
+      "prompt": "Explain GPU inference batching in two sentences.",
+      "planned_output": 48,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "staggered",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "Explain GPU inference batching in two sentences.",
+      "planned_output": 32,
+      "max_output": 64,
+      "arrival_interval_s": 0.1,
+      "desired_output_tps": 200,
+      "completion_budget_s": 120,
+      "serial_dependencies": false
+    },
+    {
+      "name": "long-input",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Context: GPU inference requests include input tokens and unknown output length. Summarize in two sentences.",
+      "planned_output": 32,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "output-underestimate",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "Write a numbered list of ten practical GPU inference scheduling considerations.",
+      "planned_output": 8,
+      "max_output": 128,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 120,
+      "serial_dependencies": false
+    },
+    {
+      "name": "dependencies",
+      "policy": "adaptive",
+      "calls": 8,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 32,
+      "max_output": 64,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 120,
+      "serial_dependencies": true
+    }
+  ]
+}

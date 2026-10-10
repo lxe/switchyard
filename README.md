@@ -7,6 +7,9 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Simulator](crates/switchyard-sim) | Deterministic workload replay and a local HTTP GPU-provider API with synthetic OpenAI-compatible serving |
 | [Scheduler and router](crates/switchyard-scheduler) | Five reference policies, queue admission, capacity planning, and adaptive host probing |
 | [Test gauntlet](crates/switchyard-gauntlet) | Analytical fixtures, workload comparisons, seeded generated tests, and software performance measurements |
+| [Live execution](crates/switchyard-live) | The same scheduler contract driving real RunPod pods and OpenAI-compatible vLLM streams |
+| [Provider adapters](crates/switchyard-provider) | Timestamped rental offers, owned pod lifecycle, and S3-compatible storage signing |
+| [Pod agent](crates/switchyard-agent) | Verified Rust hydration, observed startup progress, and authenticated model transport |
 | [Shared contracts](crates/switchyard-core) | Configuration, known request inputs, observable fleet state, and the pluggable `Scheduler` interface |
 
 The simulator runs locally and produces synthetic text. It does not load model weights or contact a GPU provider. Profiles distinguish observations, adjusted estimates, and assumptions; simulated throughput is an experiment against a profile.
@@ -81,13 +84,27 @@ Run commands with `switchyard` after installation, or with `cargo run --locked -
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --locked --workspace --all-targets -- -D warnings
-cargo test --locked --workspace --all-targets
-RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps
+cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
+cargo test --locked --workspace --all-features --all-targets
+RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --all-features --no-deps
 cargo run --locked --release -- fuzz --cases 1000 --seed 42
 ```
 
 Use `--workspace` to include every package's tests. The `bench` command measures software overhead separately from virtual GPU throughput; `--max-seconds` optionally enforces a host-specific regression budget. Generated results and local experiment data are ignored by Git.
+
+## Live GPU experiments
+
+The optional `live` feature adds production adapters to the CLI. The simulator and scheduler libraries build independently of those integrations.
+
+The [RunPod fleet recipe](configs/runpod) pins Qwen3.5 0.8B, 2B, and 4B, model archives, the serving image, engine arguments, allowed hardware, budgets, and workload definitions. Runtime and storage credentials stay in environment variables or local ignored files.
+
+```sh
+cargo run --locked --features live -- live check --env-file /path/to/credentials.env
+cargo run --locked --features live -- live gauntlet --env-file /path/to/credentials.env \
+  --model qwen3.5-0.8b --out results/my-experiment
+```
+
+The preflight avoids provisioning. The gauntlet rents GPUs, validates local token counts against vLLM, executes streamed requests through the scheduler, records actual usage and timing, and cleans up owned pods. Read the [live execution guide](docs/RUNPOD.md) for limits, artifact preparation, and crash recovery before running paid workloads.
 
 ## Project structure
 
@@ -97,6 +114,9 @@ crates/
   switchyard-scheduler/  # Policies and routing runtime
   switchyard-sim/        # Physical engine and HTTP provider
   switchyard-gauntlet/   # Workloads, integration tests, and benchmarks
+  switchyard-provider/   # GPU cloud and storage adapters
+  switchyard-agent/      # Hydration and vLLM pod transport
+  switchyard-live/       # Real workload execution and recovery
 src/                    # CLI and library facade
 configs/                # Runnable JSON recipes
 examples/               # Library and HTTP client examples
@@ -112,6 +132,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [API](docs/API.md) | Provider lifecycle, request admission, token streaming, and observations |
 | [Calibration](docs/CALIBRATION.md) | Measurement provenance and capacity-profile construction |
 | [Validation and results](docs/RESULTS.md) | Test coverage, reproducible comparisons, and known limitations |
+| [RunPod execution](docs/RUNPOD.md) | Checked-in fleet definitions, R2 hydration, live gauntlet, costs, and recovery |
 | [Repository design](docs/REPOSITORY.md) | Organization patterns studied in other open-source projects |
 | [Contributing](CONTRIBUTING.md) | Development checks and requirements for behavioral evidence |
 

@@ -101,7 +101,7 @@ fn learned_hydration_time_changes_provisioning_choices() {
                 at_s: 0.0,
                 volume_bytes_per_s: 1_000_000.0,
                 hydration_bytes: 1_000_000_000,
-                image_cached: false,
+                image_cached: Some(false),
                 model_cached: false,
             }),
         },

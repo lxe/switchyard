@@ -84,3 +84,11 @@ Use `summaries.json` for comparisons and individual run JSON for request timings
 The reference controller incorporates workload planning, memory-limited batch capacity, just-in-time provisioning, pending-capacity accounting, service-class priority and aging, and optional host learning. Further experiments can replace it through `Scheduler`, or use a separate HTTP client against the provider API. Change scheduling decisions while preserving the same physical profiles and workload seeds.
 
 The default catalog includes boundary-adjusted and documented historical text measurements alongside assumed A6000, comparative high-end GPU, and vision capacities. Its sample startup distributions are small and do not establish rare-event tails. [Calibration](CALIBRATION.md) describes how to replace those assumptions with measurements of the intended serving configuration.
+
+## Live adapter verification
+
+The v0.2 integration checkpoint passes 95 workspace tests, strict Clippy, formatting, and rustdoc with warnings denied. Provider contracts cover opaque container launch, catalog filtering, lost allocation responses, signed storage, and sanitized metadata. Agent tests cover archive integrity, transfer retries, cache verification, authenticated streaming, and lifetime handling. Live contracts cover usage conservation, a single cold allocation, bounded bursts, uncertain ownership, cancellation reuse, and GPU cleanup despite receipt failures. A dependency test keeps cloud and model-serving integrations outside the simulator and shared scheduler.
+
+The updated simulator passed 1,000 seeded workloads across five policies (5,000 runs) with no invariant failures. A local one-repetition performance pass covered 1, 100, 1,000, and 10,000 requests; the slowest 10,000-request run took 1.299 seconds. These are software execution measurements on the development host.
+
+The [RunPod recipe](../configs/runpod) preserves the actual fleet and workload definitions, timestamped quotes, pinned model revisions and archive identities, and the checksum-pinned serving bootstrap. Preflight validated all three manifests and planned a sample prompt as 21 input tokens. Real GPU outcomes are recorded separately from these offline checks.

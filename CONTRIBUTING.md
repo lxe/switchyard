@@ -10,8 +10,8 @@ Run the relevant checks from the project root:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace --all-targets
+cargo clippy --workspace --all-features --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features --all-targets
 ```
 
 Export examples and run a repeatable comparison with:

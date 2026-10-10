@@ -114,7 +114,8 @@ pub enum StartupPhase {
 pub struct HostProbe {
     pub at_s: f64,
     pub volume_bytes_per_s: f64,
-    pub image_cached: bool,
+    /// None means the provider or probe cannot observe container-image cache status.
+    pub image_cached: Option<bool>,
     pub model_cached: bool,
     pub hydration_bytes: u64,
 }

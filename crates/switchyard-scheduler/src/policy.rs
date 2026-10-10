@@ -197,6 +197,7 @@ impl SchedulerWorld<'_> {
             let available = self
                 .scenario
                 .max_nodes_per_model
+                .min(ids.len())
                 .saturating_sub(total_model_nodes);
             let mut chosen = vec![];
             for _ in 0..available {

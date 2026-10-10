@@ -1,0 +1,143 @@
+{
+  "observed_at": "2026-10-10",
+  "source": "https://api.runpod.io/v2/catalog/gpus?include=AVAILABILITY&product=POD&cloud=SECURE&count=1",
+  "availability_is_a_snapshot": true,
+  "container_disk_usd_per_gb_month": 0.1,
+  "storage_source": "https://docs.runpod.io/pods/pricing",
+  "gpus": [
+    {
+      "id": "NVIDIA GeForce RTX 4090",
+      "memory": 24,
+      "price": {
+        "community": 0.34,
+        "secure": 0.89,
+        "serverless": 1.1
+      },
+      "dataCenters": [
+        {
+          "availability": "LOW",
+          "id": "EU-CZ-1",
+          "name": "EU-CZ-1"
+        },
+        {
+          "availability": "MEDIUM",
+          "id": "EU-RO-1",
+          "name": "EU-RO-1"
+        },
+        {
+          "availability": "LOW",
+          "id": "EUR-IS-1",
+          "name": "EUR-IS-1"
+        },
+        {
+          "availability": "LOW",
+          "id": "EUR-IS-2",
+          "name": "EUR-IS-2"
+        },
+        {
+          "availability": "LOW",
+          "id": "US-IL-1",
+          "name": "US-IL-1"
+        },
+        {
+          "availability": "LOW",
+          "id": "US-NC-1",
+          "name": "US-NC-1"
+        }
+      ],
+      "cudaVersions": [
+        {
+          "available": true,
+          "version": "12.8"
+        },
+        {
+          "available": true,
+          "version": "13.0"
+        },
+        {
+          "available": true,
+          "version": "13.2"
+        },
+        {
+          "available": true,
+          "version": "13.3"
+        }
+      ]
+    },
+    {
+      "id": "NVIDIA L40S",
+      "memory": 48,
+      "price": {
+        "community": 0.79,
+        "secure": 1.09,
+        "serverless": 1.75
+      },
+      "dataCenters": [
+        {
+          "availability": "LOW",
+          "id": "EUR-IS-2",
+          "name": "EUR-IS-2"
+        },
+        {
+          "availability": "LOW",
+          "id": "OC-AU-1",
+          "name": "OC-AU-1"
+        },
+        {
+          "availability": "LOW",
+          "id": "US-TX-3",
+          "name": "US-TX-3"
+        },
+        {
+          "availability": "LOW",
+          "id": "US-TX-4",
+          "name": "US-TX-4"
+        }
+      ],
+      "cudaVersions": [
+        {
+          "available": true,
+          "version": "12.8"
+        },
+        {
+          "available": true,
+          "version": "13.0"
+        },
+        {
+          "available": true,
+          "version": "13.2"
+        }
+      ]
+    },
+    {
+      "id": "NVIDIA RTX A6000",
+      "memory": 48,
+      "price": {
+        "community": 0.33,
+        "secure": 0.59,
+        "serverless": 1.22
+      },
+      "dataCenters": [
+        {
+          "availability": "LOW",
+          "id": "US-KS-2",
+          "name": "US-KS-2"
+        }
+      ],
+      "cudaVersions": [
+        {
+          "available": true,
+          "version": "12.8"
+        },
+        {
+          "available": false,
+          "version": "13.0"
+        },
+        {
+          "available": true,
+          "version": "13.2"
+        }
+      ]
+    }
+  ]
+}

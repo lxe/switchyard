@@ -4,25 +4,41 @@ default-members = ["."]
 resolver = "3"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.98"
 publish = false
 license = "MIT"
 
 [workspace.dependencies]
-switchyard-core = { path = "crates/switchyard-core", version = "0.1.0" }
-switchyard-scheduler = { path = "crates/switchyard-scheduler", version = "0.1.0" }
-switchyard-sim = { path = "crates/switchyard-sim", version = "0.1.0" }
-switchyard-gauntlet = { path = "crates/switchyard-gauntlet", version = "0.1.0" }
+switchyard-provider = { path = "crates/switchyard-provider", version = "0.2.0" }
+switchyard-agent = { path = "crates/switchyard-agent", version = "0.2.0" }
+switchyard-live = { path = "crates/switchyard-live", version = "0.2.0" }
+switchyard-core = { path = "crates/switchyard-core", version = "0.2.0" }
+switchyard-scheduler = { path = "crates/switchyard-scheduler", version = "0.2.0" }
+switchyard-sim = { path = "crates/switchyard-sim", version = "0.2.0" }
+switchyard-gauntlet = { path = "crates/switchyard-gauntlet", version = "0.2.0" }
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 axum = "0.8.9"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "sync", "time", "signal"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "sync", "time", "signal", "process", "fs", "io-util"] }
 futures-util = "0.3"
 tower = { version = "0.5", features = ["util"] }
-reqwest = { version = "0.13", default-features = false, features = ["json"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "query", "stream", "rustls"] }
+
+aws-sigv4 = "1.6"
+aws-credential-types = "1.3"
+http = "1"
+sha2 = "0.10"
+tar = "0.4"
+zstd = "0.13"
+thiserror = "2"
+dotenvy = "0.15"
+minijinja = { version = "2", features = ["json", "loop_controls"] }
+minijinja-contrib = { version = "2", features = ["pycompat"] }
+tokenizers = { version = "0.22", default-features = false, features = ["fancy-regex"] }
+getrandom = "0.4"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -41,6 +57,7 @@ description = "Inference simulation, scheduling, routing, and validation toolkit
 readme = "README.md"
 
 [dependencies]
+switchyard-live = { workspace = true, optional = true }
 switchyard-core.workspace = true
 switchyard-scheduler.workspace = true
 switchyard-sim.workspace = true
@@ -49,6 +66,10 @@ clap.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
+
+[features]
+default = []
+live = ["dep:switchyard-live"]
 
 [dev-dependencies]
 reqwest.workspace = true

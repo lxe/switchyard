@@ -12,6 +12,9 @@ The same event engine supports offline trace replay and an incremental provider 
 | [`switchyard-scheduler`](../crates/switchyard-scheduler) | Reference policies, adaptive host beliefs, and routing runtime |
 | [`switchyard-sim`](../crates/switchyard-sim) | Physical event engine, instance lifecycle, synthetic serving, delivery, and accounting |
 | [`switchyard-gauntlet`](../crates/switchyard-gauntlet) | Workloads, calibration, generated tests, comparisons, and performance measurements |
+| [`switchyard-provider`](../crates/switchyard-provider) | Cloud lifecycle contracts, RunPod REST v2, and signed S3 storage |
+| [`switchyard-agent`](../crates/switchyard-agent) | Verified model hydration, startup observations, and transport to vLLM |
+| [`switchyard-live`](../crates/switchyard-live) | Token planning, live admission, streamed usage receipts, and owned-resource recovery |
 | Root `switchyard` package | CLI, library facade, and runnable examples |
 
 The scheduler depends only on the shared contracts. The simulator accepts any implementation of `Scheduler`; its convenience replay and HTTP front door also depend on the reference scheduler package. The gauntlet composes these packages, and its integration tests exercise their boundaries. Workspace dependencies, compiler requirements, and lints are declared in the root manifest.
@@ -119,3 +122,7 @@ The physical approximations have specific boundaries. [vLLM's optimization guide
 [Llumnix](https://arxiv.org/abs/2406.03243) uses runtime rescheduling and request-state migration across instances to address heterogeneous demand and service objectives. The pluggable controller boundary allows related scheduling experiments, but active-request migration and KV transfer are not currently implemented.
 
 [ServerlessLLM](https://arxiv.org/abs/2401.14351) examines checkpoint locality, loading, and startup-aware placement. It motivates treating host cache and transfer behavior as variables independent of GPU identity. The simulator's scalar hydration and probe model does not reproduce its storage hierarchy or live migration.
+
+## Live execution backend
+
+The live runtime supplies the same observable fleet contract to a scheduler while translating its actions into real cloud operations. Model output remains unknown until vLLM emits content and usage. Provider and storage adapters have separate lifecycles, and a pod agent exposes measured hydration and engine state. See [RunPod execution](RUNPOD.md) for configuration, measurement boundaries, and recovery.

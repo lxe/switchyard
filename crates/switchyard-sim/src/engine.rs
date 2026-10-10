@@ -393,7 +393,7 @@ impl Simulation {
                                 volume_bytes_per_s: node.host.bandwidth
                                     * (1.0
                                         + (self.probe_random.unit() * 2.0 - 1.0) * node.host.noise),
-                                image_cached: node.host.image_cached,
+                                image_cached: Some(node.host.image_cached),
                                 model_cached: node.host.model_cached,
                                 hydration_bytes: node.host.bytes,
                             });

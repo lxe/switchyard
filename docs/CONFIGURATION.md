@@ -29,7 +29,7 @@ A profile's `host` supplies a discrete `volume_bandwidth_bytes_per_s` distributi
 
 Host byte sizes represent additional hydration beyond the configured baseline. Keep them zero when an end-to-end startup sample already describes the environment being replayed. To construct a component model of downloads, exclude those downloads from the fixed component times. The configuration cannot detect duplicated calibration costs.
 
-The provider reports booting, hydrating, initializing, ready, or ended phases. Download progress becomes visible after the fixed boot/setup phase, which this approximation places at one quarter of the startup baseline. A probe takes configured virtual time and reports a noisy bandwidth measurement plus discovered cache state. The actual future readiness timestamp is not published before readiness. Cancelled hosts do not later publish pending probe results.
+The provider reports booting, hydrating, initializing, ready, or ended phases. Download progress becomes visible after the fixed boot/setup phase, which this approximation places at one quarter of the startup baseline. A probe takes configured virtual time and reports a noisy bandwidth measurement plus discovered cache state. The shared observation permits an unknown image-cache result (`null`); a controller retains its prior when a backend cannot observe that field. Simulator probes report the sampled cache state. The actual future readiness timestamp is not published before readiness. Cancelled hosts do not later publish pending probe results.
 
 ## Workload traces
 

@@ -28,11 +28,14 @@ impl HostBelief {
         let blend = |old, value| (1.0 - alpha) * old + alpha * value;
         self.volume_bytes_per_s = blend(self.volume_bytes_per_s, probe.volume_bytes_per_s);
         self.hydration_bytes = blend(self.hydration_bytes, probe.hydration_bytes as f64);
-        self.image_cache_hit_rate = blend(self.image_cache_hit_rate, f64::from(probe.image_cached));
+        if let Some(cached) = probe.image_cached {
+            self.image_cache_hit_rate = blend(self.image_cache_hit_rate, f64::from(cached));
+        }
         self.model_cache_hit_rate = blend(self.model_cache_hit_rate, f64::from(probe.model_cached));
         self.samples += 1;
     }
 }
+
 impl BuiltinScheduler {
     pub fn new(policy: Policy) -> Self {
         Self {
@@ -68,7 +71,10 @@ impl Scheduler for BuiltinScheduler {
                             samples: 1,
                             volume_bytes_per_s: probe.volume_bytes_per_s,
                             hydration_bytes: probe.hydration_bytes as f64,
-                            image_cache_hit_rate: f64::from(probe.image_cached),
+                            image_cache_hit_rate: probe.image_cached.map_or(
+                                fleet.profiles[node.profile].host.image_cache_probability,
+                                f64::from,
+                            ),
                             model_cache_hit_rate: f64::from(probe.model_cached),
                         });
                 }
@@ -200,5 +206,33 @@ impl SchedulerWorld<'_> {
             },
         });
         self.actions.push(Action::Provision { profile });
+    }
+}
+
+#[cfg(test)]
+mod observation_tests {
+    use super::*;
+    #[test]
+    fn unknown_image_cache_preserves_existing_belief() {
+        let mut belief = HostBelief {
+            samples: 1,
+            volume_bytes_per_s: 100.0,
+            hydration_bytes: 1000.0,
+            image_cache_hit_rate: 0.75,
+            model_cache_hit_rate: 0.0,
+        };
+        let mut probe = HostProbe {
+            at_s: 1.0,
+            volume_bytes_per_s: 200.0,
+            hydration_bytes: 1000,
+            image_cached: None,
+            model_cached: false,
+        };
+        belief.observe(&probe, 0.5);
+        assert_eq!(belief.image_cache_hit_rate, 0.75);
+        assert_eq!(belief.volume_bytes_per_s, 150.0);
+        probe.image_cached = Some(false);
+        belief.observe(&probe, 0.5);
+        assert_eq!(belief.image_cache_hit_rate, 0.375);
     }
 }

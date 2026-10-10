@@ -2,3 +2,7 @@
 /results/
 /data/
 /evidence/
+
+/scratch/
+/.env*
+/configs/local/
