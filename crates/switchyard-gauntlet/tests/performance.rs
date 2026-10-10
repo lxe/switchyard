@@ -1,4 +1,4 @@
-use inference_fleet_sim::{POLICIES, performance};
+use switchyard_gauntlet::{POLICIES, performance};
 
 #[test]
 fn software_benchmark_checks_real_work_and_all_controllers() {

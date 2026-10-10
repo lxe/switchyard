@@ -468,7 +468,20 @@ mod shutdown_tests {
     use tower::ServiceExt;
 
     async fn fixture(stream: bool) -> (SharedCloud, Shutdown, Response) {
-        let profile = crate::scenarios::default_profiles().remove(0);
+        let profile = serde_json::from_value::<Profile>(json!({
+            "id": "shutdown-fixture", "model": "test-model", "workload": "text",
+            "gpu": "analytical", "usd_per_hour": 1.0,
+            "startup": {"allocation_s": 0.0, "container_s": 0.0, "weights_s": 0.0,
+                "engine_s": 3.0, "jitter": 0.0},
+            "network_s": 0.0, "network_bytes_per_s": 100000000.0,
+            "max_in_flight": 2, "kv_tokens": 4096,
+            "input_work_per_token": 0.025, "image_work_per_megapixel": 0.0,
+            "adapter_load_s": 0.0, "multi_adapter_factor": 1.0, "adapter_cache_slots": 1,
+            "minimum_bill_s": 1.0,
+            "curve": [{"in_flight": 1, "work_units_per_s": 100.0}],
+            "evidence": "analytical shutdown fixture", "source": "unit test"
+        }))
+        .unwrap();
         let model = profile.model.clone();
         let profile_id = profile.id.clone();
         let cloud = Arc::new(Mutex::new(CloudSimulator::new(vec![profile], 7).unwrap()));

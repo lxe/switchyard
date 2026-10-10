@@ -1,0 +1,96 @@
+[
+  {
+    "id": "small-gpu",
+    "model": "demo-model",
+    "workload": "text",
+    "gpu": "analytical",
+    "usd_per_hour": 0.5,
+    "startup": {
+      "allocation_s": 1.0,
+      "container_s": 1.0,
+      "weights_s": 2.0,
+      "engine_s": 2.0,
+      "jitter": 0.1
+    },
+    "network_s": 0.03,
+    "network_bytes_per_s": 100000000.0,
+    "max_in_flight": 16,
+    "kv_tokens": 65536,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.75,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 80
+      },
+      {
+        "in_flight": 16,
+        "work_units_per_s": 600
+      }
+    ],
+    "evidence": "assumed: analytical example, not a GPU measurement",
+    "source": "Switchyard quickstart fixture",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        100000000.0
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 0,
+      "image_cache_probability": 0.5,
+      "model_cache_probability": 0.5,
+      "probe_duration_s": 1.0,
+      "measurement_noise": 0.05
+    }
+  },
+  {
+    "id": "large-gpu",
+    "model": "demo-model",
+    "workload": "text",
+    "gpu": "analytical",
+    "usd_per_hour": 1.5,
+    "startup": {
+      "allocation_s": 1.0,
+      "container_s": 1.0,
+      "weights_s": 2.0,
+      "engine_s": 2.0,
+      "jitter": 0.1
+    },
+    "network_s": 0.03,
+    "network_bytes_per_s": 100000000.0,
+    "max_in_flight": 32,
+    "kv_tokens": 131072,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.6721120186697783,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 120
+      },
+      {
+        "in_flight": 32,
+        "work_units_per_s": 1800
+      }
+    ],
+    "evidence": "assumed: analytical example, not a GPU measurement",
+    "source": "Switchyard quickstart fixture",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        100000000.0
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 0,
+      "image_cache_probability": 0.5,
+      "model_cache_probability": 0.5,
+      "probe_duration_s": 1.0,
+      "measurement_noise": 0.05
+    }
+  }
+]

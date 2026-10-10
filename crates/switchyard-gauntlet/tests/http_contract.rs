@@ -4,12 +4,12 @@ use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use futures_util::StreamExt;
-use inference_fleet_sim::engine::CloudSimulator;
-use inference_fleet_sim::http::router;
-use inference_fleet_sim::{CapacityPoint, HostProfile, Profile, Startup, Workload};
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::time::Duration;
+use switchyard_gauntlet::engine::CloudSimulator;
+use switchyard_gauntlet::http::router;
+use switchyard_gauntlet::{CapacityPoint, HostProfile, Profile, Startup, Workload};
 use tokio::sync::Mutex;
 use tower::ServiceExt;
 

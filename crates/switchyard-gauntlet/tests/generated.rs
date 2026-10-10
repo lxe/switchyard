@@ -1,4 +1,4 @@
-use inference_fleet_sim::*;
+use switchyard_gauntlet::*;
 
 #[test]
 fn generated_workloads_preserve_accounting_and_admission_invariants() {

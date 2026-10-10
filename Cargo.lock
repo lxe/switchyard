@@ -461,20 +461,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "inference-fleet-sim"
-version = "0.1.0"
-dependencies = [
- "axum",
- "clap",
- "futures-util",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tower",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -753,6 +739,68 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
+name = "switchyard"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "switchyard-core",
+ "switchyard-gauntlet",
+ "switchyard-scheduler",
+ "switchyard-sim",
+ "tokio",
+]
+
+[[package]]
+name = "switchyard-core"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "switchyard-gauntlet"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "switchyard-core",
+ "switchyard-scheduler",
+ "switchyard-sim",
+ "tokio",
+ "tower",
+]
+
+[[package]]
+name = "switchyard-scheduler"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "switchyard-core",
+]
+
+[[package]]
+name = "switchyard-sim"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "switchyard-core",
+ "switchyard-scheduler",
+ "tokio",
+ "tower",
+]
 
 [[package]]
 name = "syn"

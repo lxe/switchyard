@@ -1,0 +1,17 @@
+[package]
+name = "switchyard-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Inference workload, hardware, and scheduler observation contracts"
+readme = "README.md"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true

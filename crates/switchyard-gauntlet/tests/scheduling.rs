@@ -1,9 +1,9 @@
-use inference_fleet_sim::scheduler::{
+use std::collections::{BTreeMap, VecDeque};
+use switchyard_gauntlet::scheduler::{
     BuiltinScheduler, HostObservation, HostProbe, ObservedNode, ObservedRequest, PlannedRequest,
     RequestStatus, StartupPhase,
 };
-use inference_fleet_sim::*;
-use std::collections::{BTreeMap, VecDeque};
+use switchyard_gauntlet::*;
 
 #[test]
 fn smaller_requests_can_fill_residual_memory_without_starving_the_large_head() {

@@ -1,0 +1,17 @@
+[package]
+name = "switchyard-scheduler"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Observable-state inference scheduling policies and routing runtime"
+readme = "README.md"
+
+[dependencies]
+switchyard-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

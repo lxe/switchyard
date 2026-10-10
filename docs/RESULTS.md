@@ -7,10 +7,10 @@ The simulator and its controllers run without GPUs or provider credentials. The 
 Run these commands from the repository root:
 
 ```sh
-cargo fmt --check
-cargo clippy --locked --all-targets -- -D warnings
-cargo test --locked --all-targets
-RUSTDOCFLAGS='-D warnings' cargo doc --locked --no-deps
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets -- -D warnings
+cargo test --locked --workspace --all-targets
+RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps
 cargo run --locked --release -- init --out data/current
 cargo run --locked --release -- fuzz --cases 1000 --seed 42 --out results/final-fuzz
 cargo run --locked --release -- suite --seed 7 --seeds 3 --out results/final-suite
@@ -30,6 +30,8 @@ The October 10, 2026 local run passed 51 tests, strict Clippy, formatting, and d
 | Software benchmark | Every measured run drains its workload and passes accounting and admission invariants |
 
 HTTP was also exercised over a real loopback TCP listener in manual-clock mode. The Rust example completed 100 requests through the stable routing endpoint and 100 through the provider API, including provisioning, readiness polling, probing, admission, usage collection, and release. A separate streaming request emitted content, final usage, and `[DONE]`, with receipt usage matching the 20 delivered synthetic tokens. These are transport and serving-contract checks against the simulator.
+
+The Switchyard workspace refactor was revalidated on October 10: all 51 tests passed, along with strict workspace Clippy and rustdoc. The 1,000-seed corpus again passed all 5,000 simulations. One repetition per policy and size passed a two-second software execution budget, with the slowest 10,000-request run taking 1.107 seconds on the local host. This is a software timing receipt, not GPU performance evidence.
 
 GitHub Actions runs the local checks and a smaller generated/performance corpus. The workflow has been added but has not been executed on GitHub.
 

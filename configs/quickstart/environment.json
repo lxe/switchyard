@@ -1,0 +1,10 @@
+{
+  "warm": [
+    {
+      "profile": "small-gpu",
+      "copies": 1
+    }
+  ],
+  "idle_timeout_s": 5.0,
+  "router_policy": "adaptive"
+}

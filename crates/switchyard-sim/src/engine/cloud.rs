@@ -89,7 +89,7 @@ impl CloudSimulator {
         let until = self.clock() + seconds;
         if let Some(runtime) = &mut self.runtime {
             self.simulation
-                .run_until(until, Some(runtime.controller.as_mut()));
+                .run_until(until, Some(runtime.controller_mut()));
         } else {
             self.simulation.run_until(until, None);
         }
@@ -203,7 +203,7 @@ impl CloudSimulator {
                 self.simulation.now + self.simulation.scenario.scheduling.plan_interval_s;
         }
         self.simulation
-            .control(runtime.controller.as_mut(), allow_scale);
+            .control(runtime.controller_mut(), allow_scale);
         Ok(id)
     }
 

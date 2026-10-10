@@ -1,13 +1,13 @@
 use clap::{Parser, Subcommand};
-use inference_fleet_sim::{POLICIES, Policy, Profile, Scenario, report, scenarios, simulate};
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
+use switchyard::{POLICIES, Policy, Profile, Scenario, report, scenarios, simulate};
 
 #[derive(Parser)]
 #[command(
     version,
-    about = "Offline deterministic inference fleet scheduler simulator"
+    about = "Inference simulation, scheduling, routing, and validation toolkit"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -117,7 +117,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut records = vec![];
             for count in sizes {
                 for policy in POLICIES {
-                    records.push(inference_fleet_sim::performance::measure(
+                    records.push(switchyard::performance::measure(
                         count,
                         policy,
                         repetitions,
@@ -160,24 +160,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .transpose()?
                 .unwrap_or_default();
             println!("Fleet API listening on http://{bind}; clock rate {clock_rate}");
-            inference_fleet_sim::http::serve_with_config(
-                profiles,
-                environment,
-                seed,
-                bind,
-                clock_rate,
-            )
-            .await?;
+            switchyard::http::serve_with_config(profiles, environment, seed, bind, clock_rate)
+                .await?;
         }
         Command::Fuzz { cases, seed, out } => {
             let mut failures = vec![];
             for index in 0..cases {
                 let case_seed = seed.checked_add(index as u64).ok_or("seed overflow")?;
-                let (profiles, scenario) = inference_fleet_sim::fuzz::case(case_seed);
+                let (profiles, scenario) = switchyard::fuzz::case(case_seed);
                 for policy in POLICIES {
                     let run = simulate(&profiles, &scenario, policy, case_seed)?;
-                    if let Err(error) = inference_fleet_sim::fuzz::check(&run, &profiles, &scenario)
-                    {
+                    if let Err(error) = switchyard::fuzz::check(&run, &profiles, &scenario) {
                         let folder = out.join(format!("failure-{case_seed}-{policy}"));
                         save(&folder.join("profiles.json"), &profiles)?;
                         save(&folder.join("scenario.json"), &scenario)?;
@@ -198,7 +191,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             save(&out.join("profiles.json"), &profiles)?;
             save(
                 &out.join("environment.json"),
-                &inference_fleet_sim::CloudConfig::default(),
+                &switchyard::CloudConfig::default(),
             )?;
             for scenario in scenarios::suite(&profiles) {
                 save(&out.join(format!("{}.json", scenario.name)), &scenario)?;
@@ -269,7 +262,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             print!("{}", report::markdown(&[run]));
         }
         Command::Validate { profiles, scenario } => {
-            inference_fleet_sim::validate(
+            switchyard::validate(
                 &read::<Vec<Profile>>(&profiles)?,
                 &read::<Scenario>(&scenario)?,
             )?;

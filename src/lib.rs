@@ -1,14 +1,11 @@
-mod calibration;
-pub mod config;
-pub mod engine;
-pub mod fuzz;
-pub mod http;
-pub mod performance;
-pub mod report;
-pub mod runtime;
-pub mod scenarios;
-pub mod scheduler;
-
-pub use config::*;
-pub use engine::{simulate, simulate_with_scheduler};
-pub use scheduler::{Action, FleetView, Scheduler};
+//! Switchyard: inference simulation, scheduling, routing, and validation.
+//!
+//! This facade composes the workspace libraries. Use their individual crates
+//! when extending one component without depending on the complete toolkit.
+pub use switchyard_core::config;
+pub use switchyard_core::config::*;
+pub use switchyard_core::{Action, FleetView, Scheduler};
+pub use switchyard_gauntlet::{fuzz, performance, report, scenarios};
+pub use switchyard_scheduler as scheduler;
+pub use switchyard_scheduler::runtime;
+pub use switchyard_sim::{engine, http, simulate, simulate_with_scheduler};

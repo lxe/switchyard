@@ -2,7 +2,7 @@
 
 A calibrated profile connects a simulated serving configuration to observations from that configuration. It should preserve which values were measured, which were derived, and which remain assumptions. A GPU name or a single throughput headline is insufficient to establish a model's capacity curve, startup distribution, and memory limit.
 
-The example catalog combines several evidence types. It is useful for demonstrating sensitivity and controller behavior, but it does not establish a production capacity guarantee. Read each profile's `evidence` and `source` fields before comparing hardware. Historical observations are summarized below and encoded in `calibration.rs`; private raw measurement notes are excluded from the repository.
+The example catalog combines several evidence types. It is useful for demonstrating sensitivity and controller behavior, but it does not establish a production capacity guarantee. Read each profile's `evidence` and `source` fields before comparing hardware. Historical observations are summarized below and encoded in [`switchyard-gauntlet/src/calibration.rs`](../crates/switchyard-gauntlet/src/calibration.rs); private raw measurement notes are excluded from the repository.
 
 ## Configuration identity
 

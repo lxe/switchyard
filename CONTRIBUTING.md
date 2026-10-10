@@ -1,6 +1,6 @@
-# Contributing to inference-fleet-sim
+# Contributing to Switchyard
 
-`inference-fleet-sim` is a Rust tool for testing inference-fleet controllers against configurable serving and startup models. Contributions should preserve the separation between physical outcomes, controller observations, and calibration evidence. Start with [the architecture](docs/ARCHITECTURE.md) and [the calibration guide](docs/CALIBRATION.md).
+`Switchyard` is a Rust tool for testing inference-fleet controllers against configurable serving and startup models. Contributions should preserve the separation between physical outcomes, controller observations, and calibration evidence. Start with [the architecture](docs/ARCHITECTURE.md) and [the calibration guide](docs/CALIBRATION.md).
 
 ## Local development
 
@@ -10,8 +10,8 @@ Run the relevant checks from the project root:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all-targets
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-targets
 ```
 
 Export examples and run a repeatable comparison with:

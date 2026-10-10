@@ -1,7 +1,7 @@
-use inference_fleet_sim::engine::{CloudSimulator, InferenceSpec};
-use inference_fleet_sim::scheduler::{BuiltinScheduler, RequestStatus};
-use inference_fleet_sim::*;
 use serde_json::Value;
+use switchyard_gauntlet::engine::{CloudSimulator, InferenceSpec};
+use switchyard_gauntlet::scheduler::{BuiltinScheduler, RequestStatus};
+use switchyard_gauntlet::*;
 
 fn hardware() -> Profile {
     Profile {

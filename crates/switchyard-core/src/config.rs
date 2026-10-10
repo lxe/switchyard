@@ -626,7 +626,7 @@ fn validate_host(host: &HostProfile) -> Result<(), String> {
 
 /// Validate an individual accepted request without copying the experiment's
 /// accumulated history. Identity and dependency checks remain trace-level.
-pub(crate) fn validate_request_inputs(r: &Request, scheduling: &Scheduling) -> Result<(), String> {
+pub fn validate_request_inputs(r: &Request, scheduling: &Scheduling) -> Result<(), String> {
     if r.input_tokens.checked_add(r.max_output).is_none()
         || r.actual_output == 0
         || r.planned_output == 0

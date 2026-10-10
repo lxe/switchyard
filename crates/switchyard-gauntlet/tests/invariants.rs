@@ -1,4 +1,4 @@
-use inference_fleet_sim::*;
+use switchyard_gauntlet::*;
 
 fn hardware() -> Profile {
     Profile {

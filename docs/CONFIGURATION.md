@@ -1,6 +1,6 @@
 # Simulator configuration
 
-Configuration is JSON loaded into Rust types in `config.rs`. `init` writes a hardware catalog, an HTTP environment, and sixteen workload traces. The catalog describes public hardware priors; a trace or HTTP environment can override physical conditions to test a scheduler with stale priors. Unknown configuration fields are rejected so spelling mistakes do not silently change an experiment.
+Configuration is JSON loaded into Rust types in [`switchyard-core/src/config.rs`](../crates/switchyard-core/src/config.rs). `init` writes a hardware catalog, an HTTP environment, and sixteen workload traces. The catalog describes public hardware priors; a trace or HTTP environment can override physical conditions to test a scheduler with stale priors. Unknown configuration fields are rejected so spelling mistakes do not silently change an experiment.
 
 ## Hardware profiles
 

@@ -1,26 +1,20 @@
-# Inference fleet simulator architecture
+# Switchyard architecture
 
-`inference-fleet-sim` is a Rust simulator for inference requests served by rented GPU instances. It models provisioning, startup, request admission, shared GPU service, response delivery, failures, and rental cost. A scheduler chooses which instances to provision and which requests to route. The simulator evaluates those choices without acquiring GPUs or running a language model.
+Switchyard is a Rust toolkit for inference requests served by rented GPU instances. It models provisioning, startup, request admission, shared GPU service, response delivery, failures, and rental cost. A scheduler chooses which instances to provision and which requests to route. The simulator evaluates those choices without acquiring GPUs or running a language model.
 
 The same event engine supports offline trace replay and an incremental provider API. Trace replay compares scheduler policies over a fixed observation window. The provider API lets an independent client manage a virtual fleet and advance its clock. Both use configurable hardware profiles rather than a hard-coded cloud provider.
 
 ## Components
 
-| Component | Responsibility |
+| Package | Responsibility |
 | --- | --- |
-| `config.rs` | Serializable profiles, requests, jobs, scenarios, service classes, and validation |
-| `engine.rs` | Private physical state, deterministic events, fluid GPU service, delivery, and accounting |
-| `engine/cloud.rs`, `engine/service.rs`, `engine/results.rs` | Incremental provider facade, GPU and delivery physics, and result accounting |
-| `scheduler.rs` | Scheduler observations, actions, and the public `Scheduler` trait |
-| `scheduler/policy.rs` | Built-in provisioning and routing heuristics |
-| `runtime.rs` | Convenience routing runtime composed with an independent scheduler |
-| `scenarios.rs` | Editable example workloads and profiles |
-| `calibration.rs` | Explicitly scoped historical calibration of selected example fields |
-| `http.rs` | Provider lifecycle routes and virtual-clock controls |
-| `http/openai.rs` | Synthetic chat completion and streaming handlers |
-| `report.rs` | JSON-derived comparison tables |
-| `fuzz.rs` | Seeded generated workloads and accounting checks |
-| `performance.rs` | Analytical workloads and wall-clock execution measurements |
+| [`switchyard-core`](../crates/switchyard-core) | Serializable configuration, known inputs, observations, actions, and the `Scheduler` trait |
+| [`switchyard-scheduler`](../crates/switchyard-scheduler) | Reference policies, adaptive host beliefs, and routing runtime |
+| [`switchyard-sim`](../crates/switchyard-sim) | Physical event engine, instance lifecycle, synthetic serving, delivery, and accounting |
+| [`switchyard-gauntlet`](../crates/switchyard-gauntlet) | Workloads, calibration, generated tests, comparisons, and performance measurements |
+| Root `switchyard` package | CLI, library facade, and runnable examples |
+
+The scheduler depends only on the shared contracts. The simulator accepts any implementation of `Scheduler`; its convenience replay and HTTP front door also depend on the reference scheduler package. The gauntlet composes these packages, and its integration tests exercise their boundaries. Workspace dependencies, compiler requirements, and lints are declared in the root manifest.
 
 Profiles describe one serving configuration: a model, workload type, accelerator label, price, startup distribution, network behavior, batch capacity, memory budget, and adapter behavior. A profile does not automatically infer capacity from GPU specifications. Two profiles can describe different engines or settings on the same GPU by using distinct identifiers and provenance.
 
