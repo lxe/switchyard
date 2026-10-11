@@ -38,6 +38,10 @@ The checked fleet uses `bootstrap.startup.mode: "trusted_streaming"`, twenty sha
 
 The strict serving configuration disables thinking, enables prefix caching and CUDA graphs, and bounds context at 4,096 tokens with 32 concurrent engine sequences. The legacy small recipe uses eager execution with prefix caching disabled. These settings participate in compiler-cache compatibility and can be changed for another serving profile. Input planning renders the pinned Hugging Face chat template with MiniJinja and counts tokens using the Rust `tokenizers` library. Before admitting the first request to a pod, the runtime compares its count with vLLM's `/tokenize` result. Every completed stream must report matching input usage and obey its output bound.
 
+## CPU snapshot deployment
+
+The native vLLM API/worker CPU snapshot requires host checkpoint permissions in addition to matching runtime, CPU and GPU profiles. The [RunPod checkpoint preflight](runpod-cpu-snapshots.md) found those permissions missing on the tested Secure Cloud pod. That allocation could not run CRIU even before model preparation. Existing hydration and ordinary serving recipes are separate paths; their success does not establish CPU snapshot support.
+
 ## Measurements and recovery
 
 Live evidence is written incrementally before final cleanup summaries. `agent-observations.ndjson` records each observed state and HTTP start/finish timing, `host-probes.ndjson` records the exact rate and byte counters considered by a host probe, and `scheduler-decisions.ndjson` records actions, the observed nodes and probes, and scheduler diagnostics before applying those actions. Every record uses the controller's elapsed-time clock. These files remain available if a workload is interrupted; they contain no prompts, credentials, or presigned URLs. The final JSON reports remain the convenient aggregate summaries.

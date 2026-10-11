@@ -1,0 +1,174 @@
+{
+  "name": "switchyard-cpu-tree-preflight-20261011t195237z-c28f4b",
+  "configuration": {
+    "schema_version": 1,
+    "purpose": "CPU-only native API/worker CRIU deployment preflight; does not validate a 5090 serving bake",
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "cloud": "SECURE",
+    "gpu": {
+      "id": "NVIDIA GeForce RTX 4090",
+      "count": 1,
+      "minCudaVersion": "12.9",
+      "minRamPerGpu": 32,
+      "minVcpuCountPerGpu": 8
+    },
+    "disk": 80,
+    "limits": {
+      "max_active_pods": 1,
+      "max_hourly_usd": 2.0,
+      "timeout_s": 600,
+      "max_run_usd": 0.4
+    },
+    "checkpoint": {
+      "version": "4.2.1",
+      "required_capability_alternatives": [
+        "CAP_CHECKPOINT_RESTORE",
+        "CAP_SYS_ADMIN"
+      ],
+      "gpu_snapshot": false
+    },
+    "data_center_ids": [
+      "EU-RO-1"
+    ]
+  },
+  "started_at": "20261011T195237Z",
+  "events": [
+    {
+      "elapsed_s": 2.650309541000752,
+      "event": "allocation_requested",
+      "catalog_hourly_usd": 0.89
+    },
+    {
+      "elapsed_s": 3.797227383009158,
+      "event": "allocation_returned",
+      "pod": {
+        "id": "hz8i0zs71vg8xg",
+        "name": "switchyard-cpu-tree-preflight-20261011t195237z-c28f4b",
+        "status": "RUNNING",
+        "cost": 0.89,
+        "dataCenterId": "EU-RO-1",
+        "gpu": {
+          "count": 1,
+          "id": "NVIDIA GeForce RTX 4090",
+          "memory": 61,
+          "vcpuCount": 16
+        },
+        "cudaVersion": "13.0",
+        "startedAt": "2026-10-11T19:52:40.994Z"
+      }
+    },
+    {
+      "elapsed_s": 4.158301426999969,
+      "event": "pod_state",
+      "pod": {
+        "id": "hz8i0zs71vg8xg",
+        "name": "switchyard-cpu-tree-preflight-20261011t195237z-c28f4b",
+        "status": "RUNNING",
+        "cost": 0.89,
+        "dataCenterId": "EU-RO-1",
+        "gpu": {
+          "count": 1,
+          "id": "NVIDIA GeForce RTX 4090",
+          "memory": 61,
+          "vcpuCount": 16
+        },
+        "cudaVersion": "13.0",
+        "startedAt": "2026-10-11T19:52:40.994Z"
+      }
+    },
+    {
+      "elapsed_s": 19.176596806006273,
+      "event": "preflight_finished",
+      "criu_exit_codes": {
+        "CHECK": 1,
+        "UNPRIVILEGED": 1,
+        "DUMP": 1
+      },
+      "bake_possible": false
+    },
+    {
+      "elapsed_s": 19.923790691012982,
+      "event": "termination_requested",
+      "pod_id": "hz8i0zs71vg8xg"
+    },
+    {
+      "elapsed_s": 20.3853983200097,
+      "event": "cleanup_confirmed",
+      "absent": true,
+      "estimated_compute_usd": 0.00503972286267122
+    }
+  ],
+  "catalog_hourly_usd": 0.89,
+  "tool_sha256": "4713a1e6fa888fc25969ea64c9397dce315b3643497d161bb88f8498a7f3c0da",
+  "pod": {
+    "id": "hz8i0zs71vg8xg",
+    "name": "switchyard-cpu-tree-preflight-20261011t195237z-c28f4b",
+    "status": "RUNNING",
+    "cost": 0.89,
+    "dataCenterId": "EU-RO-1",
+    "gpu": {
+      "count": 1,
+      "id": "NVIDIA GeForce RTX 4090",
+      "memory": 61,
+      "vcpuCount": 16
+    },
+    "cudaVersion": "13.0",
+    "startedAt": "2026-10-11T19:52:40.994Z"
+  },
+  "last_log_error_type": "ConnectionError",
+  "preflight_completed": true,
+  "criu_exit_codes": {
+    "CHECK": 1,
+    "UNPRIVILEGED": 1,
+    "DUMP": 1
+  },
+  "native_tree_bake_possible": false,
+  "cleanup_confirmed": true,
+  "estimated_compute_usd": 0.00503972286267122,
+  "temporary_r2_object_deleted": true,
+  "schema_version": 1,
+  "result": "blocked_before_native_cpu_bake",
+  "source_commit": "dd03b30",
+  "scope": "Provider checkpoint permissions only; no runtime/model hydration, GPU bake, engine restore or inference was run.",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "gpu_memory_mib": 24564,
+    "cpu": "AMD Ryzen 9 7950X 16-Core Processor",
+    "allocated_vcpus": 16,
+    "allocated_host_ram_gb": 61,
+    "driver": "580.159.04",
+    "provider_cuda_version": "13.0",
+    "kernel": "6.8.0-124-generic",
+    "base_os": "Ubuntu 24.04.5 LTS"
+  },
+  "checkpoint_permissions": {
+    "effective": "00000000a80425fb",
+    "bounding": "00000000a80425fb",
+    "absent_from_effective_and_bounding": [
+      "CAP_CHECKPOINT_RESTORE",
+      "CAP_SYS_ADMIN",
+      "CAP_SYS_PTRACE"
+    ],
+    "seccomp_mode": 2,
+    "seccomp_filters": 1,
+    "proc_sys_read_only": true,
+    "error": "CRIU needs to have the CAP_SYS_ADMIN or the CAP_CHECKPOINT_RESTORE capability"
+  },
+  "container_log": "SWITCHYARD_PREFLIGHT_BEGIN\nLinux 6.8.0-124-generic\nPRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nCapInh:\t0000000000000000\nCapPrm:\t00000000a80425fb\nCapEff:\t00000000a80425fb\nCapBnd:\t00000000a80425fb\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t2\nSeccomp_filters:\t1\nCPU:  AMD Ryzen 9 7950X 16-Core Processor\ncat: /sys/fs/cgroup/cpu.max: No such file or directory\ncat: /sys/fs/cgroup/memory.max: No such file or directory\ncpu.max: memory.max: proc/sys mounts: proc /proc/sys proc ro,nosuid,nodev,noexec,relatime 0 0\nNVIDIA GeForce RTX 4090, 580.159.04, 24564 MiB\nVersion: 4.2.1\nCRIU needs to have the CAP_SYS_ADMIN or the CAP_CHECKPOINT_RESTORE capability:\nsetcap cap_checkpoint_restore+eip /opt/switchyard/preflight/criu/criu\n(00.000000) CRIU run id = a46b9704-4609-41a8-872c-a8fb6bc4b91f\n(00.000000) Effective capability 40 missing\n(00.000000) Effective capability 21 missing\nSWITCHYARD_CRIU_CHECK_EXIT=1\nCRIU needs to have the CAP_SYS_ADMIN or the CAP_CHECKPOINT_RESTORE capability:\nsetcap cap_checkpoint_restore+eip /opt/switchyard/preflight/criu/criu\n(00.000000) CRIU run id = 32b8396e-9006-4b74-bdf4-cb28928a06a2\n(00.000000) Effective capability 40 missing\n(00.000000) Effective capability 21 missing\nSWITCHYARD_CRIU_UNPRIVILEGED_EXIT=1\nCRIU needs to have the CAP_SYS_ADMIN or the CAP_CHECKPOINT_RESTORE capability:\n(00.000000) CRIU run id = c815b0db-040f-4ebf-b26f-d4c8bed5f2f3\n(00.000000) Effective capability 40 missing\n(00.000000) Effective capability 21 missing\nsetcap cap_checkpoint_restore+eip /opt/switchyard/preflight/criu/criu\nSWITCHYARD_CRIU_DUMP_EXIT=1\nCRIU log: /opt/switchyard/preflight/check.log\nCRIU log: /opt/switchyard/preflight/unprivileged.log\nCRIU log: /opt/switchyard/preflight/images/dump.log\nSWITCHYARD_PREFLIGHT_COMPLETE\n",
+  "timing_scope": "Controller monotonic seconds. Allocation return is a control-plane event, not proof that the container has started.",
+  "billing_scope": "Compute quote multiplied by controller duration from before tool publication through cleanup confirmation; not a provider invoice. Container-disk charges are excluded.",
+  "unmeasured": [
+    "Full native process tree checkpoint and restore",
+    "Runtime and model hydration",
+    "Engine startup",
+    "Launch-to-first-token",
+    "GPU kernel bake on allocated hardware",
+    "Cgroup CPU/memory limits: v2 paths were absent"
+  ],
+  "unavailable_5090": {
+    "cloud": "SECURE",
+    "availability": "NONE",
+    "catalog_hourly_usd": 1.19,
+    "allocation_error": "There are no longer any instances available with the requested specifications. Please refresh and try again."
+  }
+}

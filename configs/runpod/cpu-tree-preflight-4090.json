@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "purpose": "CPU-only native API/worker CRIU deployment preflight; does not validate a 5090 serving bake",
+  "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "cloud": "SECURE",
+  "gpu": {
+    "id": "NVIDIA GeForce RTX 4090",
+    "count": 1,
+    "minCudaVersion": "12.9",
+    "minRamPerGpu": 32,
+    "minVcpuCountPerGpu": 8
+  },
+  "disk": 80,
+  "limits": {
+    "max_active_pods": 1,
+    "max_hourly_usd": 2.0,
+    "timeout_s": 600,
+    "max_run_usd": 0.4
+  },
+  "checkpoint": {
+    "version": "4.2.1",
+    "required_capability_alternatives": [
+      "CAP_CHECKPOINT_RESTORE",
+      "CAP_SYS_ADMIN"
+    ],
+    "gpu_snapshot": false
+  },
+  "data_center_ids": [
+    "EU-RO-1"
+  ]
+}
