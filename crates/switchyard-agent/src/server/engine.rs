@@ -79,7 +79,7 @@ impl Drop for Process {
 
 /// Zombies cannot write caches. A surviving descendant still prevents publication even if
 /// the direct child has exited. Failure to inspect a process fails closed.
-fn live_group(group: Pid) -> Result<bool> {
+pub(super) fn live_group(group: Pid) -> Result<bool> {
     for entry in fs::read_dir("/proc")? {
         let entry = entry?;
         if entry

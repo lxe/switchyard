@@ -9,6 +9,16 @@ import json
 import socket
 import time
 
+# A spawned worker opens its own lease; inherited API descriptors alone are
+# insufficient because multiprocessing may close descriptors during spawn.
+import fcntl
+import os
+
+_loader_lease = None
+if lease_path := os.environ.get("SWITCHYARD_LOADER_LEASE"):
+    _loader_lease = open(lease_path, "rb")
+    fcntl.flock(_loader_lease, fcntl.LOCK_SH | fcntl.LOCK_NB)
+
 import torch
 
 _DTYPES = {

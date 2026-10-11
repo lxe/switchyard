@@ -70,7 +70,7 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     let source = scratch.0.join("model-source");
     fs::create_dir_all(&runtime).unwrap();
     fs::create_dir(&source).unwrap();
-    fs::write(runtime.join("engine"),"#!/bin/sh\ntouch \"$IMPORTED\"\nread gate\ntest \"$gate\" = switchyard-metadata-ready-v1 || exit 1\ntest -f \"$3/config.json\" || exit 2\ntouch \"$METADATA\"\nsleep 60\n").unwrap();
+    fs::write(runtime.join("engine"),"#!/bin/sh\nprintf '%s' \"$PYTHONPATH\" > \"$METADATA.environment\"\ntouch \"$IMPORTED\"\nread gate\ntest \"$gate\" = switchyard-metadata-ready-v1 || exit 1\ntest -f \"$3/config.json\" || exit 2\ntouch \"$METADATA\"\nsleep 60\n").unwrap();
     fs::set_permissions(runtime.join("engine"), fs::Permissions::from_mode(0o755)).unwrap();
     fs::write(source.join("config.json"), b"{}").unwrap();
     let header = br#"{"a":{"dtype":"F32","shape":[1],"data_offsets":[0,4]}}"#;
@@ -169,6 +169,10 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
             program: "engine".into(),
             args: vec![],
             environment: BTreeMap::from([
+                (
+                    "PYTHONPATH".into(),
+                    "{runtime_root}/providers:{cache_root}/compiled/sampling-provider".into(),
+                ),
                 ("IMPORTED".into(), imported.to_string_lossy().into_owned()),
                 (
                     "METADATA".into(),
@@ -183,6 +187,13 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     let state = Arc::new(RwLock::new(State::new(&ticket)));
     let observed = state.clone();
     let model_root = roots.models.clone();
+    let expected_python_suffix = format!(
+        "{}/providers:{}/{}/compiled/sampling-provider",
+        roots.runtime.display(),
+        roots.caches.display(),
+        ticket.runtime.as_ref().unwrap().artifact.manifest.id
+    );
+
     let mut pending =
         tokio::spawn(async move { prepare(&ticket, &roots, state, Instant::now()).await });
     tokio::select! {
@@ -194,6 +205,11 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
         },
     }
     assert!(imported.exists());
+    let environment =
+        fs::read_to_string(format!("{}.environment", metadata_ready.display())).unwrap();
+    assert!(environment.ends_with(&expected_python_suffix));
+    assert!(!environment.contains("{cache_root}"));
+
     assert!(!model_root.join("model").exists());
     assert!(!pending.is_finished());
     let owner = fs::read_dir(&model_root)
@@ -204,6 +220,7 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
                 .to_string_lossy()
                 .starts_with(".model-loader-")
                 .then(|| e.path())
+                .filter(|p| p.is_dir())
         })
         .unwrap();
     let socket = tokio::net::UnixStream::connect(owner.join("weights.sock"))

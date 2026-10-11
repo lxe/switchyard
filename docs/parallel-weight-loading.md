@@ -101,3 +101,11 @@ In one controlled, ordered pair on an RTX 5090, the weight phase including hydra
 Optional generic transport observers report object-relative boundaries, received and written bytes, HTTP body waits, storage-write waits, and typed reqwest, Hyper and I/O causes. They retain no URLs, vendor response bodies or formatted error chains. The agent stores bounded observations and captures host state before publishing the first actual transport failure. Intentional cancellation does not create a failure snapshot or replace an earlier failure.
 
 GPU completion reports distinguish host staging time from CUDA-event DMA time and locate the first and last completed copies relative to bridge readiness. Assignment completion is acknowledged only after native model assignment and CUDA synchronization. These spans can overlap reception and should not be added to elapsed startup time.
+
+## Loader directory ownership
+
+The agent derives the loader directory path from the complete model-content and loader identities. Stable paths let compatible engine compilation and startup-plan fingerprints survive a clean restart. A separate, permanent lock file coordinates ownership without changing the model or runtime artifacts.
+
+The agent takes an exclusive kernel lease to create or reclaim the directory, then shares the lease with the native engine. Each Python worker opens an independent shared lease before importing Torch. A bounded ownership record identifies the creator process, boot, PID namespace, and engine process group. The record is published atomically before directory creation; the engine group is registered before the metadata gate opens.
+
+A subsequent launch reclaims an abandoned directory only after obtaining an exclusive lease and establishing that the recorded owner cannot still use it. Unknown records, foreign PID namespaces, reused creator PIDs during construction, and live process groups prevent reclamation. Cleanup preserves a stable lock inode, because unlinking a locked file would allow two different inodes to represent the same apparent lease. An asynchronous engine termination may leave private loader files for the next safe reclamation.

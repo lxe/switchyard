@@ -23,40 +23,8 @@ use tokio::{
     sync::{RwLock, Semaphore, watch},
 };
 
-struct Sidecar {
-    root: PathBuf,
-}
-impl Drop for Sidecar {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.root);
-    }
-}
-fn sidecar(
-    root: &Path,
-    content_id: &str,
-    loader: &switchyard_weights::VllmLoaderConfig,
-) -> Result<Arc<Sidecar>> {
-    // vLLM includes the model path in compilation/startup-plan fingerprints.
-    // Exclusive creation protects an existing process while identical content
-    // and adapter settings receive identical paths across clean launches.
-    use sha2::{Digest, Sha256};
-    let identity = format!(
-        "{:x}",
-        Sha256::digest(format!(
-            "switchyard-loader-path-v1:{content_id}:{}",
-            loader.identity()?
-        )),
-    );
-    // Keep the socket pathname within the same bound as the old 24-character nonce.
-    let root = root.join(format!(".model-loader-{}", &identity[..24]));
-    fs::create_dir(&root)?;
-    use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(&root, fs::Permissions::from_mode(0o700))?;
-    let owner = Arc::new(Sidecar { root });
-    fs::create_dir(owner.root.join("metadata"))?;
-    write_vllm_bundle(&owner.root.join("plugin"))?;
-    Ok(owner)
-}
+mod ownership;
+use ownership::{Sidecar, sidecar};
 
 async fn metadata(h: &ExtentHydration, owner: Arc<Sidecar>) -> Result<()> {
     crate::model::metadata_bytes(h.manifest())?;
@@ -238,10 +206,10 @@ pub(super) async fn prepare(
             );
         }
         // Apply the owned loader environment after caller-supplied runtime flags.
-        let inherited = runtime
-            .environment
-            .get("PYTHONPATH")
-            .map(|s| s.replace("{runtime_root}", &roots.runtime.to_string_lossy()));
+        let inherited = runtime.environment.get("PYTHONPATH").map(|s| {
+            s.replace("{runtime_root}", &roots.runtime.to_string_lossy())
+                .replace("{cache_root}", &cache_root.to_string_lossy())
+        });
         let python_path = match inherited {
             Some(p) => format!("{}:{p}", plugin.display()),
             None => plugin.to_string_lossy().into_owned(),
@@ -250,7 +218,7 @@ pub(super) async fn prepare(
             .env("PYTHONPATH", python_path)
             .env("VLLM_PLUGINS", "switchyard_extents");
         command.stdin(Stdio::piped());
-        let mut process = engine::Process::spawn(&mut command)?;
+        let mut process = owner.spawn(&mut command)?;
         process.retain(owner.clone());
         milestone(&state, epoch, StartupEvent::EngineSpawned).await;
         // Child::wait closes any stdin it owns. Retain the gate pipe separately
