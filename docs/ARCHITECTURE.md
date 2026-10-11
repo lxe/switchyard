@@ -13,8 +13,9 @@ The same event engine supports offline trace replay and an incremental provider 
 | [`switchyard-sim`](../crates/switchyard-sim) | Physical event engine, instance lifecycle, synthetic serving, delivery, and accounting |
 | [`switchyard-gauntlet`](../crates/switchyard-gauntlet) | Workloads, calibration, generated tests, comparisons, and performance measurements |
 | [`switchyard-provider`](../crates/switchyard-provider) | Cloud lifecycle contracts, RunPod REST v2, and signed S3 storage |
-| [`switchyard-agent`](../crates/switchyard-agent) | Verified model hydration, startup observations, and transport to vLLM |
+| [`switchyard-agent`](../crates/switchyard-agent) | Bounded model/runtime hydration, startup observations, and authenticated serving proxy |
 | [`switchyard-live`](../crates/switchyard-live) | Token planning, live admission, streamed usage receipts, and owned-resource recovery |
+| [`switchyard-engine`](../crates/switchyard-engine) | Native Rust model execution through Candle/CUDA, bounded batching, and streamed text generation |
 | Root `switchyard` package | CLI, library facade, and runnable examples |
 
 The scheduler depends only on the shared contracts. The simulator accepts any implementation of `Scheduler`; its convenience replay and HTTP front door also depend on the reference scheduler package. The gauntlet composes these packages, and its integration tests exercise their boundaries. Workspace dependencies, compiler requirements, and lints are declared in the root manifest.
@@ -129,4 +130,16 @@ The physical approximations have specific boundaries. [vLLM's optimization guide
 
 ## Live execution backend
 
-The live runtime supplies the same observable fleet contract to a scheduler while translating its actions into real cloud operations. Model output remains unknown until vLLM emits content and usage. Provider and storage adapters have separate lifecycles, and a pod agent exposes measured hydration and engine state. See [RunPod execution](RUNPOD.md) for configuration, measurement boundaries, and recovery.
+The live runtime supplies the same observable fleet contract to a scheduler while translating its actions into real cloud operations. Model output remains unknown until the selected serving engine emits content and usage. Provider and storage adapters have separate lifecycles, and a pod agent exposes measured hydration and engine state. See [RunPod execution](RUNPOD.md) for configuration, measurement boundaries, and recovery.
+
+## Native inference path
+
+The native backend executes Qwen3.5 text models in a Rust process using Candle tensors and CUDA operations. The fleet scheduler chooses hosts and routes requests; the native engine separately chooses which queued requests execute together on one GPU. Neither the simulator nor the scheduler depends on the model implementation.
+
+An allocation downloads a small static agent, which hydrates independently published runtime, model, and GPU-cache artifacts into private directories. Runtime and cache archives use direct piped installation with shared transfer permits. Native weights are prepared dense safetensors files: hydration installs them on the host filesystem, then the engine reads capped host buffers and copies tensors into GPU memory. Incoming network chunks do not become GPU tensors directly. Cache families contain separately baked compiler seeds for exact driver variants; they do not contain an initialized GPU model.
+
+The engine initializes CUDA and loads weights while a separate thread prepares the tokenizer and chat renderer. Fixed configuration bounds context length, batch size, queued jobs, and host weight bytes. The GPU memory minimum filters eligible hosts; it does not impose a hard allocator ceiling. The HTTP listener opens after its required dependencies finish, without a dummy inference or automatic memory-sizing pass.
+
+Each admitted group owns its sequence state while sharing immutable model weights. Equal-length prompt rows prefill together. Varied-length groups then join shared decoding with per-row positions, masked attention padding, and private recurrent state. Mixed decode removes completed rows and compacts surviving state. New requests wait until the admitted group finishes; continuous admission, shared-prefix reuse, and paged KV allocation are not implemented.
+
+The native backend supports bounded greedy text requests and streamed OpenAI-compatible completion/usage events for the pinned 0.8B, 2B, and 4B models. F32 mathematical gates and BF16 endpoint measurements have different scopes: passing endpoint receipts do not establish strict BF16 numerical parity. See [native fleet execution](native-live-integration.md), [model accuracy](native-engine-accuracy.md), and [RunPod artifact deployment](native-runpod.md) for their configuration and evidence boundaries.
