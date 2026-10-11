@@ -19,6 +19,11 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Print the exact serving adapter fingerprint for a selected loader config.
+    LoaderIdentity {
+        #[arg(long)]
+        config: Option<PathBuf>,
+    },
     /// Create a raw extent manifest and content-addressed objects; no upload.
     Pack {
         source: PathBuf,
@@ -51,6 +56,13 @@ async fn main() {
 }
 async fn execute() -> Result<()> {
     match Cli::parse().command {
+        Command::LoaderIdentity { config } => {
+            let loader: switchyard_weights::VllmLoaderConfig = match config {
+                Some(path) => serde_json::from_slice(&fs::read(path)?)?,
+                None => Default::default(),
+            };
+            println!("{}", loader.identity()?);
+        }
         Command::Pack {
             source,
             output,
