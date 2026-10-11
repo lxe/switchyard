@@ -1,0 +1,177 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA L40S"
+    ],
+    "data_centers": [
+      "US-MO-1"
+    ],
+    "min_cuda": "12.9",
+    "disk_gb": 80,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--enable-prefix-caching",
+          "--mamba-cache-mode",
+          "align",
+          "--enable-prompt-tokens-details",
+          "--max-cudagraph-capture-size",
+          "32",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}",
+          "--max-num-batched-tokens",
+          "2048"
+        ]
+      },
+      "prior": {
+        "single_output_tps": 101,
+        "aggregate_output_tps": 546,
+        "input_work_per_token": 0.05,
+        "startup_s": 256,
+        "kv_tokens": 131072
+      },
+      "model_artifact": {
+        "kind": "extents",
+        "prefix": "switchyard/weights/qwen3.5-2b/header-first-v1/5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+        "id": "5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+        "content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+        "loader": {
+          "python_program": "venv/bin/python",
+          "cuda_stage": true,
+          "pinned_bytes": 16777216
+        }
+      },
+      "caches": [
+        {
+          "name": "compiled",
+          "gpu": "NVIDIA L40S",
+          "artifact": {
+            "id": "9c96f77edd1caf601673c0d594ef98e3456b0e71739536c97932a2f972269475",
+            "prefix": "switchyard/gauntlet/extents/cache/9c96f77edd1caf601673c0d594ef98e3456b0e71739536c97932a2f972269475"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "engine_arguments": "4034409be310a2a7ba0ef45bd43085e036e9b368d7c04c48b87b3a6bbce74776",
+            "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+            "gpu": "NVIDIA L40S",
+            "gpu_compute_capability": "8.9",
+            "model_content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+            "model_repository": "Qwen/Qwen3.5-2B",
+            "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+            "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+            "runtime_launch_configuration": "fbad7e2562be8ae0a248140137f04d0a9ad24c326ca0c76dcb22e54d27528d84",
+            "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
+          }
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "max_instances": 1,
+    "max_usd_per_hour": 1.2,
+    "max_run_usd": 0.2,
+    "run_timeout_s": 600,
+    "startup_timeout_s": 360,
+    "request_timeout_s": 300,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 0.2,
+    "experiment_timeout_s": 600
+  },
+  "scheduling": {
+    "maximum_startup_s": 600,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.2/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+    "ticket_prefix": "switchyard/gauntlet/extents/tickets",
+    "runtime": {
+      "artifact": {
+        "id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+        "prefix": "switchyard/serving-comparison/runtime/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda": "12.9",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "torch": "2.13.0+cu129",
+        "vllm": "0.31.0+cu129"
+      },
+      "program": "venv/bin/python",
+      "args": [
+        "-c",
+        "import sys, time, subprocess\nstarted = time.monotonic()\nsubprocess.run(['nvidia-smi', '--query-gpu=name,driver_version,memory.total,compute_cap', '--format=csv,noheader,nounits'], check=True)\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n':\n    raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nsys.argv[0] = 'vllm'\nmain()\n"
+      ],
+      "environment": {
+        "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+        "CC": "{runtime_root}/toolchain/bin/gcc",
+        "CXX": "{runtime_root}/toolchain/bin/g++",
+        "CUDA_HOME": "{runtime_root}/cuda",
+        "CUDA_PATH": "{runtime_root}/cuda",
+        "CUDACXX": "{runtime_root}/cuda/bin/nvcc",
+        "SSL_CERT_FILE": "{runtime_root}/certs/ca-certificates.crt",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "VLLM_NO_USAGE_STATS": "1",
+        "DO_NOT_TRACK": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HOME": "{cache_root}/compiled/huggingface",
+        "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+        "TORCHINDUCTOR_CACHE_DIR": "{cache_root}/compiled/torchinductor",
+        "VLLM_CACHE_ROOT": "{cache_root}/compiled/vllm",
+        "CUDA_CACHE_PATH": "{cache_root}/compiled/cuda",
+        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer",
+        "CUDA_CACHE_MAXSIZE": "4294967296",
+        "XDG_CACHE_HOME": "{cache_root}/compiled/xdg",
+        "TORCH_EXTENSIONS_DIR": "{cache_root}/compiled/torch-extensions",
+        "VLLM_ENABLE_STARTUP_PLAN": "1",
+        "FLASHINFER_CUBIN_CHECKSUM_DISABLED": "1",
+        "FLASHINFER_NO_DOWNLOAD": "1",
+        "VLLM_FORCE_AOT_LOAD": "1",
+        "PYTHONPATH": "{cache_root}/compiled/sampling-provider",
+        "FLASHINFER_DISABLE_JIT": "1"
+      },
+      "hydration": {
+        "retries": 0
+      }
+    },
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/dev/shm/switchyard",
+      "require_model_ram": true,
+      "early_launch": true
+    }
+  }
+}
