@@ -45,6 +45,8 @@ pub struct HydrationOptions {
     pub extraction_concurrency: usize,
     /// Optional physically reserved spool for independent reception and extraction.
     pub receive_buffer: Option<ReceiveBufferOptions>,
+    /// Per-object HTTP observations for direct trusted streaming, without signed URLs.
+    pub transport_observer: Option<crate::transport::TransferObserver>,
     /// Additional attempts after a failed request; partial transfers resume when supported.
     pub retries: usize,
     /// Total deadline for each HTTP attempt, including its streamed response body.
@@ -63,6 +65,7 @@ impl Default for HydrationOptions {
             download_limit: None,
             extraction_concurrency: 4,
             receive_buffer: None,
+            transport_observer: None,
             retries: 2,
             request_timeout_s: 120,
             stall_timeout_s: 30,

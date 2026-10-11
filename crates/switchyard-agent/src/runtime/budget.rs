@@ -76,9 +76,10 @@ pub(super) fn check(
         })
         .transpose()?
         .unwrap_or(0);
-    // Trusted mode reserves reception files; verified mode retains downloaded
-    // chunks. Both consume filesystem capacity, including any cache artifacts.
+    // Trusted runtime shards feed decoders directly; only verified hydration
+    // retains compressed chunks, including component and cache artifacts.
     let compressed_backing_bytes = runtime
+        .filter(|_| ticket.startup.mode == switchyard_artifacts::HydrationMode::Verified)
         .map(|r| {
             std::iter::once(&r.artifact)
                 .chain(r.components.iter().map(|c| &c.artifact))
@@ -178,13 +179,7 @@ pub(super) fn check(
 
 pub(super) fn decoder_history_bound(ticket: &Ticket) -> u64 {
     let runtime_workers = if ticket.runtime.is_some() {
-        ticket.concurrency.min(
-            if ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
-                4
-            } else {
-                8
-            },
-        )
+        super::extraction_concurrency(ticket)
     } else {
         0
     };

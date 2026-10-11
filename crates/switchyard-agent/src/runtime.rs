@@ -378,7 +378,7 @@ pub(crate) async fn preflight(
         && runtime.hydration.is_some_and(|h| h.retries != 0)
     {
         return Err(Error::Manifest(
-            "reserved progressive runtime reception requires zero retries".into(),
+            "trusted runtime streaming requires zero retries".into(),
         ));
     }
     if !(1..=64).contains(&ticket.concurrency) || ticket.stall_s == 0 || ticket.stall_s > 86400 {
@@ -540,6 +540,16 @@ struct HydrationContext<'a> {
     download_limit: Arc<tokio::sync::Semaphore>,
 }
 
+fn extraction_concurrency(ticket: &Ticket) -> usize {
+    ticket.concurrency.min(
+        if ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
+            20
+        } else {
+            8
+        },
+    )
+}
+
 async fn hydrate_one(
     artifact: ArtifactTicket,
     destination: &Path,
@@ -549,60 +559,13 @@ async fn hydrate_one(
     let diagnostic = crate::transport::TransportDiagnostics::default();
     context.state.write().await.artifacts[index].transport = Some(diagnostic.clone());
     let options = HydrationOptions {
-        receive_buffer: if context.ticket.startup.mode
-            == switchyard_artifacts::HydrationMode::TrustedStreaming
-        {
-            let mut reservation = switchyard_artifacts::ReceiveBufferOptions::new(
-                context.roots.chunks.join("reception"),
-            );
-            use std::os::unix::fs::MetadataExt;
-            if std::fs::metadata(&context.roots.models)?.dev()
-                == std::fs::metadata(
-                    destination
-                        .ancestors()
-                        .skip(1)
-                        .find(|p| p.is_dir())
-                        .ok_or_else(|| {
-                            Error::Manifest("runtime output has no existing parent".into())
-                        })?,
-                )?
-                .dev()
-            {
-                let (allocation, declared) = {
-                    let state = context.state.read().await;
-                    (
-                        state.model_allocation.clone(),
-                        state
-                            .dependency_budget
-                            .as_ref()
-                            .map_or(0, |b| b.model_output_required_bytes),
-                    )
-                };
-                // Snapshot ownership/allocation before hydrate's current-free-space
-                // query. Intervening writes then leave a conservative pending claim.
-                reservation.additional_output_bytes = if declared == 0 {
-                    0
-                } else {
-                    declared.saturating_sub(allocation.allocated_bytes()?)
-                };
-            }
-            reservation.observer = Some(diagnostic.observer());
-            Some(reservation)
-        } else {
-            None
-        },
+        // A bounded HTTP body feeds each decoder directly. No compressed reception spool.
+        transport_observer: Some(diagnostic.observer()),
         mode: context.ticket.startup.mode,
         download_limit: Some(context.download_limit.clone()),
         cache_dir: context.roots.chunks.clone(),
         download_concurrency: context.ticket.concurrency,
-        extraction_concurrency: context.ticket.concurrency.min(
-            if context.ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming
-            {
-                4
-            } else {
-                8
-            },
-        ),
+        extraction_concurrency: extraction_concurrency(context.ticket),
         retries: context
             .ticket
             .runtime

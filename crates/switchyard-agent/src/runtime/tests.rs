@@ -431,7 +431,7 @@ async fn decoder_budget_includes_independent_model_and_runtime_workers() {
     ticket.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
     assert_eq!(
         budget::decoder_history_bound(&ticket),
-        (4 + 2 + 3) * history
+        (20 + 2 + 3) * history
     );
     ticket.concurrency = 2;
     assert_eq!(
@@ -1071,4 +1071,47 @@ async fn staged_launch_without_an_artifact_preserves_native_command_fallback() {
         .is_none()
     );
     assert_eq!(receiver.await.unwrap().as_std().get_program(), "vllm");
+}
+
+#[tokio::test]
+async fn trusted_runtime_streams_without_compressed_backing_and_retains_transport_observations() {
+    let (mut ticket, _server) = fixture().await;
+    ticket.concurrency = 20;
+    ticket.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+    let destination = TempDir::new();
+    let roots = RootPaths::under(&destination.0);
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    command(&ticket, &roots, state.clone())
+        .await
+        .unwrap()
+        .unwrap();
+    let state = state.read().await;
+    assert_eq!(
+        state
+            .dependency_budget
+            .as_ref()
+            .unwrap()
+            .compressed_backing_bytes,
+        0
+    );
+    assert!(!roots.chunks.join("reception").exists());
+    for artifact in &state.artifacts {
+        assert_eq!(artifact.phase, ArtifactPhase::Ready);
+        assert!(artifact.reception.is_none());
+        let observation = artifact.transport.as_ref().unwrap().snapshot();
+        assert!(!observation.transfers.is_empty());
+        assert!(observation.failure.is_none());
+        assert!(observation.transfers.iter().all(|transfer| {
+            matches!(
+                transfer.boundary,
+                switchyard_artifacts::transport::TransferBoundary::Complete
+            ) && transfer.received_bytes == transfer.expected_bytes
+                && transfer.written_bytes == 0
+        }));
+    }
+    assert!(
+        !serde_json::to_string(&*state)
+            .unwrap()
+            .contains("must-not-leak")
+    );
 }

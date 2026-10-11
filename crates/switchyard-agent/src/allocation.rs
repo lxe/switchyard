@@ -19,10 +19,6 @@ impl ModelAllocation {
     pub(crate) fn register(&self, query: impl Fn() -> Result<u64> + Send + Sync + 'static) {
         *self.0.lock().unwrap() = Some(Arc::new(query));
     }
-    pub(crate) fn allocated_bytes(&self) -> Result<u64> {
-        let query = self.0.lock().unwrap().clone();
-        query.map_or(Ok(0), |query| query())
-    }
 }
 
 /// The caller supplies an exclusively owned root and validated manifest paths.

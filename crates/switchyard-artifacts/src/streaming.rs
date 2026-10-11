@@ -11,7 +11,7 @@ use std::{
         Arc,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::sync::Notify;
 use tokio_util::io::{StreamReader, SyncIoBridge};
@@ -159,6 +159,13 @@ where
             ),
             None => None,
         };
+        let trace = crate::transport::Trace::new(
+            chunk.name.clone(),
+            0,
+            chunk.size,
+            options.transport_observer.clone(),
+        );
+        trace.boundary(crate::transport::TransferBoundary::Headers);
         let response = tokio::time::timeout(
             Duration::from_secs(options.stall_timeout_s),
             client.get(&url).send(),
@@ -167,10 +174,24 @@ where
         let response = match response {
             Ok(Ok(response)) if response.status() == reqwest::StatusCode::OK => Some(response),
             Ok(Ok(response)) => {
+                let mut observed = crate::transport::TransportFailure::local("status");
+                observed.status = Some(response.status().as_u16());
+                trace.failure(observed);
                 failure = Error::Http(response.status().as_u16());
                 None
             }
-            _ => None,
+            Ok(Err(error)) => {
+                trace.failure(crate::transport::TransportFailure::request(
+                    "headers", &error,
+                ));
+                None
+            }
+            Err(_) => {
+                let mut observed = crate::transport::TransportFailure::local("headers_deadline");
+                observed.timeout = true;
+                trace.failure(observed);
+                None
+            }
         };
         if let Some(response) = response {
             let progress = Arc::new(AtomicU64::new(0));
@@ -179,12 +200,14 @@ where
             let received_unpacked = unpacked.clone();
             let size = chunk.size;
             let stall = Duration::from_secs(options.stall_timeout_s);
+            let body_trace = trace.clone();
             let body = stream::try_unfold(
                 (response.bytes_stream(), 0_u64),
                 move |(mut body, seen)| {
                     let control = control.clone();
                     let tracker = received_tracker.clone();
                     let unpacked = received_unpacked.clone();
+                    let trace = body_trace.clone();
                     async move {
                         let notified = control.wake.notified();
                         tokio::pin!(notified);
@@ -196,20 +219,30 @@ where
                                 "hydration cancelled",
                             ));
                         }
+                        let began = Instant::now();
                         let part = tokio::select! {
                             biased;
                             _ = notified => return Err(io::Error::new(io::ErrorKind::ConnectionAborted, "hydration cancelled")),
-                            part = tokio::time::timeout(stall, body.next()) => part.map_err(|_| io::Error::new(io::ErrorKind::TimedOut, "artifact body stalled"))?,
+                            part = tokio::time::timeout(stall, body.next()) => part.map_err(|_| {
+                                let mut failure = crate::transport::TransportFailure::local("body_deadline");
+                                failure.timeout = true;
+                                trace.failure(failure);
+                                io::Error::new(io::ErrorKind::TimedOut, "artifact body stalled")
+                            })?,
                         };
                         match part {
                             Some(part) => {
-                                let bytes = part.map_err(|_| {
+                                let bytes = part.map_err(|error| {
+                                    trace.failure(crate::transport::TransportFailure::request(
+                                        "body", &error,
+                                    ));
                                     io::Error::new(
                                         io::ErrorKind::UnexpectedEof,
                                         "artifact body interrupted",
                                     )
                                 })?;
                                 let count = bytes.len() as u64;
+                                trace.body(count, began.elapsed().as_secs_f64());
                                 let before = tracker.downloaded.fetch_add(count, Ordering::Relaxed);
                                 if before >> 20 != (before + count) >> 20 {
                                     tracker
@@ -226,7 +259,10 @@ where
                                     })?;
                                 Ok(Some((bytes, (body, next))))
                             }
-                            None if seen == size => Ok(None),
+                            None if seen == size => {
+                                trace.boundary(crate::transport::TransferBoundary::Complete);
+                                Ok(None)
+                            }
                             None => Err(io::Error::new(
                                 io::ErrorKind::UnexpectedEof,
                                 "compressed chunk is shorter than declared size",
@@ -272,6 +308,13 @@ where
                     return Ok(());
                 }
                 Err(error) => {
+                    let observed = match &error {
+                        Error::Io(error) => {
+                            crate::transport::TransportFailure::io("extract", error)
+                        }
+                        _ => crate::transport::TransportFailure::local("extract"),
+                    };
+                    trace.failure(observed);
                     unpacked.fetch_sub(progress.load(Ordering::Relaxed), Ordering::Relaxed);
                     failure = error;
                 }
