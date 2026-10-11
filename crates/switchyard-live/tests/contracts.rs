@@ -302,6 +302,7 @@ async fn fixture_with_cache_export(
             "/state",
             get(|| async {
                 Json(switchyard_agent::State {
+                    model_diagnostics: None,
                     artifact_bytes_downloaded: 0,
                     artifact_network_bytes_downloaded: 0,
                     artifact_bytes_total: 0,
@@ -379,6 +380,7 @@ async fn fixture_with_cache_export(
         )
         .unwrap();
         config.bootstrap.runtime = Some(switchyard_live::artifacts::ServingRuntimeConfig {
+            hydration: None,
             artifact: switchyard_live::artifacts::ArtifactRef {
                 prefix: "runtimes/fixture".into(),
                 id: runtime_manifest.id.clone(),

@@ -1,5 +1,6 @@
 //! Streaming legacy TAR pieces with bounded channels and exclusively owned publication.
-use super::{ExactReader, extract_reader, sample_rate};
+use super::diagnostics::{Boundary, ModelDiagnostics, ShardTrace, TransferTrace};
+use super::{ExactReader, extract_observed, sample_rate};
 use crate::{Chunk, Error, Phase, Result, State, Ticket};
 use futures_util::{FutureExt, StreamExt, TryStreamExt, future::BoxFuture};
 use std::{
@@ -115,8 +116,10 @@ pub(super) async fn hydrate(
         chunks.sort_by_key(|chunk| chunk.seq);
     }
     let started = Instant::now();
+    let diagnostics = ModelDiagnostics::new(&ticket.manifest, &limit, started, CHANNEL_PIECES);
     {
         let mut st = state.write().await;
+        st.model_diagnostics = Some(diagnostics.clone());
         st.phase = Phase::Hydrating;
         st.bytes_downloaded = 0;
         st.model_cached = false;
@@ -131,10 +134,13 @@ pub(super) async fn hydrate(
             let state = state.clone();
             let limit = limit.clone();
             let stage = stage.clone();
+            let diagnostics = diagnostics.clone();
             async move {
+                let shard_trace = diagnostics.shard(chunks[0].shard);
                 let mut jobs = Vec::new();
                 let mut readers: Vec<Box<dyn Read + Send>> = Vec::new();
                 for chunk in chunks {
+                    let trace = diagnostics.transfer(&chunk.name);
                     let (sender, receiver) = mpsc::channel(CHANNEL_PIECES);
                     let (consumed, completion) = oneshot::channel();
                     let permit = Arc::new(Mutex::new(None));
@@ -142,6 +148,7 @@ pub(super) async fn hydrate(
                         receiver,
                         pending: io::Cursor::new(Vec::new()),
                         cancelled: cancelled.clone(),
+                        trace: trace.clone(),
                     };
                     let decoded: Box<dyn Read + Send> = if ticket.manifest.compress == "zstd" {
                         // Decoder construction reads its header; do that on the blocking worker.
@@ -160,6 +167,9 @@ pub(super) async fn hydrate(
                         },
                         consumed: Some(consumed),
                         permit: permit.clone(),
+                        trace,
+                        shard_trace: shard_trace.clone(),
+                        seq: chunk.seq,
                     }));
                     jobs.push(TransferJob {
                         url: ticket.urls[&chunk.name].clone(),
@@ -177,8 +187,20 @@ pub(super) async fn hydrate(
                         current: None,
                     };
                     let mut archive = tar::Archive::new(reader);
-                    extract_reader(&manifest, &mut archive, &stage, &seen)?;
+                    shard_trace.boundary(Boundary::Archive);
+                    let result = extract_observed(
+                        &manifest,
+                        &mut archive,
+                        &stage,
+                        &seen,
+                        Some(&shard_trace),
+                    );
+                    if result.is_err() {
+                        shard_trace.boundary(Boundary::ExtractionError);
+                    }
+                    result?;
                     io::copy(&mut archive.into_inner(), &mut io::sink())?;
+                    shard_trace.boundary(Boundary::Complete);
                     Ok::<_, Error>(())
                 });
                 let stall = Duration::from_secs(ticket.stall_s);
@@ -189,7 +211,7 @@ pub(super) async fn hydrate(
                             client.clone(),
                             state.clone(),
                             limit.clone(),
-                            started,
+                            diagnostics.clone(),
                             stall,
                         )
                     })
@@ -243,24 +265,36 @@ fn scheduled_transfer(
     client: reqwest::Client,
     state: Arc<RwLock<State>>,
     limit: Arc<Semaphore>,
-    started: Instant,
+    diagnostics: ModelDiagnostics,
     stall: Duration,
 ) -> BoxFuture<'static, Result<Transfer>> {
     async move {
         // Acquire in TAR sequence before launching concurrently. A later piece
         // cannot hold a slot while its required predecessor waits.
+        let trace = diagnostics.transfer(&job.chunk.name);
+        trace.boundary(Boundary::PermitWait);
+        trace.update(|t, now| t.permit_wait_started_s = Some(now));
         let acquired = limit.acquire_owned().await.map_err(|_| Error::Task)?;
+        trace.update(|t, now| t.permit_acquired_s = Some(now));
         *job.permit.lock().map_err(|_| Error::Task)? = Some(acquired);
         Ok(async move {
             transfer(
-                &client, &job.url, &job.chunk, job.sender, &state, started, stall,
+                &client,
+                &job.url,
+                &job.chunk,
+                job.sender,
+                &state,
+                &diagnostics,
+                stall,
             )
             .await?;
             // Keep the slot and permit until the decoder consumes this piece. Even
             // small completed chunks therefore cannot accumulate a whole model.
+            trace.boundary(Boundary::DecoderCompletion);
             job.completion
                 .await
                 .map_err(|_| Error::Transfer("model extraction stopped".into()))?;
+            trace.boundary(Boundary::Complete);
             Ok(())
         }
         .boxed())
@@ -285,14 +319,52 @@ async fn transfer(
     chunk: &Chunk,
     sender: mpsc::Sender<Vec<u8>>,
     state: &RwLock<State>,
-    started: Instant,
+    diagnostics: &ModelDiagnostics,
     stall: Duration,
 ) -> Result<()> {
+    let trace = diagnostics.transfer(&chunk.name);
+    let result = transfer_body(client, url, chunk, sender, state, diagnostics, stall).await;
+    if result.is_err() {
+        let class = trace
+            .error_class()
+            .unwrap_or_else(|| "transfer_error".into());
+        diagnostics.failure(&chunk.name, &class).await;
+        trace.boundary(Boundary::Failed);
+    }
+    result
+}
+
+async fn transfer_body(
+    client: &reqwest::Client,
+    url: &str,
+    chunk: &Chunk,
+    sender: mpsc::Sender<Vec<u8>>,
+    state: &RwLock<State>,
+    diagnostics: &ModelDiagnostics,
+    stall: Duration,
+) -> Result<()> {
+    let trace = diagnostics.transfer(&chunk.name);
+    trace.boundary(Boundary::HeadersWait);
+    trace.update(|t, now| t.request_s = Some(now));
     let response = tokio::time::timeout(stall, client.get(url).send())
         .await
-        .map_err(|_| Error::Transfer(format!("{} headers stalled", chunk.name)))?
-        .map_err(|_| Error::Transfer(format!("{} transport", chunk.name)))?;
+        .map_err(|_| {
+            trace.error("headers_wait_deadline");
+            Error::Transfer(format!("{} headers stalled", chunk.name))
+        })?
+        .map_err(|error| {
+            trace.request_error(&error);
+            Error::Transfer(format!("{} transport", chunk.name))
+        })?;
+    trace.update(|t, now| {
+        t.headers_s = Some(now);
+        t.http_status = Some(response.status().as_u16());
+        t.http_version = Some(format!("{:?}", response.version()));
+        t.declared_length = response.content_length();
+        t.remote_socket = response.remote_addr().map(|a| a.to_string());
+    });
     if !response.status().is_success() {
+        trace.error("http_status");
         return Err(Error::Transfer(format!(
             "{} HTTP {}",
             chunk.name,
@@ -301,32 +373,74 @@ async fn transfer(
     }
     let mut stream = response.bytes_stream();
     let mut total = 0_u64;
-    while let Some(piece) = tokio::time::timeout(stall, stream.next())
-        .await
-        .map_err(|_| Error::Transfer(format!("{} stalled", chunk.name)))?
-    {
-        let piece = piece.map_err(|_| Error::Transfer(format!("{} interrupted", chunk.name)))?;
-        total = total
-            .checked_add(piece.len() as u64)
-            .ok_or_else(|| Error::Transfer("response size overflow".into()))?;
+    loop {
+        trace.boundary(Boundary::BodyWait);
+        let wait = Instant::now();
+        let next = tokio::time::timeout(stall, stream.next()).await;
+        let waited = wait.elapsed().as_secs_f64();
+        trace.update(|t, _| {
+            t.body_wait_s += waited;
+            t.longest_body_wait_s = t.longest_body_wait_s.max(waited);
+        });
+        let next = match next {
+            Ok(next) => next,
+            Err(_) => {
+                trace.error("body_wait_deadline");
+                // Sample while the response stream still owns its connection.
+                diagnostics.failure(&chunk.name, "body_wait_deadline").await;
+                return Err(Error::Transfer(format!("{} stalled", chunk.name)));
+            }
+        };
+        let Some(piece) = next else {
+            trace.update(|t, now| t.body_eof_s = Some(now));
+            break;
+        };
+        let piece = piece.map_err(|error| {
+            trace.request_error(&error);
+            Error::Transfer(format!("{} interrupted", chunk.name))
+        })?;
+        trace.update(|t, now| {
+            t.first_body_s.get_or_insert(now);
+            t.last_body_s = Some(now);
+            t.received_bytes += piece.len() as u64;
+        });
+        total = total.checked_add(piece.len() as u64).ok_or_else(|| {
+            trace.error("size_overflow");
+            Error::Transfer("response size overflow".into())
+        })?;
         if total > chunk.size {
+            trace.error("size_exceeded");
             return Err(Error::Transfer(format!("{} size exceeded", chunk.name)));
         }
+        trace.boundary(Boundary::ProgressState);
         {
             let mut st = state.write().await;
             st.bytes_downloaded += piece.len() as u64;
-            sample_rate(&mut st, started);
+            sample_rate(&mut st, trace.origin());
         }
         for bytes in piece.chunks(PIECE_BYTES) {
-            sender
-                .send(bytes.to_vec())
-                .await
-                .map_err(|_| Error::Transfer("model extraction stopped".into()))?;
+            trace.boundary(Boundary::ChannelSend);
+            trace.update(|t, _| t.channel_available_slots = sender.capacity());
+            let wait = Instant::now();
+            let result = sender.send(bytes.to_vec()).await;
+            trace.update(|t, _| {
+                t.channel_wait_s += wait.elapsed().as_secs_f64();
+                t.channel_available_slots = sender.capacity();
+                if result.is_ok() {
+                    t.delivered_bytes += bytes.len() as u64;
+                }
+            });
+            result.map_err(|_| {
+                trace.error("consumer_closed");
+                Error::Transfer("model extraction stopped".into())
+            })?;
         }
     }
     if total != chunk.size {
+        trace.error("size_mismatch");
         return Err(Error::Transfer(format!("{} size mismatch", chunk.name)));
     }
+    trace.boundary(Boundary::BodyComplete);
     // Dropping sender delivers EOF. Partial streaming attempts fail rather than replaying TAR.
     Ok(())
 }
@@ -335,6 +449,7 @@ struct ChannelReader {
     receiver: mpsc::Receiver<Vec<u8>>,
     pending: io::Cursor<Vec<u8>>,
     cancelled: Arc<AtomicBool>,
+    trace: TransferTrace,
 }
 impl Read for ChannelReader {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
@@ -349,10 +464,16 @@ impl Read for ChannelReader {
                 ));
             }
             let size = self.pending.read(buffer)?;
+            self.trace.update(|t, _| t.consumed_bytes += size as u64);
             if size != 0 {
                 return Ok(size);
             }
-            match self.receiver.blocking_recv() {
+            self.trace.consumer(Boundary::ChannelReceive);
+            let next = self.receiver.blocking_recv();
+            self.trace.consumer(Boundary::Decoding);
+            self.trace
+                .update(|t, _| t.channel_available_slots = self.receiver.capacity());
+            match next {
                 Some(piece) => self.pending = io::Cursor::new(piece),
                 None => return Ok(0),
             }
@@ -378,15 +499,41 @@ struct DecodedPiece {
     consumed: Option<oneshot::Sender<()>>,
     // The blocking reader owns the permit even if its async downloader is cancelled.
     permit: Arc<Mutex<Option<OwnedSemaphorePermit>>>,
+    trace: TransferTrace,
+    shard_trace: ShardTrace,
+    seq: usize,
 }
 impl Read for DecodedPiece {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-        let size = self.inner.read(buffer)?;
+        self.shard_trace.update(|s, now| {
+            s.active_seq = Some(self.seq);
+            s.boundary = Boundary::PieceRead;
+            s.boundary_since_s = now;
+        });
+        self.trace.consumer(Boundary::Decoding);
+        let result = self.inner.read(buffer);
+        self.trace.consumer(if result.is_ok() {
+            Boundary::Archive
+        } else {
+            Boundary::ReadError
+        });
+        let size = result?;
+        self.trace.update(|t, _| t.decoded_bytes += size as u64);
+        self.shard_trace.update(|s, now| {
+            s.decoded_bytes += size as u64;
+            s.boundary = Boundary::Archive;
+            s.boundary_since_s = now;
+        });
         if size == 0 && !buffer.is_empty() {
             self.permit
                 .lock()
                 .map_err(|_| io::Error::other("model transfer permit lock"))?
                 .take();
+            self.trace.update(|t, now| {
+                t.permit_released_s = Some(now);
+                t.consumed_s = Some(now);
+            });
+            self.trace.consumer(Boundary::Complete);
             if let Some(consumed) = self.consumed.take() {
                 let _ = consumed.send(());
             }

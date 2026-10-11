@@ -96,6 +96,7 @@ fn fixture(engine_url: String, stop_succeeds: bool) -> Fixture {
         lifetime_s: 10,
         startup: Default::default(),
         runtime: Some(RuntimeTicket {
+            hydration: None,
             artifact: ArtifactTicket {
                 manifest,
                 urls: BTreeMap::new(),

@@ -100,6 +100,34 @@ After confirmed shutdown, the agent snapshots `/opt/switchyard/cache/<runtime-id
 
 A completed export leaves `/state` in `exporting`, with `inference_verified: false`, because the engine is stopped. Export chunks remain available until agent shutdown. A cancelled packing waiter cannot expose late worker output, and private scratch is removed when its ownership ends. Compression already running in a blocking worker may finish before its private files are removed; it cannot publish a result after cancellation. The controller should download and verify all chunks with its authenticated client, terminate the GPU pod, then publish the generic artifact with its own storage credentials. File caches do not preserve in-memory CUDA graphs or engine process state.
 
+## Model hydration diagnostics
+
+Authenticated `/state` and `/probe` observations include `model_diagnostics` while a legacy model is hydrated in `trusted_streaming` mode. Each transfer reports its TAR shard and sequence, the operation currently awaited, and separate counters for response-body receipt, channel delivery, compressed bytes read by the decoder, and decoded TAR bytes. Each shard reports its active sequence, extraction boundary, decoded bytes, and bytes actually written to model files. TAR headers and padding count as decoded bytes but do not count as file writes. These counters describe data movement; trusted mode does not verify content hashes.
+
+All diagnostic timestamps are seconds from one `std::time::Instant` captured immediately before model hydration starts. They share an origin across model transfers and shard readers. They are separate from the agent-start origin used by `startup_milestones`. `elapsed_s` is the time of serialization; `boundary_since_s` and `consumer_since_s` identify the last boundary transition. Their corresponding ages describe an in-progress wait even when the aggregate byte count is unchanged.
+
+The downloader's `boundary` can be `pending`, `permit_wait`, `headers_wait`, `body_wait`, `progress_state`, `channel_send`, `body_complete`, `decoder_completion`, `complete`, or `failed`. The independent `consumer_boundary` reports `pending`, `decoding`, `channel_receive`, `archive`, `complete`, or `read_error`. The shard boundary distinguishes `piece_read`, `archive`, and `file_write`, with terminal extraction/error states. An ahead piece with `channel_send`, zero sampled available slots, and an untouched consumer is waiting for ordered extraction. A `body_wait` with spare channel slots means the caller is awaiting a response frame. That observation alone cannot locate the cause within the remote service, network, client transport, or local scheduling.
+
+`request_s`, `headers_s`, `first_body_s`, `last_body_s`, and `body_eof_s` describe request progress. The HTTP version, status, declared response length, and numeric remote socket address are retained. `permit_wait_s` and `permit_held_s` include current unfinished intervals. `channel_wait_s` and `body_wait_s` sum completed waits; add the current boundary age when measuring an unfinished wait. `longest_body_wait_s` reports the longest completed frame wait, including a timed-out wait. Channel capacity is a sample taken around sends and receives. Counter updates on the producer and blocking consumer are independent, so a snapshot can briefly show consumption ahead of delivery; completed transfers conserve all three wire-byte counters.
+
+Diagnostics retain at most 256 transfer records and 64 shard records. Omitted counts are explicit. Buffer sizes, ordered extraction, semaphore ownership, HTTP settings, and retry behavior are unchanged. Updates use small per-record mutexes and fixed boundary enums. Serialization samples the live records; there is no background telemetry task or per-frame event log in the agent.
+
+The first transfer failure freezes the current transfer and shard observations before cancellation. At a body-wait deadline, the agent samples Linux process/task CPU ticks, memory, process I/O, and owned TCP socket tables while the response stream still exists. The fixed allowlists exclude command lines, environment variables, URLs, headers, and response bodies. Task and socket counts are capped at 64 and 128; missing proc data is reported. Task CPU times are kernel clock ticks; memory fields from `meminfo` are KiB, and I/O and socket queue fields are bytes. TCP addresses and states use Linux proc hexadecimal notation. Socket tables provide queues, retransmission counters, and timer state; they do not provide packet traces or establish which endpoint caused a wait. `request_timeout` classifies a reqwest timeout without claiming which internal timer caused it; `body_wait_deadline` and `headers_wait_deadline` identify the agent's explicit wait timers.
+
+Runtime and cache retry options are supplied through `bootstrap.runtime.hydration` in the checked fleet configuration and copied into `RuntimeTicket.hydration`. Set `{ "retries": 0 }` for diagnostic reproductions. `retries` counts additional attempts; values from 0 through 10 are accepted, and an omitted `hydration` preserves the existing two retries. Trusted model streaming already performs one attempt. Verified legacy model hydration retains its existing retry policy, so diagnostic reproductions use trusted mode. There is no environment override for these options.
+
+### Explicit local replay
+
+The ignored test `hydrate::diagnostics::local::production_pipeline_without_retries` accepts a JSON input on stdin. Its fields are `ticket`, optional generic `runtime` artifact ticket, absolute `model_root`, absolute `runtime_root`, and `receipt` output path. Supply a trusted-streaming model ticket, fresh exclusively owned destinations, and short-lived download capabilities directly through the pipe. Ticket JSON must never be written into receipts or logs.
+
+```sh
+<ticket-generator> | cargo test -p switchyard-agent --lib \
+  hydrate::diagnostics::local::production_pipeline_without_retries \
+  -- --exact --ignored --nocapture
+```
+
+The replay uses the production model preflight, shared semaphore, model hydrator, and generic runtime hydrator. Runtime retries are explicitly zero, and trusted model streaming performs one attempt per piece. It writes state samples every 250 ms and a terminal receipt, with a 600-second run deadline. Start with model hydration alone; then supply the same pinned runtime as the single changed variable. This replay does not launch the engine, verify GPU compatibility, or reproduce the cloud filesystem and network. Those differences must accompany any causal claim. The caller owns cleanup of its output roots after inspecting the receipt.
+
 ## Verification
 
 ```sh

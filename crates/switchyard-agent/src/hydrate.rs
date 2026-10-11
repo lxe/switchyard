@@ -16,7 +16,9 @@ use std::{
 use switchyard_artifacts::HydrationMode;
 use tokio::{io::AsyncWriteExt, sync::RwLock};
 
+mod diagnostics;
 mod streaming;
+pub use diagnostics::{ModelDiagnostics, ModelSnapshot};
 
 fn relative(path: &str) -> bool {
     !path.is_empty()
@@ -467,6 +469,16 @@ fn extract_reader<R: Read>(
     dest: &Path,
     seen: &Mutex<BTreeSet<String>>,
 ) -> Result<()> {
+    extract_observed(manifest, archive, dest, seen, None)
+}
+
+fn extract_observed<R: Read>(
+    manifest: &Manifest,
+    archive: &mut tar::Archive<R>,
+    dest: &Path,
+    seen: &Mutex<BTreeSet<String>>,
+    trace: Option<&diagnostics::ShardTrace>,
+) -> Result<()> {
     for entry in archive.entries()? {
         let mut entry = entry?;
         let path = entry.path()?.into_owned();
@@ -509,7 +521,18 @@ fn extract_reader<R: Read>(
             .write(true)
             .create_new(true)
             .open(output)?;
-        if io::copy(&mut entry, &mut file)? != expected.size {
+        let written = if let Some(trace) = trace {
+            io::copy(
+                &mut entry,
+                &mut diagnostics::ObservedWriter {
+                    inner: &mut file,
+                    trace,
+                },
+            )?
+        } else {
+            io::copy(&mut entry, &mut file)?
+        };
+        if written != expected.size {
             return Err(Error::Manifest("archive file was truncated".into()));
         }
     }

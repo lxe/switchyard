@@ -16,10 +16,33 @@ use tokio::{
 mod cache;
 mod compatibility;
 
+/// Optional per-runtime transfer controls, copied from checked fleet configuration.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RuntimeHydrationOptions {
+    /// Additional HTTP attempts; zero preserves failures during diagnostic reproductions.
+    pub retries: usize,
+}
+impl Default for RuntimeHydrationOptions {
+    fn default() -> Self {
+        Self { retries: 2 }
+    }
+}
+impl RuntimeHydrationOptions {
+    pub fn validate(&self) -> Result<()> {
+        if self.retries > 10 {
+            return Err(Error::Manifest("invalid runtime retry limit".into()));
+        }
+        Ok(())
+    }
+}
+
 /// URLs are temporary access credentials, so runtime and cache tickets omit Debug.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeTicket {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hydration: Option<RuntimeHydrationOptions>,
     pub artifact: ArtifactTicket,
     pub compatibility: BTreeMap<String, String>,
     /// Executable relative to /opt/switchyard/runtime; internal symlinks are supported.
@@ -201,6 +224,9 @@ impl RuntimeTicket {
             .collect()
     }
     fn validate_launch(&self, mode: switchyard_artifacts::HydrationMode) -> Result<()> {
+        if let Some(options) = self.hydration {
+            options.validate()?;
+        }
         if let Some(export) = &self.cache_export {
             export.validate(&self.artifact.manifest.id)?;
         }
@@ -488,7 +514,13 @@ async fn hydrate_one(
                 8
             },
         ),
-        retries: 2,
+        retries: context
+            .ticket
+            .runtime
+            .as_ref()
+            .and_then(|runtime| runtime.hydration)
+            .unwrap_or_default()
+            .retries,
         stall_timeout_s: context.ticket.stall_s,
         request_timeout_s: context.ticket.lifetime_s.clamp(1, 600),
         ..HydrationOptions::default()
