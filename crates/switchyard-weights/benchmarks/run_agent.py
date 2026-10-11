@@ -164,6 +164,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not path.is_file():
             self.send_error(404)
             return
+        size = path.stat().st_size
+        start, end = 0, size - 1
+        ranged = self.headers.get("Range")
+        if ranged:
+            try:
+                start, end = map(int, ranged.removeprefix("bytes=").split("-"))
+                if not ranged.startswith("bytes=") or not 0 <= start <= end < size:
+                    raise ValueError("invalid byte range")
+            except ValueError:
+                self.send_error(416)
+                return
+        length = end - start + 1
         began = time.monotonic()
         received = 0
         if active_timeline is not None:
@@ -173,20 +185,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 console=False,
                 artifact=parts[0],
                 object=parts[1],
-                expected_bytes=path.stat().st_size,
+                expected_bytes=length,
             )
         try:
-            self.send_response(200)
-            self.send_header("Content-Length", str(path.stat().st_size))
+            self.send_response(206 if ranged else 200)
+            self.send_header("Content-Length", str(length))
+            if ranged:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
             self.end_headers()
             with path.open("rb") as source:
-                while block := source.read(65536):
+                source.seek(start)
+                remaining = length
+                while remaining and (block := source.read(min(65536, remaining))):
                     if parts[0] == "model" and args.model_delay:
                         time.sleep(args.model_delay)
                     if parts[0].startswith("components-") and args.component_delay:
                         time.sleep(args.component_delay)
                     self.wfile.write(block)
                     received += len(block)
+                    remaining -= len(block)
         except (BrokenPipeError, ConnectionResetError):
             pass
         finally:
