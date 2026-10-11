@@ -98,6 +98,7 @@ struct Node {
     observed: ObservedNode,
     ticket_key: String,
     checked_tokenizer: bool,
+    bandwidth: switchyard_core::probe::BandwidthWindow,
 }
 
 /// Live execution translates observations and provider actions through the simulator's scheduling contract.

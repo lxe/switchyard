@@ -61,7 +61,11 @@ impl Scheduler for BuiltinScheduler {
         if self.policy == Policy::Adaptive {
             for (id, node) in fleet.nodes.iter().enumerate() {
                 if let Some(probe) = &node.host.probe
-                    && !self.observations.contains_key(&id)
+                    && probe.fresh(fleet.now, &fleet.scheduling.probe)
+                    && self
+                        .observations
+                        .get(&id)
+                        .is_none_or(|old| probe.at_s > old.at_s)
                 {
                     self.observations.insert(id, probe.clone());
                     self.beliefs
@@ -120,26 +124,35 @@ impl Scheduler for BuiltinScheduler {
                 if node.ended_s.is_some() || node.is_ready {
                     continue;
                 }
-                if matches!(
-                    node.host.phase,
-                    StartupPhase::Hydrating | StartupPhase::Initializing
-                ) && node.host.probe.is_none()
-                    && !node.host.probe_pending
-                {
-                    world.actions.push(Action::ProbeHost { node: id });
-                }
+                let timed_out = fleet.now - node.allocated_s > fleet.scheduling.maximum_startup_s;
                 let slow = node.host.probe.as_ref().is_some_and(|probe| {
-                    probe.hydration_bytes > 0
+                    probe.fresh(fleet.now, &fleet.scheduling.probe)
+                        && node.host.bytes_total > node.host.bytes_downloaded
                         && probe.volume_bytes_per_s < fleet.scheduling.minimum_hydration_bytes_per_s
-                        && (node
+                        && node
                             .host
                             .bytes_total
-                            .saturating_sub(node.host.bytes_downloaded))
+                            .saturating_sub(node.host.bytes_downloaded)
                             as f64
                             / probe.volume_bytes_per_s
                             > fleet.scheduling.maximum_startup_s
                 });
-                if slow || fleet.now - node.allocated_s > fleet.scheduling.maximum_startup_s {
+                if !timed_out
+                    && !slow
+                    && node.host.bytes_total > node.host.bytes_downloaded
+                    && matches!(
+                        node.host.phase,
+                        StartupPhase::Hydrating | StartupPhase::Initializing
+                    )
+                    && fleet
+                        .scheduling
+                        .probe
+                        .due(fleet.now, node.host.probe_attempted_s)
+                    && !node.host.probe_pending
+                {
+                    world.actions.push(Action::ProbeHost { node: id });
+                }
+                if slow || timed_out {
                     node.ended_s = Some(fleet.now);
                     world.actions.push(Action::Release { node: id });
                     self.cancellations += 1;
@@ -207,6 +220,7 @@ impl SchedulerWorld<'_> {
                 bytes_downloaded: 0,
                 bytes_total: 0,
                 probe_pending: false,
+                probe_attempted_s: None,
                 probe: None,
             },
         });
@@ -228,6 +242,8 @@ mod observation_tests {
         };
         let mut probe = HostProbe {
             at_s: 1.0,
+            started_s: 0.0,
+            received_bytes: 200,
             volume_bytes_per_s: 200.0,
             hydration_bytes: 1000,
             image_cached: None,

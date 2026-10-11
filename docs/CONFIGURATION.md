@@ -53,7 +53,7 @@ A profile's `host` supplies a discrete `volume_bandwidth_bytes_per_s` distributi
 
 Host byte sizes represent additional hydration beyond the configured baseline. Keep them zero when an end-to-end startup sample already describes the environment being replayed. To construct a component model of downloads, exclude those downloads from the fixed component times. The configuration cannot detect duplicated calibration costs.
 
-The provider reports booting, hydrating, initializing, ready, or ended phases. Download progress becomes visible after the fixed boot/setup phase, which this approximation places at one quarter of the startup baseline. A probe takes configured virtual time and reports a noisy bandwidth measurement plus discovered cache state. The shared observation permits an unknown image-cache result (`null`); a controller retains its prior when a backend cannot observe that field. Simulator probes report the sampled cache state. The actual future readiness timestamp is not published before readiness. Cancelled hosts do not later publish pending probe results.
+The provider reports booting, hydrating, initializing, ready, or ended phases. Download progress becomes visible after the fixed boot/setup phase, which this approximation places at one quarter of the startup baseline. A simulator probe consumes at least `host.probe_duration_s` and the configured minimum measurement window; its duration can increase to collect the required payload, bounded by the maximum window for that extension. Completion publishes a noisy sample only if it qualifies under `scheduling.probe`. The shared observation permits an unknown image-cache result (`null`); a controller retains its prior when a backend cannot observe that field. Simulator probes report the sampled cache state. The actual future readiness timestamp is not published before readiness. Cancelled hosts do not later publish pending probe results.
 
 ## Workload traces
 
@@ -73,7 +73,35 @@ The generic provider interface does not autonomously provision or release extern
 
 `Scheduling` controls planning cadence, reactive drain targets, minimum planning windows, reserved warm slots, priority aging, output-estimate floors, slow-start cancellation thresholds, retry cooldown, learning rate, and whether queued requests may overtake a memory-blocked request. Reactive delay and idle retention belong to the enclosing scenario or HTTP environment. The `classes` map defines priority (smaller values first), relative warm-node service weight, permission to use reserved warm slots, and eligibility for planning announced future work. Classes are scheduling controls rather than application roles.
 
-The adaptive controller records each completed cold-host probe once and updates profile bandwidth, hydration bytes, and cache-hit estimates with an exponentially weighted moving average. Its configurable `learning_rate` is the weight of a new observation. These estimates influence later startup forecasts; a slow host can also trigger cancellation and profile cooldown. This is a baseline learning heuristic, and cannot promise optimal placement when a profile contains several very different host populations.
+The adaptive controller learns each fresh, qualified host sample once and updates profile bandwidth, hydration bytes, and cache-hit estimates with an exponentially weighted moving average. Its configurable `learning_rate` is the weight of a new observation. A later sample from the same host can update the estimates again; repeated controller ticks cannot relearn that sample. These estimates influence later startup forecasts. Rate-based cancellation requires a fresh sample and remaining transfer bytes, while the startup deadline applies independently. This is a baseline learning heuristic, and cannot promise optimal placement when a profile contains several very different host populations.
+
+`scheduling.probe` controls sample qualification and refresh in live deployments, simulator traces, and HTTP environments:
+
+| Field | Default | Meaning |
+| --- | ---: | --- |
+| `minimum_window_s` | `2.0` | Shortest accepted received-byte measurement window |
+| `maximum_window_s` | `30.0` | Longest accepted window and retained counter history |
+| `minimum_received_bytes` | `8388608` | Minimum new received bytes in an accepted window (8 MiB) |
+| `reprobe_interval_s` | `2.0` | Minimum time between explicit attempts on one host |
+| `maximum_age_s` | `10.0` | Maximum sample endpoint age for learning or rate-based cancellation |
+
+All time fields must be finite and positive, `minimum_window_s` must not exceed `maximum_window_s`, `reprobe_interval_s` must not exceed `maximum_age_s`, and `minimum_received_bytes` must be positive. Unknown fields are rejected. For example, an explicit default policy is:
+
+```json
+{
+  "scheduling": {
+    "probe": {
+      "minimum_window_s": 2.0,
+      "maximum_window_s": 30.0,
+      "minimum_received_bytes": 8388608,
+      "reprobe_interval_s": 2.0,
+      "maximum_age_s": 10.0
+    }
+  }
+}
+```
+
+The [host probe contract](HOST-PROBES.md) defines matching counters, sample freshness, cancellation rules, and the simulator's active measurement approximation.
 
 ## Live scheduling configuration
 

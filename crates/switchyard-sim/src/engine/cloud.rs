@@ -169,9 +169,9 @@ impl CloudSimulator {
         if node.host.probe_pending {
             return Err("busy: probe pending".into());
         }
-        node.host.probe_pending = true;
-        let done = sim.now + node.host.probe_duration_s;
-        sim.push(done, EventKind::ProbeDone(id));
+        if !sim.start_probe(id) {
+            return Err("busy: host probe refresh interval has not elapsed".into());
+        }
         Ok(())
     }
 

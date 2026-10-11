@@ -420,6 +420,36 @@ fn live_configuration_reuses_generic_scheduling_validation() {
             scheduling.classes.get_mut("standard").unwrap().weight = 0.0;
             scheduling
         },
+        {
+            let mut s = Scheduling::default();
+            s.probe.minimum_received_bytes = 0;
+            s
+        },
+        {
+            let mut s = Scheduling::default();
+            s.probe.minimum_window_s = f64::NAN;
+            s
+        },
+        {
+            let mut s = Scheduling::default();
+            s.probe.maximum_window_s = 1.0;
+            s
+        },
+        {
+            let mut s = Scheduling::default();
+            s.probe.reprobe_interval_s = 0.0;
+            s
+        },
+        {
+            let mut s = Scheduling::default();
+            s.probe.maximum_age_s = f64::INFINITY;
+            s
+        },
+        {
+            let mut s = Scheduling::default();
+            s.probe.reprobe_interval_s = 11.0;
+            s
+        },
     ];
     for scheduling in invalid {
         let expected = validate_scheduling(&scheduling).unwrap_err();

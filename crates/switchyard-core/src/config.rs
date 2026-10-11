@@ -345,6 +345,41 @@ pub struct Scheduling {
     pub minimum_hydration_bytes_per_s: f64,
     pub maximum_startup_s: f64,
     pub retry_cooldown_s: f64,
+    /// Required bandwidth evidence and refresh cadence for host observations.
+    pub probe: ProbePolicy,
+}
+
+/// Qualification and refresh controls shared by live and simulated host probes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ProbePolicy {
+    /// Shortest accepted received-byte measurement window, in seconds.
+    pub minimum_window_s: f64,
+    /// Longest accepted measurement window and retained counter history.
+    pub maximum_window_s: f64,
+    /// Minimum new received bytes in an accepted measurement window.
+    pub minimum_received_bytes: u64,
+    /// Minimum elapsed time between explicit probe attempts on one host.
+    pub reprobe_interval_s: f64,
+    /// Maximum age of a sample endpoint for learning or slow-start cancellation.
+    pub maximum_age_s: f64,
+}
+impl Default for ProbePolicy {
+    fn default() -> Self {
+        Self {
+            minimum_window_s: 2.0,
+            maximum_window_s: 30.0,
+            minimum_received_bytes: 8 * 1024 * 1024,
+            reprobe_interval_s: 2.0,
+            maximum_age_s: 10.0,
+        }
+    }
+}
+impl ProbePolicy {
+    pub fn due(&self, now: f64, attempted_s: Option<f64>) -> bool {
+        now.is_finite()
+            && attempted_s.is_none_or(|at| at.is_finite() && now - at >= self.reprobe_interval_s)
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -401,6 +436,7 @@ impl Default for Scheduling {
             minimum_hydration_bytes_per_s: 25_000_000.0,
             maximum_startup_s: 180.0,
             retry_cooldown_s: 60.0,
+            probe: ProbePolicy::default(),
         }
     }
 }
@@ -577,6 +613,21 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
 
 /// Validate controller settings independently of a trace or execution backend.
 pub fn validate_scheduling(s: &Scheduling) -> Result<(), String> {
+    let p = &s.probe;
+    if [
+        p.minimum_window_s,
+        p.maximum_window_s,
+        p.reprobe_interval_s,
+        p.maximum_age_s,
+    ]
+    .iter()
+    .any(|v| !v.is_finite() || *v <= 0.0)
+        || p.minimum_window_s > p.maximum_window_s
+        || p.reprobe_interval_s > p.maximum_age_s
+        || p.minimum_received_bytes == 0
+    {
+        return Err("invalid host probe policy".into());
+    }
     if !s.learning_rate.is_finite()
         || !(0.0..=1.0).contains(&s.learning_rate)
         || s.learning_rate == 0.0

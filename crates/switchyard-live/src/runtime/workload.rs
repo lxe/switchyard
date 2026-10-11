@@ -179,6 +179,7 @@ impl<P: Provider> LiveRuntime<P> {
                 self.observe().await?;
                 next_observation = self.now() + 1.0;
             }
+            let now = self.now();
             let allow_scale = now - last_scale >= self.scheduling.plan_interval_s;
             if allow_scale {
                 last_scale = now;

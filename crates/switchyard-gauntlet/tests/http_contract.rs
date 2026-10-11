@@ -7,6 +7,7 @@ use futures_util::StreamExt;
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::time::Duration;
+use switchyard_gauntlet::CloudConfig;
 use switchyard_gauntlet::engine::CloudSimulator;
 use switchyard_gauntlet::http::router;
 use switchyard_gauntlet::{CapacityPoint, HostProfile, Profile, Startup, Workload};
@@ -60,8 +61,10 @@ fn api_with(profile: Profile) -> Router {
 }
 
 fn api_with_profiles(profiles: Vec<Profile>) -> Router {
+    let mut config = CloudConfig::default();
+    config.scheduling.probe.minimum_window_s = 1.0;
     router(Arc::new(Mutex::new(
-        CloudSimulator::new(profiles, 7).unwrap(),
+        CloudSimulator::with_config(profiles, config, 7).unwrap(),
     )))
 }
 
@@ -421,7 +424,22 @@ async fn probe_result_is_visible_only_after_its_completion_time() {
     assert_eq!(after.body["host"]["probe_pending"], false);
     assert!(after.body["host"]["probe"].is_object());
     assert_eq!(after.body["host"]["probe"]["at_s"], 2.0);
+    assert_eq!(after.body["host"]["probe"]["started_s"], 1.0);
+    assert!(
+        after.body["host"]["probe"]["received_bytes"]
+            .as_u64()
+            .unwrap()
+            >= 8 * 1024 * 1024
+    );
     assert_eq!(after.body["ready_at_s"], Value::Null);
+    let too_soon = call(&app, "POST", &format!("{path}/probes"), None).await;
+    assert_error(&too_soon, StatusCode::CONFLICT, "conflict");
+    advance(&app, 1.0).await;
+    let refresh = call(&app, "POST", &format!("{path}/probes"), None).await;
+    assert_eq!(refresh.status, StatusCode::ACCEPTED);
+    advance(&app, 1.0).await;
+    let refreshed = call(&app, "GET", &path, None).await;
+    assert_eq!(refreshed.body["host"]["probe"]["at_s"], 4.0);
 }
 
 #[tokio::test]

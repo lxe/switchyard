@@ -699,7 +699,10 @@ async fn single_call_does_not_duplicate_cold_capacity_and_hot_burst_conserves_us
     }));
     let observations = std::fs::read_to_string(out.join("agent-observations.ndjson")).unwrap();
     assert!(observations.lines().all(|line| {
-        serde_json::from_str::<serde_json::Value>(line).unwrap()["state"].is_object()
+        let observation = serde_json::from_str::<serde_json::Value>(line).unwrap();
+        observation["state"].is_object()
+            && observation["start_s"].as_f64().unwrap() <= observation["finish_s"].as_f64().unwrap()
+            && observation["finish_s"] == observation["at_s"]
     }));
     assert!(!out.join("agent-observations.json").exists());
     runtime.set_policy(Policy::WarmOnly);

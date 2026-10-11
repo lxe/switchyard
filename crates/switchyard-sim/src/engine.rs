@@ -169,6 +169,8 @@ struct HostState {
     probe_duration_s: f64,
     noise: f64,
     probe_pending: bool,
+    probe_attempted_s: Option<f64>,
+    probe_window: switchyard_core::probe::BandwidthWindow,
     probe: Option<HostProbe>,
 }
 
@@ -388,15 +390,36 @@ impl Simulation {
                         let node = &mut self.nodes[id];
                         node.host.probe_pending = false;
                         if node.ended_s.is_none() {
-                            node.host.probe = Some(HostProbe {
-                                at_s: self.now,
-                                volume_bytes_per_s: node.host.bandwidth
-                                    * (1.0
-                                        + (self.probe_random.unit() * 2.0 - 1.0) * node.host.noise),
-                                image_cached: Some(node.host.image_cached),
-                                model_cached: node.host.model_cached,
-                                hydration_bytes: node.host.bytes,
-                            });
+                            let duration =
+                                self.now - node.host.probe_attempted_s.expect("started probe");
+                            let received = (duration
+                                * node.host.bandwidth
+                                * (1.0 + (self.probe_random.unit() * 2.0 - 1.0) * node.host.noise))
+                                as u64;
+                            node.host.probe_window.record(
+                                self.now,
+                                vec![switchyard_core::probe::TransferCounter {
+                                    source: "simulated-active-probe".into(),
+                                    total_bytes: 0,
+                                    received_bytes: received,
+                                }],
+                                &self.scenario.scheduling.probe,
+                            );
+                            if let Some(sample) = node
+                                .host
+                                .probe_window
+                                .qualify(&self.scenario.scheduling.probe)
+                            {
+                                node.host.probe = Some(HostProbe {
+                                    at_s: sample.at_s,
+                                    started_s: sample.started_s,
+                                    received_bytes: sample.received_bytes,
+                                    volume_bytes_per_s: sample.bytes_per_s,
+                                    image_cached: Some(node.host.image_cached),
+                                    model_cached: node.host.model_cached,
+                                    hydration_bytes: node.host.bytes,
+                                });
+                            }
                         }
                     }
                     EventKind::Tick => {
@@ -502,6 +525,8 @@ impl Simulation {
                 probe_duration_s: reality.probe_duration_s,
                 noise: reality.measurement_noise,
                 probe_pending: false,
+                probe_attempted_s: None,
+                probe_window: switchyard_core::probe::BandwidthWindow::default(),
                 probe: None,
             },
         });
@@ -596,6 +621,7 @@ impl Simulation {
                     let rate = host
                         .probe
                         .as_ref()
+                        .filter(|probe| probe.fresh(self.now, &self.scenario.scheduling.probe))
                         .map_or(p.host.volume_bandwidth_bytes_per_s[0], |probe| {
                             probe.volume_bytes_per_s
                         });
@@ -672,28 +698,46 @@ impl Simulation {
                     node,
                     service_weight,
                 } => self.admit(request, node, service_weight),
-                Action::ProbeHost { node } => {
-                    if let Some(n) = self.nodes.get_mut(node) {
-                        if n.ended_s.is_none()
-                            && !n.host.probe_pending
-                            && self.now >= n.host.setup_until_s
-                        {
-                            n.host.probe_pending = true;
-                            let done = self.now + n.host.probe_duration_s;
-                            self.push(done, EventKind::ProbeDone(node));
-                            true
-                        } else {
-                            false
-                        }
-                    } else {
-                        false
-                    }
-                }
+                Action::ProbeHost { node } => self.start_probe(node),
             };
             if !valid {
                 self.invalid_decisions += 1;
             }
         }
+    }
+
+    fn start_probe(&mut self, id: usize) -> bool {
+        let Some(node) = self.nodes.get_mut(id) else {
+            return false;
+        };
+        let policy = &self.scenario.scheduling.probe;
+        if node.ended_s.is_some()
+            || node.host.probe_pending
+            || self.now < node.host.setup_until_s
+            || !policy.due(self.now, node.host.probe_attempted_s)
+        {
+            return false;
+        }
+        node.host.probe_pending = true;
+        node.host.probe_attempted_s = Some(self.now);
+        node.host.probe_window = switchyard_core::probe::BandwidthWindow::default();
+        node.host.probe_window.record(
+            self.now,
+            vec![switchyard_core::probe::TransferCounter {
+                source: "simulated-active-probe".into(),
+                total_bytes: 0,
+                received_bytes: 0,
+            }],
+            policy,
+        );
+        // The existing synthetic active probe must now measure enough time and
+        // payload. Very slow hosts finish an unqualified bounded measurement.
+        let duration = node.host.probe_duration_s.max(policy.minimum_window_s).max(
+            (policy.minimum_received_bytes as f64 / node.host.bandwidth)
+                .min(policy.maximum_window_s),
+        );
+        self.push(self.now + duration, EventKind::ProbeDone(id));
+        true
     }
 
     fn host_observation(&self, n: &Node) -> HostObservation {
@@ -719,6 +763,7 @@ impl Simulation {
                 0
             },
             probe_pending: n.host.probe_pending,
+            probe_attempted_s: n.host.probe_attempted_s,
             probe: n.host.probe.clone(),
         }
     }

@@ -116,11 +116,31 @@ pub enum StartupPhase {
 #[derive(Debug, Clone, Serialize)]
 pub struct HostProbe {
     pub at_s: f64,
+    pub started_s: f64,
+    pub received_bytes: u64,
     pub volume_bytes_per_s: f64,
     /// None means the provider or probe cannot observe container-image cache status.
     pub image_cached: Option<bool>,
     pub model_cached: bool,
     pub hydration_bytes: u64,
+}
+impl HostProbe {
+    pub fn fresh(&self, now: f64, policy: &ProbePolicy) -> bool {
+        let window = self.at_s - self.started_s;
+        self.at_s.is_finite()
+            && self.started_s.is_finite()
+            && self.started_s >= 0.0
+            && now.is_finite()
+            && now >= self.at_s
+            && now - self.at_s <= policy.maximum_age_s
+            && window >= policy.minimum_window_s
+            && window <= policy.maximum_window_s
+            && self.received_bytes >= policy.minimum_received_bytes
+            && self.volume_bytes_per_s.is_finite()
+            && self.volume_bytes_per_s > 0.0
+            && (self.volume_bytes_per_s - self.received_bytes as f64 / window).abs()
+                <= self.volume_bytes_per_s * 1e-9
+    }
 }
 #[derive(Debug, Clone, Serialize)]
 pub struct HostObservation {
@@ -128,6 +148,7 @@ pub struct HostObservation {
     pub bytes_downloaded: u64,
     pub bytes_total: u64,
     pub probe_pending: bool,
+    pub probe_attempted_s: Option<f64>,
     pub probe: Option<HostProbe>,
 }
 

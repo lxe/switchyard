@@ -278,7 +278,14 @@ fn noisy_probes_do_not_change_future_host_samples_or_readiness() {
             probe_duration_s: 0.1,
             measurement_noise: noise,
         };
-        let mut cloud = CloudSimulator::new(vec![profile], 19).unwrap();
+        let mut config = CloudConfig::default();
+        config.scheduling.probe = ProbePolicy {
+            minimum_window_s: 0.09,
+            minimum_received_bytes: 1,
+            reprobe_interval_s: 0.1,
+            ..ProbePolicy::default()
+        };
+        let mut cloud = CloudSimulator::with_config(vec![profile], config, 19).unwrap();
         let first = cloud.provision("analytical-gpu").unwrap();
         cloud.advance(0.5).unwrap();
         for _ in 0..5 {
