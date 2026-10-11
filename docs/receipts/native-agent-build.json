@@ -1,0 +1,20 @@
+{
+  "format": "switchyard-agent-build-evidence-v1",
+  "source_commit": "316716ca5c2649b16b6a58758b869d9e1d26f8d9",
+  "agent_source_last_commit": "af27c412034f17ab7a57a9d9fe0f4ee9082c250f",
+  "built_at_utc": "2026-10-11T23:00:28.127328+00:00",
+  "builder_image": "rust:1.98.1-alpine@sha256:7cc1c22d77d9432f7fe012a70e6d3e555af54c2a6832700ed7d553f1769ae89f",
+  "target": "x86_64-unknown-linux-musl",
+  "binary": "switchyard-agent-x86_64-linux-musl",
+  "binary_bytes": 13614880,
+  "binary_sha256": "8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f",
+  "linkage": "static-pie",
+  "cargo_command": "cargo build --locked --release -p switchyard-agent --target x86_64-unknown-linux-musl",
+  "build_limits": {
+    "cpu_count": 2,
+    "memory_bytes": 4294967296,
+    "swap_bytes": 0
+  },
+  "download_concurrency": "deployment selects twenty shared permits",
+  "scope": "Agent bootstrap artifact only; native engine/GPU caches and full cloud gauntlet acceptance are separate. Rebuild reused existing locked compiler cache and produced the same binary hash as the measured native baseline agent."
+}

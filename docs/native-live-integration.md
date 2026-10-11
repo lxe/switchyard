@@ -8,6 +8,8 @@ A model selects `engine.kind: native`, `dtype: bf16` or `f32`, `language_model_o
 
 The runtime must pin its `engine_sha256`. The adapter serializes the fixed serving configuration into `--config-json` and sets the endpoint bind address to `127.0.0.1:8000`, behind the authenticated agent proxy. The native CLI accepts exactly one configuration source: inline JSON or a configuration file. It consumes prepared dense safetensors archives; the vLLM extent layout is rejected for native models.
 
+The public [agent-v0.5.0-rc.3 bootstrap binary](https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.3/switchyard-agent-x86_64-linux-musl) is statically linked for x86_64 musl. Its rebuilt SHA-256 is `8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f`, matching both the GitHub asset digest and a downloaded copy. The [build receipt](receipts/native-agent-build.json) pins the source and builder. A fleet configuration can retain this URL and hash without embedding an expiring storage capability. The release covers the agent; native runtime, cache and fleet acceptance remain separate artifacts.
+
 Cache preparation and reuse retain the generic cache requirements: runtime identity, model revision/repository/archive identity, engine configuration fingerprint, runtime launch fingerprint, and GPU name. Native artifacts add the exact binary, CUDA build, GPU architecture, driver, and bake configuration labels. Changing a required label demands a compatible published artifact; the adapter does not bypass these checks.
 
 Cache publishers can derive these generic labels offline using the same Rust implementation as cache reuse:
