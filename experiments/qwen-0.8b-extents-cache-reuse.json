@@ -1,0 +1,221 @@
+{
+  "scope": "Native Torch AOT and FlashInfer JIT-disabled cache-reuse smoke test for the raw-extent 0.8B fleet. This is 34 calls, not the full scheduler gauntlet.",
+  "configuration": "configs/runpod/preparation/qwen-0.8b-extents-reuse.json",
+  "workload": "configs/runpod/smoke.json",
+  "controller_source": "2fff830",
+  "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+  "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+  "model_artifact": {
+    "kind": "extents",
+    "prefix": "switchyard/weights/qwen3.5-0.8b/header-first-v1/0222a31a9a1b9c24724718965056f13d3196aff4c9175fe58c281ef4677f839a",
+    "id": "0222a31a9a1b9c24724718965056f13d3196aff4c9175fe58c281ef4677f839a",
+    "content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+    "loader": {
+      "python_program": "venv/bin/python",
+      "cuda_stage": true,
+      "pinned_bytes": 16777216
+    }
+  },
+  "cache": {
+    "name": "compiled",
+    "gpu": "NVIDIA L40S",
+    "artifact": {
+      "id": "792688c5aab3f534f5cf9f4f36f8cb250a7e0a5b22863fea1cd05d0b9e746d17",
+      "prefix": "switchyard/gauntlet/extents/cache/792688c5aab3f534f5cf9f4f36f8cb250a7e0a5b22863fea1cd05d0b9e746d17"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "engine_arguments": "474101343f11a1f7fb39ce4881366adf7bd4c8941bdfc324034d789f7f94e693",
+      "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+      "gpu": "NVIDIA L40S",
+      "gpu_compute_capability": "8.9",
+      "model_content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+      "model_repository": "Qwen/Qwen3.5-0.8B",
+      "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+      "runtime_launch_configuration": "fbad7e2562be8ae0a248140137f04d0a9ad24c326ca0c76dcb22e54d27528d84",
+      "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
+    }
+  },
+  "source_cache_id": "92cfb6239dea59dc41b3421c5d64dc98dbd15ab4b0f94dbdbb9e57bbe5a4511b",
+  "sampling_provider_shim_sha256": "314d97ea8c3d288d0afce09e9f3dc823a83d4a219c02b85097de71ee143cf0fb",
+  "enforced_runtime_environment": {
+    "VLLM_FORCE_AOT_LOAD": "1",
+    "FLASHINFER_DISABLE_JIT": "1",
+    "FLASHINFER_NO_DOWNLOAD": "1",
+    "PYTHONPATH": "{cache_root}/compiled/sampling-provider"
+  },
+  "verification": "The serving process completed all calls with native AOT loading required and JIT disabled. Original cache entries were checked offline before publication. Native memory-plan acceptance was not observed; no inference about that optimization is made.",
+  "workloads": [
+    {
+      "name": "cold-single",
+      "policy": "adaptive",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 32,
+      "output_tokens_per_s": 0.4725525552303965,
+      "ttft_p50_s": 67.65520038999999,
+      "ttft_p95_s": 67.65520038999999,
+      "response_p95_s": 67.70922201399999,
+      "elapsed_s": 67.71733566099999,
+      "launches": 1,
+      "probes": 1,
+      "releases": 0,
+      "invalid_actions": 0
+    },
+    {
+      "name": "hot-single",
+      "policy": "warm_only",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 32,
+      "output_tokens_per_s": 80.87879113362298,
+      "ttft_p50_s": 0.18632745799999384,
+      "ttft_p95_s": 0.18632745799999384,
+      "response_p95_s": 0.2964114220000056,
+      "elapsed_s": 0.39565378700000053,
+      "launches": 0,
+      "probes": 0,
+      "releases": 0,
+      "invalid_actions": 0
+    },
+    {
+      "name": "hot-burst-32",
+      "policy": "adaptive",
+      "requests": 32,
+      "completed": 32,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 835,
+      "output_tokens_per_s": 1012.7617342006952,
+      "ttft_p50_s": 0.5263647040000023,
+      "ttft_p95_s": 0.6379912230000002,
+      "response_p95_s": 0.7231629119999923,
+      "elapsed_s": 0.8244782280000038,
+      "launches": 0,
+      "probes": 0,
+      "releases": 0,
+      "invalid_actions": 0
+    }
+  ],
+  "probe_records": [
+    {
+      "artifact_bytes_received": 5432616775,
+      "artifact_bytes_total": 5438607373,
+      "at_s": 37.557309311,
+      "model_bytes_received": 1769980465,
+      "model_bytes_total": 1769980465,
+      "node": 0,
+      "phase": "hydrating",
+      "rate_bytes_per_s": 189348089.23629615
+    }
+  ],
+  "telemetry": [
+    "agent-observations.ndjson",
+    "host-probes.ndjson",
+    "scheduler-decisions.ndjson"
+  ],
+  "estimated_rental_usd": 0.020465823345589728,
+  "cleanup": {
+    "all_absent": true,
+    "http_status": 404,
+    "allocations": 1
+  },
+  "timing_scope": "TTFT is controller request submission to first useful content and includes provisioning for the cold call. Startup milestones use the separate agent epoch. This single-host smoke test does not establish a causal optimization speedup.",
+  "startup_milestones": [
+    {
+      "elapsed_s": 1.843079133,
+      "event": "model_hydration_started"
+    },
+    {
+      "elapsed_s": 1.869308346,
+      "event": "runtime_hydration_started"
+    },
+    {
+      "elapsed_s": 3.097891069,
+      "event": "model_metadata_ready"
+    },
+    {
+      "elapsed_s": 10.882072073,
+      "event": "model_hydration_finished"
+    },
+    {
+      "elapsed_s": 31.607629552,
+      "event": "runtime_hydration_finished"
+    },
+    {
+      "elapsed_s": 31.608722451,
+      "event": "engine_spawned"
+    },
+    {
+      "elapsed_s": 52.50142509,
+      "event": "tensor_loading_finished"
+    },
+    {
+      "elapsed_s": 59.564215015,
+      "event": "inference_verified"
+    }
+  ],
+  "weight_loading": {
+    "assignment_complete_seconds": 52.501232957,
+    "bytes_delivered": 1746882752,
+    "first_tensor_seconds": 52.25454656,
+    "gpu": {
+      "bytes": 1746882752,
+      "copies": 488,
+      "dma_seconds": 0.0716382079650648,
+      "first_copy_finished_seconds": 52.254996398463845,
+      "last_copy_finished_seconds": 52.49893444869667,
+      "staging_seconds": 0.05051432270556688
+    },
+    "tensors_delivered": 488
+  },
+  "artifact_reception": [
+    {
+      "name": "runtime",
+      "compressed_bytes": 5432616775,
+      "reception": {
+        "buffer_high_water_bytes": 2057174605,
+        "buffered_bytes": 0,
+        "compressed_consumed_bytes": 5432616775,
+        "consumer_wait_seconds": 16.43063833,
+        "decoded_bytes": 20276901888,
+        "extraction_complete_seconds": 25.618384718,
+        "file_written_bytes": 20031196806,
+        "network_received_bytes": 5432616775,
+        "receiver_body_wait_seconds": 239.17458514,
+        "receiver_storage_write_seconds": 13.869493173,
+        "reception_complete_seconds": 20.668808758,
+        "reclaimed_bytes": 5432868864,
+        "reservation_seconds": 0.573688284,
+        "reserved_bytes": 5432868864,
+        "storage_written_bytes": 5432616775
+      }
+    },
+    {
+      "name": "compiled",
+      "compressed_bytes": 5990598,
+      "reception": {
+        "buffer_high_water_bytes": 3369128,
+        "buffered_bytes": 0,
+        "compressed_consumed_bytes": 5990598,
+        "consumer_wait_seconds": 0.272775068,
+        "decoded_bytes": 113315840,
+        "extraction_complete_seconds": 0.57112262,
+        "file_written_bytes": 111574792,
+        "network_received_bytes": 5990598,
+        "receiver_body_wait_seconds": 0.374611595,
+        "receiver_storage_write_seconds": 0.007053906,
+        "reception_complete_seconds": 0.398623476,
+        "reclaimed_bytes": 5992448,
+        "reservation_seconds": 0.01097982,
+        "reserved_bytes": 5992448,
+        "storage_written_bytes": 5990598
+      }
+    }
+  ]
+}

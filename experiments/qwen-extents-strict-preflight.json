@@ -1,0 +1,38 @@
+{
+  "scope": "Read-only preflight for the three-model raw-extent native-AOT fleet. All model-specific strict caches have separate fresh 34-call smoke receipts; this preflight does not provision or establish full scheduler gauntlet acceptance.",
+  "configuration": "configs/runpod/qwen-extents-l40s-strict.json",
+  "artifact_checks": {
+    "checks": [
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-0.8b"
+      },
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-2b"
+      },
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-4b"
+      }
+    ],
+    "provisioned": false
+  },
+  "offers": [
+    {
+      "gpu": "NVIDIA L40S",
+      "gpu_memory_gb": 48,
+      "data_center": "US-MO-1",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 1.09,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791699255
+    }
+  ],
+  "native_reuse_receipts": [
+    "experiments/qwen-0.8b-extents-cache-reuse.json",
+    "experiments/qwen-2b-extents-cache-reuse.json",
+    "experiments/qwen-4b-extents-cache-reuse.json"
+  ],
+  "prior_scope": "Serving-capacity priors transfer conservatively from the earlier matched full-runtime archive comparison. Raw-extent smoke timings are not isolated prefill or saturation calibration. Startup decomposition, network capacity, prefill factor and KV admission remain labeled assumptions."
+}

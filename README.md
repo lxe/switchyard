@@ -100,7 +100,7 @@ Use `--workspace` to include every package's tests. The `bench` command measures
 
 The optional `live` feature adds production adapters to the CLI. The simulator and scheduler libraries build independently of those integrations.
 
-The [RunPod fleet recipe](configs/runpod) pins Qwen3.5 0.8B, 2B, and 4B, model archives, the serving image, engine arguments, allowed hardware, budgets, and workload definitions. Runtime and storage credentials stay in environment variables or local ignored files.
+The [RunPod fleet recipes](configs/runpod) pin Qwen3.5 0.8B, 2B, and 4B, model artifacts, the serving image, engine arguments, allowed hardware, budgets, and workload definitions. The raw-extent recipe hydrates weights, a serving runtime, and model-specific compiler caches separately. [Runtime preparation](docs/serving-runtime-preparation.md) describes native AOT reuse and compatibility; [engine comparison](docs/serving-engine-comparison.md) records measured vLLM and SGLang tradeoffs. Runtime and storage credentials stay in environment variables or local ignored files.
 
 ```sh
 cargo run --locked --features live -- live check --env-file /path/to/credentials.env
