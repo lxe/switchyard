@@ -62,7 +62,24 @@ async fn readiness_requires_tokenization_and_decoding_after_health() {
                 .status()
                 .is_success()
         );
-        let result = readiness::verify(&client, &base, "test-model").await;
+        let observed = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let result = readiness::verify_observed(&client, &base, "test-model", |event| {
+            observed
+                .lock()
+                .unwrap()
+                .push(serde_json::to_value(event).unwrap());
+            async {}
+        })
+        .await;
+        assert_eq!(
+            *observed.lock().unwrap(),
+            vec![
+                serde_json::json!("tokenization_started"),
+                serde_json::json!("tokenization_response_received"),
+                serde_json::json!("first_decode_started"),
+                serde_json::json!("first_decode_response_received"),
+            ]
+        );
         assert_eq!(result.is_ok(), should_pass);
         if let Err(error) = result {
             assert!(!error.to_string().contains("secret-upstream-output"));

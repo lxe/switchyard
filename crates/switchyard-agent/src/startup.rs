@@ -59,6 +59,12 @@ pub enum StartupEvent {
     ModelHydrationFinished,
     EngineSpawned,
     ModelGateReleased,
+    EngineHealthPollingStarted,
+    EngineHealthReady,
+    TokenizationStarted,
+    TokenizationResponseReceived,
+    FirstDecodeStarted,
+    FirstDecodeResponseReceived,
     InferenceVerified,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]

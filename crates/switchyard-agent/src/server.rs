@@ -230,6 +230,12 @@ async fn run_engine(
         .timeout(Duration::from_secs(2))
         .build()
         .map_err(|_| Error::Transfer("health client initialization".into()))?;
+    crate::startup::milestone(
+        &state,
+        epoch,
+        crate::startup::StartupEvent::EngineHealthPollingStarted,
+    )
+    .await;
     loop {
         if process.child.try_wait()?.is_some() {
             return Err(Error::Transfer(
@@ -246,7 +252,17 @@ async fn run_engine(
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
-    readiness::verify(&client, "http://127.0.0.1:8000", &ticket.model).await?;
+    crate::startup::milestone(
+        &state,
+        epoch,
+        crate::startup::StartupEvent::EngineHealthReady,
+    )
+    .await;
+    readiness::verify_observed(&client, "http://127.0.0.1:8000", &ticket.model, |event| {
+        let state = state.clone();
+        async move { crate::startup::milestone(&state, epoch, event).await }
+    })
+    .await?;
     crate::startup::milestone(
         &state,
         epoch,

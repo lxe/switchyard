@@ -1,11 +1,26 @@
 //! Readiness requires tokenization and one decoded token after engine health succeeds.
-use crate::{Error, Result};
+use crate::{Error, Result, startup::StartupEvent};
 use futures_util::StreamExt;
 use serde_json::{Value, json};
 use std::time::Duration;
 
+#[cfg(test)]
 pub(super) async fn verify(client: &reqwest::Client, base: &str, model: &str) -> Result<()> {
+    verify_observed(client, base, model, |_| async {}).await
+}
+
+pub(super) async fn verify_observed<F, Fut>(
+    client: &reqwest::Client,
+    base: &str,
+    model: &str,
+    mut observe: F,
+) -> Result<()>
+where
+    F: FnMut(StartupEvent) -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
     let messages = json!([{"role":"user","content":"Reply with one word."}]);
+    observe(StartupEvent::TokenizationStarted).await;
     let tokenized = request(
         client,
         &format!("{base}/tokenize"),
@@ -15,6 +30,7 @@ pub(super) async fn verify(client: &reqwest::Client, base: &str, model: &str) ->
         }),
     )
     .await?;
+    observe(StartupEvent::TokenizationResponseReceived).await;
     if !tokenized
         .get("count")
         .and_then(Value::as_u64)
@@ -24,6 +40,7 @@ pub(super) async fn verify(client: &reqwest::Client, base: &str, model: &str) ->
             "engine readiness tokenization returned no tokens".into(),
         ));
     }
+    observe(StartupEvent::FirstDecodeStarted).await;
     let completion = request(
         client,
         &format!("{base}/v1/chat/completions"),
@@ -33,6 +50,7 @@ pub(super) async fn verify(client: &reqwest::Client, base: &str, model: &str) ->
         }),
     )
     .await?;
+    observe(StartupEvent::FirstDecodeResponseReceived).await;
     let usage = completion.get("usage");
     let prompt_tokens = usage
         .and_then(|u| u.get("prompt_tokens"))
