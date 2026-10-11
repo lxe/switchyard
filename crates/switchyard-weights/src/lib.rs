@@ -4,6 +4,14 @@ mod bridge;
 #[cfg(unix)]
 pub use bridge::{BridgeProgress, WeightBridge};
 
+#[cfg(target_os = "linux")]
+mod chunk_bridge;
+#[cfg(target_os = "linux")]
+pub use chunk_bridge::ChunkBridge;
+#[cfg(target_os = "linux")]
+mod reception;
+#[cfg(target_os = "linux")]
+pub use reception::{DeliveryBridge, WeightReception};
 mod packing;
 pub use packing::{pack_weights, priority_extents};
 #[cfg(target_os = "linux")]

@@ -23,7 +23,61 @@ pub fn pack_weights(
     if prefixes.is_empty() {
         return Err(Error::Invalid("missing safetensors checkpoint".into()));
     }
-    pack_extents_with_prefixes(source, output, metadata, extent_bytes, &prefixes)
+    // Bake source-to-final byte destinations into immutable artifact metadata.
+    // Only a completed final-state export may advertise final serving layout.
+    let mut provisional =
+        pack_extents_with_prefixes(source, output, metadata, extent_bytes, &prefixes)?;
+    if source.join("switchyard-final-state.json").is_file() {
+        let mut tensors = vec![];
+        for (entry, item) in provisional.entries.iter().enumerate() {
+            let Entry::File { path, size, .. } = item else {
+                continue;
+            };
+            if !path.ends_with(".safetensors") {
+                continue;
+            }
+            let mut input = File::open(source.join(path))?;
+            let mut length = [0; 8];
+            input.read_exact(&mut length)?;
+            let mut header = vec![0; u64::from_le_bytes(length) as usize];
+            input.read_exact(&mut header)?;
+            for t in super::parse_header(entry, *size, &header)? {
+                tensors.push(switchyard_artifacts::tensors::TensorDestination {
+                    stride: switchyard_artifacts::tensors::dense_stride(&t.shape)?,
+                    name: t.name,
+                    dtype: t.dtype,
+                    shape: t.shape,
+                    layout: "dense_c".into(),
+                    bytes: t.length,
+                    ranges: vec![switchyard_artifacts::tensors::DestinationRange {
+                        entry,
+                        source_offset: t.offset,
+                        destination_offset: 0,
+                        length: t.length,
+                    }],
+                });
+            }
+        }
+        let destinations = switchyard_artifacts::tensors::TensorManifest {
+            format: "switchyard-tensor-destinations-v1".into(),
+            worker: switchyard_artifacts::tensors::WorkerPartition {
+                rank: 0,
+                tensor_parallel_size: 1,
+                pipeline_parallel_size: 1,
+            },
+            tensors,
+        };
+        destinations.validate(&provisional.entries)?;
+        provisional.metadata.attributes.insert(
+            switchyard_artifacts::tensors::ATTRIBUTE.into(),
+            serde_json::to_string(&destinations)?,
+        );
+        // Objects are content addressed and reused. Only identities/metadata change.
+    }
+    provisional.content_id = provisional.content_identity()?;
+    provisional.id = provisional.identity()?;
+    provisional.validate()?;
+    Ok(provisional)
 }
 fn inspect(root: &Path, directory: &Path, prefixes: &mut BTreeMap<String, u64>) -> Result<()> {
     for child in fs::read_dir(directory)? {

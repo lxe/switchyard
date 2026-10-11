@@ -196,6 +196,7 @@ async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
                     python_program: "engine".into(),
                     cuda_stage: false,
                     pinned_bytes: 4096,
+                    buffers: Default::default(),
                 },
             },
         }),

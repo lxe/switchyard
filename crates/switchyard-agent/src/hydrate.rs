@@ -158,12 +158,20 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
             return Err(Error::Manifest("invalid extent transfer bounds".into()));
         }
         let metadata = crate::model::metadata_bytes(&artifact.manifest)?;
-        let reused = ticket.startup.mode == HydrationMode::TrustedStreaming
+        let bounded = artifact
+            .manifest
+            .metadata
+            .attributes
+            .contains_key(switchyard_artifacts::tensors::ATTRIBUTE);
+        let reused = !bounded
+            && ticket.startup.mode == HydrationMode::TrustedStreaming
             && switchyard_artifacts::extents::ExtentHydration::trusted_publication_reusable(
                 &artifact.manifest,
                 &root.join("model"),
             )?;
-        let model_required = if reused {
+        let model_required = if bounded {
+            loader.buffers.spool_bytes
+        } else if reused {
             0
         } else {
             artifact.manifest.total_bytes()?
@@ -175,7 +183,15 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
         crate::startup::check_capacity(
             &observation,
             ticket.startup.require_model_ram,
-            loader.pinned_bytes as u64 + (64 << 20),
+            if bounded {
+                loader.buffers.ram_bytes
+                    + loader.buffers.pinned_bytes as u64
+                    + (loader.buffers.download_concurrency * loader.buffers.download_buffer_bytes)
+                        as u64
+                    + (64 << 20)
+            } else {
+                loader.pinned_bytes as u64 + (64 << 20)
+            },
         )?;
         let mut state = state.write().await;
         state.model_storage = Some(observation);

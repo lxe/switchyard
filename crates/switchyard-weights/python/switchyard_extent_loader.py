@@ -218,6 +218,7 @@ def register():
             extra = dict(load_config.model_loader_extra_config)
             self.socket_path = extra.pop("socket_path")
             self.timeout = extra.pop("timeout_seconds", 120)
+            self.chunk_streaming = extra.pop("chunk_streaming", False)
             self.cuda_stage = extra.pop("cuda_stage", False)
             self.pinned_bytes = extra.pop("pinned_bytes", 16 * 1024 * 1024)
             # Let the pinned base class validate only its ordinary configuration.
@@ -228,6 +229,29 @@ def register():
             super().__init__(base_config)
             self.completed = None
             self.final_destinations = None
+
+        def load_model(self, vllm_config, model_config, prefix=""):
+            if not self.chunk_streaming:
+                return super().load_model(vllm_config, model_config, prefix)
+            # The baked final-state receipt is checked by load_weights before
+            # copying. Dense final weights already completed native post-load
+            # transformations; repeating them would violate their layout contract.
+            if model_config.quantization is not None or model_config.is_moe:
+                raise ValueError(
+                    "chunk final-state loading requires dense unquantized state"
+                )
+            from vllm.model_executor.model_loader.base_loader import (
+                set_default_torch_dtype,
+            )
+
+            load_device = (
+                vllm_config.load_config.device or vllm_config.device_config.device
+            )
+            with set_default_torch_dtype(model_config.dtype):
+                with torch.device(load_device):
+                    model = self.create_model(vllm_config, model_config, prefix)
+                self.load_weights(model, model_config)
+            return model.eval()
 
         def download_model(self, model_config):
             # All config/tokenizer metadata must already be complete and local.
@@ -293,28 +317,41 @@ def register():
                         "fixed serving profile requires final-state tensors"
                     )
 
-                if final:
+                if final and self.chunk_streaming:
+                    from switchyard_final_state import (
+                        native_state,
+                        validate_destinations,
+                    )
+                    from switchyard_chunk_loader import ChunkConsumer
+                    import json
 
-                    def iterator(destinations):
-                        self.final_destinations = destinations
-                        return self._get_weights_iterator(
-                            self.Source(
-                                model_or_path=model_config.model,
-                                revision=model_config.revision,
-                            )
-                        )
-
-                    receipt = load_final_state(model, model_config, iterator)
+                    receipt = json.loads(
+                        (Path(model_config.model) / RECEIPT).read_text()
+                    )
+                    state = validate_destinations(
+                        receipt,
+                        native_state(model),
+                        runtime_id=os.environ["SWITCHYARD_RUNTIME_ARTIFACT_ID"],
+                        model_class=type(model).__module__
+                        + "."
+                        + type(model).__qualname__,
+                    )
+                    ChunkConsumer(self.socket_path, state, timeout=self.timeout).load()
                     record(
                         policy,
                         "final_state_loaded",
                         tensors=receipt["tensor_count"],
                         bytes=receipt["tensor_bytes"],
                         hf_mapping_performed=False,
-                        direct_gpu_destinations=self.cuda_stage,
+                        direct_gpu_destinations=True,
+                        chunk_streaming=True,
                     )
-                else:
-                    super().load_weights(model, model_config)
+                    return
+                if final:
+                    raise ValueError(
+                        "final serving weights require bounded chunk delivery"
+                    )
+                super().load_weights(model, model_config)
                 # Preserve base model weight tracking. Consumers acknowledge only
                 # after model-specific assignment has returned and CUDA has settled.
                 if torch.cuda.is_available():

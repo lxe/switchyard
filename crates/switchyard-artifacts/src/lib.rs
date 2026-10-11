@@ -4,12 +4,16 @@
 //! [`Manifest`]. [`hydrate`] downloads verified chunks into a reusable cache,
 //! extracts into a private staging tree, verifies its entries, then publishes it
 //! by renaming the complete directory. Existing destinations are never overlaid.
+pub mod buffer_limits;
 pub mod extents;
 mod extract;
 mod hydrate;
 mod manifest;
 mod pack;
 mod paths;
+#[cfg(target_os = "linux")]
+pub mod range_stream;
+pub mod tensors;
 pub mod transport;
 mod verify;
 

@@ -12,11 +12,8 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use switchyard_artifacts::{
-    Entry,
-    extents::{ExtentHydration, ExtentOptions},
-};
-use switchyard_weights::{WeightBridge, write_vllm_bundle};
+use switchyard_artifacts::{Entry, extents::ExtentOptions};
+use switchyard_weights::{DeliveryBridge, WeightReception, write_vllm_bundle};
 use tokio::{
     io::AsyncWriteExt,
     process::Command,
@@ -26,7 +23,13 @@ use tokio::{
 mod ownership;
 use ownership::{Sidecar, sidecar};
 
-async fn metadata(h: &ExtentHydration, owner: Arc<Sidecar>) -> Result<()> {
+async fn metadata(h: &WeightReception, owner: Arc<Sidecar>) -> Result<()> {
+    if matches!(h, WeightReception::Bounded { .. }) {
+        return Ok(h.metadata(&owner.root.join("metadata")).await?);
+    }
+    let WeightReception::Persistent(h) = h else {
+        unreachable!()
+    };
     crate::model::metadata_bytes(h.manifest())?;
     for (index, entry) in h.manifest().entries.iter().enumerate() {
         match entry {
@@ -83,7 +86,7 @@ pub(super) async fn prepare(
     let owner = sidecar(&roots.models, &artifact.manifest.content_id, loader)?;
     let diagnostic = crate::transport::TransportDiagnostics::default();
     state.write().await.model_transport = Some(diagnostic.clone());
-    let hydration = Arc::new(ExtentHydration::prepare(
+    let hydration = Arc::new(WeightReception::prepare(
         artifact.clone(),
         &roots.models.join("model"),
         ExtentOptions {
@@ -96,6 +99,7 @@ pub(super) async fn prepare(
             request_timeout: Duration::from_secs(ticket.lifetime_s),
             ..ExtentOptions::default()
         },
+        loader.buffers.clone(),
     )?);
     let allocation = state.read().await.model_allocation.clone();
     let reused_model = state.read().await.model_cached;
@@ -128,7 +132,7 @@ pub(super) async fn prepare(
             .checked_add(metadata)
             .ok_or_else(|| Error::Manifest("model allocation overflow".into()))
     });
-    let bridge = WeightBridge::bind(&owner.root.join("weights.sock"))?;
+    let bridge = DeliveryBridge::bind(&owner.root.join("weights.sock"), &hydration)?;
     let (tx, mut rx) = watch::channel(None);
     let network = async {
         milestone(&state, epoch, StartupEvent::ModelHydrationStarted).await;
@@ -207,6 +211,7 @@ pub(super) async fn prepare(
                 "timeout_seconds": ticket.lifetime_s,
                 "cuda_stage": loader.cuda_stage,
                 "pinned_bytes": loader.pinned_bytes,
+                "chunk_streaming": matches!(&*hydration, WeightReception::Bounded {..}),
             });
             args.extend([
                 "--load-format".into(),

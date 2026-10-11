@@ -16,6 +16,12 @@ use tokio::{
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct BridgeProgress {
     pub tensors_delivered: usize,
+    #[serde(default)]
+    pub chunks_delivered: usize,
+    #[serde(default)]
+    pub chunks_consumed: usize,
+    #[serde(default)]
+    pub bytes_consumed: u64,
     pub bytes_delivered: u64,
     pub first_tensor_seconds: Option<f64>,
     pub assignment_complete_seconds: Option<f64>,

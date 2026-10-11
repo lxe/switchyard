@@ -24,6 +24,16 @@ enum Command {
         #[arg(long)]
         config: Option<PathBuf>,
     },
+    /// Stream bounded transient chunks to final tensor destinations.
+    Stream {
+        ticket: PathBuf,
+        destination: PathBuf,
+        socket: PathBuf,
+        #[arg(long)]
+        buffers: PathBuf,
+        #[arg(long, default_value_t = 120)]
+        timeout_seconds: u64,
+    },
     /// Create a raw extent manifest and content-addressed objects; no upload.
     Pack {
         source: PathBuf,
@@ -62,6 +72,38 @@ async fn execute() -> Result<()> {
                 None => Default::default(),
             };
             println!("{}", loader.identity()?);
+        }
+        Command::Stream {
+            ticket,
+            destination,
+            socket,
+            buffers,
+            timeout_seconds,
+        } => {
+            let ticket: ExtentTicket = serde_json::from_slice(&fs::read(ticket)?)?;
+            let limits = serde_json::from_slice(&fs::read(buffers)?)?;
+            let reception = switchyard_weights::WeightReception::prepare(
+                ticket,
+                &destination,
+                ExtentOptions {
+                    request_timeout: Duration::from_secs(timeout_seconds),
+                    ..Default::default()
+                },
+                limits,
+            )?;
+            fs::create_dir_all(destination.join("metadata"))?;
+            let bridge = switchyard_weights::DeliveryBridge::bind(&socket, &reception)?;
+            let epoch = Instant::now();
+            let metadata_root = destination.join("metadata");
+            let (_, _, report) = tokio::try_join!(
+                reception.run(),
+                reception.metadata(&metadata_root),
+                bridge.serve(&reception, epoch, || {}, |_| {})
+            )?;
+            println!(
+                "{}",
+                serde_json::json!({"event":"stream_complete","report":report,"progress":reception.progress()})
+            );
         }
         Command::Pack {
             source,
