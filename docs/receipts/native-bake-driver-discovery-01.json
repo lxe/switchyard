@@ -1,0 +1,100 @@
+{
+  "format": "switchyard-native-bake-driver-discovery-v1",
+  "recorded_utc": "2026-10-11T23:52:41.036634+00:00",
+  "allocation": "direct RunPod POST /pods from dedicated offline bake controller",
+  "inference_scheduler_used": false,
+  "pod": {
+    "id": "pr2fu7hf0w36vp",
+    "name": "switchyard-native-bake-9227027c840b",
+    "allocation_status": "RUNNING",
+    "cost": 0.89,
+    "dataCenterId": "EU-RO-1",
+    "cudaVersion": "13.0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-638bbf1b-ac43-4f83-2b41-811f924bbdf5",
+    "driver": "580.173.02",
+    "capability": "8.9",
+    "memory": "24564 MiB"
+  },
+  "provider_hardware_records": [
+    {
+      "source": "container",
+      "line": "{\"stage\": \"bake_hardware_observed\", \"gpu\": \"NVIDIA GeForce RTX 4090\", \"driver\": \"580.173.02\", \"capability\": \"8.9\"}",
+      "ts": "2026-10-11T23:40:07.931140256Z"
+    }
+  ],
+  "requested_models": [
+    "qwen3.5-0.8b",
+    "qwen3.5-2b"
+  ],
+  "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+  "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+  "minimum_host_ram_gb": 32,
+  "minimum_vcpus": 8,
+  "container_disk_gb": 30,
+  "max_active_owned_pods": 1,
+  "max_hourly_usd": 1,
+  "pod_timeout_s": 600,
+  "observed_before_weights_transfer": true,
+  "native_bake_outcome": {
+    "phase": "failed",
+    "exit_code": 1,
+    "published_components": [],
+    "cloud_stderr_retained_for_native_failure": false
+  },
+  "controller_repairs": {
+    "user_agent": "all control requests now send required Switchyard/0.5 header; default header returned HTTP 403 while correctly tagged unauthenticated request reached endpoint and returned HTTP 401",
+    "output_parent": "batch script now creates each model output parent before native bake create_dir",
+    "diagnostics": "bounded sanitized native log is retrieved before cleanup; provider logs collected throughout allocation",
+    "platform_boundary": "allocation now requires independent bake platform config; no serving scheduler policy flag"
+  },
+  "capacity_rejections": [
+    {
+      "attempt": "02",
+      "http_status": 400,
+      "reason": "no capacity for fixed specifications",
+      "owned_pod_created": false,
+      "minimum_ram_gb": 64,
+      "minimum_host_cuda": "13.0",
+      "allowed_cuda_versions": [
+        "13.0"
+      ],
+      "control": "ssh"
+    },
+    {
+      "attempt": "03",
+      "http_status": 400,
+      "reason": "no capacity for fixed specifications",
+      "owned_pod_created": false,
+      "minimum_ram_gb": 64,
+      "minimum_host_cuda": "13.0",
+      "allowed_cuda_versions": null,
+      "control": "ssh"
+    },
+    {
+      "attempt": "04",
+      "http_status": 400,
+      "reason": "no capacity for fixed specifications",
+      "owned_pod_created": false,
+      "minimum_ram_gb": 64,
+      "minimum_host_cuda": "13.0",
+      "allowed_cuda_versions": null,
+      "control": "http"
+    }
+  ],
+  "cleanup": {
+    "pod_id": "pr2fu7hf0w36vp",
+    "name": "switchyard-native-bake-9227027c840b",
+    "confirmed_absent": true
+  },
+  "fresh_cleanup_http_status": 404,
+  "limitations": {
+    "cache_coverage_established": false,
+    "failed_elastic_pod_driver_versions_established": false,
+    "current_engine_freeze": "further production bakes held for prefix-caching and paged-attention engine freeze",
+    "next_bakes": "all three models require exact-binary components for each desired driver after source freeze"
+  },
+  "fresh_cleanup_checked_utc": "2026-10-11T23:58:26.155831+00:00"
+}

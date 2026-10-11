@@ -67,7 +67,7 @@ The profile points to local files containing the RunPod and R2 credentials. The 
 
 ## Offline cloud bake and fresh launch
 
-The bake allocates one owned GPU pod, hydrates the runtime, model, and preparation artifacts, and executes the native bake tool. Representative generation includes an eight-row equal-length cohort and varied prompt lengths. This generation prepares the compiler cache using the declared request configuration. The tool saves the native binary identity, configuration, GPU, driver, CUDA cache inventory, and generation output. The controller publishes the cache and terminates the bake pod.
+The bake allocates one owned GPU pod, hydrates the runtime, model, and preparation artifacts, and executes the native bake tool. Representative generation includes an eight-row equal-length cohort and varied prompt lengths. This generation prepares the compiler cache using the declared request configuration. The tool saves the native binary identity, configuration, GPU, driver, CUDA cache inventory, and generation output. The single-model controller publishes the cache and terminates the bake pod. The [native bake platform controller](native-bake-platform.md) supports sequential model bakes with an independent provider profile and terminates its pod before local component publication.
 
 ```bash
 python deploy/native/run-bake.py \
