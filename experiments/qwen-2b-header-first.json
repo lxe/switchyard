@@ -1,0 +1,31 @@
+{
+  "model": "Qwen/Qwen3.5-2B",
+  "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "scope": "Header-first artifact preparation and immutable R2 publication. No inference endpoint, GPU cache, startup latency or throughput measurement.",
+  "source": {
+    "legacy_archive_sha256": "5b145c1b5c2abcdc178afecec1ff9e32ecdece67e78010ffcb0fa7a95dfb56b7",
+    "original_file_digests_preserved": 13
+  },
+  "layout": {
+    "format": "switchyard-extents-v1",
+    "id": "5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+    "content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+    "extent_bytes": 16777216,
+    "extents": 285,
+    "total_file_bytes": 4571274023,
+    "weight_header_bytes": 76656,
+    "manifest_file": "qwen-2b-header-first.manifest.json"
+  },
+  "publication": {
+    "prefix": "switchyard/weights/qwen3.5-2b/header-first-v1/5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+    "manifest_created": true,
+    "objects": 285,
+    "objects_created": 285,
+    "manifest_readback_matches": true,
+    "header_object_digest_matches": true
+  },
+  "preparation": {
+    "header_validated_at_pack": true,
+    "whole_file_hashes_at_endpoint_startup": false
+  }
+}
