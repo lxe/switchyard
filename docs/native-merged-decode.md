@@ -22,7 +22,23 @@ The admitted row count and context limit bound state sizes. Left padding costs s
 
 `cargo test -p switchyard-engine --all-targets` passes fourteen tests, including seven mixed decode fixtures. `cargo clippy -p switchyard-engine --all-targets -- -D warnings` passes. Tiny deterministic F32 models exercise prompt lengths 8/32/96, GDN value/key-head ratios 1/2/3, a shared prefill cohort, reordered state restoration, scatter/resume and removal of the longest row. They compare each decode with an independent session at a maximum absolute-logit tolerance of `0.00002`.
 
-The engine fixtures check output ordering, EOS, cancellation, different output budgets, observer row IDs across bounded cohorts, fresh calls and context rejection. The offline teacher fixture checks identical next-token choices and expected-token log-probability error at most `0.0001`. Ownership fixtures reject foreign model state, stale or unknown IDs, duplicate selection, position drift and late prefill. These are CPU synthetic results; CUDA model parity and throughput have not yet been measured.
+The engine fixtures check output ordering, EOS, cancellation, different output budgets, observer row IDs across bounded cohorts, fresh calls and context rejection. The offline teacher fixture checks identical next-token choices and expected-token log-probability error at most `0.0001`. Ownership fixtures reject foreign model state, stale or unknown IDs, duplicate selection, position drift and late prefill. These are CPU synthetic results; the released-model CUDA comparison is recorded separately below.
+
+## Measured CUDA numerical gate
+
+The [RTX 5090 receipt](receipts/native-merged-decode-rtx5090.json) records dense F32 Qwen3.5 0.8B, 2B and 4B comparisons against independent native sessions and the pinned published Hugging Face implementation. Each model consumes the same six literal histories with prompt lengths 8/32/96 repeated and continuation lengths 16/12/4/10/8/2. The longest rows finish first, exercising CUDA row selection and KV cropping while shorter rows continue. All 52 teacher-forced next-token decisions per model match both references, giving 156/156 matches per reference across the three models.
+
+| Model | Maximum log-probability error vs independent | Maximum log-probability error vs published |
+| --- | ---: | ---: |
+| 0.8B | 0.0000191922 | 0.0000178740 |
+| 2B | 0.0000162125 | 0.0000161429 |
+| 4B | 0.0000643729 | 0.0000355862 |
+
+Every comparison passes the unchanged `0.0001` maximum expected-token log-probability error and exact argmax contract. The oracle uses the accepted PyTorch convolution and GDN fallbacks, eager attention, TF32 disabled and the validated rotary reconstruction. Binary, model revision, config, literal trace, model shard and reference hashes are preserved. All processes ran serially through existing tmux session 0, pane `%3`; no production inference readiness request was added.
+
+The first native GPU attempt rejected strided KV input to CUDA `index_select`. Compaction now makes K/V contiguous before selecting surviving rows, matching the explicit layout handling for GDN state. The original gate then passed. An oracle cache write failure was resolved by directing writable caches into a private output directory while preserving the shared cache read-only; its mathematical script was unchanged. Owned reference containers had a 32 GiB memory cap and no swap beyond that cap. Sampled cgroup high-water memory was 1.84 GB for 0.8B and 3.27 GB for 4B; the 2B container high-water value was not collected.
+
+These tests establish the recorded F32 numerical behavior. Full generated-sequence equality and warm throughput are separate acceptance steps; neither is claimed by the teacher-forcing receipt.
 
 ## CUDA reference handoff
 
