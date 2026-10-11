@@ -1,0 +1,351 @@
+{
+  "compiler_cache_reused_for_final_export": true,
+  "cpu_fixtures_passed": 11,
+  "format": "switchyard-native-gpu-cpu-acceptance-v1",
+  "local_output": "results/native-gpu-builds/final-release-01",
+  "matrix_artifact_id": "704892a596f40f2cf0acf37215fb8ea00b2d699799f8f1a6e9fe5740afdef8e0",
+  "ruff_check_passed": true,
+  "scope": "CPU compilation and artifact inspection; no GPU execution, driver JIT capture, or model bake",
+  "targets": [
+    {
+      "architecture": "sm_89",
+      "artifact_id": "5a5ffffe7d45f47a272586aa2b22e214e6e238594eb7d673dbfb2c08fa9dba8b",
+      "binary_embedded_ptx_targets": {
+        "switchyard-engine": [
+          "sm_89"
+        ],
+        "switchyard-engine-bake": [],
+        "switchyard-engine-bench": []
+      },
+      "build_job_sha256": "eeacfbd5b4b8800d86fc2e48bef9b28b0a78c411528de678c5b6ba9935c4e972",
+      "compatibility_key": "a90d08df0e9f554205a01377e48f99f8b49d04b64f5834f543ff9ed1eb630fc7",
+      "compiler_cache_key": "a11f9e0645d4c0537b8565c039f95cc026947063fb21e9024d191b1c724180ae",
+      "dependencies": {
+        "candle-core": {
+          "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+          "version": "0.11.0"
+        },
+        "candle-kernels": {
+          "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+          "version": "0.11.0"
+        },
+        "candle-nn": {
+          "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+          "version": "0.11.0"
+        },
+        "cudaforge": {
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "version": "0.1.6"
+        },
+        "cudarc": {
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "version": "0.19.10"
+        }
+      },
+      "file_counts": {
+        "bin": 3,
+        "kernels/cubin": 11,
+        "kernels/ptx": 11
+      },
+      "file_hashes_verified": 26,
+      "gpu_execution_validated": false,
+      "host_libc": [
+        "glibc",
+        "2.44"
+      ],
+      "nvcc_version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Sep_01_08:45:21_PDT_2026\nCuda compilation tools, release 13.4, V13.4.92\nBuild cuda_13.4.r13.4/compiler.38855100_0",
+      "ptx_isa_versions": [
+        "9.4"
+      ],
+      "runtime_requirements": {
+        "switchyard-engine": {
+          "shared_libraries": [
+            "ld-linux-x86-64.so.2",
+            "libc.so.6",
+            "libcublas.so.13",
+            "libcuda.so.1",
+            "libcudart.so.13",
+            "libcurand.so.10",
+            "libgcc_s.so.1",
+            "libm.so.6",
+            "libstdc++.so.6"
+          ],
+          "symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.10",
+            "GLIBC_2.14",
+            "GLIBC_2.15",
+            "GLIBC_2.16",
+            "GLIBC_2.17",
+            "GLIBC_2.18",
+            "GLIBC_2.2.5",
+            "GLIBC_2.25",
+            "GLIBC_2.27",
+            "GLIBC_2.28",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.30",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.39",
+            "GLIBC_2.4",
+            "GLIBC_2.5",
+            "GLIBC_2.7",
+            "GLIBC_2.9"
+          ]
+        },
+        "switchyard-engine-bake": {
+          "shared_libraries": [
+            "ld-linux-x86-64.so.2",
+            "libc.so.6",
+            "libcudart.so.13",
+            "libgcc_s.so.1",
+            "libstdc++.so.6"
+          ],
+          "symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.15",
+            "GLIBC_2.16",
+            "GLIBC_2.17",
+            "GLIBC_2.18",
+            "GLIBC_2.2.5",
+            "GLIBC_2.28",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.4",
+            "GLIBC_2.30",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.39",
+            "GLIBC_2.4",
+            "GLIBC_2.9"
+          ]
+        },
+        "switchyard-engine-bench": {
+          "shared_libraries": [
+            "ld-linux-x86-64.so.2",
+            "libc.so.6",
+            "libcudart.so.13",
+            "libgcc_s.so.1",
+            "libm.so.6",
+            "libstdc++.so.6"
+          ],
+          "symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.15",
+            "GLIBC_2.16",
+            "GLIBC_2.17",
+            "GLIBC_2.18",
+            "GLIBC_2.2.5",
+            "GLIBC_2.25",
+            "GLIBC_2.28",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.30",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.38",
+            "GLIBC_2.39",
+            "GLIBC_2.4",
+            "GLIBC_2.7",
+            "GLIBC_2.9"
+          ]
+        }
+      },
+      "rust_target": "x86_64-unknown-linux-gnu",
+      "source_commit": "600d6dd55f0d8afd771d8ba01331e4fdfdd2bda2",
+      "source_inputs_sha256": "7243bb0e031bd64b3509ce852e03b70b55c5d718a8e1fc82bac45491260d8f4d"
+    },
+    {
+      "architecture": "sm_120a",
+      "artifact_id": "d9b3ea71ec4f5d380c32f3a05851d0dc56358d2c8ad22443d389d3ecc6b96aae",
+      "binary_embedded_ptx_targets": {
+        "switchyard-engine": [
+          "sm_120a"
+        ],
+        "switchyard-engine-bake": [],
+        "switchyard-engine-bench": []
+      },
+      "build_job_sha256": "eeacfbd5b4b8800d86fc2e48bef9b28b0a78c411528de678c5b6ba9935c4e972",
+      "compatibility_key": "214820feeb0ea7222b45c24841177aae131e0271dd80dab646ba6bac10aff7e3",
+      "compiler_cache_key": "434c0f14e6191e28ef39e481b4ccb46f98cb47d7ecb5cc6185806c7126576e2d",
+      "dependencies": {
+        "candle-core": {
+          "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+          "version": "0.11.0"
+        },
+        "candle-kernels": {
+          "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+          "version": "0.11.0"
+        },
+        "candle-nn": {
+          "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+          "version": "0.11.0"
+        },
+        "cudaforge": {
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "version": "0.1.6"
+        },
+        "cudarc": {
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "version": "0.19.10"
+        }
+      },
+      "file_counts": {
+        "bin": 3,
+        "kernels/cubin": 11,
+        "kernels/ptx": 11
+      },
+      "file_hashes_verified": 26,
+      "gpu_execution_validated": false,
+      "host_libc": [
+        "glibc",
+        "2.44"
+      ],
+      "nvcc_version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Sep_01_08:45:21_PDT_2026\nCuda compilation tools, release 13.4, V13.4.92\nBuild cuda_13.4.r13.4/compiler.38855100_0",
+      "ptx_isa_versions": [
+        "9.4"
+      ],
+      "runtime_requirements": {
+        "switchyard-engine": {
+          "shared_libraries": [
+            "ld-linux-x86-64.so.2",
+            "libc.so.6",
+            "libcublas.so.13",
+            "libcuda.so.1",
+            "libcudart.so.13",
+            "libcurand.so.10",
+            "libgcc_s.so.1",
+            "libm.so.6",
+            "libstdc++.so.6"
+          ],
+          "symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.10",
+            "GLIBC_2.14",
+            "GLIBC_2.15",
+            "GLIBC_2.16",
+            "GLIBC_2.17",
+            "GLIBC_2.18",
+            "GLIBC_2.2.5",
+            "GLIBC_2.25",
+            "GLIBC_2.27",
+            "GLIBC_2.28",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.30",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.39",
+            "GLIBC_2.4",
+            "GLIBC_2.5",
+            "GLIBC_2.7",
+            "GLIBC_2.9"
+          ]
+        },
+        "switchyard-engine-bake": {
+          "shared_libraries": [
+            "ld-linux-x86-64.so.2",
+            "libc.so.6",
+            "libcudart.so.13",
+            "libgcc_s.so.1",
+            "libstdc++.so.6"
+          ],
+          "symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.15",
+            "GLIBC_2.16",
+            "GLIBC_2.17",
+            "GLIBC_2.18",
+            "GLIBC_2.2.5",
+            "GLIBC_2.28",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.4",
+            "GLIBC_2.30",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.39",
+            "GLIBC_2.4",
+            "GLIBC_2.9"
+          ]
+        },
+        "switchyard-engine-bench": {
+          "shared_libraries": [
+            "ld-linux-x86-64.so.2",
+            "libc.so.6",
+            "libcudart.so.13",
+            "libgcc_s.so.1",
+            "libm.so.6",
+            "libstdc++.so.6"
+          ],
+          "symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.15",
+            "GLIBC_2.16",
+            "GLIBC_2.17",
+            "GLIBC_2.18",
+            "GLIBC_2.2.5",
+            "GLIBC_2.25",
+            "GLIBC_2.28",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.30",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.38",
+            "GLIBC_2.39",
+            "GLIBC_2.4",
+            "GLIBC_2.7",
+            "GLIBC_2.9"
+          ]
+        }
+      },
+      "rust_target": "x86_64-unknown-linux-gnu",
+      "source_commit": "600d6dd55f0d8afd771d8ba01331e4fdfdd2bda2",
+      "source_inputs_sha256": "7243bb0e031bd64b3509ce852e03b70b55c5d718a8e1fc82bac45491260d8f4d"
+    }
+  ]
+}
