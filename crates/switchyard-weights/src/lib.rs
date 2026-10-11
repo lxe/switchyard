@@ -7,6 +7,7 @@ pub use bridge::{BridgeProgress, WeightBridge};
 mod packing;
 pub use packing::{pack_weights, priority_extents};
 mod loader;
+pub mod startup_policy;
 pub use loader::{VllmLoaderConfig, write_vllm_bundle};
 
 use serde::{Deserialize, Serialize};

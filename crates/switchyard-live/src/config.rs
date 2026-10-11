@@ -239,6 +239,32 @@ impl ExecutionConfig {
         }
         if let Some(runtime) = &self.bootstrap.runtime {
             runtime.validate()?;
+            if let Some(encoded) = runtime
+                .environment
+                .get(switchyard_agent::weights::startup_policy::VLLM_STARTUP_POLICY_ENV)
+            {
+                use switchyard_agent::weights::startup_policy::VllmStartupPolicy;
+                let policy = VllmStartupPolicy::parse(encoded)
+                    .map_err(|error| Error::Config(error.to_string()))?;
+                policy
+                    .validate_environment(&runtime.environment, &runtime.artifact.id)
+                    .map_err(|error| Error::Config(error.to_string()))?;
+                if runtime
+                    .compatibility
+                    .get("vllm")
+                    .and_then(|version| version.split('+').next())
+                    != Some("0.31.0")
+                    || self.models.iter().any(|model| {
+                        !matches!(model.artifact, crate::model::ModelArtifact::Extents(_))
+                            || model.engine.kind != EngineKind::Vllm
+                    })
+                {
+                    return Err(Error::Config(
+                        "prepared startup policy requires pinned vLLM 0.31.0 extent-backed models"
+                            .into(),
+                    ));
+                }
+            }
         }
         self.storage.validate()?;
         validate_endpoint(&self.bootstrap.agent_url)?;
