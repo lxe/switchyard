@@ -1,0 +1,12 @@
+{
+  "observer_sha256": "17437eee60ed07de61e0291ddd42d9ecce7f54bb5d465a4924792e0f8294de28",
+  "cpu_fixture_passed": true,
+  "gpu_execution_tested": false,
+  "synthetic_gpu_csv_parsed": true,
+  "owned_parent_process_observed": true,
+  "sample_count": 3,
+  "observer_starts_threads_in_api": false,
+  "torch_imported_by_observer": false,
+  "matched_launch_program_args_environment": true,
+  "compiler_entries_unchanged": true
+}
