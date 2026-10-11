@@ -25,8 +25,8 @@ FROM native-builder AS builder
 WORKDIR /build
 COPY deploy/hydration/sources.lock.json deploy/hydration/requirements.in deploy/hydration/requirements.lock deploy/hydration/smoke.py deploy/hydration/compiler-wrapper.sh deploy/hydration/runtime-env.sh ./
 COPY --from=rust-builder /source/target/release/switchyard-runtime-build /build/switchyard-runtime-build
-RUN --mount=type=cache,id=switchyard-hydration-downloads,target=/build/downloads \
-    --mount=type=cache,id=switchyard-hydration-uv,target=/build/uv-cache \
+RUN --mount=type=cache,id=switchyard-hydration-downloads,target=/build/downloads,sharing=locked \
+    --mount=type=cache,id=switchyard-hydration-uv,target=/build/uv-cache,sharing=locked \
     /build/switchyard-runtime-build
 
 FROM scratch AS export

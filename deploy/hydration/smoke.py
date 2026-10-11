@@ -78,7 +78,7 @@ with tempfile.TemporaryDirectory(prefix="switchyard-smoke-") as temporary:
     subprocess.run([str(binary)], check=True)
     cuda_source = Path(temporary) / "smoke.cu"
     cubin = Path(temporary) / "smoke.cubin"
-    cuda_source.write_text('extern "C" __global__ void smoke(float* x){x[threadIdx.x] += 1.0f;}\n')
+    cuda_source.write_text('#include <curand.h>\n#include <curand_kernel.h>\nextern "C" __global__ void smoke(float* x){curandState_t s;curand_init(1234,threadIdx.x,0,&s);x[threadIdx.x] += curand_uniform(&s);}\n')
     subprocess.run([os.environ["CUDACXX"], "--cubin", "-arch=sm_89", "-ccbin", os.environ["CXX"],
                     str(cuda_source), "-o", str(cubin)], check=True)
     assert cubin.read_bytes().startswith(b"\x7fELF")

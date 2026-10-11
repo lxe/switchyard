@@ -19,7 +19,10 @@ pub(super) async fn assemble(root: &Path, lock: &Value, client: &reqwest::Client
         let name = component["name"]
             .as_str()
             .ok_or("missing CUDA component name")?;
-        if !matches!(name, "cuda_nvcc" | "cuda_cudart" | "cuda_cccl") {
+        if !matches!(
+            name,
+            "cuda_nvcc" | "cuda_cudart" | "cuda_cccl" | "cuda_crt" | "libnvvm" | "libcurand"
+        ) {
             return Err(format!("unsupported CUDA compiler component: {name}").into());
         }
         let archive = download(client, component, &format!("{name}.tar.xz")).await?;
@@ -43,7 +46,15 @@ pub(super) async fn assemble(root: &Path, lock: &Value, client: &reqwest::Client
     }
     // NVIDIA redistributions use lib; CUDA extension builders commonly expect lib64.
     symlink("lib", toolkit.join("lib64"))?;
-    for path in ["bin/nvcc", "include/cuda_runtime.h", "lib/libcudart.so"] {
+    for path in [
+        "bin/nvcc",
+        "include/cuda_runtime.h",
+        "include/crt/host_config.h",
+        "include/curand.h",
+        "nvvm/bin/cicc",
+        "nvvm/libdevice/libdevice.10.bc",
+        "lib/libcudart.so",
+    ] {
         if !toolkit.join(path).is_file() {
             return Err(format!("CUDA compiler component is incomplete: {path}").into());
         }
