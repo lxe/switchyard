@@ -1,5 +1,7 @@
 # Selected local cold-start rollout
 
+The current CPU snapshot and final tensor rollout is documented in [CPU snapshot and final tensor cold start](cpu-snapshot-local-cold-start.md).
+
 This historical Qwen3.5 0.8B rollout produced its first streamed content, `Paris`, **38.988 seconds after local container launch**. The streaming request itself took **81.4 ms** after an internal inference call had already warmed the engine. The 81.4 ms figure is therefore a warm request measurement. This was one successful local RTX 5090 rollout through the actual Switchyard agent, with timestamped native startup instrumentation. The [sanitized timing receipt](receipts/selected-local-cold-start.json) retains the identities, decisions, and measured operations.
 
 ## Measurement conditions
