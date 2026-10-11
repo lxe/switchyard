@@ -103,9 +103,11 @@ The optional `live` feature adds production adapters to the CLI. The simulator a
 The [RunPod fleet recipes](configs/runpod) pin Qwen3.5 0.8B, 2B, and 4B, model artifacts, the serving image, engine arguments, allowed hardware, budgets, and workload definitions. The raw-extent recipe hydrates weights, a serving runtime, and model-specific compiler caches separately. [Runtime preparation](docs/serving-runtime-preparation.md) describes native AOT reuse and compatibility; [engine comparison](docs/serving-engine-comparison.md) records measured vLLM and SGLang tradeoffs. Runtime and storage credentials stay in environment variables or local ignored files.
 
 ```sh
-cargo run --locked --features live -- live check --env-file /path/to/credentials.env
-cargo run --locked --features live -- live gauntlet --env-file /path/to/credentials.env \
-  --model qwen3.5-0.8b --out results/my-experiment
+cargo run --locked --features live -- live check \
+  --config configs/runpod/qwen-extents-l40s-strict.json --env-file /path/to/credentials.env
+cargo run --locked --features live -- live gauntlet \
+  --config configs/runpod/qwen-extents-l40s-strict.json --env-file /path/to/credentials.env \
+  --out results/my-experiment
 ```
 
 The preflight avoids provisioning. The gauntlet rents GPUs, validates local token counts against the serving engine, executes streamed requests through the scheduler, records actual usage and timing, and cleans up owned pods. Read the [live execution guide](docs/RUNPOD.md) for limits, artifact preparation, and crash recovery before running paid workloads.

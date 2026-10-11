@@ -4,7 +4,7 @@ The CLI enables this backend with `--features live`. The live runtime runs Switc
 
 ## Configuration and credentials
 
-The checked-in [fleet definition](../configs/runpod/qwen-small.json) and [workloads](../configs/runpod/gauntlet.json) describe the experiment. They contain deployment settings and credential variable names. Keep credential values in your shell or an ignored file:
+The checked-in [strict raw-extent fleet definition](../configs/runpod/qwen-extents-l40s-strict.json) and [workloads](../configs/runpod/gauntlet.json) describe the experiment. They contain deployment settings and credential variable names. Keep credential values in your shell or an ignored file:
 
 ```text
 RUNPOD_API_KEY=...
@@ -15,17 +15,20 @@ PODTRAIN_R2_SECRET_ACCESS_KEY=...
 Use repeatable `--env-file` arguments to read existing credential files. Process environment values take precedence, then the first file containing each variable. The loader does not mutate the process environment.
 
 ```sh
-cargo run --features live -- live discover --env-file /path/to/credentials.env
-cargo run --features live -- live check --env-file /path/to/credentials.env
-cargo run --features live -- live gauntlet --env-file /path/to/credentials.env \
-  --model qwen3.5-0.8b --out results/my-experiment
+cargo run --features live -- live discover \
+  --config configs/runpod/qwen-extents-l40s-strict.json --env-file /path/to/credentials.env
+cargo run --features live -- live check \
+  --config configs/runpod/qwen-extents-l40s-strict.json --env-file /path/to/credentials.env
+cargo run --features live -- live gauntlet \
+  --config configs/runpod/qwen-extents-l40s-strict.json --env-file /path/to/credentials.env \
+  --out results/my-experiment
 ```
 
 `discover` queries the current RunPod REST v2 catalog. `check` validates model manifests and downloads the pinned tokenizers and chat templates to a local cache. Both commands avoid provisioning. `gauntlet` rents GPUs and executes the workload definitions. The default experiment runs one model at a time, with at most two active pods, a configured hourly rental ceiling, and separate wall-clock, startup, request, and rental budgets. Experiment-wide cost and wall-clock limits also bound the complete multi-model run. Each model gets its own ownership journal and cleanup receipt.
 
 ## Hydration and model serving
 
-The storage adapter signs S3 requests using AWS SigV4 with R2's `auto` signing region. A model's `shards-v1` manifest describes independent TAR shards split into ordered pieces. The fleet configuration pins the archive identity, which commits to the ordered chunk hashes. The agent's verified mode checks chunk and optional file hashes. The checked fleet selects trusted streaming, which skips content hashing and feeds downloaded pieces directly into extraction. Both modes enforce relative paths, supported entry types, and declared sizes before publishing the model directory.
+The storage adapter signs S3 requests using AWS SigV4 with R2's `auto` signing region. The strict fleet uses header-first safetensors manifests with raw model extents, a separate `artifact-v1` runtime and a distinct compiler cache for each model. The legacy `qwen-small.json` recipe uses a `shards-v1` manifest describing independent TAR shards split into ordered pieces. The fleet configuration pins the archive identity, which commits to the ordered chunk hashes. The agent's verified mode checks chunk and optional file hashes. The checked fleet selects trusted streaming, which skips content hashing and feeds downloaded pieces directly into extraction. Archive hydration enforces relative paths, supported entry types and declared sizes before publication. Raw-extent hydration validates the layout and stages payloads independently of archive extraction; [weight loading](parallel-weight-loading.md) describes its native serving bridge.
 
 Long-lived storage credentials stay on the client. The client writes a short-lived bootstrap ticket containing signed GET capabilities for the selected model's chunks and configured vLLM arguments. A pod receives the ticket URL and a random agent token. It downloads a checksum-pinned static Rust agent, hydrates the model, then starts vLLM on loopback port 8000. The agent exposes authenticated `/state`, `/probe`, and model-serving paths on port 8080. The provider constructs the RunPod HTTP proxy address.
 
@@ -33,11 +36,11 @@ Agent observations include hydration progress, elapsed time, observed download r
 
 The checked fleet uses `bootstrap.startup.mode: "trusted_streaming"`, twenty shared runtime/model HTTP streams, RAM-backed model storage, and an early-import stdin gate. See [serving hydration](HYDRATION.md) for these policies and the compiler-cache preparation workflow. RunPod-specific `compute.min_ram_per_gpu_gb` and `compute.min_vcpu_count_per_gpu` set host placement floors. They do not configure `/dev/shm`; the agent measures its actual capacity before hydration.
 
-The checked serving configuration disables thinking and prefix caching, uses eager execution, and bounds context and engine concurrency. These settings participate in compiler-cache compatibility and can be changed for another serving profile. Input planning renders the pinned Hugging Face chat template with MiniJinja and counts tokens using the Rust `tokenizers` library. Before admitting the first request to a pod, the runtime compares its count with vLLM's `/tokenize` result. Every completed stream must report matching input usage and obey its output bound.
+The strict serving configuration disables thinking, enables prefix caching and CUDA graphs, and bounds context at 4,096 tokens with 32 concurrent engine sequences. The legacy small recipe uses eager execution with prefix caching disabled. These settings participate in compiler-cache compatibility and can be changed for another serving profile. Input planning renders the pinned Hugging Face chat template with MiniJinja and counts tokens using the Rust `tokenizers` library. Before admitting the first request to a pod, the runtime compares its count with vLLM's `/tokenize` result. Every completed stream must report matching input usage and obey its output bound.
 
 ## Measurements and recovery
 
-Live evidence is written incrementally before final cleanup summaries. `agent-observations.ndjson` records each observed state, `host-probes.ndjson` records the exact rate and byte counters considered by a host probe, and `scheduler-decisions.ndjson` records actions, the observed nodes and probes, and scheduler diagnostics before applying those actions. Every record uses the controller's elapsed-time clock. These files remain available if a workload is interrupted; they contain no prompts, credentials, or presigned URLs. The final JSON reports remain the convenient aggregate summaries.
+Live evidence is written incrementally before final cleanup summaries. `agent-observations.ndjson` records each observed state and HTTP start/finish timing, `host-probes.ndjson` records the exact rate and byte counters considered by a host probe, and `scheduler-decisions.ndjson` records actions, the observed nodes and probes, and scheduler diagnostics before applying those actions. Every record uses the controller's elapsed-time clock. These files remain available if a workload is interrupted; they contain no prompts, credentials, or presigned URLs. The final JSON reports remain the convenient aggregate summaries.
 
 Reports contain streamed first-content latency, response latency, output tokens per wall second, final usage, scheduler diagnostics, allocation counts, and estimated rent. A throughput target is a scheduling objective, not a guarantee. The reports measure the complete client/runtime/provider path; they are not isolated GPU kernel benchmarks. Partial generated token counts are estimates obtained by tokenizing streamed text, while final usage comes from vLLM.
 
@@ -65,3 +68,7 @@ Provider contracts and rates follow the [RunPod v2 catalog](https://docs.runpod.
 ## Agent builds
 
 `scripts/build-agent.sh` builds a static x86-64 musl binary with a digest-pinned Rust 1.98.1 Alpine image. It mounts the source read-only and keeps build outputs in ignored `target/` directories. Publish the resulting binary at the configured `agent_url` and set `agent_sha256` to its SHA256 digest before provisioning. Pods reject a bootstrap binary whose checksum does not match.
+
+## Cost inputs
+
+GPU offers are timestamped RunPod catalog quotes, and the actual allocated pod quote supersedes the catalog rate for rental estimates. The checked container disk rate is $0.10/GB/month, converted with the configured 730 hours per month. This published tariff was rechecked on October 11, 2026 against [RunPod billing](https://docs.runpod.io/accounts-billing/billing), which specifies per-second compute and container-disk charges. The estimate adds disk separately until the provider establishes whether the pod quote already includes it, so it can overestimate the invoice. Reports retain the quote and elapsed ownership interval; they do not claim to reconcile an account invoice.

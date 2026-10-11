@@ -17,7 +17,7 @@ cargo run --locked --release -- suite --seed 7 --seeds 3 --out results/final-sui
 cargo run --locked --release -- bench --sizes 1,100,1000,10000 --repetitions 3
 ```
 
-The workspace validation passes 209 tests with all features enabled, strict Clippy, formatting, and rustdoc with warnings denied. The generated-workload test exercises 128 seeds across all five policies. A separate release-mode run exercised 1,000 seeds, beginning at 42, across five policies: 5,000 simulations with no invariant failures. This is seeded generative fuzzing; it does not use coverage-guided mutation.
+The workspace validation passes 281 tests (with one explicitly gated real-download diagnostic ignored) with all features enabled, strict Clippy, formatting, and rustdoc with warnings denied. The generated-workload test exercises 128 seeds across all five policies. A separate release-mode run exercised 1,000 seeds, beginning at 42, across five policies: 5,000 simulations with no invariant failures. This is seeded generative fuzzing; it does not use coverage-guided mutation.
 
 | Check | Behavior established |
 | --- | --- |
@@ -55,7 +55,7 @@ For the 72-request workload targeting 200 output tokens per second, the existing
 
 The 1,000-call burst targets 2,000 output tokens per second. Planned hybrid achieves about 3,117 at USD 0.4091, while cheapest elastic achieves about 1,896 at USD 0.4400 and misses the target. Startup, memory-fitting batches, and idle billing can make a cheaper advertised capacity less cost-effective for a finite job.
 
-The unknown-hydration scenario samples additional uncached transfers over hidden 5 or 250 MB/s volume links. The controller still begins with the original profile priors. Adaptive achieves a median 3,756 burst output tokens per second at USD 0.9694, compared with planned hybrid's 2,394 at USD 1.8785. That is about 57% more throughput and 48% less rental cost in this stress fixture. Adaptive meets the burst target in two of three seeds; planned hybrid meets it in none. The diagnostics record probe observations, learned beliefs, and cancelled starts. Three seeds demonstrate the mechanism but do not establish tail reliability.
+The unknown-hydration scenario samples additional uncached transfers over hidden 5 or 250 MB/s volume links. The controller still begins with the original profile priors. Adaptive achieves a median 3,728 burst output tokens per second at USD 0.9687, compared with planned hybrid's 2,394 at USD 1.8785. That is about 56% more throughput and 48% less rental cost in this stress fixture. Adaptive meets the burst target in two of three seeds; planned hybrid meets it in none. The diagnostics record probe observations, learned beliefs, and cancelled starts. Three seeds demonstrate the mechanism but do not establish tail reliability.
 
 ## Software performance
 
@@ -65,11 +65,11 @@ The local release build ran on an Intel Core i7-13700 with three repetitions per
 
 | Policy | Wall time p50, ms | Wall time p95, ms |
 | --- | ---: | ---: |
-| Warm only | 1,029 | 1,035 |
-| Reactive | 692 | 702 |
-| Cheapest elastic | 1,092 | 1,100 |
-| Planned hybrid | 1,114 | 1,122 |
-| Adaptive | 1,111 | 1,118 |
+| Warm only | 1,085 | 1,105 |
+| Reactive | 731 | 741 |
+| Cheapest elastic | 1,159 | 1,202 |
+| Planned hybrid | 1,153 | 1,185 |
+| Adaptive | 1,137 | 1,144 |
 
 Equal-time event coalescing, cached workload totals and active progress, and available-pool checks keep simultaneous bursts from repeating unnecessary queue copies and admission scans. The values include controller work and result construction, while JSON file writing and invariant checks happen outside the timed interval.
 
@@ -87,7 +87,7 @@ The default catalog includes boundary-adjusted and documented historical text me
 
 Contracts cover catalog filtering, uncertain allocation ownership, authenticated streaming, token-usage conservation, cancellation, cache compatibility, export, and GPU cleanup despite receipt failures. Streaming regressions distinguish network stalls from extraction backpressure and exercise ordered TAR pieces under shared transfer contention. A dependency guard keeps production integrations outside core, scheduler, and simulator.
 
-Seeded fuzzing covered 1,000 workloads across five policies (5,000 runs) with no invariant failures. A local one-repetition performance pass covered 1, 100, 1,000, and 10,000 requests; the slowest 10,000-request run took 1.299 seconds. These are software execution measurements on the development host.
+The qualified-probe policy passed 1,000 generated workloads across five policies (5,000 runs) and all 240 fixed-trace comparisons. The three-repetition CPU benchmark covered 1, 100, 1,000, and 10,000 requests; every run stayed below the two-second development-host budget. The [software validation receipt](../experiments/qualified-probe-software-validation.json) records the corpus and performance measurements independently of GPU throughput.
 
 The [RunPod recipe](../configs/runpod) preserves the actual fleet and workload definitions, timestamped quotes, pinned model revisions and archive identities, and the checksum-pinned serving bootstrap. Preflight validated all three manifests and planned a sample prompt as 21 input tokens. Real GPU outcomes are recorded separately from these offline checks.
 

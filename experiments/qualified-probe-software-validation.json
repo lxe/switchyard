@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "controller_source_commit": "828caa26a86a99e59f465b867fdbf54a7dfb101d",
+  "scope": "Final shared qualified-probe policy and retained-progress observation contract; simulator, seeded generated workloads and analytical CPU performance.",
+  "fuzz": {
+    "cases": 1000,
+    "failures": [],
+    "first_seed": 42,
+    "policies": 5,
+    "simulations": 5000
+  },
+  "suite": {
+    "runs": 240,
+    "seeds": [
+      7,
+      8,
+      9
+    ],
+    "policies": 5,
+    "scenarios": 16,
+    "invalid_decisions": 0,
+    "summary_sha256": "72a888590d04f762c3674f173c0f64b99d3fe1ab4d5341f8292aacd1688a3692"
+  },
+  "performance": {
+    "hardware": "Intel Core i7-13700",
+    "requests": [
+      1,
+      100,
+      1000,
+      10000
+    ],
+    "repetitions": 3,
+    "per_run_budget_s": 2,
+    "records": [
+      {
+        "requests": 1,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 0.069959,
+        "wall_ms_p95": 0.10689299999999999,
+        "simulated_requests_per_wall_second": 14294.086536399891,
+        "completed": 1,
+        "simulated_output_tps": 683.4615962929043
+      },
+      {
+        "requests": 1,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 0.074362,
+        "wall_ms_p95": 0.078238,
+        "simulated_requests_per_wall_second": 13447.72867862618,
+        "completed": 1,
+        "simulated_output_tps": 683.4615962929043
+      },
+      {
+        "requests": 1,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 0.074668,
+        "wall_ms_p95": 0.075514,
+        "simulated_requests_per_wall_second": 13392.617988964483,
+        "completed": 1,
+        "simulated_output_tps": 683.4615962929043
+      },
+      {
+        "requests": 1,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 0.073854,
+        "wall_ms_p95": 0.075633,
+        "simulated_requests_per_wall_second": 13540.228017439813,
+        "completed": 1,
+        "simulated_output_tps": 683.4615962929043
+      },
+      {
+        "requests": 1,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 0.074125,
+        "wall_ms_p95": 0.074621,
+        "simulated_requests_per_wall_second": 13490.725126475549,
+        "completed": 1,
+        "simulated_output_tps": 683.4615962929043
+      },
+      {
+        "requests": 100,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 1.640321,
+        "wall_ms_p95": 1.6664130000000001,
+        "simulated_requests_per_wall_second": 60963.67723146872,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 1.803204,
+        "wall_ms_p95": 1.818493,
+        "simulated_requests_per_wall_second": 55456.84237612605,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 1.791792,
+        "wall_ms_p95": 1.817093,
+        "simulated_requests_per_wall_second": 55810.049380731696,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 1.873562,
+        "wall_ms_p95": 1.917827,
+        "simulated_requests_per_wall_second": 53374.267838480926,
+        "completed": 100,
+        "simulated_output_tps": 8528.726239318758
+      },
+      {
+        "requests": 100,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 1.821872,
+        "wall_ms_p95": 1.841213,
+        "simulated_requests_per_wall_second": 54888.59810129362,
+        "completed": 100,
+        "simulated_output_tps": 8528.726239318758
+      },
+      {
+        "requests": 1000,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 20.892733,
+        "wall_ms_p95": 21.700484,
+        "simulated_requests_per_wall_second": 47863.532262629305,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 22.553104,
+        "wall_ms_p95": 24.114292,
+        "simulated_requests_per_wall_second": 44339.79464644867,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 22.698217,
+        "wall_ms_p95": 22.716182,
+        "simulated_requests_per_wall_second": 44056.323895396716,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 22.781388,
+        "wall_ms_p95": 23.131911000000002,
+        "simulated_requests_per_wall_second": 43895.481697603325,
+        "completed": 1000,
+        "simulated_output_tps": 10063.415515465716
+      },
+      {
+        "requests": 1000,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 23.018592,
+        "wall_ms_p95": 23.628860000000003,
+        "simulated_requests_per_wall_second": 43443.14369879791,
+        "completed": 1000,
+        "simulated_output_tps": 10063.415515465716
+      },
+      {
+        "requests": 10000,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 1085.493658,
+        "wall_ms_p95": 1104.690789,
+        "simulated_requests_per_wall_second": 9212.398364836876,
+        "completed": 10000,
+        "simulated_output_tps": 10204.465445506348
+      },
+      {
+        "requests": 10000,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 730.703753,
+        "wall_ms_p95": 740.809936,
+        "simulated_requests_per_wall_second": 13685.436757295538,
+        "completed": 10000,
+        "simulated_output_tps": 19119.978515262424
+      },
+      {
+        "requests": 10000,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 1158.655312,
+        "wall_ms_p95": 1202.329712,
+        "simulated_requests_per_wall_second": 8630.694475252187,
+        "completed": 10000,
+        "simulated_output_tps": 10204.465445506348
+      },
+      {
+        "requests": 10000,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 1153.048089,
+        "wall_ms_p95": 1184.737048,
+        "simulated_requests_per_wall_second": 8672.66516930154,
+        "completed": 10000,
+        "simulated_output_tps": 10069.877893844385
+      },
+      {
+        "requests": 10000,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 1137.279325,
+        "wall_ms_p95": 1143.525754,
+        "simulated_requests_per_wall_second": 8792.91461664442,
+        "completed": 10000,
+        "simulated_output_tps": 10069.877893844385
+      }
+    ]
+  },
+  "qualification": "Synthetic profile capacities and CPU overhead are separate from real GPU throughput. Objective misses and unfinished work remain outcomes rather than invariant failures.",
+  "controller_binary_sha256": "a8de4c398d726c28be49f506f946f11d9f539aac1a880ebfb8b9085f20c1c9f1",
+  "workspace": {
+    "passed": 281,
+    "failed": 0,
+    "ignored": 1,
+    "all_features": true,
+    "all_targets": true,
+    "strict_clippy": true,
+    "rustdoc_warnings_denied": true,
+    "formatting": true
+  }
+}

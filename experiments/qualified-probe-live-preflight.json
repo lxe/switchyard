@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "scope": "Read-only strict raw-extent fleet preflight; no GPU allocated.",
+  "fleet": "configs/runpod/qwen-extents-l40s-strict.json",
+  "fleet_sha256": "fc7a7d33dbcec56dace492446d5a91904e23db8cef3eda02eb2a97db0ee1ee87",
+  "offerings": [
+    {
+      "gpu": "NVIDIA L40S",
+      "gpu_memory_gb": 48,
+      "data_center": "US-TX-3",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 1.09,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791703328
+    },
+    {
+      "gpu": "NVIDIA L40S",
+      "gpu_memory_gb": 48,
+      "data_center": "US-TX-4",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 1.09,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791703328
+    }
+  ],
+  "preflight": {
+    "checks": [
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-0.8b"
+      },
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-2b"
+      },
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-4b"
+      }
+    ],
+    "provisioned": false
+  }
+}

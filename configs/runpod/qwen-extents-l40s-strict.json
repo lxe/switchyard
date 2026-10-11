@@ -7,7 +7,9 @@
       "NVIDIA L40S"
     ],
     "data_centers": [
-      "US-MO-1"
+      "US-MO-1",
+      "US-TX-3",
+      "US-TX-4"
     ],
     "min_cuda": "12.9",
     "disk_gb": 80,
@@ -237,7 +239,14 @@
   "scheduling": {
     "maximum_startup_s": 600,
     "minimum_hydration_bytes_per_s": 5000000,
-    "retry_cooldown_s": 60
+    "retry_cooldown_s": 60,
+    "probe": {
+      "minimum_window_s": 2.0,
+      "maximum_window_s": 30.0,
+      "minimum_received_bytes": 8388608,
+      "reprobe_interval_s": 2.0,
+      "maximum_age_s": 10.0
+    }
   },
   "bootstrap": {
     "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
