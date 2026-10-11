@@ -13,7 +13,7 @@ use std::{
         Arc,
         atomic::{AtomicUsize, Ordering},
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
 use switchyard_artifact_tools::{
     HydrationReceipt, ProbeOptions, ProbeReceipt,
@@ -335,10 +335,10 @@ async fn probe_enforces_exact_lengths_stall_timeout_and_complete_request_deadlin
             "probe does not retry"
         );
     }
-    async fn timeout(header: Duration, body: Duration, attempt: u64, stall: u64) {
+    async fn timeout(header: Duration, body: Duration, attempt: u64, stall: u64, expected: &str) {
         let fixture = Fixture::new(1, header, body, 0, true).await;
-        let started = Instant::now();
-        assert!(
+        let error = tokio::time::timeout(
+            Duration::from_secs(10),
             probe_directory(
                 &fixture.storage,
                 "artifacts",
@@ -346,22 +346,36 @@ async fn probe_enforces_exact_lengths_stall_timeout_and_complete_request_deadlin
                 ProbeOptions {
                     concurrency: 1,
                     request_timeout_s: attempt,
-                    stall_timeout_s: stall
-                }
-            )
-            .await
-            .is_err()
+                    stall_timeout_s: stall,
+                },
+            ),
+        )
+        .await
+        .expect("probe deadline must terminate while the server remains blocked")
+        .unwrap_err()
+        .to_string();
+        assert!(
+            error.contains(expected),
+            "unexpected deadline failure: {error}"
         );
-        assert!(started.elapsed() < Duration::from_millis(1400));
         assert_eq!(fixture.state.requests.load(Ordering::Relaxed), 1);
     }
+    // A held server response distinguishes a real deadline from a late response.
+    // The outer guard bounds regressions without a narrow wall-clock speed requirement.
+    let held = Duration::from_secs(30);
     tokio::join!(
         length(-1),
         length(1),
-        timeout(Duration::from_millis(1500), Duration::ZERO, 1, 5),
-        timeout(Duration::from_millis(1500), Duration::ZERO, 5, 1),
-        timeout(Duration::ZERO, Duration::from_millis(1500), 5, 1),
-        timeout(Duration::ZERO, Duration::from_millis(1500), 1, 5)
+        timeout(held, Duration::ZERO, 1, 5, "request failed or timed out"),
+        timeout(held, Duration::ZERO, 5, 1, "response headers stalled"),
+        timeout(Duration::ZERO, held, 5, 1, "response body stalled"),
+        timeout(
+            Duration::ZERO,
+            held,
+            1,
+            5,
+            "response body failed or timed out"
+        )
     );
 }
 
