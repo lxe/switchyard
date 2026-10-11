@@ -113,9 +113,10 @@ try:
     assert consumer.peak_inflight > 1, (
         "multiple outstanding CUDA transfers not exercised"
     )
-    pattern = bytes((i * 13 + 17) % 256 for i in range(256))
-    expected = torch.frombuffer(bytearray(pattern * 1024), dtype=torch.uint8)
-    for offset in range(0, size, len(expected)):
+    for offset in range(0, size, 256 << 10):
+        block = offset // (256 << 10)
+        pattern = bytes((i * 13 + 17 + block) % 256 for i in range(256))
+        expected = torch.frombuffer(bytearray(pattern * 1024), dtype=torch.uint8)
         actual = destination.narrow(0, offset, len(expected)).cpu()
         assert torch.equal(actual, expected), f"wrong final bytes at {offset}"
     events = []

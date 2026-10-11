@@ -29,6 +29,8 @@ impl Default for BufferLimits {
 impl BufferLimits {
     pub fn validate(&self) -> Result<()> {
         if self.chunk_bytes == 0
+            || self.chunk_bytes > 64 << 20
+            || self.pinned_bytes > 4 << 30
             || !self.chunk_bytes.is_multiple_of(ALIGN)
             || self.download_buffer_bytes < ALIGN
             || !self.download_buffer_bytes.is_multiple_of(ALIGN)

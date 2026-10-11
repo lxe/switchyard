@@ -1,0 +1,46 @@
+{
+  "success": {
+    "bytes": 67108864,
+    "ram_peak_bytes": 1048576,
+    "spool_peak_bytes": 2097152,
+    "gpu_temporary_bytes": 0,
+    "peak_transfers": 4,
+    "gpu_dma_seconds": 0.002840416000224648,
+    "staging_seconds": 0.027574461950280238,
+    "reclaimed_bytes": 67117056,
+    "network_wait_seconds": 0.019619027999999965,
+    "spool_write_seconds": 0.021824885999999998,
+    "backpressure_seconds": 18.274210954000008
+  },
+  "cancel": {
+    "outstanding_events_settled": true,
+    "private_spool_removed": true
+  },
+  "noncontiguous": {
+    "rejected_before_copy": true
+  },
+  "container_memory": {
+    "current_bytes": 357416960,
+    "peak_bytes": 358400000,
+    "anon": 328634368,
+    "file": 17113088,
+    "file_dirty": 1384448,
+    "file_writeback": 0,
+    "shmem": 11534336
+  },
+  "proof": {
+    "binary_sha256": "cfbdde1974b87e72d99687653d2c2541767f4be5e73e65ef47ab1ddf0ef7eb92",
+    "source_commit": "4ddd8c7",
+    "gpu": "RTX 5090",
+    "container_memory_limit_bytes": 2147483648,
+    "chunk_bytes": 262144,
+    "pinned_bytes": 2097152,
+    "download_concurrency": 6,
+    "transfer_concurrency": 4,
+    "out_of_order_ready": true,
+    "reception_span_seconds": 3.111668391,
+    "reception_mib_per_second": 20.567769798375107,
+    "event_dma_gib_per_second": 22.00381915714349,
+    "cold_start_first_token": "pending coordinating launch"
+  }
+}

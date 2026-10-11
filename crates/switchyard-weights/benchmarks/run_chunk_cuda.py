@@ -26,8 +26,8 @@ header += b" " * ((-len(header)) % 8)
 with (source / "model.safetensors").open("wb") as out:
     out.write(len(header).to_bytes(8, "little"))
     out.write(header)
-    pattern = bytes((i * 13 + 17) % 256 for i in range(256)) * 1024
-    for _ in range(size // len(pattern)):
+    for block in range(size // (256 << 10)):
+        pattern = bytes((i * 13 + 17 + block) % 256 for i in range(256)) * 1024
         out.write(pattern)
 (source / "switchyard-final-state.json").write_text("{}\n")
 subprocess.run(
@@ -71,7 +71,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         with path.open("rb") as data:
             data.seek(start)
-            self.wfile.write(data.read(end - start + 1))
+            try:
+                self.wfile.write(data.read(end - start + 1))
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # Expected when the cancellation test closes its receiver.
 
     def log_message(self, *args):
         pass

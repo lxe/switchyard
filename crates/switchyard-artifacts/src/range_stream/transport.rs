@@ -14,25 +14,25 @@ impl RangeStream {
         priority_entries: &[usize],
     ) -> Result<()> {
         ticket.manifest.validate_structure()?;
-        let mut requests = vec![];
-        let mut id = 0;
-        for extent in &ticket.manifest.extents {
-            let mut n = 0;
-            while n < extent.length {
-                let length = (extent.length - n).min(self.shared.limits.chunk_bytes as u64);
-                let spec = RangeSpec {
-                    id,
-                    entry: extent.entry,
-                    offset: extent.offset + n,
-                    length,
-                    padded_length: length.div_ceil(ALIGN as u64) * ALIGN as u64,
-                };
-                requests.push((spec, extent.clone(), n));
-                n += length;
-                id += 1;
-            }
+        if self.shared.started.swap(true, Ordering::AcqRel) {
+            return Err(Error::Invalid("range reception started twice".into()));
         }
-        requests.sort_by_key(|(spec, _, _)| !priority_entries.contains(&spec.entry));
+        let mut guard = CancelRun {
+            stream: self.clone(),
+            armed: true,
+        };
+        let chunk = self.shared.limits.chunk_bytes as u64;
+        // Enumerate lazily: do not allocate a model-wide list of cloned range
+        // descriptors before downloads. Only the bounded active jobs own clones.
+        let requests = Requests {
+            extents: &ticket.manifest.extents,
+            priority: priority_entries,
+            pass: 0,
+            index: 0,
+            relative: 0,
+            next_id: 0,
+            chunk,
+        };
         let client = reqwest::Client::builder()
             .timeout(timeout)
             .build()
@@ -59,6 +59,7 @@ impl RangeStream {
             self.shared.state.lock().unwrap().finished = true;
             self.shared.wake.notify_waiters();
         }
+        guard.armed = false;
         result
     }
     async fn receive(
@@ -181,5 +182,62 @@ impl RangeStream {
         self.shared.state.lock().unwrap().ready.push_back(range);
         self.shared.wake.notify_waiters();
         Ok(())
+    }
+}
+
+struct CancelRun {
+    stream: RangeStream,
+    armed: bool,
+}
+impl Drop for CancelRun {
+    fn drop(&mut self) {
+        if self.armed {
+            self.stream.cancel()
+        }
+    }
+}
+
+struct Requests<'a> {
+    extents: &'a [Extent],
+    priority: &'a [usize],
+    pass: u8,
+    index: usize,
+    relative: u64,
+    next_id: usize,
+    chunk: u64,
+}
+impl Iterator for Requests<'_> {
+    type Item = (RangeSpec, Extent, u64);
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.index == self.extents.len() {
+                if self.pass == 1 {
+                    return None;
+                }
+                self.pass = 1;
+                self.index = 0;
+                self.relative = 0;
+            }
+            let extent = &self.extents[self.index];
+            if self.priority.contains(&extent.entry) != (self.pass == 0)
+                || self.relative == extent.length
+            {
+                self.index += 1;
+                self.relative = 0;
+                continue;
+            }
+            let relative = self.relative;
+            let length = (extent.length - relative).min(self.chunk);
+            self.relative += length;
+            let spec = RangeSpec {
+                id: self.next_id,
+                entry: extent.entry,
+                offset: extent.offset + relative,
+                length,
+                padded_length: length.div_ceil(ALIGN as u64) * ALIGN as u64,
+            };
+            self.next_id += 1;
+            return Some((spec, extent.clone(), relative));
+        }
     }
 }

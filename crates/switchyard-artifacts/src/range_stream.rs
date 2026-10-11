@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
@@ -81,6 +81,8 @@ struct Shared {
     state: Mutex<State>,
     wake: Notify,
     cancelled: AtomicBool,
+    started: AtomicBool,
+    last_progress_ns: AtomicU64,
     directory: PathBuf,
     limits: BufferLimits,
     epoch: Instant,
@@ -88,6 +90,18 @@ struct Shared {
 }
 impl Shared {
     fn emit(&self, id: Option<usize>, lifecycle: Option<Lifecycle>) {
+        if lifecycle.is_none() {
+            let now = self.epoch.elapsed().as_nanos().min(u64::MAX as u128) as u64;
+            let previous = self.last_progress_ns.load(Ordering::Relaxed);
+            if now.saturating_sub(previous) < 100_000_000
+                || self
+                    .last_progress_ns
+                    .compare_exchange(previous, now, Ordering::Relaxed, Ordering::Relaxed)
+                    .is_err()
+            {
+                return;
+            }
+        }
         if let Some(o) = &self.observer {
             let stats = self.state.lock().unwrap().stats.clone();
             (o.0)(RangeEvent {
@@ -149,6 +163,8 @@ impl RangeStream {
                 }),
                 wake: Notify::new(),
                 cancelled: AtomicBool::new(false),
+                started: AtomicBool::new(false),
+                last_progress_ns: AtomicU64::new(0),
                 directory,
                 limits,
                 epoch: Instant::now(),

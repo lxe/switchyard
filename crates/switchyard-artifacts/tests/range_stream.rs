@@ -53,7 +53,13 @@ async fn response(
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn delayed_slow_consumer_reclaims_and_bounds_large_single_tensor() {
-    let root = std::env::temp_dir().join(format!("bounded-test-{}", std::process::id()));
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("target")
+        .join(format!("bounded-test-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("src")).unwrap();
     // Represents one tensor 32 times the entire RAM budget. No consumer assembles it.
