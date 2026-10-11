@@ -1,0 +1,139 @@
+{
+  "scope": "Fresh GPU preparation of Qwen3.5-2B raw extents, native compiler caches, serving warmup and immutable R2 cache publication. Cache reuse and full scheduler gauntlet remain separate acceptance steps.",
+  "configuration": "configs/runpod/preparation/qwen-2b-extents.json",
+  "warmup_plan": "configs/runpod/cache-bake-l40s-2b.json",
+  "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+  "runtime": {
+    "prefix": "switchyard/serving-comparison/runtime/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+    "id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14"
+  },
+  "model_artifact": {
+    "kind": "extents",
+    "prefix": "switchyard/weights/qwen3.5-2b/header-first-v1/5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+    "id": "5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+    "content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+    "loader": {
+      "python_program": "venv/bin/python",
+      "cuda_stage": true,
+      "pinned_bytes": 16777216
+    }
+  },
+  "cache": {
+    "name": "compiled",
+    "gpu": "NVIDIA L40S",
+    "artifact": {
+      "prefix": "switchyard/gauntlet/extents/cache/e005a45a52d975987e1ccb214632e4cae6c74af41c6fdfa98c2632158c77c8c3",
+      "id": "e005a45a52d975987e1ccb214632e4cae6c74af41c6fdfa98c2632158c77c8c3"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "engine_arguments": "4034409be310a2a7ba0ef45bd43085e036e9b368d7c04c48b87b3a6bbce74776",
+      "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+      "gpu": "NVIDIA L40S",
+      "gpu_compute_capability": "8.9",
+      "model_content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+      "model_repository": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+      "runtime_launch_configuration": "ac1aa2ba2841d2059e3a0f5e3b1a3a8740d44d93fdd2864efc16494d12ab61aa",
+      "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
+    }
+  },
+  "publication": {
+    "id": "e005a45a52d975987e1ccb214632e4cae6c74af41c6fdfa98c2632158c77c8c3",
+    "prefix": "switchyard/gauntlet/extents/cache/e005a45a52d975987e1ccb214632e4cae6c74af41c6fdfa98c2632158c77c8c3",
+    "manifest_created": true,
+    "chunks_created": {
+      "1dbc8fd691ef246e07f66c9f6b67b7d440ad0e19a1c1bca621e887a698d6e8cf.tar.zst": true
+    }
+  },
+  "startup_milestones": [
+    {
+      "elapsed_s": 1.164708726,
+      "event": "model_hydration_started"
+    },
+    {
+      "elapsed_s": 1.191228529,
+      "event": "runtime_hydration_started"
+    },
+    {
+      "elapsed_s": 2.898350076,
+      "event": "model_metadata_ready"
+    },
+    {
+      "elapsed_s": 15.656407834,
+      "event": "model_hydration_finished"
+    },
+    {
+      "elapsed_s": 22.396828719,
+      "event": "runtime_hydration_finished"
+    },
+    {
+      "elapsed_s": 22.398519761,
+      "event": "engine_spawned"
+    },
+    {
+      "elapsed_s": 52.004222093,
+      "event": "tensor_loading_finished"
+    },
+    {
+      "elapsed_s": 189.284093344,
+      "event": "inference_verified"
+    }
+  ],
+  "clock": "Milestone seconds are measured from the agent startup epoch; provider allocation and controller timings use a separate epoch. This is a cache bake, not optimized cache-reuse timing.",
+  "weight_loading": {
+    "assignment_complete_seconds": 52.00406864,
+    "bytes_delivered": 4548144832,
+    "first_tensor_seconds": 51.594969729,
+    "gpu": {
+      "bytes": 4548144832,
+      "copies": 632,
+      "dma_seconds": 0.17841468786960468,
+      "first_copy_finished_seconds": 51.595459608361125,
+      "last_copy_finished_seconds": 52.00166358426213,
+      "staging_seconds": 0.08976514264941216
+    },
+    "tensors_delivered": 632
+  },
+  "warmup": [
+    {
+      "name": "warm-single",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 54,
+      "output_tokens_per_s": 59.06889574929478,
+      "ttft_p50_s": 0.5515169889999925,
+      "ttft_p95_s": 0.5515169889999925
+    },
+    {
+      "name": "warm-batch-8",
+      "requests": 8,
+      "completed": 8,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 512,
+      "output_tokens_per_s": 428.915894109344,
+      "ttft_p50_s": 0.630631692999998,
+      "ttft_p95_s": 0.6894461050000018
+    },
+    {
+      "name": "warm-batch-32",
+      "requests": 32,
+      "completed": 32,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 2399,
+      "output_tokens_per_s": 1459.6099636096037,
+      "ttft_p50_s": 0.7499609909999947,
+      "ttft_p95_s": 0.7860706660000005
+    }
+  ],
+  "estimated_rental_usd": 0.0622204722724435,
+  "cleanup": {
+    "all_absent": true,
+    "http_status": 404
+  }
+}
