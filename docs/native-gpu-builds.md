@@ -109,4 +109,13 @@ Hardware acceptance remains separate: load the selected engine on each intended 
 
 The [CPU acceptance receipt](receipts/native-gpu-builds-cpu.json) records a real local build from source commit `600d6dd`, using CUDA 13.4 and a Linux GNU host. One invocation produced `sm_89` and `sm_120a` sets, each containing three executables, 11 PTX files, 11 standalone cubins, and one static CUDA archive. All 52 exported file hashes and the retained producer hash were verified. The serving executable in each set contains only its selected embedded PTX target; the bake and benchmark helpers do not embed PTX.
 
-The final export reused compiler outputs from the same sources and toolchain; it is not a cold-build timing result. PTX ISA 9.4 is recorded explicitly, so an older driver must not be assumed to load these particular local outputs. The receipt establishes compilation and inspection, with GPU execution, numerical acceptance, driver-cache portability, and model-bake acceptance still unvalidated. It does not establish Ubuntu CUDA 13.0 compatibility. The container wrapper has CPU fixture validation; its first production build remains pending the final engine source.
+That export reused compiler outputs from the same sources and toolchain; it is not a cold-build timing result. PTX ISA 9.4 is recorded explicitly, so an older driver must not be assumed to load those local CUDA 13.4 outputs. Compilation and inspection alone do not establish GPU execution or cache portability.
+
+The [Ubuntu matrix receipt](receipts/native-gpu-builds-ubuntu.json) records the accepted serving source built in the digest-pinned Ubuntu 24.04 CUDA 13.0 image. One CPU-only invocation produced separate SM89 and SM120a targets and runtime library closures. All 52 exported target hashes and both runtime inventories were independently checked after publication of the completion marker. Physical capability and compiler target remain separate fields; no GPU was exposed to the builder, and its container was removed.
+
+| Target | Serving binary SHA-256 |
+| --- | --- |
+| SM89 | `410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355` |
+| SM120a | `28873160d343e377e74792abe8510cfae44c8a2ec2c09f55c18a03e20379f9d8` |
+
+These identities differ from the earlier local CUDA 13.4 engine. Each requires its own exact-binary driver-cache bake and hardware acceptance; earlier caches and serving measurements cannot be relabeled for this build.
