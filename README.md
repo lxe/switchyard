@@ -7,7 +7,7 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Simulator](crates/switchyard-sim) | Deterministic workload replay and a local HTTP GPU-provider API with synthetic OpenAI-compatible serving |
 | [Scheduler and router](crates/switchyard-scheduler) | Five reference policies, queue admission, capacity planning, and adaptive host probing |
 | [Test gauntlet](crates/switchyard-gauntlet) | Analytical fixtures, workload comparisons, seeded generated tests, and software performance measurements |
-| [Live execution](crates/switchyard-live) | The same scheduler contract driving real RunPod pods and OpenAI-compatible vLLM or SGLang streams |
+| [Live execution](crates/switchyard-live) | The same scheduler contract driving real RunPod pods and OpenAI-compatible vLLM, SGLang, or native Rust streams |
 | [Provider adapters](crates/switchyard-provider) | Timestamped rental offers, owned pod lifecycle, and S3-compatible storage signing |
 | [Pod agent](crates/switchyard-agent) | Rust hydration, observed startup progress, and authenticated model transport |
 | [Artifacts](crates/switchyard-artifacts) | Deterministic archives, integrity checks, bounded transfer, and atomic hydration without cloud or engine dependencies |
@@ -162,3 +162,6 @@ The serving fixture supports synthetic chat completions and streaming. It does n
 MIT licensed.
 
 - [Selected local cold-start timeline](docs/selected-local-cold-start.md): instrumented hydration and native serving startup through the first streamed token.
+
+- [Native live integration](docs/native-live-integration.md): fixed launch bounds, streamed usage, token planning, and the native workload gauntlet.
+- [Native GPU builds](docs/native-gpu-builds.md): explicit architecture matrices and separate GPU bake acceptance.

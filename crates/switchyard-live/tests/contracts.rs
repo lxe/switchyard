@@ -926,6 +926,7 @@ fn bake_plan(arrival_interval_s: f64) -> switchyard_live::bake::CacheBakePlan {
                 policy: Policy::WarmOnly,
                 calls: 2,
                 prompt: "hello".into(),
+                prompt_variants: vec![],
                 planned_output: 1,
                 max_output: 2,
                 arrival_interval_s,

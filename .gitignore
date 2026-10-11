@@ -6,3 +6,5 @@
 /scratch/
 /.env*
 /configs/local/
+
+__pycache__/

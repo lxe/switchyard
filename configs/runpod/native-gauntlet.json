@@ -1,0 +1,147 @@
+{
+  "cases": [
+    {
+      "name": "cold-single",
+      "policy": "adaptive",
+      "calls": 1,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 600,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-single",
+      "policy": "warm_only",
+      "calls": 1,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 60,
+      "serial_dependencies": false
+    },
+    {
+      "name": "burst-1000",
+      "policy": "adaptive",
+      "calls": 1000,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 1000,
+      "completion_budget_s": 300,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-cheapest_elastic",
+      "policy": "cheapest_elastic",
+      "calls": 100,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-reactive",
+      "policy": "reactive",
+      "calls": 100,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-planned_hybrid",
+      "policy": "planned_hybrid",
+      "calls": 100,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "staggered",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0.1,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "mixed-length-burst",
+      "policy": "adaptive",
+      "calls": 64,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false,
+      "prompt_variants": [
+        "Name the capital of France.",
+        "Explain why grouping inference requests helps a GPU process more tokens each second.",
+        "A GPU receives short requests at unpredictable times. Some requests share a system prompt, while others have longer inputs and unknown output lengths. Explain one useful scheduling decision in two sentences."
+      ],
+      "output_bounds": [
+        8,
+        16,
+        32
+      ]
+    },
+    {
+      "name": "shared-system-prefix",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false,
+      "system_prompt": "Answer briefly. Explain technical ideas using plain language."
+    },
+    {
+      "name": "output-underestimate",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "List several practical GPU inference scheduling considerations.",
+      "planned_output": 4,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": false
+    },
+    {
+      "name": "dependencies",
+      "policy": "adaptive",
+      "calls": 8,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 24,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 200,
+      "completion_budget_s": 180,
+      "serial_dependencies": true
+    }
+  ]
+}

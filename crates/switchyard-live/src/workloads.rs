@@ -17,6 +17,9 @@ pub struct Case {
     pub policy: Policy,
     pub calls: usize,
     pub prompt: String,
+    /// Cycle complete user prompts; an empty list uses `prompt` for every call.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub prompt_variants: Vec<String>,
     pub planned_output: u64,
     pub max_output: u64,
     pub arrival_interval_s: f64,
@@ -82,9 +85,14 @@ impl Case {
                 },
             });
         }
+        let prompt = if self.prompt_variants.is_empty() {
+            &self.prompt
+        } else {
+            &self.prompt_variants[id % self.prompt_variants.len()]
+        };
         messages.push(Message {
             role: "user".into(),
-            content: format!("{}\nRequest identifier: {id}.", self.prompt),
+            content: format!("{prompt}\nRequest identifier: {id}."),
         });
         let max_output = if self.output_bounds.is_empty() {
             self.max_output

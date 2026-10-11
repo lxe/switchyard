@@ -49,3 +49,37 @@ fn comparison_corpus_preserves_shared_system_prefix_and_bounds_mixed_outputs() {
     invalid.cases[0].output_bounds = vec![0];
     assert!(invalid.validate().is_err());
 }
+
+#[test]
+fn native_gauntlet_cycles_input_and_output_work_without_changing_service_classes() {
+    let plan: Experiment =
+        serde_json::from_str(include_str!("../../../configs/runpod/native-gauntlet.json")).unwrap();
+    plan.validate().unwrap();
+    let mixed = plan
+        .cases
+        .iter()
+        .find(|c| c.name == "mixed-length-burst")
+        .unwrap();
+    let requests = mixed.requests("native-model");
+    assert_ne!(
+        requests[0].messages[0].content,
+        requests[1].messages[0].content
+    );
+    assert_eq!(
+        requests
+            .iter()
+            .take(3)
+            .map(|r| r.max_output)
+            .collect::<Vec<_>>(),
+        [8, 16, 32]
+    );
+    assert!(requests.iter().all(|r| r.class == "standard"));
+    let deps = plan
+        .cases
+        .iter()
+        .find(|c| c.name == "dependencies")
+        .unwrap()
+        .requests("native-model");
+    assert_eq!(deps[1].depends_on, [0]);
+    assert_eq!(plan.cases.iter().map(|c| c.calls).sum::<usize>(), 1470);
+}

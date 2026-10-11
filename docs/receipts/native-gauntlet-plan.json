@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "workloads_sha256": "90278a460080d422047ed25824127d8fb191679a9a01b8797f0b3d3369d099f3",
+  "gpu_allocation": false,
+  "scope": "Every planned input was tokenized with local pinned model assets; no inference or cloud execution in this preflight.",
+  "models": [
+    {
+      "calls": 1470,
+      "maximum_input_plus_output_tokens": 87,
+      "model": "qwen3.5-0.8b",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17"
+    },
+    {
+      "calls": 1470,
+      "maximum_input_plus_output_tokens": 87,
+      "model": "qwen3.5-2b",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    },
+    {
+      "calls": 1470,
+      "maximum_input_plus_output_tokens": 87,
+      "model": "qwen3.5-4b",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+    }
+  ]
+}

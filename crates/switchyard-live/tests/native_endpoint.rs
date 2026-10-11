@@ -70,3 +70,46 @@ async fn native_endpoint_accepts_live_tokenization_and_single_burst_streams() {
         receipts.len()
     );
 }
+
+/// Counts every planned request using the actual local pinned model assets; no GPU required.
+#[test]
+#[ignore = "requires explicitly supplied checkout with downloaded pinned model tokenizers"]
+fn native_gauntlet_fits_all_three_pinned_model_contexts() {
+    let root = PathBuf::from(std::env::var("SWITCHYARD_NATIVE_CHECKOUT").expect("checkout path"));
+    let models: serde_json::Value =
+        serde_json::from_str(include_str!("../../../configs/engine/models.json")).unwrap();
+    let plan: switchyard_live::workloads::Experiment =
+        serde_json::from_str(include_str!("../../../configs/runpod/native-gauntlet.json")).unwrap();
+    plan.validate().unwrap();
+    let mut counts = vec![];
+    for model in models["models"].as_array().unwrap() {
+        let config: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(root.join(model["config"].as_str().unwrap())).unwrap(),
+        )
+        .unwrap();
+        let assets = root.join(config["model_root"].as_str().unwrap());
+        let planner = Planner::from_files(
+            &assets.join("tokenizer.json"),
+            &assets.join("chat_template.jinja"),
+        )
+        .unwrap();
+        let mut maximum = 0;
+        for case in &plan.cases {
+            for request in case.requests(model["id"].as_str().unwrap()) {
+                let total = planner.input_tokens(&request.messages).unwrap() + request.max_output;
+                assert!(
+                    total <= config["max_context"].as_u64().unwrap(),
+                    "{} / {} needs {total} tokens",
+                    model["id"],
+                    case.name
+                );
+                maximum = maximum.max(total);
+            }
+        }
+        counts.push(serde_json::json!({"model":model["id"],"revision":model["source_revision"],"maximum_input_plus_output_tokens":maximum,"calls":1470}));
+    }
+    if let Ok(path) = std::env::var("SWITCHYARD_NATIVE_PLAN_RECEIPT") {
+        std::fs::write(path, serde_json::to_vec_pretty(&counts).unwrap()).unwrap();
+    }
+    println!("{}", serde_json::to_string(&counts).unwrap());
+}
