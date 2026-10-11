@@ -4,22 +4,22 @@ default-members = ["."]
 resolver = "3"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 rust-version = "1.98"
 publish = false
 license = "MIT"
 
 [workspace.dependencies]
-switchyard-artifact-tools = { path = "crates/switchyard-artifact-tools", version = "0.4.0" }
-switchyard-artifacts = { path = "crates/switchyard-artifacts", version = "0.4.0" }
-switchyard-provider = { path = "crates/switchyard-provider", version = "0.4.0" }
-switchyard-agent = { path = "crates/switchyard-agent", version = "0.4.0" }
-switchyard-live = { path = "crates/switchyard-live", version = "0.4.0" }
-switchyard-core = { path = "crates/switchyard-core", version = "0.4.0" }
-switchyard-scheduler = { path = "crates/switchyard-scheduler", version = "0.4.0" }
-switchyard-sim = { path = "crates/switchyard-sim", version = "0.4.0" }
-switchyard-gauntlet = { path = "crates/switchyard-gauntlet", version = "0.4.0" }
+switchyard-artifact-tools = { path = "crates/switchyard-artifact-tools", version = "0.4.1" }
+switchyard-artifacts = { path = "crates/switchyard-artifacts", version = "0.4.1" }
+switchyard-provider = { path = "crates/switchyard-provider", version = "0.4.1" }
+switchyard-agent = { path = "crates/switchyard-agent", version = "0.4.1" }
+switchyard-live = { path = "crates/switchyard-live", version = "0.4.1" }
+switchyard-core = { path = "crates/switchyard-core", version = "0.4.1" }
+switchyard-scheduler = { path = "crates/switchyard-scheduler", version = "0.4.1" }
+switchyard-sim = { path = "crates/switchyard-sim", version = "0.4.1" }
+switchyard-gauntlet = { path = "crates/switchyard-gauntlet", version = "0.4.1" }
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

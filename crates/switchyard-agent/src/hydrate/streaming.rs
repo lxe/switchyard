@@ -1,7 +1,7 @@
 //! Streaming legacy TAR pieces with bounded channels and exclusively owned publication.
 use super::{ExactReader, extract_reader, sample_rate};
 use crate::{Chunk, Error, Phase, Result, State, Ticket};
-use futures_util::{StreamExt, TryStreamExt};
+use futures_util::{FutureExt, StreamExt, TryStreamExt, future::BoxFuture};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -106,13 +106,7 @@ pub(super) async fn hydrate(
     fs::create_dir(&stage)?;
     let cancellation = Cancellation(Arc::new(AtomicBool::new(false)));
     let seen = Arc::new(Mutex::new(BTreeSet::new()));
-    let client = reqwest::Client::builder()
-        .user_agent("Switchyard/0.1")
-        .connect_timeout(Duration::from_secs(15))
-        .read_timeout(Duration::from_secs(ticket.stall_s))
-        .timeout(Duration::from_secs(ticket.lifetime_s.clamp(1, 600)))
-        .build()
-        .map_err(|_| Error::Transfer("stream client initialization".into()))?;
+    let client = client(ticket)?;
     let mut shards: BTreeMap<usize, Vec<Chunk>> = BTreeMap::new();
     for chunk in &ticket.manifest.chunks {
         shards.entry(chunk.shard).or_default().push(chunk.clone());
@@ -167,7 +161,13 @@ pub(super) async fn hydrate(
                         consumed: Some(consumed),
                         permit: permit.clone(),
                     }));
-                    jobs.push((chunk, sender, completion, permit));
+                    jobs.push(TransferJob {
+                        url: ticket.urls[&chunk.name].clone(),
+                        chunk,
+                        sender,
+                        completion,
+                        permit,
+                    });
                 }
                 let manifest = ticket.manifest.clone();
                 let extraction = tokio::task::spawn_blocking(move || {
@@ -181,38 +181,27 @@ pub(super) async fn hydrate(
                     io::copy(&mut archive.into_inner(), &mut io::sink())?;
                     Ok::<_, Error>(())
                 });
+                let stall = Duration::from_secs(ticket.stall_s);
                 let transfers = futures_util::stream::iter(jobs)
-                    .map(|(chunk, sender, completion, permit)| {
-                        let client = client.clone();
-                        let limit = limit.clone();
-                        let state = state.clone();
-                        async move {
-                            *permit.lock().map_err(|_| Error::Task)? =
-                                Some(limit.acquire_owned().await.map_err(|_| Error::Task)?);
-                            transfer(
-                                &client,
-                                &ticket.urls[&chunk.name],
-                                &chunk,
-                                sender,
-                                &state,
-                                started,
-                            )
-                            .await?;
-                            // Keep the slot and permit until the decoder consumes this piece. Even
-                            // small completed chunks therefore cannot accumulate a whole model.
-                            completion
-                                .await
-                                .map_err(|_| Error::Transfer("model extraction stopped".into()))?;
-                            Ok::<_, Error>(())
-                        }
+                    .then(move |job| {
+                        scheduled_transfer(
+                            job,
+                            client.clone(),
+                            state.clone(),
+                            limit.clone(),
+                            started,
+                            stall,
+                        )
                     })
-                    .buffer_unordered(ticket.concurrency)
+                    .boxed()
+                    .try_buffer_unordered(ticket.concurrency)
                     .try_collect::<Vec<_>>();
                 tokio::try_join!(transfers, async {
                     extraction.await.map_err(|_| Error::Task)?
                 })?;
                 Ok::<_, Error>(())
             }
+            .boxed()
         })
         .buffer_unordered(ticket.concurrency.min(20))
         .try_collect::<Vec<_>>()
@@ -241,6 +230,55 @@ pub(super) async fn hydrate(
     Ok(())
 }
 
+type Transfer = BoxFuture<'static, Result<()>>;
+struct TransferJob {
+    url: String,
+    chunk: Chunk,
+    sender: mpsc::Sender<Vec<u8>>,
+    completion: oneshot::Receiver<()>,
+    permit: Arc<Mutex<Option<OwnedSemaphorePermit>>>,
+}
+fn scheduled_transfer(
+    job: TransferJob,
+    client: reqwest::Client,
+    state: Arc<RwLock<State>>,
+    limit: Arc<Semaphore>,
+    started: Instant,
+    stall: Duration,
+) -> BoxFuture<'static, Result<Transfer>> {
+    async move {
+        // Acquire in TAR sequence before launching concurrently. A later piece
+        // cannot hold a slot while its required predecessor waits.
+        let acquired = limit.acquire_owned().await.map_err(|_| Error::Task)?;
+        *job.permit.lock().map_err(|_| Error::Task)? = Some(acquired);
+        Ok(async move {
+            transfer(
+                &client, &job.url, &job.chunk, job.sender, &state, started, stall,
+            )
+            .await?;
+            // Keep the slot and permit until the decoder consumes this piece. Even
+            // small completed chunks therefore cannot accumulate a whole model.
+            job.completion
+                .await
+                .map_err(|_| Error::Transfer("model extraction stopped".into()))?;
+            Ok(())
+        }
+        .boxed())
+    }
+    .boxed()
+}
+
+fn client(ticket: &Ticket) -> Result<reqwest::Client> {
+    reqwest::Client::builder()
+        .user_agent("Switchyard/0.1")
+        .connect_timeout(Duration::from_secs(15))
+        // Reqwest's read timer runs during consumer backpressure. Only time an
+        // actively awaited network operation below; keep the total request bound.
+        .timeout(Duration::from_secs(ticket.lifetime_s.clamp(1, 600)))
+        .build()
+        .map_err(|_| Error::Transfer("stream client initialization".into()))
+}
+
 async fn transfer(
     client: &reqwest::Client,
     url: &str,
@@ -248,11 +286,11 @@ async fn transfer(
     sender: mpsc::Sender<Vec<u8>>,
     state: &RwLock<State>,
     started: Instant,
+    stall: Duration,
 ) -> Result<()> {
-    let response = client
-        .get(url)
-        .send()
+    let response = tokio::time::timeout(stall, client.get(url).send())
         .await
+        .map_err(|_| Error::Transfer(format!("{} headers stalled", chunk.name)))?
         .map_err(|_| Error::Transfer(format!("{} transport", chunk.name)))?;
     if !response.status().is_success() {
         return Err(Error::Transfer(format!(
@@ -263,7 +301,10 @@ async fn transfer(
     }
     let mut stream = response.bytes_stream();
     let mut total = 0_u64;
-    while let Some(piece) = stream.next().await {
+    while let Some(piece) = tokio::time::timeout(stall, stream.next())
+        .await
+        .map_err(|_| Error::Transfer(format!("{} stalled", chunk.name)))?
+    {
         let piece = piece.map_err(|_| Error::Transfer(format!("{} interrupted", chunk.name)))?;
         total = total
             .checked_add(piece.len() as u64)
@@ -378,49 +419,4 @@ impl Read for PieceReaders {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[tokio::test]
-    async fn cancelled_downloader_keeps_permit_with_decoding_worker() {
-        struct Paused(std::sync::mpsc::Receiver<()>);
-        impl Read for Paused {
-            fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
-                self.0.recv().unwrap();
-                Ok(0)
-            }
-        }
-        let limit = Arc::new(Semaphore::new(1));
-        let permit = Arc::new(Mutex::new(Some(
-            limit.clone().acquire_owned().await.unwrap(),
-        )));
-        let (release, waiting) = std::sync::mpsc::channel();
-        let (started, ready) = oneshot::channel();
-        let (consumed, _completion) = oneshot::channel();
-        let mut reader = DecodedPiece {
-            inner: ExactReader {
-                inner: Box::new(Paused(waiting)),
-                remaining: 0,
-                checked_end: false,
-            },
-            consumed: Some(consumed),
-            permit: permit.clone(),
-        };
-        let decoding = tokio::task::spawn_blocking(move || {
-            let _ = started.send(());
-            assert_eq!(reader.read(&mut [0]).unwrap(), 0);
-        });
-        ready.await.unwrap();
-        // Drop the async downloader's ownership while the decoder is still blocked.
-        drop(permit);
-        decoding.abort();
-        assert_eq!(limit.available_permits(), 0);
-        release.send(()).unwrap();
-        tokio::time::timeout(Duration::from_secs(2), async {
-            while limit.available_permits() != 1 {
-                tokio::time::sleep(Duration::from_millis(5)).await;
-            }
-        })
-        .await
-        .unwrap();
-    }
-}
+mod tests;

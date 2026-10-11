@@ -129,7 +129,7 @@
     "hydration_concurrency": 20,
     "hydration_stall_s": 20,
     "poll_ms": 100,
-    "max_experiment_usd": 4.62,
+    "max_experiment_usd": 4.61,
     "experiment_timeout_s": 5400
   },
   "scheduling": {
@@ -139,8 +139,8 @@
   },
   "bootstrap": {
     "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
-    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.4.0/switchyard-agent-x86_64-linux-musl",
-    "agent_sha256": "a39ff3d1e8226ce7b8995c1e1ee8bf0a775465fb01467d777c7e4e8cf156f07c",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.4.1/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "2ae60a2d4313908f6dfa13bda9bcb9c2cb2d1ae64b4ccd7c9be3f8caf0ac0628",
     "ticket_prefix": "switchyard/bootstrap",
     "runtime": {
       "artifact": {
@@ -184,7 +184,9 @@
         "CUDA_CACHE_MAXSIZE": "4294967296",
         "XDG_CACHE_HOME": "{cache_root}/compiled/xdg",
         "TORCH_EXTENSIONS_DIR": "{cache_root}/compiled/torch-extensions",
-        "VLLM_ENABLE_STARTUP_PLAN": "1"
+        "VLLM_ENABLE_STARTUP_PLAN": "1",
+        "FLASHINFER_CUBIN_CHECKSUM_DISABLED": "1",
+        "FLASHINFER_NO_DOWNLOAD": "1"
       }
     },
     "startup": {

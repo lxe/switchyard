@@ -623,3 +623,115 @@ async fn trusted_extracts_before_final_transfer_and_cancellation_never_publishes
     assert!(!root.0.join("model").exists());
     server.abort();
 }
+
+#[tokio::test]
+async fn trusted_shards_progress_with_contended_slots_and_out_of_order_responses() {
+    #[derive(Clone)]
+    struct ContendedSource {
+        bodies: Arc<BTreeMap<String, Vec<u8>>>,
+        arrivals: Arc<AtomicUsize>,
+        active: Arc<AtomicUsize>,
+        peak: Arc<AtomicUsize>,
+        first_wave: Arc<tokio::sync::Barrier>,
+    }
+    async fn piece(
+        AxumState(source): AxumState<ContendedSource>,
+        RoutePath(name): RoutePath<String>,
+    ) -> Response {
+        let active = source.active.fetch_add(1, Ordering::Relaxed) + 1;
+        source.peak.fetch_max(active, Ordering::Relaxed);
+        if source.arrivals.fetch_add(1, Ordering::Relaxed) < 5 {
+            // Five slots remain after another artifact reserves fifteen. Network
+            // requests must overlap even though extraction consumes each TAR in order.
+            source.first_wave.wait().await;
+        }
+        if name.ends_with("-0000") {
+            // Later pieces finish their HTTP bodies before their TAR predecessor.
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        source.active.fetch_sub(1, Ordering::Relaxed);
+        Response::new(Body::from(source.bodies[&name].clone()))
+    }
+    let weights = vec![42; 2 << 20];
+    let mut manifest = fixture("none").0;
+    manifest.chunks.clear();
+    manifest.files.clear();
+    let mut bodies = BTreeMap::new();
+    for shard in 0..2 {
+        let path = format!("weights-{shard}.bin");
+        manifest.files.insert(
+            path.clone(),
+            FileInfo {
+                size: weights.len() as u64,
+                sha256: Some(sha(&weights)),
+            },
+        );
+        for (seq, raw) in tar_files(&[(&path, &weights)])
+            .chunks(128 << 10)
+            .enumerate()
+        {
+            let name = format!("piece-{shard}-{seq:04}");
+            bodies.insert(name.clone(), raw.to_vec());
+            manifest.chunks.push(Chunk {
+                name,
+                size: raw.len() as u64,
+                raw: raw.len() as u64,
+                shard,
+                seq,
+                sha256: sha(raw),
+            });
+        }
+    }
+    manifest.total_size = manifest.chunks.iter().map(|chunk| chunk.size).sum();
+    manifest.raw_size = manifest.chunks.iter().map(|chunk| chunk.raw).sum();
+    // Storage order is deliberately unhelpful; each shard must acquire slots in seq order.
+    manifest.chunks.reverse();
+    let source = ContendedSource {
+        bodies: Arc::new(bodies),
+        arrivals: Arc::new(AtomicUsize::new(0)),
+        active: Arc::new(AtomicUsize::new(0)),
+        peak: Arc::new(AtomicUsize::new(0)),
+        first_wave: Arc::new(tokio::sync::Barrier::new(5)),
+    };
+    let observed = source.peak.clone();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let server = SourceServer {
+        base: base.clone(),
+        handle: tokio::spawn(async move {
+            axum::serve(
+                listener,
+                Router::new()
+                    .route("/chunks/{name}", get(piece))
+                    .with_state(source),
+            )
+            .await
+            .unwrap();
+        }),
+    };
+    let mut ticket = ticket(manifest, &server.base);
+    ticket.concurrency = 20;
+    ticket.startup.mode = HydrationMode::TrustedStreaming;
+    let root = TempDir::new();
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    let limit = Arc::new(tokio::sync::Semaphore::new(20));
+    let other_artifact = limit.clone().acquire_many_owned(15).await.unwrap();
+    preflight(&ticket, &root.0, &state).await.unwrap();
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        hydrate_with_limit(&ticket, &root.0, state, limit.clone()),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert_eq!(observed.load(Ordering::Relaxed), 5);
+    assert_eq!(limit.available_permits(), 5);
+    for shard in 0..2 {
+        assert_eq!(
+            std::fs::read(root.0.join(format!("model/weights-{shard}.bin"))).unwrap(),
+            weights
+        );
+    }
+    drop(other_artifact);
+    assert_eq!(limit.available_permits(), 20);
+}
