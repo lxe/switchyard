@@ -275,3 +275,151 @@ async fn failed_chunk_publication_never_publishes_manifest_and_rejects_invalid_l
     assert_eq!(state.objects.lock().unwrap().len(), 1);
     server.abort();
 }
+
+#[tokio::test]
+async fn raw_extent_cli_preserves_captured_manifest_and_publishes_objects_first() {
+    use switchyard_artifact_tools::ExtentPublicationReceipt;
+    use switchyard_artifacts::extents::ExtentManifest;
+    let scratch = Scratch::new();
+    let source = scratch.0.join("source");
+    fs::create_dir(&source).unwrap();
+    fs::write(source.join("weights"), b"abcdefghijklmno").unwrap();
+    let metadata = scratch.0.join("metadata.json");
+    fs::write(
+        &metadata,
+        br#"{"kind":"weights","compatibility":{},"attributes":{}}"#,
+    )
+    .unwrap();
+    let directory = scratch.0.join("packed");
+    run(Command::PackExtents {
+        source,
+        out: directory.clone(),
+        metadata,
+        extent_bytes: 4,
+    })
+    .await
+    .unwrap();
+    let path = directory.join("manifest.json");
+    let original = fs::read(&path).unwrap();
+    let manifest: ExtentManifest = serde_json::from_slice(&original).unwrap();
+    let state = Uploads {
+        source_manifest: path.clone(),
+        replacement: Arc::new(b"{}".to_vec()),
+        objects: Arc::new(Mutex::new(BTreeMap::new())),
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!("http://{}", listener.local_addr().unwrap());
+    let app = Router::new()
+        .route("/{*key}", put(upload))
+        .with_state(state.clone());
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let config = scratch.0.join("storage.json");
+    fs::write(&config, serde_json::to_vec(&serde_json::json!({"storage": {
+        "endpoint":endpoint,"region":"auto","bucket":"bucket","access_key_env":"EXTENT_ACCESS","secret_key_env":"EXTENT_SECRET","url_lifetime_s":900
+    }})).unwrap()).unwrap();
+    let credentials = scratch.0.join("credentials.env");
+    fs::write(
+        &credentials,
+        "EXTENT_ACCESS=test-access\nEXTENT_SECRET=test-secret\n",
+    )
+    .unwrap();
+    let receipt = scratch.0.join("receipt.json");
+    run(Command::PublishExtents {
+        storage: StorageSettings {
+            config,
+            env_file: vec![credentials],
+        },
+        directory,
+        prefix: "weights".into(),
+        concurrency: 20,
+        receipt: receipt.clone(),
+    })
+    .await
+    .unwrap();
+    let receipt: ExtentPublicationReceipt =
+        serde_json::from_slice(&fs::read(receipt).unwrap()).unwrap();
+    assert_eq!(receipt.format, "switchyard-extents-v1");
+    assert_eq!(receipt.id, manifest.id);
+    assert_eq!(receipt.content_id, manifest.content_id);
+    assert_eq!(receipt.objects_created.len(), 4);
+    let objects = state.objects.lock().unwrap();
+    assert_eq!(
+        objects[&format!("bucket/weights/{}/manifest.json", manifest.id)],
+        original
+    );
+    assert_eq!(objects.len(), 5);
+    assert_eq!(fs::read(path).unwrap(), b"{}");
+    server.abort();
+}
+
+#[tokio::test]
+async fn shared_extent_object_is_uploaded_once_and_corrupt_range_blocks_publication() {
+    use switchyard_artifact_tools::publish_extent_directory;
+    use switchyard_artifacts::extents::pack_extents;
+    let scratch = Scratch::new();
+    let source = scratch.0.join("source");
+    fs::create_dir(&source).unwrap();
+    fs::write(source.join("weights"), b"abcdefgh").unwrap();
+    let directory = scratch.0.join("packed");
+    let mut manifest = pack_extents(
+        &source,
+        &directory,
+        Metadata {
+            kind: "weights".into(),
+            compatibility: BTreeMap::new(),
+            attributes: BTreeMap::new(),
+        },
+        4,
+    )
+    .unwrap();
+    fs::write(directory.join("combined.raw"), b"abcdefgh").unwrap();
+    for extent in &mut manifest.extents {
+        extent.object = "combined.raw".into();
+        extent.object_offset = extent.offset;
+        extent.object_size = 8;
+    }
+    manifest.id = manifest.identity().unwrap();
+    let bytes = serde_json::to_vec(&manifest).unwrap();
+    let path = directory.join("manifest.json");
+    fs::write(&path, &bytes).unwrap();
+    let state = Uploads {
+        source_manifest: path.clone(),
+        replacement: Arc::new(bytes.clone()),
+        objects: Arc::new(Mutex::new(BTreeMap::new())),
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!("http://{}", listener.local_addr().unwrap());
+    let app = Router::new()
+        .route("/{*key}", put(upload))
+        .with_state(state.clone());
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let storage = Storage::with_keys(
+        &StorageConfig {
+            endpoint,
+            region: "auto".into(),
+            bucket: "bucket".into(),
+            access_key_env: "ACCESS".into(),
+            secret_key_env: "SECRET".into(),
+            url_lifetime_s: 900,
+        },
+        "test-access".into(),
+        "test-secret".into(),
+    )
+    .unwrap();
+    manifest.extents[1].sha256 = "a".repeat(64);
+    manifest.id = manifest.identity().unwrap();
+    fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert!(
+        publish_extent_directory(&storage, &directory, "weights", 20)
+            .await
+            .is_err()
+    );
+    assert!(state.objects.lock().unwrap().is_empty());
+    fs::write(&path, &bytes).unwrap();
+    let receipt = publish_extent_directory(&storage, &directory, "weights", 20)
+        .await
+        .unwrap();
+    assert_eq!(receipt.objects_created.len(), 1);
+    assert_eq!(state.objects.lock().unwrap().len(), 2);
+    server.abort();
+}

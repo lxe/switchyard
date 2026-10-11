@@ -18,6 +18,44 @@ serializable `PublicationReceipt` with the immutable reference and per-object
 creation flags. Existing matching objects are verified and reused; different
 objects are refused. The CLI invokes this same function and writes its receipt.
 
+## Raw extent preparation and publication
+
+`pack-extents` preserves filesystem bytes in independently downloadable raw objects
+and writes a `switchyard-extents-v1` manifest. This generic packer divides files at
+the requested size; model-specific tensor and header planning belongs to the weight
+preparation layer. Extent layout identity and filesystem content identity are
+separate fields, and neither is interchangeable with an archive identity.
+
+```sh
+cargo run --features artifacts -- artifacts pack-extents \
+  --source model-files --out packed-weights --metadata metadata.json \
+  --extent-bytes 8388608
+cargo run --features artifacts -- artifacts publish-extents \
+  --config fleet.json --env-file credentials.env \
+  --directory packed-weights --prefix switchyard/weights \
+  --concurrency 20 --receipt publication.json
+```
+
+The publisher also accepts extent directories produced by model-specific packers.
+Their manifest must be named `manifest.json`. Library callers use
+`publish_extent_directory(&storage, directory, namespace, concurrency)` and receive
+an `ExtentPublicationReceipt` containing the format, layout and content identities,
+immutable prefix, and per-object creation flags. Shared objects are uploaded once,
+even when multiple extents refer to different ranges within the object.
+
+Before upload, publication validates the manifest, each local object, and every
+declared range digest. These checks run during preparation, outside endpoint
+startup. The captured manifest is published after all unique objects have been
+accepted. A corrupt range prevents publication; failed or cancelled uploads can
+leave reusable objects without publishing an incomplete manifest. Object files
+must remain stable throughout the operation.
+
+A [live R2 receipt](../../experiments/extent-publication-r2.json) records a 4 KiB
+fixture packed into four extents that share one identical content-addressed object.
+Remote reads matched the local object and manifest bytes. A second publication
+reused both objects without creating replacements. This validates the storage
+boundary and deduplication; it does not establish model startup performance.
+
 Hydration defaults to verified installation. For trusted, pinned publications,
 `hydrate --trusted-streaming --concurrency 20 --extraction-concurrency 20`
 extracts response bytes as they arrive without content hashing, a tree rescan,

@@ -1,7 +1,7 @@
 //! Pack, verify, publish, and hydrate independently of fleet scheduling.
 use crate::{
     Error, ProbeOptions, Result, diagnostics::HydrationTiming, probe, probe_directory,
-    publish_directory,
+    publish_directory, publish_extent_directory,
 };
 use clap::{Args, Subcommand};
 use serde::{Deserialize, Serialize};
@@ -49,6 +49,17 @@ pub enum Command {
         #[arg(long, default_value_t = 6)]
         zstd_level: i32,
     },
+    /// Preserve file bytes in independent raw objects with a separate extent manifest.
+    PackExtents {
+        #[arg(long)]
+        source: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+        #[arg(long)]
+        metadata: PathBuf,
+        #[arg(long, default_value_t = 8388608)]
+        extent_bytes: u64,
+    },
     /// Verify a hydrated tree against its complete manifest, without network access.
     Verify {
         #[arg(long)]
@@ -66,6 +77,19 @@ pub enum Command {
         #[arg(long, default_value = "switchyard/artifacts")]
         prefix: String,
         #[arg(long, default_value_t = 4)]
+        concurrency: usize,
+        #[arg(long)]
+        receipt: PathBuf,
+    },
+    /// Publish raw extent objects first and their distinct manifest last.
+    PublishExtents {
+        #[command(flatten)]
+        storage: StorageSettings,
+        #[arg(long)]
+        directory: PathBuf,
+        #[arg(long, default_value = "switchyard/weights")]
+        prefix: String,
+        #[arg(long, default_value_t = 20)]
         concurrency: usize,
         #[arg(long)]
         receipt: PathBuf,
@@ -201,6 +225,31 @@ pub async fn run(command: Command) -> Result<()> {
                 manifest.chunks.iter().map(|c| c.size).sum::<u64>()
             );
         }
+        Command::PackExtents {
+            source,
+            out,
+            metadata,
+            extent_bytes,
+        } => {
+            let metadata: Metadata = read(&metadata)?;
+            let target = out.clone();
+            let manifest = tokio::task::spawn_blocking(move || {
+                switchyard_artifacts::extents::pack_extents(
+                    &source,
+                    &target,
+                    metadata,
+                    extent_bytes,
+                )
+            })
+            .await??;
+            write(&out.join("manifest.json"), &manifest)?;
+            println!(
+                "{}: {} entries, {} raw extents",
+                manifest.id,
+                manifest.entries.len(),
+                manifest.extents.len()
+            );
+        }
         Command::Verify {
             manifest,
             directory,
@@ -222,6 +271,19 @@ pub async fn run(command: Command) -> Result<()> {
         } => {
             let store = storage(&settings)?;
             let published = publish_directory(&store, &directory, &prefix, concurrency).await?;
+            write(&receipt, &published)?;
+            println!("{} published at {}", published.id, published.prefix);
+        }
+        Command::PublishExtents {
+            storage: settings,
+            directory,
+            prefix,
+            concurrency,
+            receipt,
+        } => {
+            let store = storage(&settings)?;
+            let published =
+                publish_extent_directory(&store, &directory, &prefix, concurrency).await?;
             write(&receipt, &published)?;
             println!("{} published at {}", published.id, published.prefix);
         }

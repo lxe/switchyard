@@ -47,7 +47,7 @@ pub async fn publish_directory(
             "invalid publication prefix or concurrency".into(),
         ));
     }
-    let snapshot = Snapshot::capture(&directory.join("manifest.json"))?;
+    let snapshot = Snapshot::capture(&directory.join("manifest.json"), Manifest::validate)?;
     let manifest = &snapshot.manifest;
     let prefix = format!("{namespace}/{}", manifest.id);
     let chunks_created = {
@@ -90,18 +90,21 @@ pub async fn publish_directory(
     })
 }
 
-struct Snapshot {
-    manifest: Manifest,
-    path: PathBuf,
-    sha256: String,
-    size: u64,
+pub(crate) struct Snapshot<M> {
+    pub(crate) manifest: M,
+    pub(crate) path: PathBuf,
+    pub(crate) sha256: String,
+    pub(crate) size: u64,
 }
 
-impl Snapshot {
-    fn capture(source: &Path) -> Result<Self> {
+impl<M: serde::de::DeserializeOwned> Snapshot<M> {
+    pub(crate) fn capture(
+        source: &Path,
+        validate: impl FnOnce(&M) -> switchyard_artifacts::Result<()>,
+    ) -> Result<Self> {
         let bytes = fs::read(source)?;
-        let manifest: Manifest = serde_json::from_slice(&bytes)?;
-        manifest.validate()?;
+        let manifest: M = serde_json::from_slice(&bytes)?;
+        validate(&manifest)?;
         let mut random = [0_u8; 12];
         getrandom::fill(&mut random)
             .map_err(|_| Error::Config("manifest snapshot randomness unavailable".into()))?;
@@ -131,7 +134,7 @@ impl Snapshot {
     }
 }
 
-impl Drop for Snapshot {
+impl<M> Drop for Snapshot<M> {
     fn drop(&mut self) {
         let _ = fs::remove_file(&self.path);
     }
@@ -169,7 +172,7 @@ mod tests {
         let path = root.join("manifest.json");
         let bytes = serde_json::to_vec(&manifest).unwrap();
         fs::write(&path, &bytes).unwrap();
-        let snapshot = Snapshot::capture(&path).unwrap();
+        let snapshot = Snapshot::capture(&path, Manifest::validate).unwrap();
         let temporary = snapshot.path.clone();
         assert_eq!(fs::read(&temporary).unwrap(), bytes);
         #[cfg(unix)]

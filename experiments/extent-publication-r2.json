@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-10",
+  "experiment": "raw extent immutable R2 publication boundary",
+  "workspace_version": "0.5.0",
+  "fixture": {
+    "file": "payload.bin",
+    "bytes": "bytes(range(256)) repeated 16 times",
+    "file_mode": "0644",
+    "extent_bytes": 1024,
+    "metadata": {
+      "kind": "extent-publication-smoke",
+      "compatibility": {},
+      "attributes": {
+        "purpose": "raw object publication boundary"
+      }
+    }
+  },
+  "publication": {
+    "format": "switchyard-extents-v1",
+    "id": "90c1c395491da6f8daea439412231afb38cc5f05820c0d8199e59bf5a95c147b",
+    "content_id": "ac10611540ab734d625d738dca8bd73de98351eb5e8f2bea80e54e465c1cc6f1",
+    "prefix": "switchyard/experiments/extent-publication/90c1c395491da6f8daea439412231afb38cc5f05820c0d8199e59bf5a95c147b",
+    "manifest_created": true,
+    "objects_created": {
+      "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9.raw": true
+    }
+  },
+  "readback": {
+    "remote_manifest_matches": true,
+    "remote_unique_objects_match": 1,
+    "manifest_sha256": "c3ea64f0836aa50f7e2dc226a55e9850f4d9154a9afe2b7ac6a7f2769b9880ad"
+  },
+  "republication": {
+    "format": "switchyard-extents-v1",
+    "id": "90c1c395491da6f8daea439412231afb38cc5f05820c0d8199e59bf5a95c147b",
+    "content_id": "ac10611540ab734d625d738dca8bd73de98351eb5e8f2bea80e54e465c1cc6f1",
+    "prefix": "switchyard/experiments/extent-publication/90c1c395491da6f8daea439412231afb38cc5f05820c0d8199e59bf5a95c147b",
+    "manifest_created": false,
+    "objects_created": {
+      "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9.raw": false
+    }
+  },
+  "claim_limit": "Confirms raw-object and manifest publication, remote byte equivalence, deduplication, and immutable reuse. Does not measure model hydration, GPU loading or cold-start performance."
+}

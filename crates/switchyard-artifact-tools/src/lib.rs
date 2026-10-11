@@ -1,11 +1,13 @@
 //! Local artifact tooling combines a cloud-independent archive library with object storage.
 pub mod cli;
 mod diagnostics;
+mod extent_publication;
 mod probe;
 mod publication;
 mod runtime_build;
 
 pub use diagnostics::HydrationReceipt;
+pub use extent_publication::{ExtentPublicationReceipt, publish_extent_directory};
 pub use probe::{ProbeOptions, ProbeReceipt, ProbeShard, probe_directory};
 pub use publication::{PublicationReceipt, publish_directory};
 
