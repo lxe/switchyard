@@ -1,0 +1,35 @@
+{
+  "scope": "Control-plane preflight only. No GPU provisioned and no throughput or startup measurement for these raw-extent configurations.",
+  "configuration": "configs/runpod/qwen-extents-l40s.json",
+  "agent_source_commit": "395386eb54124b52a211f26d46f0372ca0f9a500",
+  "artifact_checks": {
+    "checks": [
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-0.8b"
+      },
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-2b"
+      },
+      {
+        "input_tokens": 21,
+        "model": "qwen3.5-4b"
+      }
+    ],
+    "provisioned": false
+  },
+  "offers": [
+    {
+      "gpu": "NVIDIA L40S",
+      "gpu_memory_gb": 48,
+      "data_center": "US-MO-1",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 1.09,
+      "disk_usd_per_hour": 0.010958904109589041,
+      "quoted_at_unix_s": 1791696318
+    }
+  ],
+  "cache_preparation_required": true,
+  "prior_scope": "Serving-capacity priors transferred from the matched full-runtime legacy-model engine comparison. Startup priors are conservative baseline estimates, not measurements of the raw-extent loader. Prefill work factor 0.05 is uncalibrated. KV admission is context4096 times32 active sequences, not maximum physical capacity."
+}
