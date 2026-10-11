@@ -159,8 +159,9 @@ pub(super) fn decoder_history_bound(ticket: &Ticket) -> u64 {
         0
     };
     let model_workers = match &ticket.source {
-        crate::model::ModelSource::Legacy(s) if s.manifest.compress == "zstd" => {
-            ticket.concurrency.min(
+        crate::model::ModelSource::Legacy(s) if s.manifest.compress == "zstd" => ticket
+            .concurrency
+            .min(
                 s.manifest
                     .chunks
                     .iter()
@@ -168,7 +169,13 @@ pub(super) fn decoder_history_bound(ticket: &Ticket) -> u64 {
                     .collect::<std::collections::BTreeSet<_>>()
                     .len(),
             )
-        }
+            .min(
+                if ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
+                    20
+                } else {
+                    8
+                },
+            ),
         _ => 0,
     };
     (runtime_workers + model_workers) as u64 * 128 * 1024 * 1024

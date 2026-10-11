@@ -500,7 +500,9 @@ fn extract_shard(
     let pieces = shard.iter().map(|chunk| {
         let file = std::fs::File::open(chunks.join(&chunk.name))?;
         let piece: Box<dyn Read> = if manifest.compress == "zstd" {
-            Box::new(zstd::stream::read::Decoder::new(file)?)
+            let mut decoder = zstd::stream::read::Decoder::new(file)?;
+            decoder.window_log_max(27)?;
+            Box::new(decoder)
         } else {
             Box::new(file)
         };

@@ -26,6 +26,7 @@ parser.add_argument("--agent", type=Path, required=True)
 parser.add_argument("--image", default="ghcr.io/lxe/switchyard-runtime:ubuntu24.04")
 parser.add_argument("--model-delay", type=float, default=0)
 parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="both")
+parser.add_argument("--warm-cache-from", type=Path)
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[3]
 out = args.output.resolve()
@@ -119,6 +120,27 @@ try:
         root.mkdir()
         installation = root / "installation"
         installation.mkdir()
+        if args.warm_cache_from:
+            subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--name",
+                    "switchyard-extent-cache-seed-" + secrets.token_hex(6),
+                    "-v",
+                    str(args.warm_cache_from.resolve()) + ":/seed:ro",
+                    "-v",
+                    str(installation) + ":/destination",
+                    "--entrypoint",
+                    "/bin/cp",
+                    args.image,
+                    "--archive",
+                    "/seed/.",
+                    "/destination/cache",
+                ],
+                check=True,
+            )
         epoch = time.monotonic()
         before = len(events)
         runtime = {
@@ -326,7 +348,12 @@ try:
                     for e in events[before:]
                 ],
                 "scope": "Cold private container, actual agent ticket/preflights/runtime reception and extraction, tokenizer and native vLLM serving. Compiler caches initially empty. Correctness hashing was performed only in the separate loader comparison.",
+                "compiler_cache_seeded": args.warm_cache_from is not None,
             }
+            if args.warm_cache_from:
+                result["scope"] = (
+                    "Fresh private container and runtime/model reception; compiler cache copied from a prior matching local run before the request epoch. This tests upstream cache reuse, without claiming a published artifact-v1 cache bake. Correctness hashing was performed only in the separate loader comparison."
+                )
             for e in result["http"]:
                 e.pop("started_monotonic")
                 e.pop("ended_monotonic")
