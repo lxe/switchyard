@@ -218,6 +218,7 @@ pub(super) async fn prepare(
                 .args(args)
                 .env("SWITCHYARD_RUNTIME_ROOT", &roots.runtime)
                 .env("SWITCHYARD_COMPONENTS_ROOT", roots.components())
+                .env("SWITCHYARD_MODEL_CONTENT_ID", &artifact.manifest.content_id)
                 .env(
                     "SWITCHYARD_RUNTIME_ARTIFACT_ID",
                     &runtime.artifact.manifest.id,

@@ -13,4 +13,4 @@ requires-python = ">=3.12"
 switchyard_extents = "switchyard_extent_loader:register"
 
 [tool.setuptools]
-py-modules = ["switchyard_extent_loader", "switchyard_vllm_startup", "switchyard_vllm_hooks"]
+py-modules = ["switchyard_extent_loader", "switchyard_vllm_startup", "switchyard_vllm_hooks", "switchyard_serving_profile", "switchyard_final_state"]

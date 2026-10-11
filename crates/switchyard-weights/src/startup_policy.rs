@@ -55,6 +55,8 @@ pub struct VllmStartupPolicy {
     #[serde(default)]
     pub memory_plan: ReusePolicy,
     #[serde(default)]
+    pub serving_profile: Option<String>,
+    #[serde(default)]
     pub cache_aliases: Vec<String>,
     #[serde(default = "telemetry")]
     pub telemetry: bool,
@@ -64,6 +66,21 @@ impl VllmStartupPolicy {
         let policy: Self = serde_json::from_str(value)
             .map_err(|_| Error::Invalid("vLLM startup policy JSON or fields".into()))?;
         if policy.schema_version != 1
+            || policy.serving_profile.as_ref().is_some_and(|value| {
+                let path = Path::new(value);
+                path.is_absolute()
+                    || value.contains(['\\', '\0'])
+                    || path.components().count() < 2
+                    || path
+                        .components()
+                        .any(|p| !matches!(p, std::path::Component::Normal(_)))
+                    || path
+                        .components()
+                        .collect::<std::path::PathBuf>()
+                        .as_os_str()
+                        != value.as_str()
+                    || policy.cache_policy != ReusePolicy::Required
+            })
             || policy.cache_aliases.len() > 8
             || policy.cache_aliases.iter().any(|value| {
                 let path = Path::new(value);
@@ -123,13 +140,14 @@ impl VllmStartupPolicy {
             ));
         }
         if self.cache_policy == ReusePolicy::Required
-            && [
-                "VLLM_FORCE_AOT_LOAD",
-                "FLASHINFER_DISABLE_JIT",
-                "FLASHINFER_NO_DOWNLOAD",
-            ]
-            .iter()
-            .any(|name| environment.get(*name).map(String::as_str) != Some("1"))
+            && (self.compute_capability.is_none()
+                || [
+                    "VLLM_FORCE_AOT_LOAD",
+                    "FLASHINFER_DISABLE_JIT",
+                    "FLASHINFER_NO_DOWNLOAD",
+                ]
+                .iter()
+                .any(|name| environment.get(*name).map(String::as_str) != Some("1")))
         {
             return Err(Error::Invalid(
                 "required cache policy needs native strict flags".into(),

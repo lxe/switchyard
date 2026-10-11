@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "strategy": "prepared",
+  "worker_method": "spawn",
+  "compute_capability": "12.0",
+  "tokenizer_preload": true,
+  "cache_policy": "required",
+  "memory_plan": "native",
+  "serving_profile": "compiled/serving-profile.json",
+  "telemetry": true
+}

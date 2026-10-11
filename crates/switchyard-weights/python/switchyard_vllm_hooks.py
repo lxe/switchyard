@@ -231,6 +231,11 @@ def install(policy=None):
     model_preparation(policy, engine_args, registry)
     process_method(policy, importlib.import_module("vllm.utils.system_utils"))
     memory_plan(policy, importlib.import_module("vllm.v1.worker.startup_plan"))
+    from switchyard_serving_profile import install as install_serving_profile
+
+    install_serving_profile(
+        policy, importlib.import_module("vllm.v1.worker.gpu_worker"), record
+    )
     _installed_pid = os.getpid()
     record(policy, "native_hooks_ready")
 

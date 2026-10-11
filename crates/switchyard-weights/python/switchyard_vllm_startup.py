@@ -46,6 +46,7 @@ class Policy:
     tokenizer_preload: bool = False
     cache_policy: str = "native"
     memory_plan: str = "native"
+    serving_profile: str | None = None
     cache_aliases: tuple = ()
     telemetry: bool = True
 
@@ -100,6 +101,19 @@ class Policy:
             )
         if policy.cache_policy == "required" and policy.compute_capability is None:
             raise ValueError("required cache policy needs the selected GPU capability")
+        if policy.serving_profile is not None:
+            profile = Path(policy.serving_profile)
+            if (
+                not isinstance(policy.serving_profile, str)
+                or profile.is_absolute()
+                or ".." in profile.parts
+                or str(profile) != policy.serving_profile
+                or len(profile.parts) < 2
+                or policy.cache_policy != "required"
+            ):
+                raise ValueError(
+                    "serving profile must be a normalized selected cache file with strict cache policy"
+                )
         return policy
 
 

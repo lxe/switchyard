@@ -55,10 +55,12 @@ class CompletedWeights:
         timeout=120,
         cuda_device=None,
         pinned_bytes=16 * 1024 * 1024,
+        destinations=None,
     ):
         if pinned_bytes <= 0:
             raise ValueError("pinned_bytes must be positive")
         self.mappings = {}
+        self.destinations = destinations
         self.device = None if cuda_device is None else torch.device(cuda_device)
         self.stream = (
             None if self.device is None else torch.cuda.Stream(device=self.device)
@@ -114,9 +116,26 @@ class CompletedWeights:
                 start = time.perf_counter()
                 # Full temporary tensor is necessary for model-specific assignment;
                 # pinned host staging is bounded independently of that tensor size.
-                device_raw = torch.empty(
-                    spec["length"], dtype=torch.uint8, device=self.device
-                )
+                if self.destinations is None:
+                    device_raw = torch.empty(
+                        spec["length"], dtype=torch.uint8, device=self.device
+                    )
+                else:
+                    destination = self.destinations.get(spec["name"])
+                    if (
+                        destination is None
+                        or list(destination.shape) != spec["shape"]
+                        or destination.dtype != _DTYPES[spec["dtype"]]
+                        or not destination.is_contiguous()
+                    ):
+                        raise ValueError(
+                            "final-state descriptor differs from direct GPU destination"
+                        )
+                    device_raw = destination.view(torch.uint8).reshape(-1)
+                    if device_raw.numel() != spec["length"]:
+                        raise ValueError(
+                            "final-state byte length differs from destination"
+                        )
                 self.stream.wait_stream(torch.cuda.current_stream(self.device))
                 device_raw.record_stream(self.stream)
                 event = torch.cuda.Event(enable_timing=True)
@@ -208,6 +227,7 @@ def register():
             base_config.model_loader_extra_config = extra
             super().__init__(base_config)
             self.completed = None
+            self.final_destinations = None
 
         def download_model(self, model_config):
             # All config/tokenizer metadata must already be complete and local.
@@ -245,6 +265,7 @@ def register():
                 timeout=self.timeout,
                 cuda_device=device,
                 pinned_bytes=self.pinned_bytes,
+                destinations=self.final_destinations,
             )
             if self.counter_before_loading_weights == 0.0:
                 self.counter_before_loading_weights = time.perf_counter()
@@ -256,7 +277,44 @@ def register():
                     "Extent bridge currently supports dense, unquantized checkpoints"
                 )
             try:
-                super().load_weights(model, model_config)
+                from pathlib import Path
+
+                from switchyard_final_state import RECEIPT, load_final_state
+                from switchyard_vllm_startup import Policy, record
+
+                policy = Policy.from_environment()
+                final = (Path(model_config.model) / RECEIPT).is_file()
+                if (
+                    policy is not None
+                    and policy.serving_profile is not None
+                    and not final
+                ):
+                    raise ValueError(
+                        "fixed serving profile requires final-state tensors"
+                    )
+
+                if final:
+
+                    def iterator(destinations):
+                        self.final_destinations = destinations
+                        return self._get_weights_iterator(
+                            self.Source(
+                                model_or_path=model_config.model,
+                                revision=model_config.revision,
+                            )
+                        )
+
+                    receipt = load_final_state(model, model_config, iterator)
+                    record(
+                        policy,
+                        "final_state_loaded",
+                        tensors=receipt["tensor_count"],
+                        bytes=receipt["tensor_bytes"],
+                        hf_mapping_performed=False,
+                        direct_gpu_destinations=self.cuda_stage,
+                    )
+                else:
+                    super().load_weights(model, model_config)
                 # Preserve base model weight tracking. Consumers acknowledge only
                 # after model-specific assignment has returned and CUDA has settled.
                 if torch.cuda.is_available():

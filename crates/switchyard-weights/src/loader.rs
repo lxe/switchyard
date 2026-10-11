@@ -11,6 +11,8 @@ const ADAPTER: &str = include_str!("../python/switchyard_extent_loader.py");
 const RUNNER: &str = include_str!("../python/serve.py");
 const STARTUP: &str = include_str!("../python/switchyard_vllm_startup.py");
 const HOOKS: &str = include_str!("../python/switchyard_vllm_hooks.py");
+const SERVING_PROFILE: &str = include_str!("../python/switchyard_serving_profile.py");
+const FINAL_STATE: &str = include_str!("../python/switchyard_final_state.py");
 fn python_program() -> String {
     "venv/bin/python".into()
 }
@@ -56,11 +58,13 @@ impl VllmLoaderConfig {
         Ok(format!(
             "{:x}",
             Sha256::digest(serde_json::to_vec(&(
-                "switchyard-vllm-loader-v2",
+                "switchyard-vllm-loader-v3",
                 ADAPTER,
                 RUNNER,
                 STARTUP,
                 HOOKS,
+                SERVING_PROFILE,
+                FINAL_STATE,
                 self
             ))?)
         ))
@@ -78,6 +82,11 @@ pub fn write_vllm_bundle(directory: &Path) -> Result<()> {
     fs::write(directory.join("serve.py"), RUNNER)?;
     fs::write(directory.join("switchyard_vllm_startup.py"), STARTUP)?;
     fs::write(directory.join("switchyard_vllm_hooks.py"), HOOKS)?;
+    fs::write(
+        directory.join("switchyard_serving_profile.py"),
+        SERVING_PROFILE,
+    )?;
+    fs::write(directory.join("switchyard_final_state.py"), FINAL_STATE)?;
     let dist = directory.join("switchyard_extent_loader-0.0.0.dist-info");
     fs::create_dir(&dist)?;
     fs::write(
