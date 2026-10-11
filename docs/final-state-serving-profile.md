@@ -26,7 +26,7 @@ The profile has schema version 1 and purpose `fixed_serving_budget`. It binds th
 
 The [preparation helper](../crates/switchyard-weights/benchmarks/bake_serving_engine.py) runs against the selected runtime and model on the target GPU. It writes native final model files, warmed cache files and `serving-profile.unbound.json` to a private output directory. Callable worker serialization is enabled only in this preparation process. It captures no GPU process checkpoint.
 
-Pack the exported model with `switchyard-weights pack SOURCE OUTPUT --extent-bytes 4194304`. Set the profile's `model_content_id` to that new manifest's content ID, then place the bound file at `cache/compiled/serving-profile.json` and pack the cache. Cache compatibility must use the selected final model content ID, current loader v3 identity and serving arguments.
+Pack the exported model with `switchyard-weights pack SOURCE OUTPUT --extent-bytes 4194304`. Set the profile's `model_content_id` to that new manifest's content ID, then place the bound file at `cache/compiled/serving-profile.json`. Pack the contents of `cache/compiled/` as the cache artifact: the agent hydrates the named `compiled` cache beneath `{cache_root}/compiled/`, so artifact entries must begin with `serving-profile.json`, `flashinfer/` and the other cache directories. Cache compatibility must use the selected final model content ID, current loader identity and serving arguments.
 
 The loader bundle includes `switchyard_final_state.py` and `switchyard_serving_profile.py`; both participate in its v3 source identity. CPU preparation must import this same bundle. The agent injects `SWITCHYARD_MODEL_CONTENT_ID` into the engine child so the profile validates the actual artifact, including after a CPU process restore.
 

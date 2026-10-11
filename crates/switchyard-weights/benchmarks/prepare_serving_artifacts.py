@@ -157,7 +157,7 @@ def main():
             "artifacts",
             "pack",
             "--source",
-            str((args.bake / "cache").resolve()),
+            str((args.bake / "cache/compiled").resolve()),
             "--out",
             str(args.cache_artifact.resolve()),
             "--metadata",
