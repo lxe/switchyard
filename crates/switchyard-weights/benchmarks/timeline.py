@@ -96,6 +96,8 @@ class Timeline:
                 "automatic_memory_sizing",
                 "kv_cache_memory_bytes",
                 "runtime_headroom_bytes",
+                "clock_offset_s",
+                "clock_uncertainty_s",
                 "tensor_count",
                 "tensor_bytes",
             )

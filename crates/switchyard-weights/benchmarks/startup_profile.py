@@ -117,6 +117,15 @@ if module_sources := os.environ.get("NATIVE_MODULE_SOURCES"):
 
 
 def record(event):
+    offset = float(os.environ.get("VLLM_CPU_SNAPSHOT_CLOCK_OFFSET_S", "0"))
+    for field in ("monotonic", "started_monotonic", "ended_monotonic"):
+        if field in event:
+            event[field] += offset
+    if offset:
+        event["clock_offset_s"] = offset
+        event["clock_uncertainty_s"] = float(
+            os.environ.get("VLLM_CPU_SNAPSHOT_CLOCK_UNCERTAINTY_S", "0")
+        )
     event.update(pid=os.getpid(), thread=threading.get_ident())
     os.write(fd, (json.dumps(event, separators=(",", ":")) + "\n").encode())
 

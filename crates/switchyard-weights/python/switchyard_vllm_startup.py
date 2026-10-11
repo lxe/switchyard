@@ -120,13 +120,19 @@ class Policy:
 def record(policy, event, **values):
     if policy is None or not policy.telemetry:
         return
-    now = time.monotonic()
+    raw_now = time.monotonic()
+    offset = float(os.environ.get("VLLM_CPU_SNAPSHOT_CLOCK_OFFSET_S", "0"))
+    now = raw_now + offset
     epoch = float(os.environ.get("SWITCHYARD_STARTUP_EPOCH", now))
     message = {
         "event": event,
         "pid": os.getpid(),
         "monotonic_s": now,
         "elapsed_s": now - epoch,
+        "clock_offset_s": offset,
+        "clock_uncertainty_s": float(
+            os.environ.get("VLLM_CPU_SNAPSHOT_CLOCK_UNCERTAINTY_S", "0")
+        ),
         **values,
     }
     print(
