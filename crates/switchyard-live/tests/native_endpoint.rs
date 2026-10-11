@@ -35,25 +35,43 @@ async fn native_endpoint_accepts_live_tokenization_and_single_burst_streams() {
     let (events, mut rx) = mpsc::channel(256);
     let drainer = tokio::spawn(async move { while rx.recv().await.is_some() {} });
     let mut receipts = vec![];
-    for count in [1, 8] {
-        let mut jobs = tokio::task::JoinSet::new();
+    for (count, mixed) in [(1, false), (8, false), (8, true)] {
+        let mut calls = Vec::new();
         for i in 0..count {
-            let endpoint = endpoint.clone();
-            let call = Call {
+            let mut call = Call {
                 id: receipts.len() + i,
                 model: model.clone(),
-                messages: messages.clone(),
+                messages: if mixed {
+                    vec![Message {role:"user".into(), content: [
+                        "Name the capital of France.",
+                        "France is a country in western Europe. Name its capital city.",
+                        "A geography exercise asks about France, a country in western Europe. The answer should name the capital city of that country. Give a short answer with the city name."
+                    ][i % 3].into()}]
+                } else {
+                    messages.clone()
+                },
                 max_output: 32,
-                input_tokens: input,
+                input_tokens: 0,
                 planner: planner.clone(),
                 epoch,
             };
+            call.input_tokens = planner.input_tokens(&call.messages).unwrap();
+            endpoint
+                .verify_tokenization(&model, &call.messages, call.input_tokens)
+                .await
+                .unwrap();
+            calls.push(call);
+        }
+        // Finish CPU token-count checks before releasing the concurrent burst.
+        let mut jobs = tokio::task::JoinSet::new();
+        for call in calls {
+            let endpoint = endpoint.clone();
             let events = events.clone();
             jobs.spawn(async move { endpoint.complete(call, events).await });
         }
         while let Some(result) = jobs.join_next().await {
             let result = result.unwrap().unwrap();
-            assert_eq!(result.input_tokens, input);
+            assert!(result.input_tokens > 0);
             assert!(result.output_tokens > 0 && result.output_tokens <= 32);
             assert!(result.first_content_s >= result.started_s);
             receipts.push(result);

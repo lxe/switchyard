@@ -20,7 +20,7 @@ The admitted row count and context limit bound state sizes. Left padding costs s
 
 ## CPU verification
 
-`cargo test -p switchyard-engine --all-targets` passes fourteen tests, including seven mixed decode fixtures. `cargo clippy -p switchyard-engine --all-targets -- -D warnings` passes. Tiny deterministic F32 models exercise prompt lengths 8/32/96, GDN value/key-head ratios 1/2/3, a shared prefill cohort, reordered state restoration, scatter/resume and removal of the longest row. They compare each decode with an independent session at a maximum absolute-logit tolerance of `0.00002`.
+`cargo test -p switchyard-engine --all-targets` includes seven mixed decode fixtures alongside the existing generation, model, transport and CLI tests. `cargo clippy -p switchyard-engine --all-targets -- -D warnings` passes. Tiny deterministic F32 models exercise prompt lengths 8/32/96, GDN value/key-head ratios 1/2/3, a shared prefill cohort, reordered state restoration, scatter/resume and removal of the longest row. They compare each decode with an independent session at a maximum absolute-logit tolerance of `0.00002`.
 
 The engine fixtures check output ordering, EOS, cancellation, different output budgets, observer row IDs across bounded cohorts, fresh calls and context rejection. The offline teacher fixture checks identical next-token choices and expected-token log-probability error at most `0.0001`. Ownership fixtures reject foreign model state, stale or unknown IDs, duplicate selection, position drift and late prefill. These are CPU synthetic results; the released-model CUDA comparison is recorded separately below.
 
