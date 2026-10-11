@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{ArgGroup, Parser, Subcommand};
 use std::{net::SocketAddr, path::PathBuf};
 use switchyard_engine::{
     Result,
@@ -10,9 +10,13 @@ use switchyard_engine::{
 };
 
 #[derive(Parser)]
+#[command(group(ArgGroup::new("configuration").required(true).args(["config", "config_json"])))]
 struct Args {
     #[arg(long)]
-    config: PathBuf,
+    config: Option<PathBuf>,
+    /// Inline fixed configuration supplied by a serving adapter.
+    #[arg(long)]
+    config_json: Option<String>,
     /// Override the configured local weight directory after artifact hydration.
     #[arg(long)]
     model_root: Option<PathBuf>,
@@ -57,7 +61,11 @@ async fn main() -> Result<()> {
     let telemetry = Telemetry::default();
     telemetry.event("process_started", serde_json::json!({"engine":"rust"}));
     let args = Args::parse();
-    let mut config: Config = serde_json::from_slice(&std::fs::read(&args.config)?)?;
+    let mut config: Config = match (args.config, args.config_json) {
+        (Some(path), None) => serde_json::from_slice(&std::fs::read(path)?)?,
+        (None, Some(json)) => serde_json::from_str(&json)?,
+        _ => unreachable!("Clap requires exactly one configuration source"),
+    };
     if let Some(root) = args.model_root {
         config.model_root = root;
     }
@@ -168,4 +176,26 @@ async fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn exactly_one_config_source_is_required() {
+        assert!(Args::try_parse_from(["engine", "serve"]).is_err());
+        assert!(
+            Args::try_parse_from([
+                "engine",
+                "--config",
+                "a.json",
+                "--config-json",
+                "{}",
+                "serve"
+            ])
+            .is_err()
+        );
+        assert!(Args::try_parse_from(["engine", "--config-json", "{}", "serve"]).is_ok());
+        assert!(Args::try_parse_from(["engine", "--config", "a.json", "serve"]).is_ok());
+    }
 }

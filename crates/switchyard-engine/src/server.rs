@@ -36,6 +36,8 @@ enum Reply {
         chat: bool,
         id: String,
         created: u64,
+        model: String,
+        include_usage: bool,
     },
 }
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
@@ -64,13 +66,34 @@ impl Reply {
             Self::Complete(tx) => {
                 let _ = tx.send(output);
             }
-            Self::Stream { tx, .. } => {
-                let data = match output {
-                    Ok(_) => "[DONE]".into(),
-                    Err(e) => json!({"error":{"message":e.to_string()}}).to_string(),
-                };
-                let _ = tx.try_send(data);
-            }
+            Self::Stream {
+                tx,
+                chat,
+                id,
+                created,
+                model,
+                include_usage,
+            } => match output {
+                Ok(output) => {
+                    if include_usage {
+                        let prompt: usize = output.iter().map(|x| x.prompt_tokens).sum();
+                        let completion: usize = output.iter().map(|x| x.token_ids.len()).sum();
+                        let object = if chat {
+                            "chat.completion.chunk"
+                        } else {
+                            "text_completion"
+                        };
+                        let usage = json!({"id":id,"created":created,"object":object,
+                                "model":model,"choices":[],"usage":{"prompt_tokens":prompt,
+                                "completion_tokens":completion,"total_tokens":prompt+completion}});
+                        let _ = tx.try_send(usage.to_string());
+                    }
+                    let _ = tx.try_send("[DONE]".into());
+                }
+                Err(e) => {
+                    let _ = tx.try_send(json!({"error":{"message":e.to_string()}}).to_string());
+                }
+            },
         }
     }
 }
@@ -110,6 +133,31 @@ struct Completion {
     stream: bool,
     #[serde(default)]
     ignore_eos: bool,
+    #[serde(default)]
+    stream_options: StreamOptions,
+}
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StreamOptions {
+    #[serde(default)]
+    include_usage: bool,
+}
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ChatTemplateKwargs {
+    #[serde(default)]
+    enable_thinking: bool,
+}
+impl ChatTemplateKwargs {
+    fn validate(&self) -> std::result::Result<(), ApiError> {
+        if self.enable_thinking {
+            return Err(ApiError(
+                Error::Config("Thinking mode is unsupported".into()),
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+        Ok(())
+    }
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -121,7 +169,39 @@ struct Chat {
     temperature: f64,
     #[serde(default)]
     stream: bool,
+    #[serde(default)]
+    stream_options: StreamOptions,
+    #[serde(default)]
+    chat_template_kwargs: ChatTemplateKwargs,
 }
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Tokenize {
+    model: String,
+    messages: Vec<Message>,
+    add_generation_prompt: bool,
+    #[serde(default)]
+    chat_template_kwargs: ChatTemplateKwargs,
+}
+async fn tokenize(
+    State(app): State<App>,
+    Json(request): Json<Tokenize>,
+) -> std::result::Result<Json<Value>, ApiError> {
+    app.check(&request.model, 0., false)?;
+    request.chat_template_kwargs.validate()?;
+    if !request.add_generation_prompt {
+        return Err(ApiError(
+            Error::Config("Expected add_generation_prompt=true".into()),
+            StatusCode::BAD_REQUEST,
+        ));
+    }
+    let tokens = app
+        .tokenizer
+        .chat(&request.messages)
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
+    Ok(Json(json!({"count":tokens.len(), "tokens":tokens})))
+}
+
 impl App {
     fn check(
         &self,
@@ -173,11 +253,13 @@ impl App {
         &self,
         requests: Vec<Generate>,
         chat: bool,
+        include_usage: bool,
     ) -> std::result::Result<Response, ApiError> {
         self.validate(&requests)?;
-        // One event per token and a final DONE event: the buffer cannot grow
+        // One event per token, optional usage, and DONE: the buffer cannot grow
         // beyond the admitted output budget, and GPU execution never waits on it.
-        let capacity = requests.iter().map(|r| r.max_tokens).sum::<usize>() + 1;
+        let capacity =
+            requests.iter().map(|r| r.max_tokens).sum::<usize>() + 1 + usize::from(include_usage);
         let (tx, rx) = mpsc::channel(capacity);
         self.tx
             .try_send(Job {
@@ -187,6 +269,8 @@ impl App {
                     chat,
                     id: completion_id(),
                     created: created(),
+                    model: self.config.model.clone(),
+                    include_usage,
                 },
             })
             .map_err(|_| {
@@ -252,7 +336,7 @@ async fn completions(
         .collect();
     app.validate(&requests)?;
     if request.stream {
-        return app.stream(requests, false);
+        return app.stream(requests, false, request.stream_options.include_usage);
     }
     let output = app.submit(requests).await?;
     let choices: Vec<Value> = output
@@ -276,6 +360,7 @@ async fn chat(
     Json(request): Json<Chat>,
 ) -> std::result::Result<Response, ApiError> {
     app.check(&request.model, request.temperature, request.stream)?;
+    request.chat_template_kwargs.validate()?;
     let prompt = app
         .tokenizer
         .chat(&request.messages)
@@ -287,7 +372,7 @@ async fn chat(
     }];
     app.validate(&requests)?;
     if request.stream {
-        return app.stream(requests, true);
+        return app.stream(requests, true, request.stream_options.include_usage);
     }
     let output = app.submit(requests).await?;
     let x = &output[0];
@@ -366,7 +451,7 @@ fn run_owner(
             if reply.closed() || stream_errors[job_index].is_some() {
                 return false;
             }
-            if let Reply::Stream { tx, chat, id, created } = reply {
+            if let Reply::Stream { tx, chat, id, created, .. } = reply {
                 let text = match decoders[i].step(token) {
                     Ok(text) => text.unwrap_or_default(),
                     Err(error) => {
@@ -471,6 +556,7 @@ pub async fn serve(
             .route("/v1/completions", post(completions))
             .route("/v1/chat/completions", post(chat))
             .route("/generate", post(generate))
+            .route("/tokenize", post(tokenize))
             .layer(DefaultBodyLimit::max(1024 * 1024))
             .with_state(app);
     let listener = tokio::net::TcpListener::bind(bind).await?;
@@ -487,4 +573,52 @@ pub async fn serve(
         .join()
         .map_err(|_| Error::Config("Inference owner panicked".into()))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn streamed_usage_counts_generated_ids_and_precedes_done() {
+        let (tx, mut rx) = mpsc::channel(2);
+        Reply::Stream {
+            tx,
+            chat: true,
+            id: "test".into(),
+            created: 0,
+            model: "fixture".into(),
+            include_usage: true,
+        }
+        .complete(Ok(vec![Generation {
+            token_ids: vec![1, 2, 3],
+            token_latency_s: vec![0.; 3],
+            elapsed_s: 0.,
+            prompt_tokens: 7,
+            finish_reason: "length".into(),
+        }]));
+        let usage: Value = serde_json::from_str(&rx.recv().await.unwrap()).unwrap();
+        assert_eq!(usage["choices"], json!([]));
+        assert_eq!(
+            usage["usage"],
+            json!({"prompt_tokens":7,"completion_tokens":3,"total_tokens":10})
+        );
+        assert_eq!(rx.recv().await.unwrap(), "[DONE]");
+        assert!(rx.recv().await.is_none());
+    }
+
+    #[test]
+    fn router_options_accept_supported_template_and_reject_unknown_fields() {
+        let mut request = json!({"model":"fixture","messages":[{"role":"user","content":"hi"}],
+            "max_tokens":8,"stream":true,"stream_options":{"include_usage":true},
+            "chat_template_kwargs":{"enable_thinking":false}});
+        let decoded: Chat = serde_json::from_value(request.clone()).unwrap();
+        assert!(decoded.stream_options.include_usage);
+        assert!(decoded.chat_template_kwargs.validate().is_ok());
+        request["chat_template_kwargs"]["enable_thinking"] = json!(true);
+        let decoded: Chat = serde_json::from_value(request.clone()).unwrap();
+        assert!(decoded.chat_template_kwargs.validate().is_err());
+        request["stream_options"]["unknown"] = json!(true);
+        assert!(serde_json::from_value::<Chat>(request).is_err());
+    }
 }

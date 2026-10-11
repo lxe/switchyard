@@ -176,10 +176,13 @@ pub struct EngineConfig {
     pub kind: EngineKind,
     pub max_model_len: u64,
     pub max_num_seqs: usize,
+    #[serde(default, skip_serializing_if = "is_zero")]
     pub gpu_memory_utilization: f64,
     pub dtype: String,
     pub language_model_only: bool,
     pub extra_args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native: Option<NativeEngineConfig>,
 }
 
 /// Process launch semantics belong to serving adapters, outside scheduling contracts.
@@ -189,10 +192,68 @@ pub enum EngineKind {
     #[default]
     Vllm,
     Sglang,
+    Native,
 }
 impl EngineKind {
     fn is_vllm(&self) -> bool {
         *self == Self::Vllm
+    }
+}
+fn is_zero(value: &f64) -> bool {
+    *value == 0.0
+}
+
+/// Explicit native serving bounds. Hardware admission is not an allocator cap.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeEngineConfig {
+    pub max_weight_bytes: u64,
+    pub minimum_gpu_memory_bytes: u64,
+    pub queue_capacity: usize,
+    pub batch_wait_ms: u64,
+    pub cuda_ordinal: usize,
+}
+impl EngineConfig {
+    fn validate_native(
+        &self,
+        runtime: Option<&crate::artifacts::ServingRuntimeConfig>,
+    ) -> Result<()> {
+        if self.kind != EngineKind::Native {
+            if self.native.is_some() {
+                return Err(Error::Config(
+                    "native bounds require the native engine".into(),
+                ));
+            }
+            return Ok(());
+        }
+        let native = self
+            .native
+            .as_ref()
+            .ok_or_else(|| Error::Config("native engine requires explicit bounds".into()))?;
+        if native.max_weight_bytes == 0
+            || native.minimum_gpu_memory_bytes == 0
+            || native.queue_capacity < self.max_num_seqs
+            || native.batch_wait_ms > 1000
+            || !matches!(self.dtype.as_str(), "bf16" | "f32")
+            || self.gpu_memory_utilization != 0.0
+            || !self.language_model_only
+            || !self.extra_args.is_empty()
+            || usize::try_from(self.max_model_len).is_err()
+        {
+            return Err(Error::Config(
+                "invalid native bounds or unsupported serving options".into(),
+            ));
+        }
+        if runtime.is_none_or(|r| {
+            r.compatibility
+                .get("engine_sha256")
+                .is_none_or(|s| !valid_sha256(s))
+        }) {
+            return Err(Error::Config(
+                "native engine requires a binary-pinned hydrated runtime".into(),
+            ));
+        }
+        Ok(())
     }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -300,6 +361,14 @@ impl ExecutionConfig {
         let mut ids = std::collections::BTreeSet::new();
         for m in &self.models {
             m.artifact.validate()?;
+            m.engine.validate_native(self.bootstrap.runtime.as_ref())?;
+            if m.engine.kind == EngineKind::Native
+                && matches!(m.artifact, crate::model::ModelArtifact::Extents(_))
+            {
+                return Err(Error::Config(
+                    "native serving does not consume vLLM tensor extents".into(),
+                ));
+            }
             if m.engine.kind == EngineKind::Sglang {
                 if matches!(m.artifact, crate::model::ModelArtifact::Extents(_)) {
                     return Err(Error::Config(
@@ -355,9 +424,10 @@ impl ExecutionConfig {
                 || !m.revision.bytes().all(|b| b.is_ascii_hexdigit())
                 || m.engine.max_num_seqs == 0
                 || m.engine.max_model_len == 0
-                || m.engine.gpu_memory_utilization <= 0.0
-                || m.engine.gpu_memory_utilization >= 1.0
-                || !m.engine.gpu_memory_utilization.is_finite()
+                || (m.engine.kind != EngineKind::Native
+                    && (m.engine.gpu_memory_utilization <= 0.0
+                        || m.engine.gpu_memory_utilization >= 1.0
+                        || !m.engine.gpu_memory_utilization.is_finite()))
                 || !valid_text(&m.engine.dtype)
                 || !valid_extra_args(&m.engine.extra_args)
                 || [
@@ -394,6 +464,7 @@ fn valid_extra_args(args: &[String]) -> bool {
         "--served-model-name",
         "--model",
         "--config",
+        "--config-json",
         "--max-model-len",
         "--max-num-seqs",
         "--gpu-memory-utilization",

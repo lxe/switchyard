@@ -1,0 +1,130 @@
+{
+  "engine_sha256": "95d8c211e8df1a9d2e636db53faae9589bf9ee9fd6b87ad8bfc24e2bf9bf52c4",
+  "config": {
+    "model": "qwen3.5-0.8b",
+    "model_root": "/home/lxe/switchyard/results/rust-engine/prepared-text-01",
+    "device": {
+      "kind": "cuda",
+      "ordinal": 0
+    },
+    "dtype": "bf16",
+    "max_context": 128,
+    "max_weight_bytes": 4294967296,
+    "max_batch_size": 8,
+    "queue_capacity": 64,
+    "batch_wait_ms": 2
+  },
+  "listener_s": 0.7826283350004815,
+  "streams": [
+    {
+      "request": 0,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 3.3815e-05,
+      "first_content_s": 0.1726466,
+      "completed_s": 0.252169229,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 1,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252265493,
+      "first_content_s": 0.29565404,
+      "completed_s": 0.375166325,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 2,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252408782,
+      "first_content_s": 0.291732159,
+      "completed_s": 0.374622492,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 3,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252532966,
+      "first_content_s": 0.291821752,
+      "completed_s": 0.37469766,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 4,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252607136,
+      "first_content_s": 0.29168204,
+      "completed_s": 0.375131376,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 5,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252672882,
+      "first_content_s": 0.291847075,
+      "completed_s": 0.375232505,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 6,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252732896,
+      "first_content_s": 0.291707102,
+      "completed_s": 0.375200024,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 7,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252792892,
+      "first_content_s": 0.291870943,
+      "completed_s": 0.374733956,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    },
+    {
+      "request": 8,
+      "input_tokens": 18,
+      "output_tokens": 11,
+      "started_s": 0.252855988,
+      "first_content_s": 0.29165242,
+      "completed_s": 0.375092042,
+      "finish_reason": "stop",
+      "content_sha256": "793ffeebebdaf8376a8e61c03dd9fcba06f29769eb81e3d854227e4ed31426e2",
+      "content_trimmed_sha256": "359ff4337837754ee62aea2866914b51b18145ea8f24630dcb551f22751bb6ef"
+    }
+  ],
+  "hydration_included": false,
+  "numerical_changes": false,
+  "schema_version": 1,
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "driver": "615.71.09",
+  "cuda_build": "13.4",
+  "acceptance": "Existing live Endpoint client accepted CPU tokenization, one call and eight concurrent SSE calls with exact usage and DONE framing.",
+  "source_scope": "API and launch adapter changes only; model arithmetic unchanged from accepted F32 gates.",
+  "timing_scope": "Warm local model files and existing driver cache. Client test compilation intervened after listener; launch-to-first-token is not measured by this receipt.",
+  "cleanup": "Owned local engine terminated; listener released.",
+  "telemetry_sha256": "2ab26681954206990c84c4955bd6094d7d18fa45a9d8560e43e17c1cd5c4f75d"
+}

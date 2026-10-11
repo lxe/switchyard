@@ -5,6 +5,7 @@ mod bootstrap;
 pub mod cli;
 pub mod config;
 pub mod model;
+mod native;
 mod ownership;
 pub mod planner;
 pub mod runtime;

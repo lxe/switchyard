@@ -2,8 +2,10 @@
 use crate::config::{EngineConfig, EngineKind, ModelConfig};
 impl EngineConfig {
     pub fn args(&self, model: &ModelConfig, path: &str) -> Vec<String> {
-        if self.kind == EngineKind::Sglang {
-            return crate::sglang::args(self, model, path);
+        match self.kind {
+            EngineKind::Sglang => return crate::sglang::args(self, model, path),
+            EngineKind::Native => return crate::native::args(self, model, path),
+            EngineKind::Vllm => {}
         }
         let mut args = vec![
             "serve".into(),

@@ -74,6 +74,11 @@ pub(super) async fn prepare<P: Provider>(
         }
         let first_profile = profiles.len();
         for offer in &offerings {
+            if model.engine.native.as_ref().is_some_and(|bounds| {
+                !native_hardware_admitted(offer, bounds.minimum_gpu_memory_bytes)
+            }) {
+                continue;
+            }
             if !model.caches.is_empty() && !model.caches.iter().any(|c| c.gpu == offer.gpu) {
                 continue;
             }
@@ -178,5 +183,34 @@ fn profile(
             probe_duration_s: 1.0,
             measurement_noise: 0.0,
         },
+    }
+}
+
+/// Provider capacity is an admission check; it does not size model or KV allocations.
+fn native_hardware_admitted(offer: &Offering, required: u64) -> bool {
+    offer
+        .gpu_memory_gb
+        .checked_mul(1024 * 1024 * 1024)
+        .is_some_and(|bytes| bytes >= required)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn native_admission_rejects_insufficient_and_overflowing_catalog_capacity() {
+        let mut offer = Offering {
+            gpu: "fixture".into(),
+            gpu_memory_gb: 8,
+            data_center: "fixture".into(),
+            availability: "available".into(),
+            gpu_usd_per_hour: 0.2,
+            disk_usd_per_hour: 0.01,
+            quoted_at_unix_s: 0,
+        };
+        assert!(native_hardware_admitted(&offer, 8 << 30));
+        assert!(!native_hardware_admitted(&offer, (8 << 30) + 1));
+        offer.gpu_memory_gb = u64::MAX;
+        assert!(!native_hardware_admitted(&offer, 1));
     }
 }

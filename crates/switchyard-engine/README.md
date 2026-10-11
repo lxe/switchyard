@@ -13,7 +13,7 @@ CARGO_BUILD_JOBS=6 CUDA_COMPUTE_CAP=120 \
   cargo build --locked --release -p switchyard-engine --features cuda
 ```
 
-Set `model_root` in [the example configuration](../../configs/engine/qwen3.5-0.8b-rtx5090.json) to a local Qwen3.5 model directory containing `config.json`, native safetensors, `tokenizer.json` and `chat_template.jinja`. Relative paths resolve against the process working directory. An optional `--model-root` overrides the configured directory for an agent-published installation.
+Set `model_root` in [the example configuration](../../configs/engine/qwen3.5-0.8b-rtx5090.json) to a local Qwen3.5 model directory containing `config.json`, native safetensors, `tokenizer.json` and `chat_template.jinja`. Relative paths resolve against the process working directory. An optional `--model-root` overrides the configured directory for an agent-published installation. Serving adapters can supply the same fixed configuration as inline JSON through `--config-json` instead of `--config`; exactly one source is required.
 
 Bake a smaller text-only tensor directory once, then serve it:
 
@@ -35,7 +35,7 @@ curl -N http://127.0.0.1:8100/v1/chat/completions \
   -d '{"model":"qwen3.5-0.8b","messages":[{"role":"user","content":"What is 17 plus 25?"}],"max_tokens":32,"temperature":0,"stream":true}'
 ```
 
-The implemented OpenAI subset is greedy text completions and chat completions, with optional SSE streaming. Completion prompts accept text, token IDs, or a batch of token-ID sequences. Response choices include token IDs. Sampling controls beyond `temperature=0`, tools, vision inputs, stop strings and reasoning parsing are unsupported; unknown request fields are rejected. `/v1/models` lists the configured model, `/health` reports the listening server, and `/generate` accepts native token requests.
+The implemented OpenAI subset is greedy text completions and chat completions, with optional SSE streaming. `stream_options.include_usage=true` adds a final usage event before `[DONE]`; counts come from generated token IDs. Chat requests accept `chat_template_kwargs.enable_thinking=false`, while thinking mode is rejected. `/tokenize` accepts the same model/messages with `add_generation_prompt=true` and returns the actual rendered prompt token count without GPU execution. Completion prompts accept text, token IDs, or a batch of token-ID sequences. Response choices include token IDs. Sampling controls beyond `temperature=0`, tools, vision inputs, stop strings and reasoning parsing are unsupported; unknown request fields are rejected. `/v1/models` lists the configured model, `/health` reports the listening server, and `/generate` accepts native token requests.
 
 ## Offline GPU kernel bake
 
@@ -99,6 +99,6 @@ Pass `--reference results/vllm.json` to retain side-by-side token differences. `
 
 `weights` owns native file loading and offline preparation. `models` owns model dispatch and the `ModelFactory` / `ModelSession` contracts. `engine` owns greedy generation and sequence limits, while `server` owns HTTP admission and transport. The simulator, fleet scheduler, provider adapter and hydration implementation do not depend on this crate.
 
-Dense Qwen3.5 dimensions come from model configuration; 0.8B is the only full checkpoint measured here. A new architecture needs a factory and session implementation, without changing HTTP admission or cloud provisioning. Vision will require a separate projector and position-aware embedding prefill contract; neither vision projectors nor multimodal rotary positions are implemented in this text-only adapter. Quantization, shared-prefix state, paged KV storage and fused recurrent kernels are also remaining work.
+Dense Qwen3.5 dimensions come from model configuration; 0.8B, 2B and 4B have local full-checkpoint validation recorded in the model fleet report. A new architecture needs a factory and session implementation, without changing HTTP admission or cloud provisioning. Vision will require a separate projector and position-aware embedding prefill contract; neither vision projectors nor multimodal rotary positions are implemented in this text-only adapter. Quantization, shared-prefix state, paged KV storage and fused recurrent kernels are also remaining work.
 
 Candle is pinned to a source revision, and the initial Qwen3.5 adapter derives from an unmerged Candle contribution. See [THIRD_PARTY.md](THIRD_PARTY.md) for provenance and licensing.

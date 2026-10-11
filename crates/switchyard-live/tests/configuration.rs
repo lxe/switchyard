@@ -79,6 +79,7 @@ fn config() -> DeploymentConfig {
             caches: vec![],
             engine: EngineConfig {
                 kind: Default::default(),
+                native: None,
                 max_model_len: 4096,
                 max_num_seqs: 32,
                 gpu_memory_utilization: 0.8,
@@ -599,4 +600,60 @@ fn runtime_dependency_name_conflicts_are_rejected_before_provisioning() {
             .to_string()
             .contains("component and cache names")
     );
+}
+
+#[test]
+fn native_launch_keeps_fixed_bounds_and_requires_pinned_runtime() {
+    let mut cfg = config();
+    let engine = &mut cfg.models[0].engine;
+    engine.kind = EngineKind::Native;
+    engine.gpu_memory_utilization = 0.;
+    engine.dtype = "bf16".into();
+    engine.extra_args.clear();
+    engine.native = Some(NativeEngineConfig {
+        max_weight_bytes: 4 << 30,
+        minimum_gpu_memory_bytes: 8 << 30,
+        queue_capacity: 64,
+        batch_wait_ms: 2,
+        cuda_ordinal: 0,
+    });
+    assert!(cfg.validate().is_err());
+    cfg.bootstrap.runtime = Some(switchyard_live::artifacts::ServingRuntimeConfig {
+        hydration: None,
+        artifact: switchyard_live::artifacts::ArtifactRef {
+            prefix: "runtime/native".into(),
+            id: "b".repeat(64),
+        },
+        components: vec![],
+        compatibility: [("engine_sha256".into(), "c".repeat(64))].into(),
+        program: "bin/launch-engine.sh".into(),
+        args: vec![],
+        environment: Default::default(),
+    });
+    cfg.validate().unwrap();
+    let model = &cfg.models[0];
+    let args = model.engine.args(model, "/published/model");
+    assert_eq!(args[0], "--config-json");
+    let launch: serde_json::Value = serde_json::from_str(&args[1]).unwrap();
+    assert_eq!(launch["model_root"], "/published/model");
+    assert_eq!(launch["max_weight_bytes"], 4_u64 << 30);
+    assert_eq!(launch["max_context"], 4096);
+    assert_eq!(launch["max_batch_size"], 32);
+    assert_eq!(&args[2..], ["serve", "--bind", "127.0.0.1:8000"]);
+    let encoded = serde_json::to_value(&model.engine).unwrap();
+    assert!(encoded.get("gpu_memory_utilization").is_none());
+    for mutation in 0..5 {
+        let mut invalid = cfg.clone();
+        let engine = &mut invalid.models[0].engine;
+        match mutation {
+            0 => engine.native = None,
+            1 => engine.gpu_memory_utilization = 0.8,
+            2 => engine.extra_args.push("--config-json={}".into()),
+            3 => engine.native.as_mut().unwrap().queue_capacity = 1,
+            _ => engine.dtype = "auto".into(),
+        }
+        assert!(invalid.validate().is_err());
+    }
+    cfg.models[0].engine.kind = EngineKind::Vllm;
+    assert!(cfg.validate().is_err());
 }
