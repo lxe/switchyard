@@ -160,8 +160,8 @@
   },
   "bootstrap": {
     "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
-    "agent_url": "https://github.com/lxe/switchyard/releases/download/hydration-diagnostics/switchyard-agent-x86_64-linux-musl",
-    "agent_sha256": "ae3e805f97859dae310e48d5ffaa2f51e0305fe41a33726729f9462b2b4159e0",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/hydration-diagnostics-v2/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "83700c80de2b52ff532b8ce53d867b4c3bc667226c6b33274fede4c0bb8554af",
     "ticket_prefix": "switchyard/bootstrap",
     "runtime": {
       "artifact": {
