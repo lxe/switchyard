@@ -150,6 +150,8 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [Validation and results](docs/RESULTS.md) | Test coverage, reproducible comparisons, and known limitations |
 | [RunPod execution](docs/RUNPOD.md) | Checked-in fleet definitions, R2 hydration, live gauntlet, costs, and recovery |
 | [Serving hydration](docs/HYDRATION.md) | Runtime build inputs, separate model/cache artifacts, compatibility, and offline verification |
+| [Native live engine](docs/native-live-integration.md) | Fixed launch bounds, streamed usage, token planning, and the native gauntlet |
+| [Native GPU builds](docs/native-gpu-builds.md) | Architecture matrices and separate GPU bake acceptance |
 | [Native CPU snapshots](docs/cpu-process-snapshots.md) | API/worker preparation, CRIU restore, fixed-profile GPU continuation and measured cold-start timing |
 | [Contributing](CONTRIBUTING.md) | Development checks and requirements for behavioral evidence |
 
@@ -162,6 +164,3 @@ The serving fixture supports synthetic chat completions and streaming. It does n
 MIT licensed.
 
 - [Selected local cold-start timeline](docs/selected-local-cold-start.md): instrumented hydration and native serving startup through the first streamed token.
-
-- [Native live integration](docs/native-live-integration.md): fixed launch bounds, streamed usage, token planning, and the native workload gauntlet.
-- [Native GPU builds](docs/native-gpu-builds.md): explicit architecture matrices and separate GPU bake acceptance.

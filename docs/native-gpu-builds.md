@@ -35,7 +35,7 @@ For `--arch 89`, the output paths are:
 | `targets/sm_89/build.json` | Compatibility inputs, file hashes, artifact identity, runtime library requirements, and validation state. |
 | `build.json` | Completed target list and matrix identity. |
 
-The existing RunPod worktree uses `bin/switchyard-engine` and `bin/switchyard-engine-bake` in its assembled runtime. It can consume those files from the selected target's `bin` directory, then assemble and verify its toolkit-library closure. This build job does not modify RunPod configuration, runtime packaging, or its output directories. Driver libraries and link-time `libcuda` stubs are not copied into these artifacts.
+The native RunPod packager uses `bin/switchyard-engine` and `bin/switchyard-engine-bake` from the selected target, then assembles and verifies its toolkit-library closure. This build job does not modify RunPod configuration, runtime packaging, or its output directories. Driver libraries and link-time `libcuda` stubs are not copied into these artifacts.
 
 Standalone cubins are build outputs for inspection and later backend integration. The current pinned Candle loader reads embedded PTX; merely shipping sibling cubins does not make that loader consume them or eliminate its driver JIT. A loader change needs its own modular backend implementation and hardware proof.
 

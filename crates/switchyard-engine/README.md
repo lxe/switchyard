@@ -27,7 +27,7 @@ target/release/switchyard-engine \
   --model-root data/qwen3.5-0.8b-text serve --bind 127.0.0.1:8100
 ```
 
-Preparation preserves source tensor precision and dense native names, removes unused vision tensors, and writes fresh safetensors and model/tokenizer metadata. It does not quantize, fuse projections, or capture GPU allocations. Failed preparation can leave an incomplete output directory; use a fresh destination for the next attempt. The generic artifact packer can package the prepared directory independently. Full cloud hydration of this engine has not been validated.
+Preparation preserves source tensor precision and dense native names, removes unused vision tensors, and writes fresh safetensors and model/tokenizer metadata. It does not quantize, fuse projections, or capture GPU allocations. Failed preparation can leave an incomplete output directory; use a fresh destination for the next attempt. The generic artifact packer can package the prepared directory independently. The [native RunPod workflow](../../docs/native-runpod.md) records a fresh 0.8B baseline cloud launch. Final three-model cloud and scheduler acceptance must use the integrated binary and its own platform bakes.
 
 ```sh
 curl -N http://127.0.0.1:8100/v1/chat/completions \
