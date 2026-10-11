@@ -143,3 +143,11 @@ The engine initializes CUDA and loads weights while a separate thread prepares t
 Each admitted group owns its sequence state while sharing immutable model weights. Equal-length prompt rows prefill together. Varied-length groups then join shared decoding with per-row positions, masked attention padding, and private recurrent state. Mixed decode removes completed rows and compacts surviving state. New requests wait until the admitted group finishes; continuous admission, shared-prefix reuse, and paged KV allocation are not implemented.
 
 The native backend supports bounded greedy text requests and streamed OpenAI-compatible completion/usage events for the pinned 0.8B, 2B, and 4B models. F32 mathematical gates and BF16 endpoint measurements have different scopes: passing endpoint receipts do not establish strict BF16 numerical parity. See [native fleet execution](native-live-integration.md), [model accuracy](native-engine-accuracy.md), and [RunPod artifact deployment](native-runpod.md) for their configuration and evidence boundaries.
+
+## Native artifact preparation
+
+Native baking is an offline build operation with its own platform requirements and resource owner. Its controller selects a configured build host, observes the actual GPU and driver, runs fixed model/request shapes to prepare compiler caches, exports the results, and confirms host release. It can share provider lifecycle and storage clients with inference deployment; it does not ask an inference scheduler to place requests or acquire bake capacity.
+
+Compiler targets, such as `compute_89`, describe the code being built. A bake host's driver and supported CUDA version describe the platform executing that code. The bake configuration specifies compatible host requirements independently of inference scheduling policy, and receipts retain the observed platform rather than inferring driver compatibility from a cloud pool.
+
+The published runtime, weights, and cache manifests form the boundary between preparation and serving. Inference scheduling consumes those immutable references and their compatibility labels when deploying an endpoint. A missing cache variant requires another offline bake and publication; it does not turn an inference request into a build job.
