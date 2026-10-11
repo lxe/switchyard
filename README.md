@@ -7,11 +7,11 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Simulator](crates/switchyard-sim) | Deterministic workload replay and a local HTTP GPU-provider API with synthetic OpenAI-compatible serving |
 | [Scheduler and router](crates/switchyard-scheduler) | Five reference policies, queue admission, capacity planning, and adaptive host probing |
 | [Test gauntlet](crates/switchyard-gauntlet) | Analytical fixtures, workload comparisons, seeded generated tests, and software performance measurements |
-| [Live execution](crates/switchyard-live) | The same scheduler contract driving real RunPod pods and OpenAI-compatible vLLM streams |
+| [Live execution](crates/switchyard-live) | The same scheduler contract driving real RunPod pods and OpenAI-compatible vLLM or SGLang streams |
 | [Provider adapters](crates/switchyard-provider) | Timestamped rental offers, owned pod lifecycle, and S3-compatible storage signing |
 | [Pod agent](crates/switchyard-agent) | Rust hydration, observed startup progress, and authenticated model transport |
 | [Artifacts](crates/switchyard-artifacts) | Deterministic archives, integrity checks, bounded transfer, and atomic hydration without cloud or engine dependencies |
-| [Weight loading](crates/switchyard-weights) | Safetensors metadata discovery and completion leases for loading received tensor ranges; agent integration is in development |
+| [Weight loading](crates/switchyard-weights) | Header-first safetensors publication and completion leases for incremental vLLM weight loading through the pod agent |
 | [Artifact tools](crates/switchyard-artifact-tools) | Independent build, pack, publish, verify, and hydrate commands |
 | [Runtime builder](crates/switchyard-runtime-build) | Locked serving environment assembly inside an isolated Docker build |
 | [Shared contracts](crates/switchyard-core) | Configuration, known request inputs, observable fleet state, and the pluggable `Scheduler` interface |
@@ -108,7 +108,7 @@ cargo run --locked --features live -- live gauntlet --env-file /path/to/credenti
   --model qwen3.5-0.8b --out results/my-experiment
 ```
 
-The preflight avoids provisioning. The gauntlet rents GPUs, validates local token counts against vLLM, executes streamed requests through the scheduler, records actual usage and timing, and cleans up owned pods. Read the [live execution guide](docs/RUNPOD.md) for limits, artifact preparation, and crash recovery before running paid workloads.
+The preflight avoids provisioning. The gauntlet rents GPUs, validates local token counts against the serving engine, executes streamed requests through the scheduler, records actual usage and timing, and cleans up owned pods. Read the [live execution guide](docs/RUNPOD.md) for limits, artifact preparation, and crash recovery before running paid workloads.
 
 ## Project structure
 
