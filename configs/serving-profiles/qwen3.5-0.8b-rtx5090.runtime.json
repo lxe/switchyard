@@ -1,0 +1,105 @@
+{
+  "bootstrap": {
+    "runtime": {
+      "artifact": {
+        "id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
+        "prefix": "switchyard/runtime-components/0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda": "12.9",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "runtime_partition": "6eac928b61a9991063dee46aa18958a86d95c533b5fab95d50371c1609b0bed2",
+        "runtime_source_patches": "dd6a7add998de7fed6532f88146f303e2aad59123ea5ce290beee2d0b9a01306",
+        "torch": "2.13.0+cu129",
+        "vllm": "0.31.0+cu129"
+      },
+      "program": "venv/bin/python",
+      "args": [],
+      "environment": {
+        "PATH": "{runtime_root}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/python/lib:{runtime_root}/venv/lib/python3.12/site-packages/torch/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cublas/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_cccl/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cudnn/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cufft/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cufile/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/curand/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cusolver/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cusparse/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cusparselt/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nccl/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nvshmem/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nvtx/lib:{runtime_root}/venv/lib/python3.12/site-packages/tvm_ffi/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/cu12/lib:{runtime_root}/venv/lib/python3.12/site-packages/pynvvideocodec.:{runtime_root}/venv/lib/python3.12/site-packages/PyNvVideoCodec:{runtime_root}/venv/lib/python3.12/site-packages/torchcodec:{runtime_root}/venv/lib/python3.12/site-packages/triton/_C",
+        "SSL_CERT_FILE": "{runtime_root}/certs/ca-certificates.crt",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "VLLM_NO_USAGE_STATS": "1",
+        "DO_NOT_TRACK": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HOME": "{cache_root}/compiled/huggingface",
+        "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+        "TORCHINDUCTOR_CACHE_DIR": "{cache_root}/compiled/torchinductor",
+        "VLLM_CACHE_ROOT": "{cache_root}/compiled/vllm",
+        "CUDA_CACHE_PATH": "{cache_root}/compiled/cuda",
+        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer",
+        "CUDA_CACHE_MAXSIZE": "4294967296",
+        "XDG_CACHE_HOME": "{cache_root}/compiled/xdg",
+        "TORCH_EXTENSIONS_DIR": "{cache_root}/compiled/torch-extensions",
+        "VLLM_ENABLE_STARTUP_PLAN": "1",
+        "FLASHINFER_NO_DOWNLOAD": "1",
+        "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
+        "VLLM_FORCE_AOT_LOAD": "1",
+        "VLLM_ENGINE_STARTUP_POLICY": "{\"schema_version\":1,\"strategy\":\"prepared\",\"worker_method\":\"spawn\",\"compute_capability\":\"12.0\",\"tokenizer_preload\":true,\"cache_policy\":\"required\",\"memory_plan\":\"native\",\"serving_profile\":\"compiled/serving-profile.json\",\"telemetry\":true}",
+        "CPATH": "{runtime_root}/venv/lib/python3.12/site-packages/nvidia/curand/include",
+        "FLASHINFER_DISABLE_JIT": "1",
+        "PYTHONPATH": "{cache_root}/compiled/sampling-provider",
+        "VLLM_CPU_SNAPSHOT_ROOT": "{components_root}/cpu-process"
+      },
+      "hydration": {
+        "retries": 0
+      },
+      "components": [
+        {
+          "name": "cpu-process",
+          "artifact": {
+            "id": "4dcffc33b090c8cf565bfa5dbc0222f5f0634592d4b845742ad1bfd3f5ca9460",
+            "prefix": "local-cpu-process/4dcffc33b090c8cf565bfa5dbc0222f5f0634592d4b845742ad1bfd3f5ca9460"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "cpu_snapshot_profile": "580e895281cf45fa0410616236e3e99f473212a143711ec30d6284bac253599f",
+            "os": "ubuntu24.04",
+            "python": "3.12.14",
+            "runtime_id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
+            "runtime_partition": "6eac928b61a9991063dee46aa18958a86d95c533b5fab95d50371c1609b0bed2",
+            "runtime_source_patches": "dd6a7add998de7fed6532f88146f303e2aad59123ea5ce290beee2d0b9a01306",
+            "torch": "2.13.0+cu129",
+            "vllm": "0.31.0+cu129"
+          }
+        }
+      ]
+    }
+  },
+  "models": [
+    {
+      "caches": [
+        {
+          "name": "compiled",
+          "gpu": "RTX5090",
+          "artifact": {
+            "id": "dc777a3aafb5870f247c401f1c0a7ed8d7ebd8817fc2e8617b6eb24dc3941e50",
+            "prefix": "local-final-cache/dc777a3aafb5870f247c401f1c0a7ed8d7ebd8817fc2e8617b6eb24dc3941e50"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "cuda": "12.9",
+            "os": "ubuntu24.04",
+            "python": "3.12.14",
+            "runtime_partition": "6eac928b61a9991063dee46aa18958a86d95c533b5fab95d50371c1609b0bed2",
+            "runtime_source_patches": "dd6a7add998de7fed6532f88146f303e2aad59123ea5ce290beee2d0b9a01306",
+            "torch": "2.13.0+cu129",
+            "vllm": "0.31.0+cu129",
+            "runtime_id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
+            "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+            "model_content_id": "b412c698a5a67efd4f2b57484406cb52cbf5b000b95ebd991d98bf3aafd98f32",
+            "weight_loader": "b506dd3139c76ba933920985b0b67784e772174331b10a40741786af7d2cb52b",
+            "engine_arguments": "3311973b68535cd2b24292615351cdef7b33788143357ea22837dee80abfc768",
+            "gpu": "RTX5090",
+            "compute_capability": "12.0"
+          }
+        }
+      ]
+    }
+  ]
+}

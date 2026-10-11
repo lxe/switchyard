@@ -561,6 +561,7 @@ async fn hydrate_one(
     let options = HydrationOptions {
         // A bounded HTTP body feeds each decoder directly. No compressed reception spool.
         transport_observer: Some(diagnostic.observer()),
+        profile_observer: direct_profile_observer(),
         mode: context.ticket.startup.mode,
         download_limit: Some(context.download_limit.clone()),
         cache_dir: context.roots.chunks.clone(),
@@ -689,3 +690,29 @@ fn totals(state: &mut State, started: Instant) {
 
 #[cfg(test)]
 mod tests;
+
+// Profiling is opt-in for the agent process, independent of serving tickets.
+fn direct_profile_observer() -> Option<switchyard_artifacts::profiling::HydrationObserver> {
+    use std::io::Write;
+    static OBSERVER: std::sync::OnceLock<
+        Option<switchyard_artifacts::profiling::HydrationObserver>,
+    > = std::sync::OnceLock::new();
+    OBSERVER
+        .get_or_init(|| {
+            let path = std::env::var_os("SWITCHYARD_HYDRATION_PROFILE")?;
+            let file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)
+                .ok()?;
+            let file = std::sync::Mutex::new(file);
+            Some(switchyard_artifacts::profiling::HydrationObserver::new(
+                move |event| {
+                    let mut file = file.lock().unwrap();
+                    let _ = serde_json::to_writer(&mut *file, &event);
+                    let _ = writeln!(file);
+                },
+            ))
+        })
+        .clone()
+}

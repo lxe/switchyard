@@ -11,6 +11,7 @@ mod hydrate;
 mod manifest;
 mod pack;
 mod paths;
+pub mod profiling;
 #[cfg(target_os = "linux")]
 pub mod range_stream;
 pub mod tensors;

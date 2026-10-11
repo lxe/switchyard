@@ -18,6 +18,8 @@ import traceback
 
 OUTPUT = os.environ.get("NATIVE_STARTUP_PROFILE")
 TARGETS = {
+    "multiprocessing.process": ["BaseProcess.start"],
+    "torch.cuda": ["_lazy_init"],
     "vllm.utils.system_utils": ["get_mp_context", "_maybe_force_spawn"],
     "torch._C": ["_cuda_init"],
     "torch.accelerator": ["set_device_index"],

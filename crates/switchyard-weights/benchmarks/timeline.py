@@ -1,7 +1,7 @@
 """Live, sanitized cold-start timeline on the host's monotonic clock.
 
 Native spans overlap: durations are measurements, not additive phase totals.
-JSONL retains every supplied native event; console imports use a 50 ms threshold.
+JSONL retains every supplied native event; console output shows phase summaries.
 No command arguments, environment values, request bodies, or URLs are emitted.
 """
 
@@ -138,7 +138,20 @@ class Timeline:
         self.emit(
             kind,
             at=at,
-            console=kind != "import" or duration is None or duration >= 0.05,
+            console=kind
+            not in {
+                "import",
+                "operation_start",
+                "buffer_progress",
+                "chunk_acknowledged",
+                "chunk_ready",
+                "chunk_received",
+                "chunk_reclaimed",
+                "cuda_copy_submitted",
+                "cuda_copy_completed",
+                "process_start",
+            }
+            and (kind != "operation" or (duration or 0) >= 0.25),
             **details,
         )
 
@@ -173,3 +186,40 @@ class Timeline:
     def close(self):
         with self.lock:
             self.output.close()
+
+    def follow_hydration_file(self, path, stop):
+        offset = 0
+        pending = ""
+        while True:
+            try:
+                with path.open() as source:
+                    source.seek(offset)
+                    pending += source.read()
+                    offset = source.tell()
+                lines = pending.split("\n")
+                pending = lines.pop()
+                for line in lines:
+                    if not line:
+                        continue
+                    item = json.loads(line)
+                    if item["event"] in {
+                        "prepared",
+                        "shards_complete",
+                        "finalized",
+                        "published",
+                    }:
+                        at = None
+                        if "unix_seconds" in item:
+                            at = time.monotonic() + item["unix_seconds"] - time.time()
+                        self.emit(
+                            "hydration_phase",
+                            at=at,
+                            artifact=item["artifact_id"][:12],
+                            phase=item["event"],
+                            artifact_elapsed_s=round(item["elapsed_seconds"], 4),
+                            **item["metrics"],
+                        )
+            except FileNotFoundError:
+                pass
+            if stop.wait(0.1):
+                return

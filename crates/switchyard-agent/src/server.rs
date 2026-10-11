@@ -224,6 +224,34 @@ async fn run_engine(
     roots: crate::runtime::RootPaths,
     epoch: std::time::Instant,
 ) -> Result<()> {
+    if std::env::var_os("SWITCHYARD_PROFILE_RUNTIME_ONLY").is_some() {
+        // Diagnostic isolation uses the exact runtime preflight/hydration path,
+        // without scheduling weight downloads or launching an inference process.
+        crate::runtime::preflight(ticket, &roots, &state).await?;
+        crate::startup::milestone(
+            &state,
+            epoch,
+            crate::startup::StartupEvent::RuntimeHydrationStarted,
+        )
+        .await;
+        crate::runtime::command_preflighted_with_limit(
+            ticket,
+            &roots,
+            state.clone(),
+            Arc::new(tokio::sync::Semaphore::new(ticket.concurrency)),
+        )
+        .await?;
+        crate::startup::milestone(
+            &state,
+            epoch,
+            crate::startup::StartupEvent::RuntimeHydrationFinished,
+        )
+        .await;
+        if let Some(stop) = commands.recv().await {
+            let _ = stop.reply.send(Ok(()));
+        }
+        return Ok(());
+    }
     let mut process = startup::prepare(ticket, &roots, state.clone(), epoch).await?;
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(2))

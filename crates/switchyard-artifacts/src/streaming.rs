@@ -57,6 +57,10 @@ pub(super) async fn hydrate<F>(
 where
     F: Fn(super::Progress) + Send + Sync + 'static,
 {
+    let profile = crate::profiling::Profile::new(
+        ticket.manifest.id.clone(),
+        options.profile_observer.clone(),
+    );
     let parent = destination
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -71,6 +75,7 @@ where
     fs::create_dir(&staging.path)?;
     set_mode(&staging.path, 0o700)?;
     let manifest = Arc::new(ticket.manifest);
+    let prepare_started = Instant::now();
     let working = staging.clone();
     let prepared = manifest.clone();
     tokio::task::spawn_blocking(move || {
@@ -78,6 +83,11 @@ where
     })
     .await
     .map_err(|_| Error::Worker)??;
+    profile.emit(
+        "prepared",
+        None,
+        [("duration_seconds", prepare_started.elapsed().as_secs_f64())],
+    );
     let unpacked = Arc::new(AtomicU64::new(0));
     tracker.emit(Phase::Extracting, 0);
     let mut operations = stream::iter(manifest.chunks.iter().cloned())
@@ -88,9 +98,10 @@ where
             let tracker = tracker.clone();
             let unpacked = unpacked.clone();
             let client = client.clone();
+            let profile = profile.clone();
             async move {
                 stream_chunk(
-                    &client, chunk, url, manifest, staging, options, tracker, unpacked,
+                    &client, chunk, url, manifest, staging, options, tracker, unpacked, profile,
                 )
                 .await
             }
@@ -104,6 +115,8 @@ where
         result?;
     }
     drop(operations);
+    profile.emit("shards_complete", None, []);
+    let finalize_started = Instant::now();
     let working = staging.clone();
     let completed = manifest.clone();
     tokio::task::spawn_blocking(move || {
@@ -112,12 +125,23 @@ where
     })
     .await
     .map_err(|_| Error::Worker)??;
+    profile.emit(
+        "finalized",
+        None,
+        [("duration_seconds", finalize_started.elapsed().as_secs_f64())],
+    );
+    let publish_started = Instant::now();
     paths::ancestors(parent)?;
     if fs::symlink_metadata(destination).is_ok() {
         return Err(Error::DestinationExists);
     }
     // No publication occurs inside detached blocking tasks.
     fs::rename(&staging.path, destination)?;
+    profile.emit(
+        "published",
+        None,
+        [("duration_seconds", publish_started.elapsed().as_secs_f64())],
+    );
     tracker.emit(Phase::Ready, tracker.total_unpacked);
     Ok(HydrationReport {
         downloaded_bytes: tracker.downloaded.load(Ordering::Relaxed),
@@ -140,15 +164,18 @@ async fn stream_chunk<F>(
     options: &HydrationOptions,
     tracker: Arc<Tracker<F>>,
     unpacked: Arc<AtomicU64>,
+    profile: crate::profiling::Profile,
 ) -> Result<()>
 where
     F: Fn(super::Progress) + Send + Sync + 'static,
 {
+    profile.emit("shard_scheduled", Some(&chunk.name), []);
     let mut failure = Error::Transfer;
     for attempt in 0..=options.retries {
         if staging.control.cancelled.load(Ordering::Relaxed) {
             return Err(Error::Cancelled);
         }
+        let permit_started = Instant::now();
         let mut permit = match &options.download_limit {
             Some(limit) => Some(
                 limit
@@ -159,6 +186,12 @@ where
             ),
             None => None,
         };
+        let permit_wait = permit_started.elapsed().as_secs_f64();
+        profile.emit(
+            "permit_acquired",
+            Some(&chunk.name),
+            [("permit_wait_seconds", permit_wait)],
+        );
         let trace = crate::transport::Trace::new(
             chunk.name.clone(),
             0,
@@ -281,10 +314,20 @@ where
             let total = unpacked.clone();
             let extracted_tracker = tracker.clone();
             let decoder_permit = permit.take();
+            let worker_profile = profile.clone();
+            let submitted = Instant::now();
             let result = tokio::task::spawn_blocking(move || {
                 // The worker retains its permit even if its async owner is dropped.
                 let _permit = decoder_permit;
-                extract::extract_stream(
+                let started = Instant::now();
+                let cpu_started = crate::profiling::thread_schedstat();
+                worker_profile.emit(
+                    "decoder_started",
+                    Some(&shard.name),
+                    [("blocking_queue_seconds", submitted.elapsed().as_secs_f64())],
+                );
+                let stats = std::cell::RefCell::new(crate::profiling::ExtractStats::default());
+                let result = extract::extract_stream_profiled(
                     bridge,
                     &working.path,
                     &expected,
@@ -298,7 +341,39 @@ where
                             extracted_tracker.emit(Phase::Extracting, before + bytes);
                         }
                     },
-                )
+                    |_| {},
+                    worker_profile.enabled().then_some(&stats),
+                );
+                let cpu_finished = crate::profiling::thread_schedstat();
+                let stats = stats.into_inner();
+                worker_profile.emit(
+                    "decoder_finished",
+                    Some(&shard.name),
+                    [
+                        ("worker_elapsed_seconds", started.elapsed().as_secs_f64()),
+                        (
+                            "thread_cpu_seconds",
+                            cpu_finished[0].saturating_sub(cpu_started[0]) as f64 / 1e9,
+                        ),
+                        (
+                            "thread_runqueue_seconds",
+                            cpu_finished[1].saturating_sub(cpu_started[1]) as f64 / 1e9,
+                        ),
+                        ("source_read_seconds", stats.source_read_seconds),
+                        ("decoder_read_seconds", stats.decoder_read_seconds),
+                        (
+                            "decode_compute_seconds",
+                            (stats.decoder_read_seconds - stats.source_read_seconds).max(0.0),
+                        ),
+                        ("file_create_seconds", stats.file_create_seconds),
+                        ("file_write_seconds", stats.file_write_seconds),
+                        ("progress_seconds", stats.progress_seconds),
+                        ("file_bytes", stats.file_bytes as f64),
+                        ("files", stats.files as f64),
+                        ("permit_wait_seconds", permit_wait),
+                    ],
+                );
+                result
             })
             .await
             .map_err(|_| Error::Worker)?;

@@ -150,6 +150,35 @@ pub(crate) fn extract_stream_observed(
     progress: impl Fn(u64),
     file_progress: impl Fn(u64),
 ) -> Result<()> {
+    extract_stream_profiled(
+        source,
+        staging,
+        manifest,
+        chunk,
+        cancelled,
+        verify_content,
+        progress,
+        file_progress,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn extract_stream_profiled(
+    source: impl Read,
+    staging: &Path,
+    manifest: &Manifest,
+    chunk: &Chunk,
+    cancelled: &AtomicBool,
+    verify_content: bool,
+    progress: impl Fn(u64),
+    file_progress: impl Fn(u64),
+    stats: Option<&std::cell::RefCell<crate::profiling::ExtractStats>>,
+) -> Result<()> {
+    let source = TimedSource {
+        inner: source,
+        stats,
+    };
     let mut decoder = zstd::stream::read::Decoder::new(source)?;
     decoder.window_log_max(27)?; // At most128MiB decoder history, even for untrusted frames.
     let mut archive = tar::Archive::new(LimitedReader {
@@ -158,6 +187,7 @@ pub(crate) fn extract_stream_observed(
         bytes: 0,
         cancelled,
         progress: &progress,
+        stats,
     });
     let mut observed = 0;
     for item in archive.entries()? {
@@ -186,7 +216,13 @@ pub(crate) fn extract_stream_observed(
                 if !item.header().entry_type().is_file() {
                     return Err(Error::Integrity("tar file type".into()));
                 }
+                let began = stats.map(|_| std::time::Instant::now());
                 let mut file = File::options().create_new(true).write(true).open(&path)?;
+                if let (Some(stats), Some(began)) = (stats, began) {
+                    let mut stats = stats.borrow_mut();
+                    stats.file_create_seconds += began.elapsed().as_secs_f64();
+                    stats.files += 1;
+                }
                 let mut hash = verify_content.then(Sha256::new);
                 let mut written = 0_u64;
                 let mut buffer = [0_u8; 64 * 1024];
@@ -202,7 +238,13 @@ pub(crate) fn extract_stream_observed(
                     if let Some(hash) = &mut hash {
                         hash.update(&buffer[..count]);
                     }
+                    let began = stats.map(|_| std::time::Instant::now());
                     file.write_all(&buffer[..count])?;
+                    if let (Some(stats), Some(began)) = (stats, began) {
+                        let mut stats = stats.borrow_mut();
+                        stats.file_write_seconds += began.elapsed().as_secs_f64();
+                        stats.file_bytes += count as u64;
+                    }
                     file_progress(count as u64);
                 }
                 if verify_content {
@@ -287,12 +329,28 @@ pub(crate) fn finish_entries(
     Ok(())
 }
 
+struct TimedSource<'a, R> {
+    inner: R,
+    stats: Option<&'a std::cell::RefCell<crate::profiling::ExtractStats>>,
+}
+impl<R: Read> Read for TimedSource<'_, R> {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        let began = self.stats.map(|_| std::time::Instant::now());
+        let result = self.inner.read(buffer);
+        if let (Some(stats), Some(began)) = (self.stats, began) {
+            stats.borrow_mut().source_read_seconds += began.elapsed().as_secs_f64();
+        }
+        result
+    }
+}
+
 struct LimitedReader<'a, R> {
     inner: R,
     limit: u64,
     bytes: u64,
     cancelled: &'a AtomicBool,
     progress: &'a dyn Fn(u64),
+    stats: Option<&'a std::cell::RefCell<crate::profiling::ExtractStats>>,
 }
 impl<R: Read> Read for LimitedReader<'_, R> {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
@@ -307,7 +365,11 @@ impl<R: Read> Read for LimitedReader<'_, R> {
         let length = buffer
             .len()
             .min(usize::try_from(remaining).unwrap_or(usize::MAX));
+        let began = self.stats.map(|_| std::time::Instant::now());
         let count = self.inner.read(&mut buffer[..length])?;
+        if let (Some(stats), Some(began)) = (self.stats, began) {
+            stats.borrow_mut().decoder_read_seconds += began.elapsed().as_secs_f64();
+        }
         self.bytes += count as u64;
         if self.bytes > self.limit {
             return Err(std::io::Error::new(
@@ -315,7 +377,11 @@ impl<R: Read> Read for LimitedReader<'_, R> {
                 "decompressed chunk exceeds manifest size",
             ));
         }
+        let began = self.stats.map(|_| std::time::Instant::now());
         (self.progress)(count as u64);
+        if let (Some(stats), Some(began)) = (self.stats, began) {
+            stats.borrow_mut().progress_seconds += began.elapsed().as_secs_f64();
+        }
         Ok(count)
     }
 }
@@ -346,6 +412,7 @@ mod tests {
             bytes: 0,
             cancelled: &cancellation,
             progress: &|_| {},
+            stats: None,
         };
         let mut reader = Bounded {
             inner: reader,

@@ -118,9 +118,28 @@ def main():
         read(args.policy), separators=(",", ":")
     )
     runtime["environment"]["VLLM_CPU_SNAPSHOT_ROOT"] = "{components_root}/cpu-process"
+    # This selected eager profile serves prepared native binaries. Toolchains
+    # and development headers remain bake inputs, not serving dependencies.
+    environment = runtime["environment"]
+    for key in (
+        "CC",
+        "CXX",
+        "CUDA_HOME",
+        "CUDA_PATH",
+        "CUDACXX",
+        "FLASHINFER_CUBIN_DIR",
+    ):
+        environment.pop(key, None)
+    environment["PATH"] = ":".join(
+        part
+        for part in environment["PATH"].split(":")
+        if "{components_root}/build/" not in part
+    )
     cpu = read(args.cpu_artifact / "manifest.json")
     runtime["components"] = [
-        item for item in runtime["components"] if item["name"] != "cpu-process"
+        item
+        for item in runtime["components"]
+        if item["name"] not in {"cpu-process", "build"}
     ] + [
         {
             "name": "cpu-process",

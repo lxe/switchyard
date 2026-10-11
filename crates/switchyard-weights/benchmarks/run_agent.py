@@ -25,6 +25,12 @@ from timeline import Timeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
+parser.add_argument(
+    "--isolation",
+    choices=["runtime", "artifacts"],
+    help="Hydrate through the agent while holding model transport; no engine launch",
+)
+parser.add_argument("--hydration-profile", action="store_true")
 parser.add_argument("--objects", type=Path, required=True)
 parser.add_argument("--legacy-ticket", type=Path, required=True)
 parser.add_argument("--runtime-objects", type=Path, required=True)
@@ -132,6 +138,7 @@ gateway = subprocess.check_output(
     text=True,
 ).strip()
 control_token = secrets.token_hex(32)
+isolation_stop = threading.Event()
 lock = threading.Lock()
 events = []
 current_ticket = None
@@ -151,6 +158,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+            return
+        if args.isolation and self.path.startswith("/model/"):
+            isolation_stop.wait(590)
             return
         parts = self.path.strip("/").split("/")
         if (
@@ -358,9 +368,12 @@ try:
         active_timeline = timeline
         stop_followers = threading.Event()
         profile_follower = None
+        hydration_follower = None
         log_follower = None
         log_process = None
         memory = None
+        resource_sampler = None
+        resource_stop = root / "resource-sampler.stop"
         if timeline:
             timeline.emit(
                 "rollout_started",
@@ -383,7 +396,11 @@ try:
         ticket_before = len(ticket_requests)
         before = len(events)
         runtime = runtime_ticket(
-            runtime_configuration, runtime_manifest, components, caches, base
+            runtime_configuration,
+            runtime_manifest,
+            [] if args.isolation == "runtime" else components,
+            [] if args.isolation == "runtime" else caches,
+            base,
         )
         if (
             args.profile_startup
@@ -396,9 +413,9 @@ try:
                 + runtime["environment"].get("PYTHONPATH", "")
             )
             if args.profile_startup:
-                runtime["environment"]["NATIVE_STARTUP_PROFILE"] = (
-                    "/opt/switchyard/startup-profile/events.jsonl"
-                )
+                runtime["environment"][
+                    "NATIVE_STARTUP_PROFILE"
+                ] = "/opt/switchyard/startup-profile/events.jsonl"
             if args.env_override_source:
                 runtime["environment"]["NATIVE_ENV_OVERRIDE_SOURCE"] = source_overlay[
                     "staged_path"
@@ -419,6 +436,13 @@ try:
             runtime["environment"][key] = value
         if args.cpu_restore:
             runtime["environment"]["VLLM_CPU_SNAPSHOT_PROGRAM"] = "/cpu-restore"
+        if args.hydration_profile and timeline:
+            hydration_follower = threading.Thread(
+                target=timeline.follow_hydration_file,
+                args=(installation / "hydration-profile.jsonl", stop_followers),
+                daemon=True,
+            )
+            hydration_follower.start()
         current_ticket = {
             "model": "qwen-local",
             "revision": "2fc06364715b967f1860aea9cf38778875588b17",
@@ -522,6 +546,18 @@ try:
             "-c",
             "umask 077; read task_uptime unused < /proc/uptime; printf '%s\\n' \"$task_uptime\" > /opt/switchyard/agent-exec-uptime; exec /agent",
         ]
+        if args.isolation:
+            position = command.index("--entrypoint")
+            command[position:position] = ["-e", "SWITCHYARD_PROFILE_RUNTIME_ONLY=1"]
+        if args.hydration_profile:
+            profile_path = installation / "hydration-profile.jsonl"
+            profile_path.touch()
+            profile_path.chmod(0o666)
+            position = command.index("--entrypoint")
+            command[position:position] = [
+                "-e",
+                "SWITCHYARD_HYDRATION_PROFILE=/opt/switchyard/hydration-profile.jsonl",
+            ]
         if timeline:
             timeline.emit("container_launch_started")
         if args.cpu_restore:
@@ -585,6 +621,21 @@ try:
                 )
             )
             memory = ContainerMemory(pid, root / "container-memory.jsonl", timeline)
+            if args.hydration_profile:
+                resource_sampler = subprocess.Popen(
+                    [
+                        "sudo",
+                        "-n",
+                        os.sys.executable,
+                        str(Path(__file__).with_name("resource_sampler.py")),
+                        "--pid",
+                        str(pid),
+                        "--output",
+                        str(root / "thread-waits.jsonl"),
+                        "--stop",
+                        str(resource_stop),
+                    ]
+                )
             stat = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
             tick_seconds = 1 / os.sysconf("SC_CLK_TCK")
             boot_start = int(stat[19]) * tick_seconds
@@ -621,6 +672,65 @@ try:
                 .rsplit(":", 1)[1]
             )
             endpoint = "http://127.0.0.1:" + port
+            if args.isolation:
+                while time.monotonic() - epoch < 120:
+                    try:
+                        response = requests.get(
+                            endpoint + "/state", headers=headers, timeout=5
+                        )
+                    except requests.ConnectionError:
+                        time.sleep(0.1)
+                        continue
+                    if response.status_code == 200:
+                        last = response.json()
+                        (root / "last-state.json").write_text(json.dumps(last))
+                        if timeline:
+                            timeline.state(last, pre_exec_lower + 0.005)
+                        if last.get("error"):
+                            raise RuntimeError(last["error"])
+                        if last.get("artifacts") and all(
+                            a["phase"] == "ready" for a in last["artifacts"]
+                        ):
+                            result = {
+                                "isolation": args.isolation,
+                                "artifact_ready_observed_seconds": time.monotonic()
+                                - epoch,
+                                "agent_binary_sha256": hashlib.file_digest(
+                                    args.agent.open("rb"), "sha256"
+                                ).hexdigest(),
+                                "shared_hydration_concurrency": current_ticket[
+                                    "concurrency"
+                                ],
+                                "agent_state": last,
+                                "container_memory": memory.summary(),
+                                "http": [
+                                    {
+                                        **e,
+                                        "started_seconds": e["started_monotonic"]
+                                        - epoch,
+                                        "ended_seconds": e["ended_monotonic"] - epoch,
+                                    }
+                                    for e in events[before:]
+                                ],
+                                "request_to_ready_seconds": None,
+                                "request_to_first_useful_token_seconds": None,
+                                "direct_request_to_first_token_seconds": None,
+                                "completion": None,
+                            }
+                            results[mode] = result
+                            (root / "receipt.json").write_text(
+                                json.dumps(result, indent=2)
+                            )
+                            if timeline:
+                                timeline.emit(
+                                    "isolated_hydration_complete",
+                                    isolation=args.isolation,
+                                )
+                            break
+                    time.sleep(0.1)
+                else:
+                    raise RuntimeError("isolated hydration deadline")
+                continue
             while time.monotonic() - epoch < 590:
                 try:
                     response = requests.get(
@@ -818,6 +928,10 @@ try:
             result = {
                 "container_memory": memory.summary(),
                 "container_memory_limit": args.memory_limit,
+                "agent_binary_sha256": hashlib.file_digest(
+                    args.agent.open("rb"), "sha256"
+                ).hexdigest(),
+                "shared_hydration_concurrency": current_ticket["concurrency"],
                 "request_to_ready_seconds": ready_at,
                 "request_to_first_useful_token_seconds": first,
                 "direct_request_to_first_token_seconds": epoch
@@ -835,7 +949,7 @@ try:
                     }
                     for e in events[before:]
                 ],
-                "scope": "Cold private container, actual agent ticket/preflights/runtime reception and extraction, tokenizer and native vLLM serving. Compiler caches initially empty. Correctness hashing was performed only in the separate loader comparison.",
+                "scope": "Fresh owned container and installation using the selected agent ticket, immutable local-HTTP artifacts, native vLLM serving and first client request. Runtime/model identities, cache inputs and instrumentation settings are recorded separately.",
                 "compiler_cache_seeded": args.warm_cache_from is not None,
                 "compiler_cache_artifact_hydrated": bool(caches),
                 "cache_artifact_provenance": {
@@ -871,7 +985,7 @@ try:
                 )
             elif caches:
                 result["scope"] = (
-                    "Fresh owned GPU container and empty installation; boot, build, model and diagnostic native-cache artifacts hydrated from local HTTP. Native startup profiling is enabled. The cache records its original diagnostic provenance and is not qualified for a new production deployment identity. Memory-plan acceptance remains native."
+                    "Fresh owned GPU container and empty installation; selected runtime, components, model and native-cache artifacts hydrated from local HTTP. The selected serving policy determines GPU memory planning; native decisions and cache compatibility remain in telemetry."
                 )
             for e in result["http"]:
                 e.pop("started_monotonic")
@@ -891,6 +1005,10 @@ try:
             )
             raise
         finally:
+            isolation_stop.set()
+            if resource_sampler is not None:
+                resource_stop.touch()
+                resource_sampler.wait(timeout=5)
             if memory is not None:
                 memory.close()
             if args.profile_startup:
@@ -905,6 +1023,12 @@ try:
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
+            if args.hydration_profile:
+                profile_path = installation / "hydration-profile.jsonl"
+                if profile_path.exists():
+                    (root / "hydration-profile.jsonl").write_bytes(
+                        profile_path.read_bytes()
+                    )
             with (root / "agent.log").open("w") as log:
                 subprocess.run(
                     ["docker", "logs", name],
@@ -924,8 +1048,12 @@ try:
                     log_process.wait(timeout=3)
                 except subprocess.TimeoutExpired:
                     log_process.terminate()
-                    log_process.wait(timeout=3)
-            for follower in (profile_follower, log_follower):
+                    try:
+                        log_process.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        log_process.kill()
+                        log_process.wait()
+            for follower in (profile_follower, log_follower, hydration_follower):
                 if follower is not None:
                     follower.join(timeout=3)
             if timeline:

@@ -200,7 +200,12 @@ async fn twenty_independent_streams_extract_before_any_response_finishes() {
     let (ticket, state, gate, server) = fixture.serve(true, false).await;
     let destination = fixture.root.join("hydrated");
     let target = destination.clone();
-    let options = fixture.options();
+    let mut options = fixture.options();
+    let observations = Arc::new(Mutex::new(Vec::new()));
+    let recording = observations.clone();
+    options.profile_observer = Some(switchyard_artifacts::profiling::HydrationObserver::new(
+        move |event| recording.lock().unwrap().push(event),
+    ));
     let progress = Arc::new(Mutex::new(vec![]));
     let recorded = progress.clone();
     let task = tokio::spawn(async move {
@@ -240,6 +245,26 @@ async fn twenty_independent_streams_extract_before_any_response_finishes() {
     );
     verify(&destination, &fixture.manifest).unwrap();
     assert!(fixture.staging().is_none());
+    let observations = observations.lock().unwrap();
+    assert_eq!(observations.last().unwrap().event, "published");
+    let workers: Vec<_> = observations
+        .iter()
+        .filter(|event| event.event == "decoder_finished")
+        .collect();
+    assert_eq!(workers.len(), 24);
+    assert_eq!(
+        workers
+            .iter()
+            .map(|event| event.metrics["file_bytes"] as u64)
+            .sum::<u64>(),
+        24 * 256 * 1024
+    );
+    assert!(
+        workers
+            .iter()
+            .all(|event| event.metrics["decoder_read_seconds"]
+                >= event.metrics["source_read_seconds"])
+    );
     server.abort();
 }
 

@@ -47,6 +47,8 @@ pub struct HydrationOptions {
     pub receive_buffer: Option<ReceiveBufferOptions>,
     /// Per-object HTTP observations for direct trusted streaming, without signed URLs.
     pub transport_observer: Option<crate::transport::TransferObserver>,
+    /// Optional detailed direct-stream phase/shard measurements.
+    pub profile_observer: Option<crate::profiling::HydrationObserver>,
     /// Additional attempts after a failed request; partial transfers resume when supported.
     pub retries: usize,
     /// Total deadline for each HTTP attempt, including its streamed response body.
@@ -66,6 +68,7 @@ impl Default for HydrationOptions {
             extraction_concurrency: 4,
             receive_buffer: None,
             transport_observer: None,
+            profile_observer: None,
             retries: 2,
             request_timeout_s: 120,
             stall_timeout_s: 30,

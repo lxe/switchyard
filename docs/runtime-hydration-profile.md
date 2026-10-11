@@ -24,6 +24,8 @@ Direct hydration retains bounded HTTP-body buffering and allows extraction to ba
 
 Trusted runtime capacity accounting reserves output files and decoder memory, without reserving complete compressed backing. The worker retains its shared transfer permit through extraction and cancellation. Per-object transport telemetry reports compressed bytes received, body wait time, completion, and failure; compressed spool write counters are zero. No new serving-time hashes, tree scans, or per-file fsyncs are introduced.
 
+The [actual-agent isolation and serving measurements](direct-agent-hydration.md) attribute the integrated gap to dirty-page writeback throttling and document the selected bake-only build dependency.
+
 ## Integrated startup gap
 
 The latest local CPU-snapshot serving rollout took 49.954 seconds to first streamed content. Runtime reception completed in 3.866 seconds and extraction completed in 30.191 seconds, measured from that artifact's own start. Standalone direct hydration demonstrates that the runtime does not inherently require thirty seconds to materialize. It does not attribute the integrated delay to a specific cause. Concurrent artifact work, agent progress/state handling, filesystem writeback and instrumentation remain separate variables to profile using the selected direct path.
