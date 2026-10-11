@@ -180,12 +180,22 @@ class CompletedWeights:
 
 def register():
     """Invoke through a vLLM general plugin in every engine worker process."""
+    # General plugins load before worker device initialization. A fresh spawned
+    # worker must install the memory-plan observer here, before init_device;
+    # the loader's later __init__ records the actual child process method.
+    if os.environ.get("SWITCHYARD_STARTUP_GATE_RELEASED") == "1":
+        from switchyard_vllm_hooks import install
+
+        install()
     from vllm.model_executor.model_loader import register_model_loader
     from vllm.model_executor.model_loader.default_loader import DefaultModelLoader
 
     @register_model_loader("switchyard_extents")
     class ExtentModelLoader(DefaultModelLoader):
         def __init__(self, load_config):
+            from switchyard_vllm_hooks import worker_start
+
+            worker_start()
             extra = dict(load_config.model_loader_extra_config)
             self.socket_path = extra.pop("socket_path")
             self.timeout = extra.pop("timeout_seconds", 120)

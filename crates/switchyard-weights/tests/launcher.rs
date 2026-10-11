@@ -45,3 +45,21 @@ fn spawned_worker_does_not_repeat_metadata_gate() {
     );
     assert!(String::from_utf8_lossy(&output.stdout).contains("spawned worker ready"));
 }
+
+#[test]
+fn prepared_startup_cpu_acceptance() {
+    let output = Command::new("python3")
+        .arg(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/python/tests/test_startup.py"
+        ))
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}

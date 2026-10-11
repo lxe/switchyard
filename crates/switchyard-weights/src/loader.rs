@@ -8,19 +8,9 @@ use std::{
 use switchyard_artifacts::{Error, Result};
 
 const ADAPTER: &str = include_str!("../python/switchyard_extent_loader.py");
-const RUNNER: &str = r#"import runpy, sys
-
-def main():
-    import vllm
-    if sys.stdin.readline() != 'switchyard-metadata-ready-v1\n':
-        raise RuntimeError('metadata readiness gate cancelled')
-    sys.stdin.close()
-    sys.argv = ['vllm'] + sys.argv[1:]
-    runpy.run_module('vllm.entrypoints.cli.main', run_name='__main__')
-
-if __name__ == '__main__':
-    main()
-"#;
+const RUNNER: &str = include_str!("../python/serve.py");
+const STARTUP: &str = include_str!("../python/switchyard_vllm_startup.py");
+const HOOKS: &str = include_str!("../python/switchyard_vllm_hooks.py");
 fn python_program() -> String {
     "venv/bin/python".into()
 }
@@ -66,9 +56,11 @@ impl VllmLoaderConfig {
         Ok(format!(
             "{:x}",
             Sha256::digest(serde_json::to_vec(&(
-                "switchyard-vllm-loader-v1",
+                "switchyard-vllm-loader-v2",
                 ADAPTER,
                 RUNNER,
+                STARTUP,
+                HOOKS,
                 self
             ))?)
         ))
@@ -84,6 +76,8 @@ pub fn write_vllm_bundle(directory: &Path) -> Result<()> {
     }
     fs::write(directory.join("switchyard_extent_loader.py"), ADAPTER)?;
     fs::write(directory.join("serve.py"), RUNNER)?;
+    fs::write(directory.join("switchyard_vllm_startup.py"), STARTUP)?;
+    fs::write(directory.join("switchyard_vllm_hooks.py"), HOOKS)?;
     let dist = directory.join("switchyard_extent_loader-0.0.0.dist-info");
     fs::create_dir(&dist)?;
     fs::write(
