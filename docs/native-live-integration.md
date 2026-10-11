@@ -26,7 +26,7 @@ The existing live client requests streamed chat completion with `stream_options.
 
 Before the first useful call, the client compares its locally planned prompt count with `/tokenize`. This CPU-only endpoint uses the same actual chat renderer and tokenizer as generation. It neither executes the model nor warms the GPU. Thinking mode and unknown request options remain rejected.
 
-The [local client receipt](receipts/native-live-api-rtx5090.json) records one call and eight concurrent calls accepted through `switchyard-live::serving::Endpoint` on an RTX 5090. All nine responses had matching input counts, valid usage/DONE framing, and identical answer hashes. The measured listener interval excludes network hydration. Client compilation intervened after listener publication, so that receipt does not claim launch-to-first-token latency.
+The [three-model local receipt](receipts/native-fleet-local-rtx5090.json) records 17 calls per model accepted through `switchyard-live::serving::Endpoint` on an RTX 5090: one single call, eight equal-prompt calls, and eight varied-length calls. All 51 responses passed input-token accounting, bounded output, streamed content and usage/DONE framing. Separate fresh-process HTTP benchmarks measured launch-to-first-token without intervening client compilation. These measurements exclude network hydration and provider allocation; filesystem residency was uncontrolled on the shared workstation.
 
 ## Workload gauntlet
 

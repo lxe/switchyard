@@ -32,7 +32,21 @@ The [0.8B accuracy receipt](native-engine-accuracy.md) establishes F32 equivalen
 
 A local process-start measurement with existing model files is distinct from a RunPod allocation and R2 hydration measurement. Cloud receipts must include allocation, artifact receipt/publication, GPU initialization, tensor loading, listener availability and the client's first streamed content. Driver-cache baking happens offline on a compatible platform; serving adds no inference readiness request or automatic memory sizing.
 
-## Local baked-cache startup
+## Integrated local fleet acceptance
+
+The [integrated fleet receipt](receipts/native-fleet-local-rtx5090.json) binds engine binary `790e574b91e1b2b3874840c8d67a90359937b15a94dfdfa6861735dd39a81c70`, serving source `3adac950e9f7ea329539b1844a5ff659a458a1b2`, CUDA 13.4 and RTX 5090 driver 615.71.09. Every model received a separate exact-binary offline cache bake and a fresh serving process. A further 17 useful calls per model exercised the live Rust client, including equal and varied prompt lengths; all 51 streams passed token accounting and completion framing.
+
+| Model | Client listener | Launch to first streamed token | 16-call burst output tokens/s |
+| --- | ---: | ---: | ---: |
+| 0.8B | 0.709 s | 0.840 s | 601 |
+| 2B | 1.467 s | 1.596 s | 551 |
+| 4B | 4.307 s | 4.454 s | 342 |
+
+Each burst generated 32 tokens per request with a maximum admitted batch of eight. Requests can span several admitted groups, so these values include engine queuing. These are single BF16 samples with local prepared files and separately baked kernel caches; they exclude allocation and hydration. Filesystem residency and shared-host background activity were uncontrolled. They do not establish strict BF16 sequence parity or cloud throughput.
+
+Engine telemetry attributes local weight reads to 0.429 s, 1.000 s and 3.407 s respectively. Subsequent model construction, tensor copies and synchronization took 0.178 s, 0.363 s and 0.799 s. CUDA initialization took approximately 0.067–0.068 s per process, while tokenizer preparation completed in parallel. The receipt retains both engine-clock phase events and client-clock first-token measurements rather than adding overlapping intervals.
+
+## Earlier local baked-cache baseline
 
 All three checkpoints have been served on the RTX 5090 with the corrected CUDA 13.4 engine, driver 615.71.09 and separately baked driver caches. Each measurement launches a fresh process with resident prepared model files and warm filesystem pages. The burst contains eight equal-length requests with 32 output tokens each.
 
