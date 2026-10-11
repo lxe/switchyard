@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "profile": "qwen3.5-0.8b-bf16-sm89-flashattn",
+  "source_runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+  "scope": {
+    "model": "Qwen/Qwen3.5-0.8B",
+    "dtype": "bfloat16",
+    "gpu_compute_capability": "8.9",
+    "attention_backend": "FLASH_ATTN",
+    "speculative_decoding": false
+  },
+  "selection_rule": "remove only universal flashinfer_cubin/cubins/*.cubin payloads; native sampling provider retained in cache",
+  "removed_files": 42704,
+  "removed_bytes": 6546167652,
+  "removed_inventory_sha256": "ff3d763a5e0f2315a63e7562935dfe756edea90702a197fce54517365eca0c86",
+  "retained": [
+    "package code and metadata",
+    "headers",
+    "checksums",
+    "directory paths",
+    "native libraries",
+    "compiler toolchain"
+  ],
+  "gpu_acceptance_required": true
+}

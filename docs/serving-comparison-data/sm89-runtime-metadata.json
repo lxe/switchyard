@@ -1,0 +1,23 @@
+{
+  "kind": "runtime",
+  "compatibility": {
+    "architecture": "x86_64",
+    "cuda": "12.9",
+    "os": "ubuntu24.04",
+    "python": "3.12.14",
+    "torch": "2.13.0+cu129",
+    "vllm": "0.31.0+cu129",
+    "asset_profile": "qwen3.5-0.8b-bf16-sm89-flashattn"
+  },
+  "attributes": {
+    "builder_sha256": "a2fef62f6b95aacfc3d9c1068ab21e13453485e65ec87fb601c60ccaae1c9ddd",
+    "gpu_bake_performed": "false",
+    "python_bytecode_invalidation": "unchecked-hash",
+    "requirements_sha256": "da4efc93fc2b9212fc4de7bc0be0cdc43c408b697e16b7cf3d3c628bcb274800",
+    "runtime_root": "/opt/switchyard/runtime",
+    "sources_sha256": "4f21b9ddf58773cdb4746595495d4ea94708fe20419a158d99ccabedec185a62",
+    "source_runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+    "asset_profile": "qwen3.5-0.8b-bf16-sm89-flashattn",
+    "removed_cubin_bytes": "6546167652"
+  }
+}

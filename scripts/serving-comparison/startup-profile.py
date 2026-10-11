@@ -12,8 +12,10 @@ import json
 import os
 import sys
 import time
+import traceback
 
 FUNCTIONS = {
+    'torch.cuda': ['_lazy_init'],
     'vllm.v1.worker.gpu.warmup': ['warmup_kernels', '_warmup_kernels', 'run_mixed_prefill_decode_warmup'],
     'vllm.model_executor.warmup.kernel_warmup': [
         'kernel_warmup', 'cutedsl_warmup', 'qwen_triton_warmup',
@@ -42,6 +44,20 @@ CLASSES = {
     },
 }
 ACTIVE = True
+ASSET_PATHS = set()
+
+def audit_asset_access(event, args):
+    if event != 'open' or not args or not isinstance(args[0], (str, bytes)):
+        return
+    path = os.fsdecode(args[0])
+    marker = '/site-packages/flashinfer_cubin/'
+    if marker in path and path not in ASSET_PATHS:
+        ASSET_PATHS.add(path)
+        print('SWITCHYARD_RUNTIME_ASSET_ACCESS ' + json.dumps({
+            'pid': os.getpid(), 'path': 'flashinfer_cubin/' + path.split(marker, 1)[1],
+        }, sort_keys=True), flush=True)
+
+sys.addaudithook(audit_asset_access)
 
 def emit(**values):
     print('SWITCHYARD_STARTUP_PROFILE ' + json.dumps({
@@ -54,8 +70,15 @@ def timed(function, name):
         global ACTIVE
         if not ACTIVE:
             return function(*args, **kwargs)
+        if name == 'torch.cuda._lazy_init' and sys.modules['torch.cuda'].is_initialized():
+            return function(*args, **kwargs)
         began = time.monotonic()
         observation = {}
+        if name == 'torch.cuda._lazy_init':
+            observation['callers'] = [
+                {'file': os.path.basename(frame.filename), 'function': frame.name, 'line': frame.lineno}
+                for frame in traceback.extract_stack(limit=14)[:-1]
+            ]
         if name.endswith('determine_available_memory') and args:
             snapshot = getattr(args[0], 'init_snapshot', None)
             if snapshot is not None:
