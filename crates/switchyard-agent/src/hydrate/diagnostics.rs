@@ -12,6 +12,101 @@ use tokio::sync::Semaphore;
 
 const MAX_TRANSFERS: usize = 256;
 const MAX_SHARDS: usize = 64;
+const MAX_ERROR_CAUSES: usize = 16;
+
+/// Flags and typed causes only: Display/Debug strings may contain capabilities or bodies.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReqwestErrorFlags {
+    pub timeout: bool,
+    pub connect: bool,
+    pub dns: bool,
+    pub request: bool,
+    pub body: bool,
+    pub decode: bool,
+    pub builder: bool,
+    pub status: bool,
+    pub redirect: bool,
+    pub upgrade: bool,
+}
+impl From<&reqwest::Error> for ReqwestErrorFlags {
+    fn from(error: &reqwest::Error) -> Self {
+        Self {
+            timeout: error.is_timeout(),
+            connect: error.is_connect(),
+            dns: error.is_dns(),
+            request: error.is_request(),
+            body: error.is_body(),
+            decode: error.is_decode(),
+            builder: error.is_builder(),
+            status: error.is_status(),
+            redirect: error.is_redirect(),
+            upgrade: error.is_upgrade(),
+        }
+    }
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "category", rename_all = "snake_case")]
+pub enum ErrorCause {
+    Reqwest {
+        flags: ReqwestErrorFlags,
+    },
+    Hyper {
+        timeout: bool,
+        closed: bool,
+        canceled: bool,
+        incomplete_message: bool,
+        parse: bool,
+        user: bool,
+        body_write_aborted: bool,
+    },
+    Io {
+        kind: String,
+        raw_os_error: Option<i32>,
+    },
+    /// Unknown types are intentionally not formatted or named.
+    Opaque,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransportErrorDetails {
+    pub reqwest_flags: ReqwestErrorFlags,
+    pub causes: Vec<ErrorCause>,
+    pub causes_truncated: bool,
+}
+fn error_causes(error: &(dyn std::error::Error + 'static)) -> (Vec<ErrorCause>, bool) {
+    let mut causes = Vec::new();
+    let mut source = Some(error);
+    while let Some(error) = source {
+        if causes.len() == MAX_ERROR_CAUSES {
+            return (causes, true);
+        }
+        causes.push(
+            if let Some(error) = error.downcast_ref::<reqwest::Error>() {
+                ErrorCause::Reqwest {
+                    flags: error.into(),
+                }
+            } else if let Some(error) = error.downcast_ref::<hyper::Error>() {
+                ErrorCause::Hyper {
+                    timeout: error.is_timeout(),
+                    closed: error.is_closed(),
+                    canceled: error.is_canceled(),
+                    incomplete_message: error.is_incomplete_message(),
+                    parse: error.is_parse(),
+                    user: error.is_user(),
+                    body_write_aborted: error.is_body_write_aborted(),
+                }
+            } else if let Some(error) = error.downcast_ref::<io::Error>() {
+                ErrorCause::Io {
+                    kind: format!("{:?}", error.kind()),
+                    raw_os_error: error.raw_os_error(),
+                }
+            } else {
+                ErrorCause::Opaque
+            },
+        );
+        source = error.source();
+    }
+    (causes, false)
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -75,6 +170,8 @@ pub struct TransferObservation {
     pub body_wait_s: f64,
     pub longest_body_wait_s: f64,
     pub error_class: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transport_error: Option<TransportErrorDetails>,
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ShardObservation {
@@ -104,6 +201,11 @@ pub struct FailureSnapshot {
     pub transfers: Vec<TransferObservation>,
     pub shards: Vec<ShardObservation>,
     pub host: HostSnapshot,
+    /// False only for older observations without cancellation-safe capture.
+    #[serde(default)]
+    pub host_capture_complete: bool,
+    #[serde(default)]
+    pub host_capture_seconds: f64,
 }
 /// Deserialized observations keep their snapshot. Locally created observations sample live data.
 #[derive(Debug, Clone, Deserialize)]
@@ -245,38 +347,46 @@ impl ModelDiagnostics {
                 inner: None,
             })
     }
-    pub(crate) async fn failure(&self, piece: &str, error_class: &str) {
+    pub(crate) fn failure(&self, piece: &str, error_class: &str) {
+        self.failure_with_capture(piece, error_class, HostSnapshot::capture);
+    }
+    fn failure_with_capture(
+        &self,
+        piece: &str,
+        error_class: &str,
+        capture: impl FnOnce() -> HostSnapshot,
+    ) {
         let Some(r) = &self.live else { return };
-        // Capture boundaries before cancellation changes them. Only the first failure is retained.
-        {
-            let mut slot = r.failure.lock().unwrap_or_else(|e| e.into_inner());
-            if slot.is_some() {
-                return;
-            }
-            let elapsed_s = r.started.elapsed().as_secs_f64();
-            *slot = Some(FailureSnapshot {
-                elapsed_s,
-                piece: piece.into(),
-                error_class: error_class.into(),
-                transfers: r
-                    .transfers
-                    .iter()
-                    .filter_map(|t| t.snapshot(elapsed_s))
-                    .collect(),
-                shards: r
-                    .shards
-                    .iter()
-                    .filter_map(|s| s.snapshot(elapsed_s))
-                    .collect(),
-                host: HostSnapshot::default(),
-            });
+        // The first record is published only after capture completes, without an await.
+        // Callers still own the sender/response here, so decoder EOF cannot cancel capture.
+        let mut slot = r.failure.lock().unwrap_or_else(|e| e.into_inner());
+        if slot.is_some() {
+            return;
         }
-        let host = tokio::task::spawn_blocking(HostSnapshot::capture)
-            .await
-            .unwrap_or_default();
-        if let Some(snapshot) = r.failure.lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
-            snapshot.host = host;
-        }
+        let elapsed_s = r.started.elapsed().as_secs_f64();
+        let mut failure = FailureSnapshot {
+            elapsed_s,
+            piece: piece.into(),
+            error_class: error_class.into(),
+            transfers: r
+                .transfers
+                .iter()
+                .filter_map(|t| t.snapshot(elapsed_s))
+                .collect(),
+            shards: r
+                .shards
+                .iter()
+                .filter_map(|s| s.snapshot(elapsed_s))
+                .collect(),
+            host: HostSnapshot::default(),
+            host_capture_complete: false,
+            host_capture_seconds: 0.0,
+        };
+        let started = Instant::now();
+        failure.host = capture();
+        failure.host_capture_seconds = started.elapsed().as_secs_f64();
+        failure.host_capture_complete = true;
+        *slot = Some(failure);
     }
 }
 #[derive(Debug, Clone)]
@@ -299,9 +409,9 @@ impl TransferTrace {
             .error_class
             .clone()
     }
-    pub(crate) fn request_error(&self, error: &reqwest::Error) {
-        self.error(if error.is_timeout() {
-            "request_timeout"
+    pub(crate) fn request_error(&self, error: &reqwest::Error) -> &'static str {
+        let class = if error.is_timeout() {
+            "reqwest_timeout"
         } else if error.is_connect() {
             "connect"
         } else if error.is_body() {
@@ -310,7 +420,17 @@ impl TransferTrace {
             "response_decode"
         } else {
             "transport"
+        };
+        let (causes, causes_truncated) = error_causes(error);
+        self.update(|t, _| {
+            t.error_class = Some(class.into());
+            t.transport_error = Some(TransportErrorDetails {
+                reqwest_flags: error.into(),
+                causes,
+                causes_truncated,
+            });
         });
+        class
     }
     pub(crate) fn now(&self) -> f64 {
         self.started.elapsed().as_secs_f64()
@@ -590,3 +710,6 @@ impl HostSnapshot {
 
 #[cfg(test)]
 mod local;
+
+#[cfg(test)]
+mod tests;

@@ -323,12 +323,12 @@ async fn transfer(
     stall: Duration,
 ) -> Result<()> {
     let trace = diagnostics.transfer(&chunk.name);
-    let result = transfer_body(client, url, chunk, sender, state, diagnostics, stall).await;
+    let result = transfer_body(client, url, chunk, &sender, state, diagnostics, stall).await;
     if result.is_err() {
         let class = trace
             .error_class()
             .unwrap_or_else(|| "transfer_error".into());
-        diagnostics.failure(&chunk.name, &class).await;
+        diagnostics.failure(&chunk.name, &class);
         trace.boundary(Boundary::Failed);
     }
     result
@@ -338,7 +338,7 @@ async fn transfer_body(
     client: &reqwest::Client,
     url: &str,
     chunk: &Chunk,
-    sender: mpsc::Sender<Vec<u8>>,
+    sender: &mpsc::Sender<Vec<u8>>,
     state: &RwLock<State>,
     diagnostics: &ModelDiagnostics,
     stall: Duration,
@@ -353,7 +353,8 @@ async fn transfer_body(
             Error::Transfer(format!("{} headers stalled", chunk.name))
         })?
         .map_err(|error| {
-            trace.request_error(&error);
+            let class = trace.request_error(&error);
+            diagnostics.failure(&chunk.name, class);
             Error::Transfer(format!("{} transport", chunk.name))
         })?;
     trace.update(|t, now| {
@@ -387,7 +388,7 @@ async fn transfer_body(
             Err(_) => {
                 trace.error("body_wait_deadline");
                 // Sample while the response stream still owns its connection.
-                diagnostics.failure(&chunk.name, "body_wait_deadline").await;
+                diagnostics.failure(&chunk.name, "body_wait_deadline");
                 return Err(Error::Transfer(format!("{} stalled", chunk.name)));
             }
         };
@@ -396,7 +397,10 @@ async fn transfer_body(
             break;
         };
         let piece = piece.map_err(|error| {
-            trace.request_error(&error);
+            let class = trace.request_error(&error);
+            // Freeze typed transport causes and completed host/socket evidence while
+            // this response and the outer transfer's sender are still owned.
+            diagnostics.failure(&chunk.name, class);
             Error::Transfer(format!("{} interrupted", chunk.name))
         })?;
         trace.update(|t, now| {
@@ -441,7 +445,8 @@ async fn transfer_body(
         return Err(Error::Transfer(format!("{} size mismatch", chunk.name)));
     }
     trace.boundary(Boundary::BodyComplete);
-    // Dropping sender delivers EOF. Partial streaming attempts fail rather than replaying TAR.
+    // The outer transfer drops its sender after success or complete failure capture.
+    // Partial streaming attempts fail rather than replaying TAR.
     Ok(())
 }
 

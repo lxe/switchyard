@@ -12,6 +12,7 @@ switchyard-artifacts.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 reqwest.workspace = true
+hyper = { version = "1", default-features = false }
 tokio.workspace = true
 axum.workspace = true
 sha2.workspace = true

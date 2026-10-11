@@ -253,6 +253,7 @@ async fn stalled_response_body_fails_without_local_backpressure() {
     assert_eq!(draining.await.unwrap(), 64);
     let snapshot = observed.snapshot();
     let failure = snapshot.failure.unwrap();
+    assert!(failure.host_capture_complete);
     assert_eq!(failure.error_class, "body_wait_deadline");
     let piece = &failure.transfers[0];
     assert_eq!(piece.boundary, Boundary::BodyWait);
@@ -293,4 +294,122 @@ fn diagnostic_record_counts_are_bounded_and_legacy_state_is_compatible() {
     let state: State =
         serde_json::from_value(serde_json::to_value(State::new(&ticket)).unwrap()).unwrap();
     assert!(state.model_diagnostics.is_none());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn transport_timeout_snapshot_is_complete_before_consumer_eof_failure() {
+    let server = server(Router::new().route(
+        "/piece",
+        get(|| async {
+            let body = futures_util::stream::once(async { Ok::<_, io::Error>(vec![42_u8; 64]) })
+                .chain(futures_util::stream::pending::<io::Result<Vec<u8>>>());
+            Response::new(Body::from_stream(body))
+        }),
+    ))
+    .await;
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_millis(500))
+        .build()
+        .unwrap();
+    let observed = diagnostics(chunk(128));
+    let (sender, mut receiver) = mpsc::channel::<Vec<u8>>(CHANNEL_PIECES);
+    let (eof_observation, eof_seen) = oneshot::channel();
+    let consumer_diagnostics = observed.clone();
+    let decoder = tokio::task::spawn_blocking(move || {
+        let mut read = 0;
+        while let Some(bytes) = receiver.blocking_recv() {
+            read += bytes.len();
+        }
+        // This is the decoder EOF boundary which used to cancel async host capture.
+        let _ = eof_observation.send((read, consumer_diagnostics.snapshot().failure));
+        Err::<(), _>(Error::Transfer("consumer decoding failed at EOF".into()))
+    });
+    let url = format!("{}?signed-capability=never-retain-this-value", server.url);
+    let state = RwLock::new(State::new(&ticket(10)));
+    let piece = chunk(128);
+    let operation = transfer(
+        &client,
+        &url,
+        &piece,
+        sender,
+        &state,
+        &observed,
+        Duration::from_secs(1),
+    );
+    let result = tokio::try_join!(operation, async { decoder.await.map_err(|_| Error::Task)? });
+    assert!(result.is_err());
+    let (read, failure) = eof_seen.await.unwrap();
+    assert_eq!(read, 64);
+    let failure = failure.expect("first transport failure must precede consumer EOF");
+    assert!(failure.host_capture_complete);
+    assert!(!failure.host.process.is_empty() || !failure.host.unavailable.is_empty());
+    assert_eq!(failure.error_class, "reqwest_timeout");
+    let details = failure.transfers[0].transport_error.as_ref().unwrap();
+    assert!(details.reqwest_flags.timeout);
+    assert!(details.reqwest_flags.decode || details.reqwest_flags.body);
+    assert!(matches!(
+        details.causes[0],
+        super::super::diagnostics::ErrorCause::Reqwest { .. }
+    ));
+    observed.failure("other-piece", "consumer_closed");
+    assert_eq!(
+        observed.snapshot().failure.unwrap().error_class,
+        "reqwest_timeout"
+    );
+    let encoded = serde_json::to_string(&observed).unwrap();
+    assert!(!encoded.contains("never-retain-this-value"));
+    assert!(!encoded.contains("signed-capability"));
+}
+
+#[tokio::test]
+async fn truncated_http_body_retains_hyper_and_specific_io_causes_without_error_text() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let serving = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let _ = stream.read(&mut [0_u8; 2048]).await.unwrap();
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 128\r\n\r\nshort body")
+            .await
+            .unwrap();
+        stream.shutdown().await.unwrap();
+    });
+    let observed = diagnostics(chunk(128));
+    let (sender, mut receiver) = mpsc::channel::<Vec<u8>>(CHANNEL_PIECES);
+    let draining = tokio::spawn(async move { while receiver.recv().await.is_some() {} });
+    let result = transfer(
+        &reqwest::Client::new(),
+        &format!("http://{address}/piece?token=must-not-leak"),
+        &chunk(128),
+        sender,
+        &RwLock::new(State::new(&ticket(10))),
+        &observed,
+        Duration::from_secs(1),
+    )
+    .await;
+    assert!(result.is_err());
+    serving.await.unwrap();
+    draining.await.unwrap();
+    let failure = observed.snapshot().failure.unwrap();
+    assert!(failure.host_capture_complete);
+    let details = failure.transfers[0].transport_error.as_ref().unwrap();
+    assert!(!details.reqwest_flags.timeout);
+    assert!(
+        details
+            .causes
+            .iter()
+            .any(|cause| matches!(cause, super::super::diagnostics::ErrorCause::Hyper { .. })),
+        "{details:?}"
+    );
+    assert!(details.causes.iter().any(|cause| matches!(
+        cause,
+        super::super::diagnostics::ErrorCause::Io { kind, raw_os_error: None }
+            if kind == "UnexpectedEof"
+    )));
+    assert!(
+        !serde_json::to_string(&failure)
+            .unwrap()
+            .contains("must-not-leak")
+    );
 }
