@@ -227,6 +227,7 @@ async fn twenty_useful_streams_and_completion_before_publication() {
     let destination = fixture.root.join("ready");
     let hydration =
         Arc::new(ExtentHydration::prepare(ticket, &destination, fixture.options()).unwrap());
+    assert_eq!(hydration.allocated_output_bytes().unwrap(), 0);
     let working = hydration.clone();
     let task = tokio::spawn(async move { working.run().await });
     let entry = fixture.entry();
@@ -245,6 +246,8 @@ async fn twenty_useful_streams_and_completion_before_publication() {
     .unwrap()
     .unwrap();
     assert!(!hydration.is_complete(entry, 0, 4096).unwrap());
+    let allocated = hydration.allocated_output_bytes().unwrap();
+    assert!((19 * 4096..32 * 4096).contains(&allocated));
     assert!(!destination.exists());
     assert!(state.requested.load(Ordering::Relaxed) >= 20);
     assert!(state.finished.load(Ordering::Relaxed) >= 19);
@@ -259,6 +262,7 @@ async fn twenty_useful_streams_and_completion_before_publication() {
     let report = task.await.unwrap().unwrap();
     assert_eq!(report.copy_buffer_bound, 20 * 64 * 1024);
     assert_eq!(report.downloaded_bytes, 32 * 4096);
+    assert_eq!(hydration.allocated_output_bytes().unwrap(), 32 * 4096);
     assert_eq!(
         fs::read(destination.join("nested/large")).unwrap(),
         fs::read(fixture.root.join("source/nested/large")).unwrap()

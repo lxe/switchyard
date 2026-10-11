@@ -129,6 +129,32 @@ pub(super) async fn prepare(
             ..ExtentOptions::default()
         },
     )?);
+    let allocation = state.read().await.model_allocation.clone();
+    let owned_hydration = Arc::downgrade(&hydration);
+    let owned_metadata = Arc::downgrade(&owner);
+    let metadata_files = artifact
+        .manifest
+        .entries
+        .iter()
+        .filter_map(|entry| match entry {
+            Entry::File { path, size, .. } if !path.ends_with(".safetensors") => {
+                Some((PathBuf::from(path), *size))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    allocation.register(move || {
+        let Some(hydration) = owned_hydration.upgrade() else {
+            return Ok(0);
+        };
+        let model = hydration.allocated_output_bytes()?;
+        let metadata = owned_metadata.upgrade().map_or(Ok(0), |owner| {
+            crate::allocation::allocated_files(&owner.root.join("metadata"), &metadata_files)
+        })?;
+        model
+            .checked_add(metadata)
+            .ok_or_else(|| Error::Manifest("model allocation overflow".into()))
+    });
     let bridge = WeightBridge::bind(&owner.root.join("weights.sock"))?;
     let (tx, mut rx) = watch::channel(None);
     let network = async {

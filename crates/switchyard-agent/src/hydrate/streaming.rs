@@ -98,13 +98,34 @@ pub(super) async fn hydrate(
     state: Arc<RwLock<State>>,
     limit: Arc<Semaphore>,
 ) -> Result<()> {
+    let allocation = state.read().await.model_allocation.clone();
+    let allocated_files = ticket
+        .manifest
+        .files
+        .iter()
+        .map(|(path, info)| (PathBuf::from(path), info.size))
+        .collect::<Vec<_>>();
     if cached(ticket, root)? {
+        let published = root.join("model");
+        allocation
+            .register(move || crate::allocation::allocated_files(&published, &allocated_files));
         state.write().await.model_cached = true;
         return Ok(());
     }
     let workspace = Arc::new(Workspace::new(root)?);
     let stage = workspace.path.join("model");
     fs::create_dir(&stage)?;
+    let owned_workspace = Arc::downgrade(&workspace);
+    let allocation_path = Arc::new(Mutex::new((stage.clone(), false)));
+    let observed_path = allocation_path.clone();
+    allocation.register(move || {
+        let owner = owned_workspace.upgrade();
+        let path = observed_path.lock().unwrap();
+        if owner.is_none() && !path.1 {
+            return Ok(0);
+        }
+        crate::allocation::allocated_files(&path.0, &allocated_files)
+    });
     let cancellation = Cancellation(Arc::new(AtomicBool::new(false)));
     let seen = Arc::new(Mutex::new(BTreeSet::new()));
     let client = client(ticket)?;
@@ -247,7 +268,11 @@ pub(super) async fn hydrate(
         ));
     }
     // Only this awaiting owner publishes; workers have no destination path or rename authority.
-    fs::rename(stage, dest)?;
+    {
+        let mut allocation = allocation_path.lock().unwrap();
+        fs::rename(stage, &dest)?;
+        *allocation = (dest, true);
+    }
     state.write().await.hydration_seconds = started.elapsed().as_secs_f64();
     Ok(())
 }

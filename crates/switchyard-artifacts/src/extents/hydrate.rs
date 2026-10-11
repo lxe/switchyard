@@ -177,6 +177,34 @@ pub struct ExtentHydration {
     destination: PathBuf,
 }
 impl ExtentHydration {
+    /// Allocated output blocks, capped per file to its declared byte size.
+    /// The publication lock keeps metadata reads on this owner's current path.
+    #[cfg(unix)]
+    pub fn allocated_output_bytes(&self) -> Result<u64> {
+        use std::os::unix::fs::MetadataExt;
+        let state = self.shared.state.lock().unwrap();
+        self.manifest()
+            .entries
+            .iter()
+            .try_fold(0_u64, |sum, entry| {
+                let Entry::File { path, size, .. } = entry else {
+                    return Ok(sum);
+                };
+                let metadata = fs::symlink_metadata(state.root.join(path))?;
+                if !metadata.is_file() || metadata.len() != *size {
+                    return Err(Error::Invalid(
+                        "owned extent allocation type or length".into(),
+                    ));
+                }
+                let allocated = metadata
+                    .blocks()
+                    .checked_mul(512)
+                    .ok_or_else(|| Error::Invalid("extent allocation overflow".into()))?
+                    .min(*size);
+                sum.checked_add(allocated)
+                    .ok_or_else(|| Error::Invalid("extent allocation overflow".into()))
+            })
+    }
     pub fn progress(&self) -> ExtentProgress {
         let state = self.shared.state.lock().unwrap();
         ExtentProgress {

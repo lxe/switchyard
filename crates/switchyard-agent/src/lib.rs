@@ -1,4 +1,7 @@
 //! Pod-side hydration tickets and observable lifecycle state. Tickets contain expiring URLs.
+mod allocation;
+#[doc(hidden)]
+pub use allocation::ModelAllocation;
 pub mod export;
 pub mod hydrate;
 pub mod model;
@@ -67,6 +70,10 @@ pub enum Phase {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct State {
+    /// Process-local ownership query, never accepted from HTTP state or serialized.
+    #[serde(skip)]
+    #[doc(hidden)]
+    pub model_allocation: ModelAllocation,
     pub model: String,
     pub revision: String,
     pub phase: Phase,
@@ -118,6 +125,7 @@ pub struct State {
 impl State {
     pub fn new(ticket: &Ticket) -> Self {
         Self {
+            model_allocation: allocation::ModelAllocation::default(),
             model: ticket.model.clone(),
             revision: ticket.revision.clone(),
             phase: Phase::Booting,

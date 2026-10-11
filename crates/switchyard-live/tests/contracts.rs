@@ -311,6 +311,7 @@ async fn fixture_with_cache_export(
             "/state",
             get(|| async {
                 Json(switchyard_agent::State {
+                    model_allocation: Default::default(),
                     model_diagnostics: None,
                     weight_loading: None,
                     model_transport: None,

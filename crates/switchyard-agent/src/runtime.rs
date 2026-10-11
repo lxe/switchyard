@@ -560,13 +560,20 @@ async fn hydrate_one(
                 )?
                 .dev()
             {
-                reservation.additional_output_bytes = context
-                    .state
-                    .read()
-                    .await
-                    .dependency_budget
-                    .as_ref()
-                    .map_or(0, |b| b.model_bytes);
+                let (allocation, declared) = {
+                    let state = context.state.read().await;
+                    (
+                        state.model_allocation.clone(),
+                        state
+                            .dependency_budget
+                            .as_ref()
+                            .map_or(0, |b| b.model_bytes),
+                    )
+                };
+                // Snapshot ownership/allocation before hydrate's current-free-space
+                // query. Intervening writes then leave a conservative pending claim.
+                reservation.additional_output_bytes =
+                    declared.saturating_sub(allocation.allocated_bytes()?);
             }
             reservation.observer = Some(diagnostic.observer());
             Some(reservation)
