@@ -1,5 +1,6 @@
 """Prepare mixed-length traces and compare merged, independent and published F32 probes."""
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -40,14 +41,18 @@ def compare(args):
     args.output.mkdir(parents=True, exist_ok=True)
     candidate = json.loads(args.candidate.read_text())
     independent = json.loads(args.independent.read_text())
-    if len(candidate) != len(independent) or not candidate:
+    traces_path = args.traces or args.candidate.with_name('traces.json')
+    traces = json.loads(traces_path.read_text())
+    if len(candidate) != len(independent) or len(candidate) != len(traces) or not candidate:
         raise ValueError('Probe row counts differ or are empty')
     reference = []
-    for row, (actual, expected) in enumerate(zip(candidate, independent)):
-        if len(actual) != len(expected) or not actual:
+    for row, (actual, expected, trace) in enumerate(zip(candidate, independent, traces)):
+        if len(actual) != len(expected) or len(actual) != len(trace['continuation']) or not actual:
             raise ValueError('Probe step counts differ or are empty')
         for step, (a, e) in enumerate(zip(actual, expected)):
-            if a['position'] != e['position'] or a['expected'] != e['expected']:
+            position = 0 if step == 0 else len(trace['prompt']) + step - 1
+            if (a['position'] != e['position'] or a['expected'] != e['expected']
+                    or a['position'] != position or a['expected'] != trace['continuation'][step]):
                 raise ValueError('Independent and merged histories differ')
             reference.append({'row': row, 'step': step, 'expected': e['expected'],
                               'argmax': e['top'][0]['token'],
@@ -65,7 +70,13 @@ def compare(args):
         if process.returncode not in (0, 1) or not report.exists():
             raise RuntimeError('Comparison failed before writing a validated report')
         reports[name] = json.loads(report.read_text())
-    result = {'passed': all(r['passed'] is True for r in reports.values()), 'comparisons': reports}
+    requests = [{'prompt': t['prompt'], 'max_tokens': len(t['continuation']),
+                 'ignore_eos': True} for t in traces]
+    result = {'passed': all(r['passed'] is True for r in reports.values()), 'comparisons': reports,
+              'requests': requests, 'inputs_sha256': {
+                  name: hashlib.sha256(path.read_bytes()).hexdigest()
+                  for name, path in [('traces', traces_path), ('merged', args.candidate),
+                                     ('independent', args.independent), ('published', args.reference)]}}
     (args.output / 'gate.json').write_text(json.dumps(result, indent=2) + '\n')
     raise SystemExit(0 if result['passed'] else 1)
 
@@ -81,6 +92,7 @@ def main():
     check.add_argument('--candidate', type=Path, required=True)
     check.add_argument('--independent', type=Path, required=True)
     check.add_argument('--reference', type=Path, required=True)
+    check.add_argument('--traces', type=Path, help='Defaults to traces.json beside candidate')
     check.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     if args.command == 'prepare':

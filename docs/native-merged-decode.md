@@ -40,3 +40,11 @@ target/release/switchyard-engine-merged-probe \
 Run the pinned published Transformers oracle separately on the identical trace file. Compare merged results both with that oracle and with independent F32 sessions, requiring identical argmax IDs and maximum expected-token log-probability error of `0.0001`. The handoff helper prepares repeated and unique 8/32/96-token prompts with differing continuation lengths and verifies every row and step. GPU execution must use the coordinating chat's serialized handoff before any throughput claim.
 
 After numerical acceptance, compare single sessions, the existing equal-length-cohort baseline and merged decode on the same request sequences, device, precision and transport. Record total output throughput, each request's first-token time, decode intervals, active row counts and memory. CPU projection measurements and this implementation alone cannot establish a serving speedup.
+
+`switchyard-engine-mixed-bench` performs that comparison offline with one loaded F32 model. It requires a passing gate receipt bound to the identical request histories and output budgets. Before timing it warms each mode and requires complete generated sequences to match; every measured repetition repeats that check. It alternates measurement order and records raw samples, medians and token timestamps from one outer clock, including each row's wait for earlier work. Driver VRAM and host RSS must be recorded separately. Its times exclude loading and HTTP, so they cannot replace an endpoint or cold-start receipt.
+
+```sh
+target/release/switchyard-engine-mixed-bench \
+  --config f32-config.json --requests requests.json \
+  --gate gate/gate.json --samples 5 --output offline-timing.json
+```

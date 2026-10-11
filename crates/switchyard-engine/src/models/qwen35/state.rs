@@ -202,10 +202,12 @@ impl Model {
                     let total = key.dim(2)?;
                     LayerState::Attention {
                         key: key
+                            .contiguous()?
                             .index_select(&ids, 0)?
                             .narrow(2, total - longest, longest)?
                             .contiguous()?,
                         value: value
+                            .contiguous()?
                             .index_select(&ids, 0)?
                             .narrow(2, total - longest, longest)?
                             .contiguous()?,

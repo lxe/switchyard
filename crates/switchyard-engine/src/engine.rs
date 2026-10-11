@@ -61,8 +61,8 @@ impl Engine {
         }
         Ok(())
     }
-    /// Groups by prompt length so no padding can contaminate recurrent state.
-    /// Rows execute as a genuine tensor batch; returned results retain caller order.
+    /// Prefills by prompt length, then joins varied-length decode when supported.
+    /// Rows execute as a tensor batch; returned results retain caller order.
     pub fn generate(&self, requests: &[Generate]) -> Result<Vec<Generation>> {
         self.generate_observed(requests, |_, _, _, _| true)
     }
@@ -71,6 +71,23 @@ impl Engine {
     pub fn generate_observed(
         &self,
         requests: &[Generate],
+        observer: impl FnMut(usize, u32, f64, bool) -> bool,
+    ) -> Result<Vec<Generation>> {
+        self.generate_mode(requests, true, observer)
+    }
+    /// Offline comparison baseline using the original equal-length cohorts.
+    /// Production generation continues to select the mixed adapter when available.
+    pub fn generate_cohorts_observed(
+        &self,
+        requests: &[Generate],
+        observer: impl FnMut(usize, u32, f64, bool) -> bool,
+    ) -> Result<Vec<Generation>> {
+        self.generate_mode(requests, false, observer)
+    }
+    fn generate_mode(
+        &self,
+        requests: &[Generate],
+        allow_mixed: bool,
         mut observer: impl FnMut(usize, u32, f64, bool) -> bool,
     ) -> Result<Vec<Generation>> {
         let mut groups: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
@@ -78,7 +95,8 @@ impl Engine {
             self.validate(request)?;
             groups.entry(request.prompt.len()).or_default().push(i);
         }
-        if groups.len() > 1
+        if allow_mixed
+            && groups.len() > 1
             && let Some(session) = self.model.mixed_session(self.config.max_batch_size)?
         {
             return self.generate_mixed(requests, session, &mut observer);

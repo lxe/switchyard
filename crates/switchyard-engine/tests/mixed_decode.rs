@@ -324,6 +324,17 @@ fn real_mixed_engine_preserves_output_order_eos_cancellation_and_context_limits(
     for (actual, expected) in fresh.iter().zip(&singles) {
         assert_eq!(actual.token_ids, expected.token_ids);
     }
+    let mut cohort_callbacks = vec![Vec::new(); requests.len()];
+    let cohorts = mixed
+        .generate_cohorts_observed(&requests, |row, token, _, _| {
+            cohort_callbacks[row].push(token);
+            true
+        })
+        .unwrap();
+    for (row, (actual, expected)) in cohorts.iter().zip(&singles).enumerate() {
+        assert_eq!(actual.token_ids, expected.token_ids);
+        assert_eq!(actual.token_ids, cohort_callbacks[row]);
+    }
     let mut invalid = requests;
     invalid[1].max_tokens = usize::MAX;
     assert!(mixed.generate(&invalid).is_err());
