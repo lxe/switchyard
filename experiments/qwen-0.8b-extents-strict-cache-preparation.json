@@ -1,0 +1,33 @@
+{
+  "scope": "Offline preparation and immutable publication of a strict native AOT cache derivative. Live 0.8B raw-extent reuse remains unverified. Original compiler entries and memory-plan files are unchanged.",
+  "configuration": "configs/runpod/preparation/qwen-0.8b-extents-reuse.json",
+  "source_cache_id": "92cfb6239dea59dc41b3421c5d64dc98dbd15ab4b0f94dbdbb9e57bbe5a4511b",
+  "derived_cache_id": "792688c5aab3f534f5cf9f4f36f8cb250a7e0a5b22863fea1cd05d0b9e746d17",
+  "original_entries": 1772,
+  "derived_entries": 1786,
+  "original_entries_unchanged": true,
+  "sampling_provider_shim_sha256": "314d97ea8c3d288d0afce09e9f3dc823a83d4a219c02b85097de71ee143cf0fb",
+  "compatibility": {
+    "architecture": "x86_64",
+    "engine_arguments": "474101343f11a1f7fb39ce4881366adf7bd4c8941bdfc324034d789f7f94e693",
+    "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+    "gpu": "NVIDIA L40S",
+    "gpu_compute_capability": "8.9",
+    "model_content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+    "model_repository": "Qwen/Qwen3.5-0.8B",
+    "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+    "runtime_launch_configuration": "fbad7e2562be8ae0a248140137f04d0a9ad24c326ca0c76dcb22e54d27528d84",
+    "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
+  },
+  "publication": {
+    "id": "792688c5aab3f534f5cf9f4f36f8cb250a7e0a5b22863fea1cd05d0b9e746d17",
+    "prefix": "switchyard/gauntlet/extents/cache/792688c5aab3f534f5cf9f4f36f8cb250a7e0a5b22863fea1cd05d0b9e746d17",
+    "manifest_created": true,
+    "chunks_created": {
+      "ae2235bb56dce3e8ae4fa107a914720c50bbbe1329a26083808e466e90ad9d3b.tar.zst": true
+    }
+  },
+  "derivation_program": "scripts/serving-comparison/strict-cache.py",
+  "live_reuse_verified": false
+}

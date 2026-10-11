@@ -65,7 +65,30 @@
           "cuda_stage": true,
           "pinned_bytes": 16777216
         }
-      }
+      },
+      "caches": [
+        {
+          "name": "compiled",
+          "gpu": "NVIDIA L40S",
+          "artifact": {
+            "prefix": "switchyard/gauntlet/extents/cache/92cfb6239dea59dc41b3421c5d64dc98dbd15ab4b0f94dbdbb9e57bbe5a4511b",
+            "id": "92cfb6239dea59dc41b3421c5d64dc98dbd15ab4b0f94dbdbb9e57bbe5a4511b"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "engine_arguments": "474101343f11a1f7fb39ce4881366adf7bd4c8941bdfc324034d789f7f94e693",
+            "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+            "gpu": "NVIDIA L40S",
+            "gpu_compute_capability": "8.9",
+            "model_content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+            "model_repository": "Qwen/Qwen3.5-0.8B",
+            "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+            "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+            "runtime_launch_configuration": "ac1aa2ba2841d2059e3a0f5e3b1a3a8740d44d93fdd2864efc16494d12ab61aa",
+            "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
+          }
+        }
+      ]
     },
     {
       "id": "qwen3.5-2b",
