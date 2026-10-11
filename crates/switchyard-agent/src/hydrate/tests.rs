@@ -815,6 +815,37 @@ async fn trusted_large_pieces_refill_twenty_stream_window_across_multiple_rounds
         80 << 20
     );
     assert_eq!(limit.available_permits(), 20);
+    let observed = state
+        .read()
+        .await
+        .model_diagnostics
+        .as_ref()
+        .unwrap()
+        .snapshot();
+    assert!(observed.failure.is_none());
+    for piece in &observed.transfers {
+        assert_eq!(piece.received_bytes, piece.expected_bytes);
+        assert_eq!(piece.delivered_bytes, piece.expected_bytes);
+        assert_eq!(piece.consumed_bytes, piece.expected_bytes);
+        assert!(piece.consumed_s.is_some());
+        assert!(piece.permit_released_s.is_some());
+    }
+    assert_eq!(
+        observed
+            .shards
+            .iter()
+            .map(|s| s.file_written_bytes)
+            .sum::<u64>(),
+        (80 << 20) + 16
+    );
+    assert!(
+        source
+            .attempts
+            .lock()
+            .unwrap()
+            .values()
+            .all(|attempts| *attempts == 1)
+    );
     assert_eq!(
         state.read().await.bytes_downloaded,
         ticket.manifest.total_size

@@ -23,6 +23,9 @@ async fn cancelled_downloader_keeps_permit_with_decoding_worker() {
         },
         consumed: Some(consumed),
         permit: permit.clone(),
+        trace: diagnostics(chunk(0)).transfer("piece"),
+        shard_trace: diagnostics(chunk(0)).shard(0),
+        seq: 0,
     };
     let decoding = tokio::task::spawn_blocking(move || {
         let _ = started.send(());
@@ -94,6 +97,17 @@ fn chunk(size: usize) -> Chunk {
     }
 }
 
+fn diagnostics(piece: Chunk) -> ModelDiagnostics {
+    let mut manifest = ticket(10).manifest;
+    manifest.chunks.push(piece);
+    ModelDiagnostics::new(
+        &manifest,
+        &Arc::new(Semaphore::new(1)),
+        Instant::now(),
+        CHANNEL_PIECES,
+    )
+}
+
 async fn paused_consumer(client: reqwest::Client) -> (Result<()>, usize) {
     const SIZE: usize = 2 << 20;
     let server =
@@ -102,6 +116,8 @@ async fn paused_consumer(client: reqwest::Client) -> (Result<()>, usize) {
     let state = Arc::new(RwLock::new(State::new(&ticket(10))));
     let (sender, mut receiver) = mpsc::channel::<Vec<u8>>(CHANNEL_PIECES);
     let capacity = sender.clone();
+    let diagnostic = diagnostics(chunk(SIZE));
+    let observed = diagnostic.clone();
     let downloading = tokio::spawn(async move {
         transfer(
             &client,
@@ -109,7 +125,7 @@ async fn paused_consumer(client: reqwest::Client) -> (Result<()>, usize) {
             &chunk(SIZE),
             sender,
             &state,
-            Instant::now(),
+            &diagnostic,
             Duration::from_secs(1),
         )
         .await
@@ -124,6 +140,13 @@ async fn paused_consumer(client: reqwest::Client) -> (Result<()>, usize) {
     // Every consumer slot is full; the network transfer now waits on local extraction.
     tokio::time::sleep(Duration::from_millis(1250)).await;
     assert!(!downloading.is_finished());
+    let snapshot = observed.snapshot();
+    let piece = &snapshot.transfers[0];
+    assert_eq!(piece.boundary, Boundary::ChannelSend);
+    assert_eq!(piece.channel_available_slots, 0);
+    assert!(piece.boundary_age_s > 1.0);
+    assert!(piece.received_bytes > piece.delivered_bytes);
+    assert!(piece.body_wait_s < 1.0);
     drop(capacity);
     let mut received = 0;
     while let Some(bytes) = receiver.recv().await {
@@ -166,15 +189,17 @@ async fn absent_response_headers_fail_the_network_stall_deadline() {
     .await;
     let state = RwLock::new(State::new(&ticket(10)));
     let (sender, _receiver) = mpsc::channel::<Vec<u8>>(CHANNEL_PIECES);
+    let observed = diagnostics(chunk(128));
+    let secret_url = format!("{}?secret=do-not-log-this-capability", server.url);
     let result = tokio::time::timeout(
         Duration::from_secs(3),
         transfer(
             &client(&ticket(10)).unwrap(),
-            &server.url,
+            &secret_url,
             &chunk(128),
             sender,
             &state,
-            Instant::now(),
+            &observed,
             Duration::from_secs(1),
         ),
     )
@@ -208,15 +233,17 @@ async fn stalled_response_body_fails_without_local_backpressure() {
         }
         received
     });
+    let observed = diagnostics(chunk(128));
+    let secret_url = format!("{}?secret=do-not-log-this-capability", server.url);
     let result = tokio::time::timeout(
         Duration::from_secs(3),
         transfer(
             &client(&ticket(10)).unwrap(),
-            &server.url,
+            &secret_url,
             &chunk(128),
             sender,
             &state,
-            Instant::now(),
+            &observed,
             Duration::from_secs(1),
         ),
     )
@@ -224,4 +251,46 @@ async fn stalled_response_body_fails_without_local_backpressure() {
     .unwrap();
     assert!(result.unwrap_err().to_string().contains("piece stalled"));
     assert_eq!(draining.await.unwrap(), 64);
+    let snapshot = observed.snapshot();
+    let failure = snapshot.failure.unwrap();
+    assert_eq!(failure.error_class, "body_wait_deadline");
+    let piece = &failure.transfers[0];
+    assert_eq!(piece.boundary, Boundary::BodyWait);
+    assert_eq!(piece.received_bytes, 64);
+    assert_eq!(piece.delivered_bytes, 64);
+    assert!(piece.channel_available_slots > 0);
+    assert!(piece.longest_body_wait_s >= 1.0);
+    assert!(piece.channel_wait_s < 0.1);
+    assert!(failure.host.tasks.len() <= 64);
+    assert!(failure.host.sockets.len() <= 128);
+    let encoded = serde_json::to_string(&observed).unwrap();
+    assert!(!encoded.contains("do-not-log-this-capability"));
+    assert!(!encoded.contains("secret="));
+    let restored: ModelDiagnostics = serde_json::from_str(&encoded).unwrap();
+    assert_eq!(restored.snapshot().transfers[0].received_bytes, 64);
+}
+
+#[test]
+fn diagnostic_record_counts_are_bounded_and_legacy_state_is_compatible() {
+    let mut ticket = ticket(10);
+    ticket.manifest.chunks = (0..300)
+        .map(|index| {
+            let mut piece = chunk(1);
+            piece.name = format!("piece-{index}");
+            piece.shard = index;
+            piece
+        })
+        .collect();
+    let limit = Arc::new(Semaphore::new(20));
+    let diagnostic =
+        ModelDiagnostics::new(&ticket.manifest, &limit, Instant::now(), CHANNEL_PIECES);
+    let observed = diagnostic.snapshot();
+    assert_eq!(observed.transfers.len(), 256);
+    assert_eq!(observed.omitted_transfers, 44);
+    assert_eq!(observed.shards.len(), 64);
+    assert_eq!(observed.omitted_shards, 236);
+    assert_eq!(observed.available_permits, Some(20));
+    let state: State =
+        serde_json::from_value(serde_json::to_value(State::new(&ticket)).unwrap()).unwrap();
+    assert!(state.model_diagnostics.is_none());
 }

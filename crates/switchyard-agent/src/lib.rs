@@ -102,6 +102,9 @@ pub struct State {
     pub runtime_storage: Option<startup::ModelStorageObservation>,
     #[serde(default)]
     pub startup_milestones: Vec<startup::StartupMilestone>,
+    /// Bounded legacy streaming diagnostics. Old observations omit this field.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_diagnostics: Option<hydrate::ModelDiagnostics>,
 }
 impl State {
     pub fn new(ticket: &Ticket) -> Self {
@@ -133,6 +136,7 @@ impl State {
             model_storage: None,
             runtime_storage: None,
             startup_milestones: vec![],
+            model_diagnostics: None,
         }
     }
 }

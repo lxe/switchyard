@@ -96,6 +96,7 @@ impl<P: Provider> LiveRuntime<P> {
                     });
                 }
                 Some(switchyard_agent::runtime::RuntimeTicket {
+                    hydration: runtime.hydration,
                     artifact: runtime.artifact.ticket(
                         &self.storage,
                         self.runtime_manifest.clone().expect("prepared runtime"),

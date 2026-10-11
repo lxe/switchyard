@@ -27,6 +27,8 @@ pub struct ArtifactRef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ServingRuntimeConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hydration: Option<switchyard_agent::runtime::RuntimeHydrationOptions>,
     pub artifact: ArtifactRef,
     #[serde(default)]
     pub compatibility: BTreeMap<String, String>,
@@ -112,6 +114,11 @@ impl ServingRuntimeConfig {
         Ok(())
     }
     pub fn validate(&self) -> Result<()> {
+        if let Some(options) = self.hydration {
+            options
+                .validate()
+                .map_err(|error| Error::Config(error.to_string()))?;
+        }
         self.artifact.validate()?;
         if !valid_key_prefix(&self.program)
             || self.args.iter().any(|a| a.contains('\0'))

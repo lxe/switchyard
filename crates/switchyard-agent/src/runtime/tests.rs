@@ -1,4 +1,5 @@
 use super::*;
+
 use crate::Manifest;
 use axum::{
     Router,
@@ -191,6 +192,7 @@ async fn fixture() -> (Ticket, Server) {
     let server = serve(&mut [&mut runtime, &mut cache], bodies).await;
     (
         ticket(RuntimeTicket {
+            hydration: None,
             artifact: runtime,
             compatibility: BTreeMap::new(),
             program: "bin/python3".into(),
@@ -691,4 +693,33 @@ async fn trusted_cache_copy_rejects_a_symlink_in_a_reused_seed() {
     assert!(error.to_string().contains("regular file"));
     assert!(!cache_root.join("engine").exists());
     assert_eq!(fs::read(outside).unwrap(), b"do not copy");
+}
+
+#[tokio::test]
+async fn configured_zero_runtime_retries_preserves_first_failed_attempt() {
+    let (mut ticket, server) = fixture().await;
+    ticket.concurrency = 1;
+    let runtime = ticket.runtime.as_mut().unwrap();
+    runtime.hydration = Some(RuntimeHydrationOptions { retries: 0 });
+    server.corrupt_first.store(true, Ordering::Relaxed);
+    let destination = TempDir::new();
+    let roots = RootPaths::under(&destination.0);
+    assert!(
+        command(&ticket, &roots, Arc::new(RwLock::new(State::new(&ticket))))
+            .await
+            .is_err()
+    );
+    assert_eq!(server.calls.load(Ordering::Relaxed), 1);
+    assert!(!roots.runtime.exists());
+
+    let mut invalid = ticket.clone();
+    invalid.runtime.as_mut().unwrap().hydration = Some(RuntimeHydrationOptions { retries: 11 });
+    assert!(
+        invalid
+            .runtime
+            .as_ref()
+            .unwrap()
+            .validate_launch(switchyard_artifacts::HydrationMode::Verified)
+            .is_err()
+    );
 }

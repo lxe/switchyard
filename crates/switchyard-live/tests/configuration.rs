@@ -185,6 +185,7 @@ fn serving_artifacts_are_optional_and_cache_identity_tracks_engine_configuration
         id: "b".repeat(64),
     };
     cfg.bootstrap.runtime = Some(ServingRuntimeConfig {
+        hydration: None,
         artifact: reference.clone(),
         compatibility: Default::default(),
         program: "venv/bin/python".into(),
@@ -237,6 +238,7 @@ fn serving_configuration_rejects_escaping_programs_and_unbound_caches() {
     assert!(cfg.validate().is_err());
     cfg.models[0].caches.clear();
     cfg.bootstrap.runtime = Some(ServingRuntimeConfig {
+        hydration: None,
         artifact: ArtifactRef {
             prefix: "artifacts/runtime".into(),
             id: "b".repeat(64),
@@ -381,4 +383,47 @@ fn live_configuration_reuses_generic_scheduling_validation() {
     let mut value = serde_json::to_value(config()).unwrap();
     value["scheduling"]["maximum_startp_s"] = 300.into();
     assert!(serde_json::from_value::<DeploymentConfig>(value).is_err());
+}
+
+#[test]
+fn checked_diagnostic_fleet_retains_explicit_retry_policy() {
+    let cfg: DeploymentConfig = serde_json::from_str(include_str!(
+        "../../../configs/runpod/hydration-diagnostic-2b.json"
+    ))
+    .unwrap();
+    cfg.validate().unwrap();
+    assert_eq!(
+        cfg.bootstrap
+            .runtime
+            .as_ref()
+            .unwrap()
+            .hydration
+            .unwrap()
+            .retries,
+        0
+    );
+    let projected = cfg.execution();
+    let restored: switchyard_live::config::ExecutionConfig =
+        serde_json::from_value(serde_json::to_value(projected).unwrap()).unwrap();
+    assert_eq!(
+        restored
+            .bootstrap
+            .runtime
+            .unwrap()
+            .hydration
+            .unwrap()
+            .retries,
+        0
+    );
+    let mut invalid = cfg;
+    invalid
+        .bootstrap
+        .runtime
+        .as_mut()
+        .unwrap()
+        .hydration
+        .as_mut()
+        .unwrap()
+        .retries = 11;
+    assert!(invalid.validate().is_err());
 }
