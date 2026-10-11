@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "source_repository": "Qwen/Qwen3.5-0.8B",
+      "source_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "source_format": "safetensors",
+      "native_adapter": "qwen3_5_text",
+      "scope": "text_only",
+      "config": "configs/engine/qwen3.5-0.8b-rtx5090.json",
+      "source_files": [
+        "chat_template.jinja",
+        "config.json",
+        "model.safetensors-00001-of-00001.safetensors",
+        "model.safetensors.index.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "LICENSE"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "qwen3.5-2b",
+      "source_repository": "Qwen/Qwen3.5-2B",
+      "source_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "source_format": "safetensors",
+      "native_adapter": "qwen3_5_text",
+      "scope": "text_only",
+      "config": "configs/engine/qwen3.5-2b-rtx5090.json",
+      "source_files": [
+        "chat_template.jinja",
+        "config.json",
+        "model.safetensors-00001-of-00001.safetensors",
+        "model.safetensors.index.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "LICENSE"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "qwen3.5-4b",
+      "source_repository": "Qwen/Qwen3.5-4B",
+      "source_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "source_format": "safetensors",
+      "native_adapter": "qwen3_5_text",
+      "scope": "text_only",
+      "config": "configs/engine/qwen3.5-4b-rtx5090.json",
+      "source_files": [
+        "chat_template.jinja",
+        "config.json",
+        "model.safetensors-00001-of-00002.safetensors",
+        "model.safetensors-00002-of-00002.safetensors",
+        "model.safetensors.index.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "LICENSE"
+      ],
+      "license": "Apache-2.0"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "model": "qwen3.5-2b",
+  "model_root": "data/qwen3.5-2b",
+  "device": {
+    "kind": "cuda",
+    "ordinal": 0
+  },
+  "dtype": "bf16",
+  "max_context": 128,
+  "max_weight_bytes": 8589934592,
+  "max_batch_size": 8,
+  "queue_capacity": 64,
+  "batch_wait_ms": 2
+}

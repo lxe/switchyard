@@ -3,7 +3,7 @@ use candle_core::{DType, Device, Tensor};
 use candle_nn::{VarBuilder, VarMap};
 use switchyard_engine::models::qwen35::{Config, ModelForCausalLM};
 
-fn model() -> ModelForCausalLM {
+fn model(value_heads: usize) -> ModelForCausalLM {
     let cfg: Config = serde_json::from_value(serde_json::json!({"text_config":{
         "vocab_size":32,"hidden_size":16,"intermediate_size":24,
         "num_hidden_layers":2,"num_attention_heads":2,"num_key_value_heads":1,
@@ -11,7 +11,7 @@ fn model() -> ModelForCausalLM {
         "rope_parameters":{"rope_theta":10000.,"partial_rotary_factor":0.5},
         "attention_bias":false,"hidden_act":"silu",
         "layer_types":["linear_attention","full_attention"],
-        "linear_num_key_heads":2,"linear_num_value_heads":2,
+        "linear_num_key_heads":2,"linear_num_value_heads":value_heads,
         "linear_key_head_dim":4,"linear_value_head_dim":4,"linear_conv_kernel_dim":4
     }}))
     .unwrap();
@@ -37,7 +37,12 @@ fn close(a: &Tensor, b: &Tensor) {
 }
 #[test]
 fn cached_decode_matches_full_causal_prefix() {
-    let weights = model();
+    for value_heads in [2, 4] {
+        cached_decode(value_heads);
+    }
+}
+fn cached_decode(value_heads: usize) {
+    let weights = model(value_heads);
     let mut cached = weights.clone();
     let mut full = weights.clone();
     let prefix = Tensor::new(&[[1u32, 2, 3]], &Device::Cpu).unwrap();
@@ -52,7 +57,12 @@ fn cached_decode_matches_full_causal_prefix() {
 }
 #[test]
 fn batch_rows_match_independent_sessions_and_weights_keep_empty_state() {
-    let weights = model();
+    for value_heads in [2, 4] {
+        batch_rows(value_heads);
+    }
+}
+fn batch_rows(value_heads: usize) {
+    let weights = model(value_heads);
     let mut batched = weights.clone();
     let batch = batched
         .forward(

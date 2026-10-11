@@ -4,7 +4,7 @@ The native engine is a Rust serving backend for the scheduler and fleet adapters
 
 ## Three-model local and RunPod fleet
 
-Configure Qwen3.5 0.8B, 2B and 4B with pinned source checkpoints and explicit context, batch, queue and memory plans. Test each model locally with single calls, batches and numerical references. Build a minimal native runtime, publish runtime, tensor and compatible GPU-cache artifacts to R2, and validate fresh RunPod launches with first-streamed-token timelines. Integrate the resulting fleet with the existing scheduler and run the live workload gauntlet. Simulator abstractions remain independent of RunPod provisioning and artifact packaging.
+Configure Qwen3.5 0.8B, 2B and 4B with [pinned source checkpoints](native-model-fleet.md) and explicit context, batch, queue and memory plans. Test each model locally with single calls, batches and numerical references. Build a minimal native runtime, publish runtime, tensor and compatible GPU-cache artifacts to R2, and validate fresh RunPod launches with first-streamed-token timelines. Integrate the resulting fleet with the existing scheduler and run the live workload gauntlet. Simulator abstractions remain independent of RunPod provisioning and artifact packaging.
 
 This is the current implementation priority. RunPod build and rollout preparation can proceed independently while local numerical and model tests finish. Provisional cloud artifacts must be rebaked against the final engine and model configuration before acceptance.
 
@@ -25,6 +25,8 @@ Correctness tests must cover format/layout errors, quantization boundaries, cach
 ## Qwen3.8 27B support
 
 Add the released Qwen3.8 27B checkpoint after checking its model card, architecture, tokenizer, tensor layout and license. Pin the source revision and implement only the adapter differences needed by that release. Select hardware or validated quantization that fits the fixed memory plan, then run the same mathematical, single/batch, cold-start and scheduler tests used for the smaller models.
+
+The [published checkpoint](https://huggingface.co/Qwen/Qwen3.8-27B) currently resolves to revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`. Its text configuration still identifies `qwen3_5_text`, with 64 layers, hidden width 5120, 48 GDN value heads and 16 key heads. It declares `output_gate_type: swish` and untied embeddings. The current smaller-model adapter uses sigmoid attention output gating; architecture naming alone therefore does not establish compatibility. Add a reference-tested gate implementation and untied-output tests before claiming support. The dense BF16 weights exceed the local 32 GiB GPU capacity, so GPU acceptance requires a larger platform or a validated quantized backend.
 
 Architecture investigation and fixture preparation can proceed in parallel. Runtime integration and final GPU validation depend on the accepted model/backend and quantization interfaces above.
 
