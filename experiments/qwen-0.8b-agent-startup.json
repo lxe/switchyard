@@ -1,0 +1,234 @@
+{
+  "model": "Qwen/Qwen3.5-0.8B",
+  "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "agent_sha256": "de8ed675579f948a4e507931e03f8361d075022bab35b1fffc75ec2089297475",
+  "agent_source_commit": "0b7849e",
+  "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "model_manifest": "qwen-0.8b-header-first.manifest.json",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "clock_origins": {
+    "request": "Host monotonic clock immediately before private Docker container creation; includes container boot, ticket fetch, preflights, actual runtime/model hydration, native serving initialization, readiness gates, tokenization and streamed useful content.",
+    "agent_milestones_and_gpu": "Elapsed monotonic time from agent startup preparation; do not subtract these directly from the harness request clock."
+  },
+  "scope": "One ordered local loopback cold pair followed by a fresh extent container seeded with the previous extent compiler directory using cp --archive before its request epoch. BF16, language-only, eager/TRITON, max model length64, max sequences1, GPU fraction0.25. No transfer delay, benchmark parameter hashing, paid allocation, or published compiler-cache artifact. Desktop GPU workloads continued. This measured launcher generation precedes the later ownership-lease and hot-publication-budget fixes.",
+  "cold": {
+    "legacy": {
+      "request_to_ready_seconds": 94.15966499699971,
+      "request_to_first_useful_token_seconds": 95.47079281399965,
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "inference_verified": true,
+      "agent_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.275458485
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.71671435
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 3.6701449520000002
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.878489851
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.879086933
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 9.87909316
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 90.280153172
+        }
+      ],
+      "weight_loading": null,
+      "runtime_reception": {
+        "reserved_bytes": 5244862464,
+        "reservation_seconds": 0.218348798,
+        "network_received_bytes": 5244615495,
+        "storage_written_bytes": 5244615495,
+        "compressed_consumed_bytes": 5244615495,
+        "buffered_bytes": 0,
+        "buffer_high_water_bytes": 4523361862,
+        "reclaimed_bytes": 5244862464,
+        "decoded_bytes": 19606843904,
+        "file_written_bytes": 19361161949,
+        "receiver_body_wait_seconds": 18.889464713,
+        "receiver_storage_write_seconds": 4.557520643,
+        "consumer_wait_seconds": 0.072461664,
+        "reception_complete_seconds": 2.786623053,
+        "extraction_complete_seconds": 8.853602687
+      }
+    },
+    "extents": {
+      "request_to_ready_seconds": 93.70405702900098,
+      "request_to_first_useful_token_seconds": 94.97598529000061,
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "inference_verified": true,
+      "agent_milestones": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.279927146
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.284067622
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.791192377
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.338808244
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.640117585
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.640641175
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 32.536697459
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 89.923375379
+        }
+      ],
+      "weight_loading": {
+        "tensors_delivered": 488,
+        "bytes_delivered": 1746882752,
+        "first_tensor_seconds": 32.155705974,
+        "assignment_complete_seconds": 32.536608022,
+        "gpu": {
+          "copies": 488,
+          "bytes": 1746882752,
+          "first_copy_finished_seconds": 32.15602448199934,
+          "last_copy_finished_seconds": 32.532657566000125,
+          "staging_seconds": 0.1719437869342073,
+          "dma_seconds": 0.07991772801114713
+        }
+      },
+      "runtime_reception": {
+        "reserved_bytes": 5244862464,
+        "reservation_seconds": 0.249284829,
+        "network_received_bytes": 5244615495,
+        "storage_written_bytes": 5244615495,
+        "compressed_consumed_bytes": 5244615495,
+        "buffered_bytes": 0,
+        "buffer_high_water_bytes": 4594597754,
+        "reclaimed_bytes": 5244862464,
+        "decoded_bytes": 19606843904,
+        "file_written_bytes": 19361161949,
+        "receiver_body_wait_seconds": 21.319518374,
+        "receiver_storage_write_seconds": 4.290180681,
+        "consumer_wait_seconds": 0.029442852,
+        "reception_complete_seconds": 2.199401166,
+        "extraction_complete_seconds": 8.593964097
+      }
+    }
+  },
+  "seeded": {
+    "request_to_ready_seconds": 39.68448591700144,
+    "request_to_first_useful_token_seconds": 39.76179532400056,
+    "completion": "Paris",
+    "tokenized_count": 19,
+    "inference_verified": true,
+    "agent_milestones": [
+      {
+        "event": "model_hydration_started",
+        "elapsed_s": 0.278865391
+      },
+      {
+        "event": "runtime_hydration_started",
+        "elapsed_s": 0.282972575
+      },
+      {
+        "event": "model_metadata_ready",
+        "elapsed_s": 0.798471713
+      },
+      {
+        "event": "model_hydration_finished",
+        "elapsed_s": 1.252462434
+      },
+      {
+        "event": "runtime_hydration_finished",
+        "elapsed_s": 8.981007528
+      },
+      {
+        "event": "engine_spawned",
+        "elapsed_s": 8.981380786
+      },
+      {
+        "event": "tensor_loading_finished",
+        "elapsed_s": 21.417827546
+      },
+      {
+        "event": "inference_verified",
+        "elapsed_s": 35.908882686
+      }
+    ],
+    "weight_loading": {
+      "tensors_delivered": 488,
+      "bytes_delivered": 1746882752,
+      "first_tensor_seconds": 20.957687216,
+      "assignment_complete_seconds": 21.417766063,
+      "gpu": {
+        "copies": 488,
+        "bytes": 1746882752,
+        "first_copy_finished_seconds": 20.958155874999647,
+        "last_copy_finished_seconds": 21.415709740998864,
+        "staging_seconds": 0.22377074700852972,
+        "dma_seconds": 0.08922816004767084
+      }
+    },
+    "runtime_reception": {
+      "reserved_bytes": 5244862464,
+      "reservation_seconds": 0.263383671,
+      "network_received_bytes": 5244615495,
+      "storage_written_bytes": 5244615495,
+      "compressed_consumed_bytes": 5244615495,
+      "buffered_bytes": 0,
+      "buffer_high_water_bytes": 4629772377,
+      "reclaimed_bytes": 5244862464,
+      "decoded_bytes": 19606843904,
+      "file_written_bytes": 19361161949,
+      "receiver_body_wait_seconds": 16.924963132,
+      "receiver_storage_write_seconds": 4.164306296,
+      "consumer_wait_seconds": 0.018537959,
+      "reception_complete_seconds": 1.926852476,
+      "extraction_complete_seconds": 7.945047262
+    }
+  },
+  "native_log_spans": {
+    "cold_extents": {
+      "model_loading_seconds": 5.932199,
+      "post_load_init_seconds": 54.51
+    },
+    "seeded_extents": {
+      "model_loading_seconds": 1.592453,
+      "post_load_init_seconds": 7.93
+    }
+  },
+  "cache_reuse": {
+    "startup_plan_fingerprint": "bb30bfe2df83e0c1",
+    "fingerprint_equal": true,
+    "persisted_memory_plan_applied": false,
+    "fallback_reason": "Native free-memory guard observed26.61GiB versus26.66GiB at bake and performed full memory profiling. Guard was preserved.",
+    "compiler_directory_seeded": true,
+    "artifact_v1_round_trip_tested": false
+  },
+  "interpretation": "The cold pair proves complete serving and GPU-report integration, but its roughly0.5s total difference does not establish a stable layout speedup. Model hydration finished before the first GPU copy in this fast local endpoint test. Compiler-directory seeding reduced startup substantially while preserving native work and its safety checks."
+}

@@ -102,6 +102,16 @@ Optional generic transport observers report object-relative boundaries, received
 
 GPU completion reports distinguish host staging time from CUDA-event DMA time and locate the first and last completed copies relative to bridge readiness. Assignment completion is acknowledged only after native model assignment and CUDA synchronization. These spans can overlap reception and should not be added to elapsed startup time.
 
+## Cold endpoint startup
+
+The [endpoint startup receipt](../experiments/qwen-0.8b-agent-startup.json) records actual agent launches with the pinned artifact-v1 runtime and canonical Qwen 0.8B weights. The request clock begins before creation of a private Docker container and includes ticket fetch, preflights, runtime reception and extraction, tokenizer initialization, native vLLM startup, readiness checks and the first non-whitespace streamed response content. Model parameter hashing belongs to the separate correctness comparison and is absent from this timing.
+
+One ordered cold pair returned “Paris” after 95.47 seconds through legacy hydration and 94.98 seconds through extents. This small whole-startup difference does not establish a stable speedup. Model hydration completed before GPU copies began on the fast loopback transport. The endpoint nevertheless exercised native Qwen assignment, the new GPU completion report and all existing admission checks.
+
+A fresh extent container seeded with the prior local compiler directory returned “Paris” after 39.76 seconds. Native model loading fell from 5.93 to 1.59 seconds, and post-load initialization fell from 54.51 to 7.93 seconds. The startup-plan fingerprint remained `bb30bfe2df83e0c1`, but its memory estimate was rejected because available GPU memory was 26.61 GiB rather than the recorded 26.66 GiB. Native full memory profiling ran. The experiment used `cp --archive`, preserving compiler file timestamps; it does not prove an artifact-v1 cache export, extraction or R2 round trip.
+
+These receipts use the recorded agent checksum and loader generation. Later lifecycle leases and hot-publication capacity checks changed the implementation and loader identity, so the receipts do not establish cache acceptance for a newly published agent. The remaining startup cost requires native phase profiling and fresh-process validation of each optimization.
+
 ## Loader directory ownership
 
 The agent derives the loader directory path from the complete model-content and loader identities. Stable paths let compatible engine compilation and startup-plan fingerprints survive a clean restart. A separate, permanent lock file coordinates ownership without changing the model or runtime artifacts.
