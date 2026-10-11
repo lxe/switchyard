@@ -425,6 +425,10 @@ fn fresh_environment() -> BTreeMap<String, String> {
                     | "HF_HUB_OFFLINE"
                     | "TRANSFORMERS_OFFLINE"
                     | "PYTHONDONTWRITEBYTECODE"
+                    | "NATIVE_STARTUP_PROFILE"
+                    | "NATIVE_ENV_OVERRIDE_SOURCE"
+                    | "NATIVE_CLI_MAIN_SOURCE"
+                    | "NATIVE_MODULE_SOURCES"
             ) || key.starts_with("VLLM_")
                 || key.starts_with("FLASHINFER_")
                 || matches!(
@@ -436,6 +440,7 @@ fn fresh_environment() -> BTreeMap<String, String> {
                         | "SWITCHYARD_STARTUP_EPOCH"
                         | "SWITCHYARD_WEIGHTS_SOCKET"
                         | "SWITCHYARD_LOADER_LEASE"
+                        | "SWITCHYARD_MODEL_CONTENT_ID"
                 )
         })
         .collect()

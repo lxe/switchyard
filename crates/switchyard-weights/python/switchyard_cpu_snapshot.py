@@ -218,6 +218,16 @@ def main():
     if request["probe"]:
         print("SWITCHYARD_CPU_SNAPSHOT " + json.dumps({"event": "cpu_probe_complete", "monotonic_s": time.monotonic() + calibration["offset_s"], "clock_uncertainty_s": calibration["uncertainty_s"], "objects_preserved": True, **safe}), flush=True)
         os._exit(0)
+    # The owned benchmark injects profiling/preview imports with sitecustomize.
+    # A restored interpreter does not repeat site initialization, so load that
+    # fresh fixture explicitly. None of these fixture settings are checkpointed.
+    if any(os.environ.get(name) for name in ("NATIVE_STARTUP_PROFILE", "NATIVE_ENV_OVERRIDE_SOURCE",
+                                             "NATIVE_CLI_MAIN_SOURCE", "NATIVE_MODULE_SOURCES")):
+        spec = importlib.machinery.PathFinder.find_spec("sitecustomize", os.environ.get("PYTHONPATH", "").split(os.pathsep))
+        if spec is None or spec.loader is None:
+            raise RuntimeError("fresh native profiling/preview fixture is absent")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
     # The existing native adapter performs policy selection, provider/worker
     # imports, normal CUDA guards and normal model/weight construction after gate.
     from switchyard_vllm_startup import Policy, configure, main as native_startup
