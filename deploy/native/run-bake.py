@@ -107,7 +107,16 @@ def main():
             "export LD_LIBRARY_PATH=/opt/switchyard/runtime/lib:${LD_LIBRARY_PATH:-}\n"
         )
         script += "nvidia-smi --query-gpu=name,uuid,driver_version,compute_cap,memory.total --format=csv,noheader -i 0\n"
-        script += "/opt/switchyard/preparation/bin/switchyard-engine-bake --engine /opt/switchyard/runtime/bin/switchyard-engine --config /opt/switchyard/runtime/native-config.json --requests /opt/switchyard/preparation/bake-requests.json --output /work/native-bake\n"
+        native_config = (
+            "/opt/switchyard/preparation/native-config.json"
+            if prepared.get("native_config_location") == "preparation"
+            else "/opt/switchyard/runtime/native-config.json"
+        )
+        script += (
+            "/opt/switchyard/preparation/bin/switchyard-engine-bake --engine /opt/switchyard/runtime/bin/switchyard-engine --config "
+            + native_config
+            + " --requests /opt/switchyard/preparation/bake-requests.json --output /work/native-bake\n"
+        )
         control.event("offline_bake_started")
         result = remote(
             endpoint,

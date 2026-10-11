@@ -127,6 +127,81 @@ class Control:
             raise RuntimeError("artifact existence check failed")
         self.upload(path, key)
 
+    def copy_immutable(self, source_key, path, key, expected_sha256):
+        """Copy already published bytes within R2 without retransmitting weights."""
+        store = self.config["storage"]
+        head_command = [
+            "aws",
+            "--endpoint-url",
+            store["endpoint"],
+            "s3api",
+            "head-object",
+            "--bucket",
+            store["bucket"],
+            "--key",
+        ]
+        head = subprocess.run(
+            head_command + [key],
+            env=self.aws_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if head.returncode == 0:
+            # Reuse retains the same complete-byte verification as uploads.
+            self.upload_immutable(path, key, expected_sha256)
+            return
+        if "(404)" not in head.stderr and "(NotFound)" not in head.stderr:
+            raise RuntimeError("legacy archive existence check failed")
+        source_head = subprocess.run(
+            head_command + [source_key],
+            env=self.aws_env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        expected_size = Path(path).stat().st_size
+        if json.loads(source_head.stdout)["ContentLength"] != expected_size:
+            raise ValueError("published native archive source size changed")
+        if expected_size <= 16 * 1024 * 1024:
+            # R2 rejects tagging controls injected by the high-level small copy.
+            copy_command = [
+                "aws",
+                "--endpoint-url",
+                store["endpoint"],
+                "s3api",
+                "copy-object",
+                "--bucket",
+                store["bucket"],
+                "--key",
+                key,
+                "--copy-source",
+                store["bucket"] + "/" + source_key,
+            ]
+        else:
+            copy_command = [
+                "aws",
+                "--endpoint-url",
+                store["endpoint"],
+                "s3",
+                "cp",
+                "s3://" + store["bucket"] + "/" + source_key,
+                "s3://" + store["bucket"] + "/" + key,
+                "--copy-props",
+                "none",
+                "--only-show-errors",
+            ]
+        subprocess.run(copy_command, env=self.aws_env, capture_output=True, check=True)
+        copied = subprocess.run(
+            head_command + [key],
+            env=self.aws_env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if json.loads(copied.stdout)["ContentLength"] != expected_size:
+            raise ValueError("copied legacy archive size differs from source")
+
     def url(self, key):
         store = self.config["storage"]
         return subprocess.check_output(

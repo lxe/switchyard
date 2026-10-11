@@ -98,6 +98,24 @@ def legacy_manifest(manifest):
     }
 
 
+def runtime_compatibility(build):
+    engine_sha = next(
+        f["sha256"] for f in build["files"] if f["path"] == "bin/switchyard-engine"
+    )
+    labels = {
+        "architecture": build["architecture"],
+        "os": build["os"],
+        "cuda_build": build["cuda_build"],
+        "gpu_compute_capability": build["gpu_compute_capability"],
+        "engine_sha256": engine_sha,
+        "engine_source_commit": build["source_commit"],
+    }
+    for key in ["cuda_compiler_target", "cuda_compiler_version"]:
+        if key in build:
+            labels[key] = build[key]
+    return labels
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
@@ -108,6 +126,7 @@ def main():
     parser.add_argument("--tool", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--reuse-prepared", type=Path)
+    parser.add_argument("--shared-runtime", type=Path)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     config = json.loads(args.config.read_text())
@@ -116,15 +135,24 @@ def main():
     if build["source_commit"] != config["engine_source_commit"]:
         raise ValueError("runtime build differs from selected engine source commit")
     built_tree = args.runtime / "tree"
-    tree = args.output / "runtime-tree"
-    (tree / "bin").mkdir(parents=True)
-    shutil.copy2(built_tree / "bin/switchyard-engine", tree / "bin/switchyard-engine")
-    shutil.copytree(built_tree / "lib", tree / "lib")
-    shutil.copy2(
-        Path(__file__).with_name("launch-engine.sh"), tree / "bin/launch-engine.sh"
+    shared = (
+        json.loads(args.shared_runtime.read_text()) if args.shared_runtime else None
     )
-    (tree / "bin/launch-engine.sh").chmod(0o755)
-    write(tree / "native-config.json", config["engine"])
+    base_compatibility = runtime_compatibility(build)
+    if shared and shared["compatibility"] != base_compatibility:
+        raise ValueError("shared runtime differs from selected build")
+    tree = args.output / "runtime-tree"
+    if not shared:
+        (tree / "bin").mkdir(parents=True)
+        shutil.copy2(
+            built_tree / "bin/switchyard-engine", tree / "bin/switchyard-engine"
+        )
+        shutil.copytree(built_tree / "lib", tree / "lib")
+        shutil.copy2(
+            Path(__file__).with_name("launch-engine.sh"), tree / "bin/launch-engine.sh"
+        )
+        (tree / "bin/launch-engine.sh").chmod(0o755)
+        write(tree / "native-config.json", config["engine"])
     requests = json.loads(args.requests.read_text())
     # One maximum-size equal-length cohort plus varied prompt lengths prepares
     # actual generation without an automatic memory sizing forward.
@@ -136,37 +164,36 @@ def main():
         preparation_tree / "bin/switchyard-engine-bake",
     )
     write(preparation_tree / "bake-requests.json", requests)
+    native_config = (preparation_tree if shared else tree) / "native-config.json"
+    if shared:
+        write(native_config, config["engine"])
     shutil.copy2(args.runtime / "build.json", preparation_tree / "native-build.json")
-    engine_sha = next(
-        f["sha256"] for f in build["files"] if f["path"] == "bin/switchyard-engine"
-    )
-    config_sha = hashlib.sha256((tree / "native-config.json").read_bytes()).hexdigest()
+    config_sha = hashlib.sha256(native_config.read_bytes()).hexdigest()
     compatibility = {
-        "architecture": "x86_64",
-        "os": "ubuntu24.04",
-        "cuda_build": build["cuda_build"],
-        "gpu_compute_capability": build["gpu_compute_capability"],
-        "engine_sha256": engine_sha,
-        "engine_source_commit": build["source_commit"],
+        **base_compatibility,
         "native_config_sha256": config_sha,
     }
-    runtime = pack_publish(
-        args.tool.resolve(),
-        control,
-        tree,
-        args.output / "runtime-artifact",
-        {
-            "kind": "native_runtime",
-            "compatibility": compatibility,
-            "attributes": {
-                "accuracy": config["numerical_accuracy"],
-                "serving_python": "false",
-                "torch": "false",
-                "vllm": "false",
-                "criu": "false",
+    runtime = (
+        shared["runtime"]
+        if shared
+        else pack_publish(
+            args.tool.resolve(),
+            control,
+            tree,
+            args.output / "runtime-artifact",
+            {
+                "kind": "native_runtime",
+                "compatibility": compatibility,
+                "attributes": {
+                    "accuracy": config["numerical_accuracy"],
+                    "serving_python": "false",
+                    "torch": "false",
+                    "vllm": "false",
+                    "criu": "false",
+                },
             },
-        },
-        "runtime",
+            "runtime",
+        )
     )
     preparation = pack_publish(
         args.tool.resolve(),
@@ -233,6 +260,14 @@ def main():
             "compatibility": compatibility,
             "accuracy": config["numerical_accuracy"],
             "gpu_bake_completed": False,
+            **(
+                {
+                    "shared_runtime": shared["launch_configuration"],
+                    "native_config_location": "preparation",
+                }
+                if shared
+                else {}
+            ),
         },
     )
     if (

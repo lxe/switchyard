@@ -15,6 +15,8 @@ A driver cache family is one immutable artifact containing independently baked C
 ```text
 driver-family.json
 drivers/580.126.20/bake.json
+drivers/580.126.20/identity.tsv
+drivers/580.126.20/component-manifest.json
 drivers/580.126.20/cuda/...
 drivers/580.159.04/bake.json
 drivers/580.159.04/cuda/...
@@ -31,3 +33,13 @@ The existing scheduler selects serving caches by GPU name and uses one shared ru
 After pinning the shared runtime and model archive references in a cache-free fleet file, derive the generic labels with `switchyard live cache-bindings --config FLEET.json --gpu 'NVIDIA GeForce RTX 4090' --out LABELS.json`. This command uses the live Rust serialization and fingerprint code without credentials, network access, or allocation. Publication must merge additional native labels without overriding any generated identity.
 
 Review the wrapper and family validation before final family publication. Acceptance requires offline component identity checks, missing-driver rejection, observed selection of the correct private directory, and a real fresh scheduler launch with streamed content and confirmed owned-pod cleanup. The final workload gauntlet remains a separate scheduler test. This design does not implement direct incoming GPU tensor loading or a hard GPU allocator ceiling.
+
+## Preparation tools
+
+`prepare-shared-runtime.py` inventories the accepted Ubuntu export and publishes only its serving binary, wrapper, and libraries. It emits a common launch configuration with the private family-cache root, expected GPU and capability, library path, enabled driver cache, fixed cache size, and zero hydration retries. `prepare_artifacts.py --shared-runtime` reuses that runtime ID and places each model's native configuration beside its offline bake executable and requests. `run-bake.py` then reads that preparation configuration while retaining the maximum equal-length cohort and varied prompts.
+
+`prepare-family.py --fleet-config FLEET.json` invokes the Rust `live cache-bindings` command itself. It checks the component binary and physical capability against the fleet's shared runtime, compares every baked native bound with the selected live model, verifies the complete component tree using Rust, and rejects duplicate driver variants or unconfirmed bake-pod cleanup. Packing has no network access. Supplying `--publish-config` publishes the packed family only after these checks; the publication receipt becomes complete after the manifest upload succeeds.
+
+The generic live model reference reads a legacy archive manifest, while the native artifact publisher stores a different artifact manifest at the original prefix. `publish-live-model.py` therefore copies the already published archive bytes within R2 to a separate immutable live prefix and publishes the converted legacy manifest last. It hashes local source archives before copying and checks copied object lengths; it does not claim a full remote hash readback for a new copy. Existing-object reuse requires the existing complete-byte hash check. R2 supports the required server-copy operations in its [S3 API](https://developers.cloudflare.com/r2/api/s3/api/). The AWS client uses bounded multipart copies for large objects and explicit small-object copies that omit unsupported tagging headers.
+
+The narrow wrapper fixtures use a fake `nvidia-smi` and stub engine. They verify observed-driver selection, rejection of missing driver/GPU/capability or changed component identity before execution, and exact forwarding of literal inline JSON arguments. Run them with `python -m unittest discover -s deploy/native/tests -p test_driver_family.py`. They establish launch control behavior; hardware and scheduler acceptance remain separate.
