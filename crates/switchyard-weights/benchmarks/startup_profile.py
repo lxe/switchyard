@@ -85,6 +85,20 @@ if source_override := os.environ.get("NATIVE_ENV_OVERRIDE_SOURCE"):
 
     sys.meta_path.insert(0, EnvOverrideFinder())
 
+if cli_override := os.environ.get("NATIVE_CLI_MAIN_SOURCE"):
+
+    class CliMainFinder(importlib.abc.MetaPathFinder):
+        def find_spec(self, fullname, path, target=None):
+            if fullname != "vllm.entrypoints.cli.main":
+                return None
+            sys.meta_path.remove(self)
+            original = importlib.util.find_spec(fullname)
+            if original is None or original.origin is None:
+                raise RuntimeError("native CLI source is absent")
+            return importlib.util.spec_from_file_location(fullname, cli_override)
+
+    sys.meta_path.insert(0, CliMainFinder())
+
 
 def record(event):
     event.update(pid=os.getpid(), thread=threading.get_ident())

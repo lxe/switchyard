@@ -1,0 +1,571 @@
+{
+  "schema_version": 1,
+  "decision": "experimental_not_selected",
+  "reason": "The narrower adapter preserves tested native parser and dispatch semantics, but its apparent wall-time difference is not a demonstrated CLI optimization: the phase from initial vllm import to engine configuration is essentially equal, and dependencies move into the serve import.",
+  "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "model_content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+  "scope": "Private RTX 5090 / canonical Qwen 0.8B endpoint runs. The identical CLI source overlay mechanism/path is used in every control and candidate. Agent, Rust RUNNER, loader identity, runtime identity and cache labels remain unchanged for this diagnostic.",
+  "common_cache_seed": {
+    "source_run": "qwen-profile-agent-06-lazy",
+    "files": 1185,
+    "bytes": 635436827,
+    "tree_sha256": "6ea9d6befb0c10b515a8039ae4fc53ffb35a55bbd1ebf0189a8cf786b626e9e0",
+    "hash_definition": "Sorted relative file path bytes, NUL, and raw SHA-256 digest of each file. Symlink targets are followed for regular files.",
+    "copy": "cp --archive before the request epoch; caches[] is empty in the ticket."
+  },
+  "native_source_sha256": {
+    "entrypoints/cli/main.py": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+    "entrypoints/cli/serve.py": "c182c88347f1eb3440a816986f1c2025a2ab2a13236cd68b0ad0146250d031ff",
+    "entrypoints/launchers/cli_args.py": "c26330deb1bffb27b4ddbdc508a02ffd06efd5b201dba7d077d288e3b6ec2a8e",
+    "entrypoints/launchers/api_server/entry.py": "4f60dee4693159b79016c6a84f016eb0ade024433807ff393ea782a31bb9f7e4",
+    "entrypoints/openai/api_server.py": "470ff555bdc19f8e17edf4ee7b6ec3f49ff5af0f773e2a7f91bab536e2239109",
+    "utils/argparse_utils.py": "fe7abd5c4478091935779b9a9a57f929f8f64cdf51ddf024e198ad5b34ee0b59"
+  },
+  "candidate_sha256": "5e51edce7dc9d7e7f7dcef57b22b051f1d4928052e9c6176e961d6aebae9a82a",
+  "harness_sha256": "401722ddb2220fed06590a04578dccb334bae8cf7275f3cfbead4fca695ec738",
+  "profile_helper_sha256": "2717f178304a714c115aac06277cd8c89add596535af3ef8455daef1a46dd53d",
+  "native_parser_comparison": {
+    "passed": true,
+    "native_cases": [
+      {
+        "case": "extent_language_model",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "single_api"
+      },
+      {
+        "case": "config_model_cli_override",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "single_api"
+      },
+      {
+        "case": "positional_model_over_config",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "single_api"
+      },
+      {
+        "case": "deprecated_model_flag",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "single_api"
+      },
+      {
+        "case": "underscored_flags",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "single_api"
+      },
+      {
+        "case": "headless",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "headless"
+      },
+      {
+        "case": "multiple_api_servers",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "multi_api"
+      },
+      {
+        "case": "data_parallel_default",
+        "equal": true,
+        "error_type": null,
+        "dispatch": "multi_api"
+      },
+      {
+        "case": "invalid_tool_parser",
+        "equal": true,
+        "error_type": "TypeError",
+        "dispatch": null
+      },
+      {
+        "case": "invalid_keepalive",
+        "equal": true,
+        "error_type": "ValueError",
+        "dispatch": null
+      },
+      {
+        "case": "invalid_headless_count",
+        "equal": true,
+        "error_type": "ValueError",
+        "dispatch": null
+      }
+    ],
+    "general_fallbacks": 2,
+    "official_single_entrypoint_observation": {
+      "model_tag": "metadata-model",
+      "model": "Qwen/Qwen3-0.6B",
+      "headless_flag": true,
+      "dispatch": "single_api"
+    }
+  },
+  "runs": [
+    {
+      "variant": "general",
+      "run": "qwen-serve-only-11-general",
+      "native_profile_enabled": true,
+      "request_to_ready_seconds": 30.370075644997996,
+      "request_to_first_useful_token_seconds": 30.446015379999153,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "cli_source_overlay": {
+        "original_sha256": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+        "staged_sha256": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+        "staged_path": "/opt/switchyard/startup-profile/cli_main.py",
+        "scope": "Private diagnostic CLI module source staged and hashed before the request epoch. The agent, loader identity, runtime artifact identity and cache labels remain those of the control; this does not identify a selected or published engine adapter."
+      },
+      "env_override_source_overlay": null,
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_epoch_request_seconds_bounds": [
+        3.748412750996067,
+        3.761844813998323
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.295246956
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.302213951
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.850853126
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.472815038
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 10.080075151
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 10.08081787
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 23.32257447
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 26.556885362
+        }
+      ],
+      "native_startup_plan_applied": true,
+      "native_startup_observations": [
+        "(EngineCore pid=190) INFO 10-11 05:39:10 [startup_plan.py:153] Applying persisted startup plan (fingerprint 43e46542da0db929): kv_cache_memory_bytes=6292101120 (5.86 GiB), recorded free-memory baseline 26.58 GiB, current 26.68 GiB. Memory profiling will be skipped.",
+        "(EngineCore pid=190) INFO 10-11 05:39:11 [core.py:380] init engine (profile, create kv cache, warmup model) took 1.52 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.0906286509998608,
+        "latency_min_seconds": 0.05825245100277243,
+        "latency_median_seconds": 0.34723420000045735,
+        "latency_max_seconds": 0.39058591200227966
+      },
+      "api_import_to_engine_config_seconds": 4.360502567997173,
+      "api_after_vllm_import_to_engine_config_seconds": 2.3894110809997073,
+      "api_vllm_import_started_request_seconds": 13.865621439999813,
+      "native_api_spans": [
+        {
+          "kind": "import",
+          "name": "vllm.env_override",
+          "started_request_seconds": 13.866498356997909,
+          "ended_request_seconds": 15.83668896099698,
+          "duration_seconds": 1.9701906039990718
+        },
+        {
+          "kind": "import",
+          "name": "vllm",
+          "started_request_seconds": 13.865621439999813,
+          "ended_request_seconds": 15.83671292699728,
+          "duration_seconds": 1.9710914869974658
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.benchmark.base",
+          "started_request_seconds": 15.83748293899771,
+          "ended_request_seconds": 15.843199536997417,
+          "duration_seconds": 0.0057165979997080285
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config",
+          "started_request_seconds": 15.954854881998472,
+          "ended_request_seconds": 17.227214339996863,
+          "duration_seconds": 1.272359457998391
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.benchmark.main",
+          "started_request_seconds": 15.837322037998092,
+          "ended_request_seconds": 17.57441656699666,
+          "duration_seconds": 1.7370945289985684
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.launch",
+          "started_request_seconds": 17.574919541999407,
+          "ended_request_seconds": 17.91813150300004,
+          "duration_seconds": 0.3432119610006339
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.preload",
+          "started_request_seconds": 17.918288400000165,
+          "ended_request_seconds": 18.049900158999662,
+          "duration_seconds": 0.1316117589994974
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.serve",
+          "started_request_seconds": 18.050030026999593,
+          "ended_request_seconds": 18.056100052999682,
+          "duration_seconds": 0.006070026000088546
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "started_request_seconds": 18.22634641199693,
+          "ended_request_seconds": 18.93251006599894,
+          "duration_seconds": 0.7061636540020118
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "started_request_seconds": 18.226124007996987,
+          "ended_request_seconds": 18.93403674399815,
+          "duration_seconds": 0.7079127360011626
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "started_request_seconds": 18.943808715997875,
+          "ended_request_seconds": 29.34039331399981,
+          "duration_seconds": 10.396584598001937
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "started_request_seconds": 18.943788520999078,
+          "ended_request_seconds": 29.340417029998207,
+          "duration_seconds": 10.396628508999129
+        }
+      ]
+    },
+    {
+      "variant": "serve_only",
+      "run": "qwen-serve-only-12-candidate",
+      "native_profile_enabled": true,
+      "request_to_ready_seconds": 29.759123544998147,
+      "request_to_first_useful_token_seconds": 29.83335268600058,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "cli_source_overlay": {
+        "original_sha256": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+        "staged_sha256": "5e51edce7dc9d7e7f7dcef57b22b051f1d4928052e9c6176e961d6aebae9a82a",
+        "staged_path": "/opt/switchyard/startup-profile/cli_main.py",
+        "scope": "Private diagnostic CLI module source staged and hashed before the request epoch. The agent, loader identity, runtime artifact identity and cache labels remain those of the control; this does not identify a selected or published engine adapter."
+      },
+      "env_override_source_overlay": null,
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_epoch_request_seconds_bounds": [
+        3.7364275159925455,
+        3.7477600729980622
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.272707098
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.276982748
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.818882035
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.42466305
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.312987476
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.313641041
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 22.699986886
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 25.960848904
+        }
+      ],
+      "native_startup_plan_applied": true,
+      "native_startup_observations": [
+        "(EngineCore pid=226) INFO 10-11 05:40:15 [startup_plan.py:153] Applying persisted startup plan (fingerprint 43e46542da0db929): kv_cache_memory_bytes=6292101120 (5.86 GiB), recorded free-memory baseline 26.58 GiB, current 26.62 GiB. Memory profiling will be skipped.",
+        "(EngineCore pid=226) INFO 10-11 05:40:16 [core.py:380] init engine (profile, create kv cache, warmup model) took 1.34 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.1945692100016458,
+        "latency_min_seconds": 0.05796164300045348,
+        "latency_median_seconds": 0.37288119699951494,
+        "latency_max_seconds": 0.44639509600165184
+      },
+      "api_import_to_engine_config_seconds": 4.34263800899862,
+      "api_after_vllm_import_to_engine_config_seconds": 2.461536762999458,
+      "api_vllm_import_started_request_seconds": 13.099433311999746,
+      "native_api_spans": [
+        {
+          "kind": "import",
+          "name": "vllm.env_override",
+          "started_request_seconds": 13.100445799998852,
+          "ended_request_seconds": 14.980509345001337,
+          "duration_seconds": 1.8800635450024856
+        },
+        {
+          "kind": "import",
+          "name": "vllm",
+          "started_request_seconds": 13.099433311999746,
+          "ended_request_seconds": 14.980534557998908,
+          "duration_seconds": 1.8811012459991616
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config",
+          "started_request_seconds": 15.014439821999986,
+          "ended_request_seconds": 16.324203323998518,
+          "duration_seconds": 1.3097635019985319
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.launchers.api_server.entry",
+          "started_request_seconds": 14.982622474999516,
+          "ended_request_seconds": 17.148720187000436,
+          "duration_seconds": 2.1660977120009193
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.serve",
+          "started_request_seconds": 14.980974177000462,
+          "ended_request_seconds": 17.18173296799796,
+          "duration_seconds": 2.2007587909974973
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "started_request_seconds": 17.442298353998922,
+          "ended_request_seconds": 18.30179741200118,
+          "duration_seconds": 0.8594990580022568
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "started_request_seconds": 17.442071320998366,
+          "ended_request_seconds": 18.303239831999235,
+          "duration_seconds": 0.8611685110008693
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "started_request_seconds": 18.314228580999043,
+          "ended_request_seconds": 28.495721684001182,
+          "duration_seconds": 10.18149310300214
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "started_request_seconds": 18.31419908099997,
+          "ended_request_seconds": 28.495755421001377,
+          "duration_seconds": 10.181556340001407
+        }
+      ]
+    },
+    {
+      "variant": "serve_only",
+      "run": "qwen-serve-only-13-candidate-unprofiled",
+      "native_profile_enabled": false,
+      "request_to_ready_seconds": 30.004537040997093,
+      "request_to_first_useful_token_seconds": 30.083927632997074,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "cli_source_overlay": {
+        "original_sha256": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+        "staged_sha256": "5e51edce7dc9d7e7f7dcef57b22b051f1d4928052e9c6176e961d6aebae9a82a",
+        "staged_path": "/opt/switchyard/startup-profile/cli_main.py",
+        "scope": "Private diagnostic CLI module source staged and hashed before the request epoch. The agent, loader identity, runtime artifact identity and cache labels remain those of the control; this does not identify a selected or published engine adapter."
+      },
+      "env_override_source_overlay": null,
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_epoch_request_seconds_bounds": [
+        3.7630068459984614,
+        3.769586282000091
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.27533345
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.279629054
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.834024915
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.409216064
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.296276998
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.296550104
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 21.986568688
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 26.234363821
+        }
+      ],
+      "native_startup_plan_applied": false,
+      "native_startup_observations": [
+        "(EngineCore pid=185) INFO 10-11 05:42:08 [startup_plan.py:123] Startup plan not applied: current free memory (26.57 GiB) is below the recorded baseline (26.58 GiB); falling back to full memory profiling.",
+        "(EngineCore pid=185) INFO 10-11 05:42:10 [startup_plan.py:189] Saved startup plan to /opt/switchyard/cache/8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc/compiled/vllm/startup_plan/startup_plan_43e46542da0db929.json",
+        "(EngineCore pid=185) INFO 10-11 05:42:10 [core.py:380] init engine (profile, create kv cache, warmup model) took 2.19 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.1100480710010743,
+        "latency_min_seconds": 0.055109288998210104,
+        "latency_median_seconds": 0.3599016335010674,
+        "latency_max_seconds": 0.3817686379989027
+      }
+    },
+    {
+      "variant": "general",
+      "run": "qwen-serve-only-14-general-unprofiled",
+      "native_profile_enabled": false,
+      "request_to_ready_seconds": 29.939781124998262,
+      "request_to_first_useful_token_seconds": 30.027009235996957,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "cli_source_overlay": {
+        "original_sha256": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+        "staged_sha256": "c170890a71e7e3110f6e7acdd4dd376294b7f4cb1d511b70c3593dfc55cb21fc",
+        "staged_path": "/opt/switchyard/startup-profile/cli_main.py",
+        "scope": "Private diagnostic CLI module source staged and hashed before the request epoch. The agent, loader identity, runtime artifact identity and cache labels remain those of the control; this does not identify a selected or published engine adapter."
+      },
+      "env_override_source_overlay": null,
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_epoch_request_seconds_bounds": [
+        3.990144653002062,
+        3.9992110860002867
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.272287676
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.768178892
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.854742113
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.440069048
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.12147774
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.121914591
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 21.632897185
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 25.88847716
+        }
+      ],
+      "native_startup_plan_applied": false,
+      "native_startup_observations": [
+        "(EngineCore pid=219) INFO 10-11 05:43:09 [startup_plan.py:123] Startup plan not applied: current free memory (26.55 GiB) is below the recorded baseline (26.58 GiB); falling back to full memory profiling.",
+        "(EngineCore pid=219) INFO 10-11 05:43:10 [startup_plan.py:189] Saved startup plan to /opt/switchyard/cache/8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc/compiled/vllm/startup_plan/startup_plan_43e46542da0db929.json",
+        "(EngineCore pid=219) INFO 10-11 05:43:10 [core.py:380] init engine (profile, create kv cache, warmup model) took 1.62 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.0943630500005384,
+        "latency_min_seconds": 0.054087139997136546,
+        "latency_median_seconds": 0.3564721680013463,
+        "latency_max_seconds": 0.3757298830023501
+      }
+    }
+  ],
+  "paired_first_useful_token_difference_general_minus_serve_only_seconds": {
+    "profiled": 0.6126626939985726,
+    "unprofiled_reverse_order": -0.05691839700011769
+  },
+  "paired_profiled_api_import_to_engine_config_difference_seconds": 0.017864558998553548,
+  "limits": [
+    "The native parser test compares namespaces, validation errors and native ServeSubcommand.cmd dispatch; only final server launch functions are intercepted in that CPU test. Actual GPU/API serving is proved separately by all four endpoint runs.",
+    "The official API-server main shares make_arg_parser but directly runs the single API server and omits CLI model_tag translation and headless/parallel/Rust/gRPC dispatch. This candidate retains ServeSubcommand.cmd rather than replacing it with that main.",
+    "Native imports nest and reuse dependencies; their individual durations cannot be summed or interpreted as wholly avoidable work.",
+    "Both profiled runs applied the native startup plan. Both unprofiled runs rejected it because free memory was below the recorded 26.58 GiB baseline (candidate 26.57 GiB, general 26.55 GiB) and ran native full memory profiling. The pairs follow matched plan paths, but the two pairs have different paths; guards are unchanged.",
+    "The concurrency burst uses identical short prompts and prefix caching. It proves correctness, not throughput.",
+    "No patched runtime, selected engine adapter, or exported cache is published by this experiment. Adoption would require a new loader/adapter identity and corresponding cache provenance."
+  ]
+}

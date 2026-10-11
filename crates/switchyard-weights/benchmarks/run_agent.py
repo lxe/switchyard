@@ -31,6 +31,7 @@ parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="bo
 parser.add_argument("--warm-cache-from", type=Path)
 parser.add_argument("--profile-startup", action="store_true")
 parser.add_argument("--env-override-source", type=Path)
+parser.add_argument("--cli-main-source", type=Path)
 parser.add_argument("--verify-concurrency", type=int, default=0, metavar="REQUESTS")
 parser.add_argument("--concurrency", type=int, default=8)
 parser.add_argument("--runtime-env", action="append", default=[], metavar="KEY=VALUE")
@@ -133,7 +134,8 @@ try:
         installation = root / "installation"
         installation.mkdir()
         source_overlay = None
-        if args.profile_startup or args.env_override_source:
+        cli_overlay = None
+        if args.profile_startup or args.env_override_source or args.cli_main_source:
             profile = installation / "startup-profile"
             profile.mkdir()
             (profile / "sitecustomize.py").write_bytes(
@@ -153,6 +155,21 @@ try:
                     "staged_sha256": hashlib.sha256(source).hexdigest(),
                     "staged_path": "/opt/switchyard/startup-profile/env_override.py",
                     "scope": "Python module source staged and hashed before the request epoch. Original source hash comes from the pinned runtime manifest. This is a private diagnostic overlay; the original artifact ID and caches[] do not identify a published patched runtime or cache.",
+                }
+            if args.cli_main_source:
+                original = next(
+                    entry
+                    for entry in runtime_manifest["entries"]
+                    if entry["path"]
+                    == "venv/lib/python3.12/site-packages/vllm/entrypoints/cli/main.py"
+                )
+                source = args.cli_main_source.read_bytes()
+                (profile / "cli_main.py").write_bytes(source)
+                cli_overlay = {
+                    "original_sha256": original["sha256"],
+                    "staged_sha256": hashlib.sha256(source).hexdigest(),
+                    "staged_path": "/opt/switchyard/startup-profile/cli_main.py",
+                    "scope": "Private diagnostic CLI module source staged and hashed before the request epoch. The agent, loader identity, runtime artifact identity and cache labels remain those of the control; this does not identify a selected or published engine adapter.",
                 }
         if args.warm_cache_from:
             subprocess.run(
@@ -195,7 +212,7 @@ try:
                 "hydration": {"retries": 0},
             }
         )
-        if args.profile_startup or args.env_override_source:
+        if args.profile_startup or args.env_override_source or args.cli_main_source:
             runtime["environment"]["PYTHONPATH"] = (
                 "/opt/switchyard/startup-profile:"
                 + runtime["environment"].get("PYTHONPATH", "")
@@ -206,6 +223,10 @@ try:
                 )
             if args.env_override_source:
                 runtime["environment"]["NATIVE_ENV_OVERRIDE_SOURCE"] = source_overlay[
+                    "staged_path"
+                ]
+            if args.cli_main_source:
+                runtime["environment"]["NATIVE_CLI_MAIN_SOURCE"] = cli_overlay[
                     "staged_path"
                 ]
         for assignment in args.runtime_env:
@@ -482,6 +503,7 @@ try:
                 "runtime_environment_overrides": args.runtime_env,
                 "native_profile_enabled": args.profile_startup,
                 "experimental_env_override_source": source_overlay,
+                "experimental_cli_main_source": cli_overlay,
                 "agent_process_start_monotonic_bounds": process_start_bounds,
                 "agent_epoch_monotonic_bounds": [
                     pre_exec_lower,
