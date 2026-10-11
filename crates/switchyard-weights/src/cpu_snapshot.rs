@@ -20,6 +20,9 @@ use switchyard_artifacts::{Manifest, Metadata, PackOptions};
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub const GATE: &[u8] = b"switchyard-metadata-ready-v1\n";
 pub const PAYLOAD: &str = include_str!("../python/switchyard_cpu_snapshot.py");
+fn payload_sha() -> String {
+    sha(format!("{PAYLOAD}{}", crate::loader::CPU_TREE).as_bytes())
+}
 const LIMIT: usize = 65536;
 
 fn sha(bytes: &[u8]) -> String {
@@ -113,6 +116,9 @@ struct OwnedChild(Child);
 impl Drop for OwnedChild {
     fn drop(&mut self) {
         if self.0.try_wait().ok().flatten().is_none() {
+            if let Some(pid) = rustix::process::Pid::from_raw(self.0.id() as i32) {
+                let _ = rustix::process::kill_process_group(pid, rustix::process::Signal::KILL);
+            }
             let _ = self.0.kill();
             let _ = self.0.wait();
         }
@@ -126,6 +132,7 @@ struct RestoredChild {
 impl Drop for RestoredChild {
     fn drop(&mut self) {
         if self.active {
+            let _ = rustix::process::kill_process_group(self.pid, rustix::process::Signal::KILL);
             let _ = rustix::process::kill_process(self.pid, rustix::process::Signal::KILL);
             let _ = rustix::process::waitpid(Some(self.pid), rustix::process::WaitOptions::empty());
         }
@@ -189,7 +196,7 @@ fn validate(snapshot: &Snapshot, root: &Path, runtime_id: &str, host: &HostProfi
     if snapshot.schema_version != 1
         || snapshot.runtime_id != runtime_id
         || snapshot.runtime_root != root
-        || snapshot.payload_sha256 != sha(PAYLOAD.as_bytes())
+        || snapshot.payload_sha256 != payload_sha()
         || &snapshot.profile != host
     {
         return Err(
@@ -197,10 +204,22 @@ fn validate(snapshot: &Snapshot, root: &Path, runtime_id: &str, host: &HostProfi
         );
     }
     if snapshot.prepared["cuda_initialized"] != false
-        || snapshot.prepared["platform_resolved"] != false
+        || snapshot.prepared["platform_resolved"] != true
+        || snapshot.prepared["vllm_import_complete"] != true
+        || snapshot.prepared["boundary"] != "Worker.init_device"
         || snapshot.prepared["gpu_device_fds"] != json!([])
     {
-        return Err("CPU snapshot contains GPU/platform state".into());
+        return Err("CPU snapshot is not a complete GPU-free API/worker tree".into());
+    }
+    let workers = snapshot.prepared["workers"]
+        .as_array()
+        .ok_or("missing prepared worker tree")?;
+    if workers.len() != 1
+        || workers.iter().any(|worker| {
+            worker["cuda_initialized"] != false || worker["gpu_device_fds"] != json!([])
+        })
+    {
+        return Err("CPU snapshot requires one prepared worker without GPU state".into());
     }
     for (path, expected) in &snapshot.base_files {
         if file_sha(path)? != *expected {
@@ -215,7 +234,7 @@ fn validate(snapshot: &Snapshot, root: &Path, runtime_id: &str, host: &HostProfi
 pub struct Prepare {
     pub runtime_root: PathBuf,
     pub runtime_manifest: PathBuf,
-    pub tokenizer: Option<PathBuf>,
+    pub serving_config: PathBuf,
     pub out: PathBuf,
     pub criu: PathBuf,
 }
@@ -243,14 +262,10 @@ pub fn prepare(options: Prepare) -> Result<Value> {
     fs::create_dir(source.join("images"))?;
     fs::create_dir(source.join("no-plugins"))?;
     fs::write(staging.join("payload.py"), PAYLOAD)?;
-    let tokenizer = options
-        .tokenizer
-        .as_ref()
-        .map(|p| p.canonicalize())
-        .transpose()?;
+    let serving: Value = read(&options.serving_config)?;
     write(
         &staging.join("prepare.json"),
-        &json!({"schema_version":1,"runtime_id":manifest.id,"tokenizer":tokenizer}),
+        &json!({"schema_version":1,"runtime_id":manifest.id,"serving":serving}),
     )?;
     let libraries = manifest
         .entries
@@ -288,17 +303,35 @@ pub fn prepare(options: Prepare) -> Result<Value> {
         .env("TRANSFORMERS_OFFLINE", "1")
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .env("VLLM_NO_USAGE_STATS", "1")
-        .stdin(Stdio::null())
+        .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
+    {
+        let environment: BTreeMap<String, String> =
+            serde_json::from_value(serving["environment"].clone())?;
+        command.envs(environment);
+        let log = fs::File::create(staging.join("preparation.log"))?;
+        command.stdout(log.try_clone()?).stderr(log);
+    }
     emit("cpu_prepare_started", start, json!({"gpu_snapshot":false}));
     let mut child = OwnedChild(command.spawn()?);
+    if let Some(mut input) = child.0.stdin.take() {
+        input.write_all(GATE)?;
+    }
     drop(external);
     let prepared = receive(&mut control)?;
     if let Some(error) = prepared.get("error").and_then(Value::as_str) {
-        return Err(format!("CPU preparation failed: {error}").into());
+        return Err(format!(
+            "CPU preparation failed: {error}; details: {}",
+            staging.join("preparation.log").display()
+        )
+        .into());
     }
-    emit("cpu_prepared", start, prepared.clone());
+    let mut summary = prepared.clone();
+    if let Some(value) = summary.as_object_mut() {
+        value.remove("mapped_files");
+    }
+    emit("cpu_prepared", start, summary);
     let mut base_files = BTreeMap::new();
     for file in prepared["mapped_files"]
         .as_array()
@@ -313,7 +346,7 @@ pub fn prepare(options: Prepare) -> Result<Value> {
         schema_version: 1,
         runtime_id: manifest.id.clone(),
         runtime_root: root,
-        payload_sha256: sha(PAYLOAD.as_bytes()),
+        payload_sha256: payload_sha(),
         profile,
         control_socket_inode: inode,
         prepared,
@@ -360,13 +393,6 @@ pub fn prepare(options: Prepare) -> Result<Value> {
         attributes: BTreeMap::from([
             ("payload_sha256".into(), snapshot.payload_sha256.clone()),
             ("gpu_snapshot".into(), "false".into()),
-            (
-                "tokenizer_sha256".into(),
-                snapshot.prepared["tokenizer_sha256"]
-                    .as_str()
-                    .unwrap_or("none")
-                    .into(),
-            ),
         ]),
     };
     emit("cpu_snapshot_pack_started", start, json!({}));
@@ -387,7 +413,15 @@ pub fn prepare(options: Prepare) -> Result<Value> {
         &options.out,
         rustix::fs::RenameFlags::NOREPLACE,
     )?;
-    emit("cpu_snapshot_published", start, receipt.clone());
+    emit(
+        "cpu_snapshot_published",
+        start,
+        json!({
+            "snapshot_artifact_id": packed.id,
+            "compressed_bytes": receipt["compressed_bytes"],
+            "gpu_snapshot": false,
+        }),
+    );
     Ok(receipt)
 }
 
@@ -590,7 +624,7 @@ mod tests {
             schema_version: 1,
             runtime_id: "runtime".into(),
             runtime_root: "/runtime".into(),
-            payload_sha256: sha(PAYLOAD.as_bytes()),
+            payload_sha256: payload_sha(),
             profile: HostProfile {
                 architecture: "x86_64".into(),
                 kernel_release: "kernel".into(),
@@ -600,7 +634,9 @@ mod tests {
                 base_os_sha256: "base".into(),
             },
             control_socket_inode: 1,
-            prepared: json!({"cuda_initialized":false,"platform_resolved":false,"gpu_device_fds":[],"gpu_driver_mappings":[]}),
+            prepared: json!({"cuda_initialized":false,"platform_resolved":true,"vllm_import_complete":true,
+                "boundary":"Worker.init_device", "gpu_device_fds":[],
+                "workers":[{"cuda_initialized":false,"gpu_device_fds":[]}]}),
             base_files: BTreeMap::new(),
         }
     }
@@ -621,6 +657,18 @@ mod tests {
         assert!(validate(&saved, root, "runtime", &saved.profile).is_err());
         saved.prepared["cuda_initialized"] = json!(false);
         saved.prepared["gpu_device_fds"] = json!(["/dev/nvidia0"]);
+        assert!(validate(&saved, root, "runtime", &saved.profile).is_err());
+        saved = snapshot();
+        saved.prepared["workers"][0]["cuda_initialized"] = json!(true);
+        assert!(validate(&saved, root, "runtime", &saved.profile).is_err());
+        saved = snapshot();
+        saved.prepared["workers"][0]["gpu_device_fds"] = json!(["/dev/nvidiactl"]);
+        assert!(validate(&saved, root, "runtime", &saved.profile).is_err());
+        saved = snapshot();
+        saved.prepared["workers"] = json!([]);
+        assert!(validate(&saved, root, "runtime", &saved.profile).is_err());
+        saved = snapshot();
+        saved.prepared["vllm_import_complete"] = json!(false);
         assert!(validate(&saved, root, "runtime", &saved.profile).is_err());
     }
 

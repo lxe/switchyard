@@ -383,7 +383,8 @@ def main():
 
         if not wait_gate(None):
             raise RuntimeError("metadata readiness gate cancelled")
-        sys.stdin.close()
+        if not os.environ.get("SWITCHYARD_CPU_TREE_BAKE"):
+            sys.stdin.close()
         import runpy
 
         sys.argv = ["vllm", *sys.argv[1:]]
@@ -400,7 +401,8 @@ def main():
         if not wait_gate(preparation):
             finder.release(cancelled=True)
             raise RuntimeError("metadata and cache readiness gate cancelled")
-        sys.stdin.close()
+        if not os.environ.get("SWITCHYARD_CPU_TREE_BAKE"):
+            sys.stdin.close()
         cache_aliases(policy)
         importlib.invalidate_caches()
         os.environ["SWITCHYARD_STARTUP_GATE_RELEASED"] = "1"

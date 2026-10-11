@@ -2,7 +2,7 @@
 
 Qwen3.5 0.8B returned its first streamed content, `Paris`, **49.954 seconds after local container launch** on an RTX 5090. The first client request took **343.6 ms** to produce content. No tokenization request or inference readiness probe preceded that request. The [timing receipt](receipts/cpu-snapshot-local-cold-start.json) preserves artifact identities, memory measurements and selected native spans.
 
-The newer [direct-stream agent measurements](direct-agent-hydration.md) reduce launch-to-content to 26.997 seconds with the selected build-free serving configuration.
+The [direct-stream agent measurements](direct-agent-hydration.md) reduced launch-to-content to 26.997 seconds with the build-free serving configuration. The current [native API/worker CPU snapshot](cpu-process-snapshots.md) also captures reusable engine construction and worker imports.
 
 ## Measurement conditions
 

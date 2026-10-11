@@ -1,8 +1,10 @@
 # Agent hydration and serving startup
 
+These measurements cover the direct-hydration repair with the earlier parent-only CPU snapshot. The current [native API/worker CPU snapshot](cpu-process-snapshots.md) removes additional launch-time CPU imports and engine setup.
+
 The selected Qwen3.5 0.8B endpoint produced its first streamed content, `Paris`, **26.997 seconds after local container launch**. Runtime hydration completed in **8.177 seconds** from that artifact's start. The main repair makes the compiler/toolchain artifact a bake dependency rather than a launch dependency for this prepared eager profile. Fixed GPU memory allocation, final tensor layout, native caches and CPU process restore remain enabled.
 
-The [measurement receipt](receipts/direct-agent-hydration.json) preserves the controlled cases, shard counters, kernel wait samples, memory/pressure counters, disk deltas and final native timeline. The checked-in [selected runtime configuration](../configs/serving-profiles/qwen3.5-0.8b-rtx5090.runtime.json) includes the exact runtime, snapshot and cache identities. It is a local privileged-CRIU fixture; these results do not establish cloud-provider restore permissions or cross-host snapshot portability.
+The [measurement receipt](receipts/direct-agent-hydration.json) preserves the controlled cases, shard counters, kernel wait samples, memory/pressure counters, disk deltas and final native timeline. The receipt preserves the runtime, snapshot and cache identities for these measurements. The checked-in [selected runtime configuration](../configs/serving-profiles/qwen3.5-0.8b-rtx5090.runtime.json) tracks the current native CPU tree rollout. It is a local privileged-CRIU fixture; these results do not establish cloud-provider restore permissions or cross-host snapshot portability.
 
 ## Direct streaming configuration
 
@@ -82,7 +84,7 @@ The final CPU restore took **142.9 ms** and completed at **12.550 seconds**. Fir
 | HTTP availability → client request observed | 0.082 s | Existing availability polling and host observation |
 | First client request → content | 0.347 s | No preceding tokenization or inference request |
 
-The API process's complete observed import union was **3.587 s**, and the spawned worker's was **4.413 s**. These unions merge nested import spans within each process. The CPU checkpoint preserves parent imports, but the worker still uses spawn and reimports Torch/vLLM. The native tokenizer registry also constructs its own tokenizer; the checkpoint's preserved low-level tokenizer object is not reused by that registry.
+The API process's complete observed import union was **3.587 s**, and the spawned worker's was **4.413 s**. These unions merge nested import spans within each process. In this recorded baseline, the CPU checkpoint preserved parent imports, but the worker still used spawn and reimported Torch/vLLM. The native tokenizer registry also constructs its own tokenizer; the checkpoint's preserved low-level tokenizer object is not reused by that registry.
 
 The **1.964-second pre-spawn interval remains unexplained at call level**. The process-start syscall path is fast, so it must not be called a two-second OS spawn. The `torch.cuda._lazy_init` probe recorded no span; this does not establish that all CUDA initialization was absent or attribute that interval to CUDA. Similarly, `Worker.init_device` is a combined native operation, not a pure CUDA-context measurement. Remaining small gaps include parser/setup work, scheduling, RPC completion and health observation. No inference readiness probes, automatic sizing or stall recovery were introduced.
 

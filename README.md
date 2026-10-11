@@ -146,6 +146,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [Validation and results](docs/RESULTS.md) | Test coverage, reproducible comparisons, and known limitations |
 | [RunPod execution](docs/RUNPOD.md) | Checked-in fleet definitions, R2 hydration, live gauntlet, costs, and recovery |
 | [Serving hydration](docs/HYDRATION.md) | Runtime build inputs, separate model/cache artifacts, compatibility, and offline verification |
+| [Native CPU snapshots](docs/cpu-process-snapshots.md) | API/worker preparation, CRIU restore, fixed-profile GPU continuation and measured cold-start timing |
 | [Contributing](CONTRIBUTING.md) | Development checks and requirements for behavioral evidence |
 
 ## Model boundaries

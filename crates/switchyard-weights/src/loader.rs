@@ -14,6 +14,7 @@ const HOOKS: &str = include_str!("../python/switchyard_vllm_hooks.py");
 const SERVING_PROFILE: &str = include_str!("../python/switchyard_serving_profile.py");
 const CHUNKS: &str = include_str!("../python/switchyard_chunk_loader.py");
 const FINAL_STATE: &str = include_str!("../python/switchyard_final_state.py");
+pub(crate) const CPU_TREE: &str = include_str!("../python/switchyard_cpu_tree.py");
 fn python_program() -> String {
     "venv/bin/python".into()
 }
@@ -71,6 +72,7 @@ impl VllmLoaderConfig {
                 HOOKS,
                 SERVING_PROFILE,
                 FINAL_STATE,
+                CPU_TREE,
                 self
             ))?)
         ))
@@ -94,6 +96,7 @@ pub fn write_vllm_bundle(directory: &Path) -> Result<()> {
         SERVING_PROFILE,
     )?;
     fs::write(directory.join("switchyard_final_state.py"), FINAL_STATE)?;
+    fs::write(directory.join("switchyard_cpu_tree.py"), CPU_TREE)?;
     let dist = directory.join("switchyard_extent_loader-0.0.0.dist-info");
     fs::create_dir(&dist)?;
     fs::write(

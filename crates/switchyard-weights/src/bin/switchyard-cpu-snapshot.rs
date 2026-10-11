@@ -16,8 +16,9 @@ fn main() {
             runtime_root: PathBuf,
             #[arg(long)]
             runtime_manifest: PathBuf,
+            /// Exact native launch arguments and preparation environment JSON.
             #[arg(long)]
-            tokenizer: Option<PathBuf>,
+            serving_config: PathBuf,
             #[arg(long)]
             out: PathBuf,
             #[arg(long, default_value = "/usr/bin/criu")]
@@ -44,13 +45,13 @@ fn main() {
         Action::Prepare {
             runtime_root,
             runtime_manifest,
-            tokenizer,
+            serving_config,
             out,
             criu,
         } => cpu_snapshot::prepare(cpu_snapshot::Prepare {
             runtime_root,
             runtime_manifest,
-            tokenizer,
+            serving_config,
             out,
             criu,
         }),

@@ -18,12 +18,15 @@ import traceback
 
 OUTPUT = os.environ.get("NATIVE_STARTUP_PROFILE")
 TARGETS = {
+    "switchyard_final_state": ["validate_destinations"],
     "multiprocessing.process": ["BaseProcess.start"],
-    "torch.cuda": ["_lazy_init"],
     "vllm.utils.system_utils": ["get_mp_context", "_maybe_force_spawn"],
     "torch._C": ["_cuda_init"],
     "torch.accelerator": ["set_device_index"],
-    "torch.cuda": ["init"],
+    "torch.cuda": ["init", "_lazy_init"],
+    "vllm.renderers": ["renderer_from_config"],
+    "vllm.v1.engine.input_processor": ["InputProcessor.__init__"],
+    "vllm.v1.engine.output_processor": ["OutputProcessor.__init__"],
     "vllm.v1.engine.utils": ["CoreEngineProcManager.__init__"],
     "vllm.engine.arg_utils": [
         "EngineArgs.create_engine_config",
@@ -194,6 +197,66 @@ def wrap(function, label):
             return function(*args, **kwargs)
         except BaseException as caught:
             error = type(caught).__name__
+            if (
+                label == "switchyard_final_state.validate_destinations"
+                and len(args) >= 2
+            ):
+                expected = args[0].get("layout", {})
+                actual = {
+                    name: {
+                        "shape": list(t.shape),
+                        "dtype": str(t.dtype),
+                        "stride": list(t.stride()),
+                    }
+                    for name, t in args[1].items()
+                }
+                differences = [
+                    {
+                        "name": name,
+                        "expected": expected.get(name),
+                        "actual": actual.get(name),
+                    }
+                    for name in sorted(expected.keys() | actual.keys())
+                    if expected.get(name) != actual.get(name)
+                ]
+                record(
+                    {
+                        "kind": "tensor_layout_mismatch",
+                        "expected_count": len(expected),
+                        "actual_count": len(actual),
+                        "difference_count": len(differences),
+                        "differences": differences[:8],
+                    }
+                )
+                frame = sys._getframe(1)
+                while frame:
+                    model_config = frame.f_locals.get("model_config")
+                    if model_config is not None and hasattr(
+                        model_config, "hf_text_config"
+                    ):
+                        record(
+                            {
+                                "kind": "model_config_at_layout_mismatch",
+                                "text_tied_embeddings": model_config.hf_text_config.tie_word_embeddings,
+                                "root_tied_embeddings": model_config.hf_config.tie_word_embeddings,
+                            }
+                        )
+                        break
+                    frame = frame.f_back
+                record(
+                    {
+                        "kind": "embedding_alias_at_layout_mismatch",
+                        "tensors": {
+                            name: {
+                                "pointer": tensor.data_ptr(),
+                                "storage": tensor.untyped_storage().data_ptr(),
+                            }
+                            for name, tensor in args[1].items()
+                            if name.endswith("embed_tokens.weight")
+                            or name.endswith("lm_head.weight")
+                        },
+                    }
+                )
             raise
         finally:
             finish(started, depth, error)
@@ -224,9 +287,21 @@ def patch(name):
             function = wrap(descriptor.__func__, name + "." + target)
             setattr(owner, parts[-1], type(descriptor)(function))
         else:
-            setattr(
-                owner, parts[-1], wrap(getattr(owner, parts[-1]), name + "." + target)
-            )
+            original = getattr(owner, parts[-1])
+            wrapped = wrap(original, name + "." + target)
+            setattr(owner, parts[-1], wrapped)
+            # Restored modules already hold references from `from ... import`.
+            # Rebind their module globals too; patching only the defining module
+            # misses calls through those preserved native aliases.
+            if len(parts) == 1 and name.startswith("vllm."):
+                for loaded in tuple(sys.modules.values()):
+                    if loaded is None or not getattr(loaded, "__name__", "").startswith(
+                        "vllm."
+                    ):
+                        continue
+                    for alias, value in tuple(vars(loaded).items()):
+                        if value is original:
+                            setattr(loaded, alias, wrapped)
 
 
 def importing(original, name, *args, **kwargs):

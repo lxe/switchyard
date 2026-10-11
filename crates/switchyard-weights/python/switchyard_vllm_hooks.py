@@ -236,6 +236,10 @@ def install(policy=None):
     install_serving_profile(
         policy, importlib.import_module("vllm.v1.worker.gpu_worker"), record
     )
+    if os.environ.get("SWITCHYARD_CPU_PREPARE_ADDRESS"):
+        from switchyard_cpu_tree import install_worker_boundary
+
+        install_worker_boundary(importlib.import_module("vllm.v1.worker.gpu_worker"))
     _installed_pid = os.getpid()
     record(policy, "native_hooks_ready")
 

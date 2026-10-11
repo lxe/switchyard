@@ -53,8 +53,8 @@
         {
           "name": "cpu-process",
           "artifact": {
-            "id": "4dcffc33b090c8cf565bfa5dbc0222f5f0634592d4b845742ad1bfd3f5ca9460",
-            "prefix": "local-cpu-process/4dcffc33b090c8cf565bfa5dbc0222f5f0634592d4b845742ad1bfd3f5ca9460"
+            "id": "178d92c5c76aa55f487484c795a05fcde730da7b095279b8bec54fa03d89b114",
+            "prefix": "local-cpu-process/178d92c5c76aa55f487484c795a05fcde730da7b095279b8bec54fa03d89b114"
           },
           "compatibility": {
             "architecture": "x86_64",
@@ -78,8 +78,8 @@
           "name": "compiled",
           "gpu": "RTX5090",
           "artifact": {
-            "id": "dc777a3aafb5870f247c401f1c0a7ed8d7ebd8817fc2e8617b6eb24dc3941e50",
-            "prefix": "local-final-cache/dc777a3aafb5870f247c401f1c0a7ed8d7ebd8817fc2e8617b6eb24dc3941e50"
+            "id": "c1c09ab18b96700ba65f7796cfd88f558244ec6732272c4cb67e184866a2185b",
+            "prefix": "local-final-cache/c1c09ab18b96700ba65f7796cfd88f558244ec6732272c4cb67e184866a2185b"
           },
           "compatibility": {
             "architecture": "x86_64",
@@ -93,7 +93,7 @@
             "runtime_id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
             "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
             "model_content_id": "b412c698a5a67efd4f2b57484406cb52cbf5b000b95ebd991d98bf3aafd98f32",
-            "weight_loader": "b506dd3139c76ba933920985b0b67784e772174331b10a40741786af7d2cb52b",
+            "weight_loader": "dd46b40a7032f0030ba184388dd3b60405ef6804d3a3d044f06d344bbb8d5d07",
             "engine_arguments": "3311973b68535cd2b24292615351cdef7b33788143357ea22837dee80abfc768",
             "gpu": "RTX5090",
             "compute_capability": "12.0"
