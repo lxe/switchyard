@@ -292,11 +292,28 @@ impl ExecutionConfig {
                 }
             }
             let mut cache_keys = std::collections::BTreeSet::new();
+            let mut cache_counts = std::collections::BTreeMap::new();
             for cache in &m.caches {
                 cache.validate()?;
                 let runtime = self.bootstrap.runtime.as_ref().ok_or_else(|| {
                     Error::Config("serving caches require a hydrated runtime".into())
                 })?;
+                if runtime
+                    .components
+                    .iter()
+                    .any(|part| part.name == cache.name)
+                {
+                    return Err(Error::Config(
+                        "runtime component and cache names must be distinct".into(),
+                    ));
+                }
+                let selected_cache_count = cache_counts.entry(&cache.gpu).or_insert(0_usize);
+                *selected_cache_count += 1;
+                if runtime.components.len() + *selected_cache_count > 64 {
+                    return Err(Error::Config(
+                        "too many runtime dependencies for a GPU".into(),
+                    ));
+                }
                 cache.requirements(runtime, m)?;
                 if !cache_keys.insert((&cache.gpu, &cache.name)) {
                     return Err(Error::Config(

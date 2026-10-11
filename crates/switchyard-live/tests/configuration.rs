@@ -572,3 +572,31 @@ fn runtime_component_identity_changes_cache_fingerprint_and_empty_layout_is_comp
     runtime.components.push(runtime.components[0].clone());
     assert!(runtime.validate().is_err());
 }
+
+#[test]
+fn runtime_dependency_name_conflicts_are_rejected_before_provisioning() {
+    use switchyard_live::artifacts::{ArtifactRef, ServingRuntimeComponent};
+    let mut cfg: DeploymentConfig = serde_json::from_str(include_str!(
+        "../../../configs/runpod/qwen-extents-l40s-strict.json"
+    ))
+    .unwrap();
+    cfg.bootstrap
+        .runtime
+        .as_mut()
+        .unwrap()
+        .components
+        .push(ServingRuntimeComponent {
+            name: cfg.models[0].caches[0].name.clone(),
+            artifact: ArtifactRef {
+                prefix: "runtime/build".into(),
+                id: "a".repeat(64),
+            },
+            compatibility: Default::default(),
+        });
+    assert!(
+        cfg.validate()
+            .unwrap_err()
+            .to_string()
+            .contains("component and cache names")
+    );
+}
