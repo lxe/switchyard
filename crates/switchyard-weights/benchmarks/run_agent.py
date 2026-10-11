@@ -20,6 +20,7 @@ from pathlib import Path
 
 import requests
 from benchmark_artifacts import artifacts, named_directories, runtime_ticket
+from container_memory import ContainerMemory
 from timeline import Timeline
 
 parser = argparse.ArgumentParser()
@@ -57,6 +58,9 @@ parser.add_argument(
     help="CPU snapshot adapter binary; enables local CRIU privileges and host PID namespace",
 )
 parser.add_argument("--image", default="ghcr.io/lxe/switchyard-runtime:ubuntu24.04")
+parser.add_argument(
+    "--memory-limit", default="8g", help="Owned container RAM cap; swap disabled"
+)
 parser.add_argument("--model-delay", type=float, default=0)
 parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="both")
 parser.add_argument(
@@ -335,6 +339,7 @@ try:
         profile_follower = None
         log_follower = None
         log_process = None
+        memory = None
         if timeline:
             timeline.emit(
                 "rollout_started",
@@ -474,6 +479,10 @@ try:
             "device=0",
             "--shm-size",
             "8g",
+            "--memory",
+            args.memory_limit,
+            "--memory-swap",
+            args.memory_limit,
             "--add-host",
             "host.docker.internal:host-gateway",
             "-p",
@@ -553,6 +562,7 @@ try:
                     ["docker", "inspect", "--format", "{{.State.Pid}}", name], text=True
                 )
             )
+            memory = ContainerMemory(pid, root / "container-memory.jsonl", timeline)
             stat = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
             tick_seconds = 1 / os.sysconf("SC_CLK_TCK")
             boot_start = int(stat[19]) * tick_seconds
@@ -784,6 +794,8 @@ try:
                         "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration.",
                     }
             result = {
+                "container_memory": memory.summary(),
+                "container_memory_limit": args.memory_limit,
                 "request_to_ready_seconds": ready_at,
                 "request_to_first_useful_token_seconds": first,
                 "direct_request_to_first_token_seconds": epoch
@@ -857,6 +869,8 @@ try:
             )
             raise
         finally:
+            if memory is not None:
+                memory.close()
             if args.profile_startup:
                 subprocess.run(
                     [
