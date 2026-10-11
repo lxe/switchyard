@@ -75,9 +75,15 @@ impl ExtentHydration {
         } else {
             reqwest::StatusCode::OK
         };
+        if shared.cancelled.load(Ordering::Acquire) {
+            return Err(Error::Cancelled);
+        }
         if response.status() != expected_status {
             let mut failure = TransportFailure::local("status");
             failure.status = Some(response.status().as_u16());
+            if shared.cancelled.load(Ordering::Acquire) {
+                return Err(Error::Cancelled);
+            }
             trace.failure(failure);
             return Err(Error::Http(response.status().as_u16()));
         }
@@ -89,6 +95,9 @@ impl ExtentHydration {
                 .content_length()
                 .is_some_and(|length| length != extent.length)
         {
+            if shared.cancelled.load(Ordering::Acquire) {
+                return Err(Error::Cancelled);
+            }
             trace.failure(TransportFailure::local("length_or_encoding"));
             return Err(Error::Integrity("extent HTTP length or encoding".into()));
         }
@@ -105,6 +114,9 @@ impl ExtentHydration {
                 .and_then(|h| h.to_str().ok())
                 != Some(expected.as_str())
             {
+                if shared.cancelled.load(Ordering::Acquire) {
+                    return Err(Error::Cancelled);
+                }
                 trace.failure(TransportFailure::local("content_range"));
                 return Err(Error::Integrity("extent HTTP content-range".into()));
             }

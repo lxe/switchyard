@@ -31,6 +31,26 @@ impl Drop for Scratch {
         let _ = fs::remove_dir_all(&self.0);
     }
 }
+#[test]
+fn loader_paths_are_stable_and_refuse_an_existing_owner() {
+    let mut nonce = [0; 8];
+    getrandom::fill(&mut nonce).unwrap();
+    let scratch =
+        Scratch(std::env::temp_dir().join(format!("extent-path-{:x}", u64::from_le_bytes(nonce))));
+    fs::create_dir(&scratch.0).unwrap();
+    let content = "a".repeat(64);
+    let loader = switchyard_weights::VllmLoaderConfig::default();
+    let first = sidecar(&scratch.0, &content, &loader).unwrap();
+    let path = first.root.clone();
+    fs::write(path.join("owner-data"), b"preserve active owner").unwrap();
+    assert!(sidecar(&scratch.0, &content, &loader).is_err());
+    assert!(path.join("owner-data").is_file());
+    drop(first);
+    let second = sidecar(&scratch.0, &content, &loader).unwrap();
+    assert_eq!(second.root, path);
+    let different = sidecar(&scratch.0, &"b".repeat(64), &loader).unwrap();
+    assert_ne!(different.root, path);
+}
 async fn until(mut f: impl FnMut() -> bool) {
     tokio::time::timeout(Duration::from_secs(5), async {
         while !f() {

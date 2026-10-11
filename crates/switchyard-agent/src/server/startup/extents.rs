@@ -31,14 +31,24 @@ impl Drop for Sidecar {
         let _ = fs::remove_dir_all(&self.root);
     }
 }
-fn sidecar(root: &Path) -> Result<Arc<Sidecar>> {
-    let mut random = [0_u8; 12];
-    getrandom::fill(&mut random).map_err(|_| Error::Task)?;
-    let suffix = random
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect::<String>();
-    let root = root.join(format!(".model-loader-{suffix}"));
+fn sidecar(
+    root: &Path,
+    content_id: &str,
+    loader: &switchyard_weights::VllmLoaderConfig,
+) -> Result<Arc<Sidecar>> {
+    // vLLM includes the model path in compilation/startup-plan fingerprints.
+    // Exclusive creation protects an existing process while identical content
+    // and adapter settings receive identical paths across clean launches.
+    use sha2::{Digest, Sha256};
+    let identity = format!(
+        "{:x}",
+        Sha256::digest(format!(
+            "switchyard-loader-path-v1:{content_id}:{}",
+            loader.identity()?
+        )),
+    );
+    // Keep the socket pathname within the same bound as the old 24-character nonce.
+    let root = root.join(format!(".model-loader-{}", &identity[..24]));
     fs::create_dir(&root)?;
     use std::os::unix::fs::PermissionsExt;
     fs::set_permissions(&root, fs::Permissions::from_mode(0o700))?;
@@ -102,7 +112,7 @@ pub(super) async fn prepare(
         .ok_or_else(|| Error::Manifest("extent model needs a selected Python runtime".into()))?;
     loader.validate()?;
     let limit = Arc::new(Semaphore::new(ticket.concurrency));
-    let owner = sidecar(&roots.models)?;
+    let owner = sidecar(&roots.models, &artifact.manifest.content_id, loader)?;
     let diagnostic = crate::transport::TransportDiagnostics::default();
     state.write().await.model_transport = Some(diagnostic.clone());
     let hydration = Arc::new(ExtentHydration::prepare(

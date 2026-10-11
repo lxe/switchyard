@@ -74,8 +74,13 @@ impl WeightBridge {
             }
             let mut unexpected = [0_u8; 1];
             let ready = tokio::select! {
-                ready=stream.next_ready(hydration)=>ready?,
-                result=input.read(&mut unexpected)=>{if result?==0{return Err(Error::Cancelled);}return Err(Error::Invalid("pipelined weights bridge command".into()));}
+                ready = stream.next_ready(hydration) => ready?,
+                result = input.read(&mut unexpected) => {
+                    if result? == 0 {
+                        return Err(Error::Cancelled);
+                    }
+                    return Err(Error::Invalid("pipelined weights bridge command".into()));
+                }
             };
             let Some(ready) = ready else {
                 output.write_all(b"{\"done\":true}\n").await?;
@@ -119,7 +124,11 @@ impl WeightBridge {
                 std::collections::btree_map::Entry::Occupied(e) => e.into_mut(),
                 std::collections::btree_map::Entry::Vacant(e) => e.insert(ready.bytes.open_file()?),
             };
-            let message = serde_json::json!({"tensor":ready.tensor,"path":format!("/proc/{}/fd/{}",std::process::id(),file.as_raw_fd()),"ready_seconds":epoch.elapsed().as_secs_f64()});
+            let message = serde_json::json!({
+                "tensor": ready.tensor,
+                "path": format!("/proc/{}/fd/{}", std::process::id(), file.as_raw_fd()),
+                "ready_seconds": epoch.elapsed().as_secs_f64(),
+            });
             output.write_all(&serde_json::to_vec(&message)?).await?;
             output.write_all(b"\n").await?;
             report.tensors_delivered += 1;

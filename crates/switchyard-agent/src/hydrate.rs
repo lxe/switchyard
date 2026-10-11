@@ -497,24 +497,58 @@ fn extract_shard(
     dest: &Path,
     seen: &Mutex<BTreeSet<String>>,
 ) -> Result<()> {
-    let mut reader: Box<dyn Read> = Box::new(io::empty());
-    for chunk in shard {
+    let pieces = shard.iter().map(|chunk| {
         let file = std::fs::File::open(chunks.join(&chunk.name))?;
         let piece: Box<dyn Read> = if manifest.compress == "zstd" {
             Box::new(zstd::stream::read::Decoder::new(file)?)
         } else {
             Box::new(file)
         };
-        reader = Box::new(reader.chain(ExactReader {
+        Ok(ExactReader {
             inner: piece,
             remaining: chunk.raw,
             checked_end: false,
-        }));
-    }
+        })
+    });
+    let reader = SequentialReader {
+        pieces,
+        current: None,
+    };
     let mut archive = tar::Archive::new(reader);
     extract_reader(manifest, &mut archive, dest, seen)?;
     io::copy(&mut archive.into_inner(), &mut io::sink())?;
     Ok(())
+}
+
+/// Construct each piece only when needed and release its decoder at EOF.
+/// Nested `Read::chain` retains every completed reader until the archive ends.
+struct SequentialReader<I, R> {
+    pieces: I,
+    current: Option<R>,
+}
+impl<I, R> Read for SequentialReader<I, R>
+where
+    I: Iterator<Item = io::Result<R>>,
+    R: Read,
+{
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        if buffer.is_empty() {
+            return Ok(0);
+        }
+        loop {
+            if let Some(reader) = &mut self.current {
+                let n = reader.read(buffer)?;
+                if n != 0 {
+                    return Ok(n);
+                }
+                self.current = None;
+            }
+            self.current = self.pieces.next().transpose()?;
+            if self.current.is_none() {
+                return Ok(0);
+            }
+        }
+    }
 }
 
 fn extract_reader<R: Read>(

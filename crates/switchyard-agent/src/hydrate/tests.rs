@@ -33,6 +33,41 @@ fn sha(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+#[test]
+fn sequential_archive_reader_releases_each_piece_before_constructing_next() {
+    struct Piece {
+        bytes: io::Cursor<Vec<u8>>,
+        live: Arc<AtomicUsize>,
+    }
+    impl Read for Piece {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            self.bytes.read(buffer)
+        }
+    }
+    impl Drop for Piece {
+        fn drop(&mut self) {
+            self.live.fetch_sub(1, Ordering::Relaxed);
+        }
+    }
+    let live = Arc::new(AtomicUsize::new(0));
+    let constructing = live.clone();
+    let pieces = (0_u8..32).map(move |value| {
+        assert_eq!(constructing.fetch_add(1, Ordering::Relaxed), 0);
+        Ok(Piece {
+            bytes: io::Cursor::new(vec![value]),
+            live: constructing.clone(),
+        })
+    });
+    let mut reader = SequentialReader {
+        pieces,
+        current: None,
+    };
+    let mut bytes = Vec::new();
+    reader.read_to_end(&mut bytes).unwrap();
+    assert_eq!(bytes, (0_u8..32).collect::<Vec<_>>());
+    assert_eq!(live.load(Ordering::Relaxed), 0);
+}
+
 fn tar_files(files: &[(&str, &[u8])]) -> Vec<u8> {
     let mut archive = tar::Builder::new(Vec::new());
     for (name, bytes) in files {

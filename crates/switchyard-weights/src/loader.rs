@@ -9,11 +9,17 @@ use switchyard_artifacts::{Error, Result};
 
 const ADAPTER: &str = include_str!("../python/switchyard_extent_loader.py");
 const RUNNER: &str = r#"import runpy, sys
-import vllm
-if sys.stdin.readline() != 'switchyard-metadata-ready-v1\n':
-    raise RuntimeError('metadata readiness gate cancelled')
-sys.argv = ['vllm'] + sys.argv[1:]
-runpy.run_module('vllm.entrypoints.cli.main', run_name='__main__')
+
+def main():
+    import vllm
+    if sys.stdin.readline() != 'switchyard-metadata-ready-v1\n':
+        raise RuntimeError('metadata readiness gate cancelled')
+    sys.stdin.close()
+    sys.argv = ['vllm'] + sys.argv[1:]
+    runpy.run_module('vllm.entrypoints.cli.main', run_name='__main__')
+
+if __name__ == '__main__':
+    main()
 "#;
 fn python_program() -> String {
     "venv/bin/python".into()
