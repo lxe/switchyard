@@ -63,6 +63,22 @@ or compressed-cache writes. This path preserves private staging, path and entry
 constraints, and declared bounds. The `--cache` directory is only used by verified
 hydration.
 
+For independent network reception, add `--receive-buffer <directory> --retries 0`
+to trusted hydration. `--max-receive-bytes` bounds the physically allocated
+compressed backing, and `--additional-output-bytes` accounts for other allocations
+on the output filesystem. The filesystem must support allocation and consumed-prefix
+reclamation. Receivers and decoders use separate concurrency budgets; extraction
+reads each growing prefix while HTTP continues writing it. A receipt's `reception`
+field reports received, stored, consumed and reclaimed bytes, buffer occupancy and
+high-water mark, and separate receiver/consumer waits. These storage reservations
+do not establish a machine's available RAM or GPU memory budget.
+
+A [local R2 cache-artifact receipt](../../experiments/reserved-reception-r2-cache.json)
+records complete reception, extraction and reclamation through this CLI path. Its
+offline content verification ran after the timed trusted hydration. The artifact
+is small and the host is a workstation; this result does not measure a cloud
+model's cold start or the network link's capacity.
+
 ## Download measurements
 
 `switchyard artifacts probe --config fleet.json --env-file credentials.env

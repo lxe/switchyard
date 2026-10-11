@@ -96,7 +96,7 @@ impl ExtentHydration {
                     notified.as_mut().enable();
                     if shared.cancelled.load(Ordering::Acquire) {
                         return Err(std::io::Error::new(
-                            std::io::ErrorKind::Interrupted,
+                            std::io::ErrorKind::ConnectionAborted,
                             "cancelled",
                         ));
                     }

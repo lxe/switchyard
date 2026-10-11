@@ -393,6 +393,9 @@ async fn hydrate_cli_records_qualified_transfer_tail_and_warm_reuse_without_netw
             concurrency: 20,
             extraction_concurrency: 20,
             trusted_streaming: true,
+            receive_buffer: None,
+            max_receive_bytes: 64 << 30,
+            additional_output_bytes: 0,
             attempt_timeout_s: 10,
             stall_timeout_s: 2,
             retries,
@@ -460,4 +463,50 @@ async fn cancelling_probe_drops_its_transfer_queue_without_more_requests_or_disk
     tokio::time::sleep(Duration::from_millis(25)).await;
     assert_eq!(fixture.state.requests.load(Ordering::Relaxed), 3);
     assert_eq!(fs::read_dir(&fixture.scratch.0).unwrap().count(), before);
+}
+
+#[tokio::test]
+async fn reserved_hydration_cli_records_independent_reception_and_reclamation() {
+    let fixture = Fixture::new(
+        2,
+        Duration::from_millis(10),
+        Duration::from_millis(30),
+        0,
+        false,
+    )
+    .await;
+    let destination = fixture.scratch.0.join("buffered-output");
+    let spool = fixture.scratch.0.join("receive-buffer");
+    let receipt = fixture.scratch.0.join("buffered-receipt.json");
+    run(Command::Hydrate {
+        storage: fixture.settings(),
+        prefix: "artifacts".into(),
+        id: fixture.manifest.id.clone(),
+        destination: destination.clone(),
+        cache: fixture.scratch.0.join("unused-cache"),
+        concurrency: 20,
+        extraction_concurrency: 1,
+        trusted_streaming: true,
+        receive_buffer: Some(spool.clone()),
+        max_receive_bytes: 16 << 20,
+        additional_output_bytes: 0,
+        attempt_timeout_s: 10,
+        stall_timeout_s: 2,
+        retries: 0,
+        receipt: Some(receipt.clone()),
+    })
+    .await
+    .unwrap();
+    let receipt: HydrationReceipt = serde_json::from_slice(&fs::read(receipt).unwrap()).unwrap();
+    let reception = receipt.reception.unwrap();
+    assert_eq!(reception.network_received_bytes, receipt.declared_bytes);
+    assert_eq!(reception.storage_written_bytes, receipt.declared_bytes);
+    assert_eq!(reception.compressed_consumed_bytes, receipt.declared_bytes);
+    assert_eq!(reception.reclaimed_bytes, reception.reserved_bytes);
+    assert_eq!(reception.buffered_bytes, 0);
+    assert!(reception.buffer_high_water_bytes > 0);
+    assert!(reception.reception_complete_seconds.is_some());
+    assert!(reception.extraction_complete_seconds.is_some());
+    switchyard_artifacts::verify(&destination, &fixture.manifest).unwrap();
+    assert_eq!(fs::read_dir(spool).unwrap().count(), 0);
 }

@@ -219,6 +219,9 @@ fn reserve(
     output_bytes: u64,
     cfg: &ReceiveBufferOptions,
 ) -> Result<(Vec<Arc<Piece>>, u64)> {
+    if owner.control.cancelled.load(Ordering::Relaxed) {
+        return Err(Error::Cancelled);
+    }
     paths::directory(&cfg.directory)?;
     paths::ancestors(&cfg.directory)?;
     let reserved = sizes
@@ -253,6 +256,9 @@ fn reserve(
     set_mode(&owner.spool, 0o700)?;
     let mut pieces = Vec::with_capacity(sizes.len());
     for (index, size) in sizes.iter().copied().enumerate() {
+        if owner.control.cancelled.load(Ordering::Relaxed) {
+            return Err(Error::Cancelled);
+        }
         let file = File::options()
             .create_new(true)
             .read(true)
@@ -319,7 +325,7 @@ impl Read for PrefixReader {
         }
         if self.piece.owner.control.cancelled.load(Ordering::Relaxed) {
             return Err(io::Error::new(
-                io::ErrorKind::Interrupted,
+                io::ErrorKind::ConnectionAborted,
                 "reception cancelled",
             ));
         }
@@ -652,4 +658,30 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
         already_present: false,
         reception: Some(progress),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cancelled_reservation_does_not_create_backing_or_output() {
+        let root = std::env::temp_dir().join(format!(
+            "switchyard-cancelled-reserve-{}",
+            paths::nonce().unwrap()
+        ));
+        let control = Arc::new(Control::default());
+        control.cancel();
+        let workspace = Arc::new(Workspace {
+            staging: root.join("output"),
+            spool: root.join("spool"),
+            control,
+        });
+        let options = ReceiveBufferOptions::new(root.clone());
+        assert!(matches!(
+            reserve(workspace, &[4096; 24], 4096, &options),
+            Err(Error::Cancelled)
+        ));
+        assert!(!root.exists());
+    }
 }

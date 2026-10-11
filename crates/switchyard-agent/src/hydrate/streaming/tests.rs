@@ -413,3 +413,43 @@ async fn truncated_http_body_retains_hyper_and_specific_io_causes_without_error_
             .contains("must-not-leak")
     );
 }
+
+#[test]
+fn permanent_channel_cancellation_escapes_standard_io_retry_loops() {
+    struct Bounded<R> {
+        inner: R,
+        calls: usize,
+    }
+    impl<R: Read> Read for Bounded<R> {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            self.calls += 1;
+            if self.calls > 8 {
+                return Err(io::Error::other("retry limit reached"));
+            }
+            self.inner.read(buffer)
+        }
+    }
+    for copy in [false, true] {
+        let (_sender, receiver) = mpsc::channel(1);
+        let channel = ChannelReader {
+            receiver,
+            pending: io::Cursor::new(vec![]),
+            cancelled: Arc::new(AtomicBool::new(true)),
+            trace: diagnostics(chunk(0)).transfer("piece"),
+        };
+        let mut reader = Bounded {
+            inner: channel,
+            calls: 0,
+        };
+        let error = if copy {
+            io::copy(&mut reader, &mut io::sink()).unwrap_err()
+        } else {
+            reader.read_exact(&mut [0; 512]).unwrap_err()
+        };
+        assert_eq!(error.kind(), io::ErrorKind::ConnectionAborted);
+        assert_eq!(
+            reader.calls, 1,
+            "permanent cancellation must not be retried by std::io"
+        );
+    }
+}

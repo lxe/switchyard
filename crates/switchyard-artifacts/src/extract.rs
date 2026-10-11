@@ -38,7 +38,7 @@ pub(crate) fn extract(
                             extract_chunk(cache, staging, manifest, chunk, cancelled)
                         {
                             if cancelled.load(Ordering::Relaxed)
-                                && matches!(&error, Error::Io(error) if error.kind() == std::io::ErrorKind::Interrupted)
+                                && matches!(&error, Error::Io(error) if error.kind() == std::io::ErrorKind::ConnectionAborted)
                             {
                                 return Err(Error::Cancelled);
                             }
@@ -298,7 +298,7 @@ impl<R: Read> Read for LimitedReader<'_, R> {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
         if self.cancelled.load(Ordering::Relaxed) {
             return Err(std::io::Error::new(
-                std::io::ErrorKind::Interrupted,
+                std::io::ErrorKind::ConnectionAborted,
                 "artifact hydration cancelled",
             ));
         }
@@ -317,5 +317,44 @@ impl<R: Read> Read for LimitedReader<'_, R> {
         }
         (self.progress)(count as u64);
         Ok(count)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io;
+    #[test]
+    fn cancelled_archive_reader_is_terminal_for_read_exact() {
+        struct Bounded<R> {
+            inner: R,
+            calls: usize,
+        }
+        impl<R: Read> Read for Bounded<R> {
+            fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+                self.calls += 1;
+                if self.calls > 8 {
+                    return Err(io::Error::other("retry limit reached"));
+                }
+                self.inner.read(buffer)
+            }
+        }
+        let cancellation = AtomicBool::new(true);
+        let reader = LimitedReader {
+            inner: io::Cursor::new(vec![0; 512]),
+            limit: 512,
+            bytes: 0,
+            cancelled: &cancellation,
+            progress: &|_| {},
+        };
+        let mut reader = Bounded {
+            inner: reader,
+            calls: 0,
+        };
+        assert_eq!(
+            reader.read_exact(&mut [0; 512]).unwrap_err().kind(),
+            io::ErrorKind::ConnectionAborted
+        );
+        assert_eq!(reader.calls, 1);
     }
 }

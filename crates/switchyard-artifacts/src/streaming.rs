@@ -192,13 +192,13 @@ where
                         notified.as_mut().enable();
                         if control.cancelled.load(Ordering::Relaxed) {
                             return Err(io::Error::new(
-                                io::ErrorKind::Interrupted,
+                                io::ErrorKind::ConnectionAborted,
                                 "hydration cancelled",
                             ));
                         }
                         let part = tokio::select! {
                             biased;
-                            _ = notified => return Err(io::Error::new(io::ErrorKind::Interrupted, "hydration cancelled")),
+                            _ = notified => return Err(io::Error::new(io::ErrorKind::ConnectionAborted, "hydration cancelled")),
                             part = tokio::time::timeout(stall, body.next()) => part.map_err(|_| io::Error::new(io::ErrorKind::TimedOut, "artifact body stalled"))?,
                         };
                         match part {

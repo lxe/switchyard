@@ -547,3 +547,35 @@ async fn reserved_capacity_rejection_happens_before_http() {
     assert!(fixture.staging().is_none());
     server.abort();
 }
+
+#[tokio::test]
+async fn invalid_reserved_reception_policy_is_rejected_before_http() {
+    let fixture = Fixture::new(1, 65536);
+    let (ticket, state, _gate, server) = fixture.serve(false, false).await;
+    for (mode, retries) in [
+        (HydrationMode::Verified, 0),
+        (HydrationMode::TrustedStreaming, 1),
+    ] {
+        let error = hydrate(
+            ticket.clone(),
+            &fixture.root.join("output"),
+            HydrationOptions {
+                mode,
+                retries,
+                receive_buffer: Some(ReceiveBufferOptions::new(fixture.root.join("spool"))),
+                ..fixture.options()
+            },
+            |_| {},
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("trusted streaming and zero retries")
+        );
+    }
+    assert!(state.requests.lock().unwrap().is_empty());
+    assert!(!fixture.root.join("output").exists());
+    server.abort();
+}

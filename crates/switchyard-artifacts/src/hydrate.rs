@@ -153,6 +153,13 @@ pub async fn hydrate<F>(
 where
     F: Fn(Progress) + Send + Sync + 'static,
 {
+    if options.receive_buffer.is_some()
+        && (options.mode != HydrationMode::TrustedStreaming || options.retries != 0)
+    {
+        return Err(Error::Invalid(
+            "reserved reception requires trusted streaming and zero retries".into(),
+        ));
+    }
     match options.mode {
         HydrationMode::Verified => ticket.manifest.validate()?,
         HydrationMode::TrustedStreaming => ticket.manifest.validate_structure()?,

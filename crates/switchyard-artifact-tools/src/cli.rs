@@ -130,6 +130,14 @@ pub enum Command {
         /// Stream trusted, pinned shards directly into their final staging files without hashing.
         #[arg(long)]
         trusted_streaming: bool,
+        /// Reserve compressed storage independently of extraction; requires trusted streaming and zero retries.
+        #[arg(long)]
+        receive_buffer: Option<PathBuf>,
+        #[arg(long, default_value_t = 64 * 1024 * 1024 * 1024)]
+        max_receive_bytes: u64,
+        /// Space reserved for other simultaneous allocations on the output filesystem.
+        #[arg(long, default_value_t = 0)]
+        additional_output_bytes: u64,
         /// Total deadline for one download attempt, including response streaming.
         #[arg(long, default_value_t = 600)]
         attempt_timeout_s: u64,
@@ -296,6 +304,9 @@ pub async fn run(command: Command) -> Result<()> {
             concurrency,
             extraction_concurrency,
             trusted_streaming,
+            receive_buffer,
+            max_receive_bytes,
+            additional_output_bytes,
             attempt_timeout_s,
             stall_timeout_s,
             retries,
@@ -313,6 +324,11 @@ pub async fn run(command: Command) -> Result<()> {
                     "invalid hydration reference or concurrency".into(),
                 ));
             }
+            if receive_buffer.is_some() && (!trusted_streaming || retries != 0) {
+                return Err(Error::Config(
+                    "reserved reception requires trusted streaming and zero retries".into(),
+                ));
+            }
             let controller = Instant::now();
             let store = storage(&settings)?;
             let ticket = probe::resolve(&store, &prefix, &id).await?;
@@ -326,6 +342,12 @@ pub async fn run(command: Command) -> Result<()> {
                 cache_dir: cache,
                 download_concurrency: concurrency,
                 extraction_concurrency,
+                receive_buffer: receive_buffer.map(|directory| {
+                    let mut options = switchyard_artifacts::ReceiveBufferOptions::new(directory);
+                    options.max_reserved_bytes = max_receive_bytes;
+                    options.additional_output_bytes = additional_output_bytes;
+                    options
+                }),
                 request_timeout_s: attempt_timeout_s,
                 stall_timeout_s,
                 retries,

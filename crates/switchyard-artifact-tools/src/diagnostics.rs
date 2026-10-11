@@ -27,6 +27,9 @@ pub struct HydrationReceipt {
     /// Publication minus the final transfer observation: a lower bound on the actual tail.
     pub post_transfer_observation_s: Option<f64>,
     pub timing_qualification: String,
+    /// Independent reception/extraction counters when reserved buffering was enabled.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reception: Option<switchyard_artifacts::ReceptionProgress>,
 }
 
 #[derive(Default)]
@@ -114,6 +117,7 @@ impl HydrationTiming {
             all_network_bytes_observed_elapsed_s: complete,
             post_transfer_observation_s: complete.map(|time| (hydration_elapsed_s - time).max(0.0)),
             timing_qualification: timing_qualification.into(),
+            reception: report.reception,
         }
     }
 }

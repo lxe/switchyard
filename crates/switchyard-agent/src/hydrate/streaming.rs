@@ -464,7 +464,7 @@ impl Read for ChannelReader {
         loop {
             if self.cancelled.load(Ordering::Relaxed) {
                 return Err(io::Error::new(
-                    io::ErrorKind::Interrupted,
+                    io::ErrorKind::ConnectionAborted,
                     "model hydration cancelled",
                 ));
             }
