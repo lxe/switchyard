@@ -24,10 +24,10 @@ The profile has schema version 1 and purpose `fixed_serving_budget`. It binds th
 
 ## Preparation and integration
 
-Root dispatches `scratch/engine-startup/bake-production-engine.sh` in existing tmux `0`. It writes native final model files, warmed cache files and `serving-profile.unbound.json` under `results/engine-startup/production-engine-bake`. Callable worker serialization is enabled only in this owned preparation process. It captures no GPU process checkpoint.
+The [preparation helper](../crates/switchyard-weights/benchmarks/bake_serving_engine.py) runs against the selected runtime and model on the target GPU. It writes native final model files, warmed cache files and `serving-profile.unbound.json` to a private output directory. Callable worker serialization is enabled only in this preparation process. It captures no GPU process checkpoint.
 
-Pack `production-engine-bake/model` with `switchyard-weights pack SOURCE OUTPUT --extent-bytes 4194304`. Set the profile's `model_content_id` to that new manifest's content ID, then place the bound file at `cache/compiled/serving-profile.json` and pack the cache. Cache compatibility must use the selected final model content ID, current loader v3 identity and serving arguments.
+Pack the exported model with `switchyard-weights pack SOURCE OUTPUT --extent-bytes 4194304`. Set the profile's `model_content_id` to that new manifest's content ID, then place the bound file at `cache/compiled/serving-profile.json` and pack the cache. Cache compatibility must use the selected final model content ID, current loader v3 identity and serving arguments.
 
 The loader bundle includes `switchyard_final_state.py` and `switchyard_serving_profile.py`; both participate in its v3 source identity. CPU preparation must import this same bundle. The agent injects `SWITCHYARD_MODEL_CONTENT_ID` into the engine child so the profile validates the actual artifact, including after a CPU process restore.
 
-The single consolidated CUDA rollout belongs to root. Focused CPU checks cover budget admission, layout mismatch, direct named copies and incomplete-state rejection. They do not establish CUDA correctness; that requires the final-artifact rollout.
+Focused CPU checks cover budget admission, layout mismatch, direct named copies and incomplete-state rejection. CUDA correctness requires a serving rollout using the packed final artifact and its matching profile.
