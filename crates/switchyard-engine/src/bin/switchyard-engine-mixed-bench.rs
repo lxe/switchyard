@@ -108,6 +108,7 @@ fn main() -> Result<()> {
         || gate["comparisons"]["independent"]["passed"] != true
         || gate["comparisons"]["published"]["passed"] != true
         || gate["requests"] != serde_json::to_value(&requests)?
+        || gate["config"] != serde_json::to_value(&config)?
         || requests
             .iter()
             .map(|r| r.prompt.len())

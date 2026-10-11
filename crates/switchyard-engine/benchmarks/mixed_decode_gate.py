@@ -43,6 +43,10 @@ def compare(args):
     independent = json.loads(args.independent.read_text())
     traces_path = args.traces or args.candidate.with_name('traces.json')
     traces = json.loads(traces_path.read_text())
+    config_path = args.config or traces_path.with_name('f32.config.json')
+    config = json.loads(config_path.read_text())
+    if config['dtype'] != 'f32':
+        raise ValueError('This numerical gate requires F32')
     if len(candidate) != len(independent) or len(candidate) != len(traces) or not candidate:
         raise ValueError('Probe row counts differ or are empty')
     reference = []
@@ -73,9 +77,9 @@ def compare(args):
     requests = [{'prompt': t['prompt'], 'max_tokens': len(t['continuation']),
                  'ignore_eos': True} for t in traces]
     result = {'passed': all(r['passed'] is True for r in reports.values()), 'comparisons': reports,
-              'requests': requests, 'inputs_sha256': {
+              'requests': requests, 'config': config, 'inputs_sha256': {
                   name: hashlib.sha256(path.read_bytes()).hexdigest()
-                  for name, path in [('traces', traces_path), ('merged', args.candidate),
+                  for name, path in [('traces', traces_path), ('config', config_path), ('merged', args.candidate),
                                      ('independent', args.independent), ('published', args.reference)]}}
     (args.output / 'gate.json').write_text(json.dumps(result, indent=2) + '\n')
     raise SystemExit(0 if result['passed'] else 1)
@@ -93,6 +97,7 @@ def main():
     check.add_argument('--independent', type=Path, required=True)
     check.add_argument('--reference', type=Path, required=True)
     check.add_argument('--traces', type=Path, help='Defaults to traces.json beside candidate')
+    check.add_argument('--config', type=Path, help='Defaults to f32.config.json beside traces')
     check.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     if args.command == 'prepare':
