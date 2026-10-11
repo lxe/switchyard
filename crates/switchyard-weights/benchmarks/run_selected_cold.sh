@@ -16,6 +16,6 @@ python -u "$selected_project/crates/switchyard-weights/benchmarks/run_agent.py" 
   --component-objects "build=$selected_partition/components/build/artifact" \
   --cache-objects "compiled=$selected_project/results/engine-startup/selected-native-cache/artifact-selected-identity" \
   --agent "$selected_project/target/artifacts/switchyard-agent-x86_64-linux-musl" \
-  --mode extents --profile-startup --live-timeline --skip-tokenize-check \
+  --mode extents --profile-startup --live-timeline \
   2>&1 | tee "$selected_output.console.log"
 printf '[rollout] Completed successfully; receipt at %s/extents/receipt.json\n' "$selected_output"

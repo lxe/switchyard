@@ -61,11 +61,6 @@ parser.add_argument(
 )
 parser.add_argument("--profile-startup", action="store_true")
 parser.add_argument("--live-timeline", action="store_true")
-parser.add_argument(
-    "--skip-tokenize-check",
-    action="store_true",
-    help="Submit the measured streaming request directly after readiness",
-)
 parser.add_argument("--env-override-source", type=Path)
 parser.add_argument("--cli-main-source", type=Path)
 parser.add_argument(
@@ -608,25 +603,6 @@ try:
             ready_at = time.monotonic() - epoch
             if timeline:
                 timeline.emit("agent_ready_observed")
-            tokenized = None
-            if not args.skip_tokenize_check:
-                tokenized = requests.post(
-                    endpoint + "/tokenize",
-                    headers=headers,
-                    json={
-                        "model": "qwen-local",
-                        "messages": [
-                            {
-                                "role": "user",
-                                "content": "Reply with exactly the word Paris.",
-                            }
-                        ],
-                        "chat_template_kwargs": {"enable_thinking": False},
-                    },
-                    timeout=30,
-                )
-                tokenized.raise_for_status()
-                assert tokenized.json()["count"] > 0
             first = None
             fragments = []
             request_started = time.monotonic()
@@ -786,7 +762,6 @@ try:
                 + first
                 - request_started,
                 "completion": "".join(fragments),
-                "tokenized_count": tokenized.json()["count"] if tokenized else None,
                 "concurrent_verification": concurrent_verification,
                 "decode_benchmark": decode_benchmark,
                 "agent_state": last,
