@@ -8,6 +8,7 @@ license.workspace = true
 description = "Build-time assembly of fixed-prefix serving hydration artifacts"
 
 [dependencies]
+serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 reqwest.workspace = true

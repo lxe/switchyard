@@ -9,6 +9,7 @@ mod cuda;
 mod download;
 mod filesystem;
 mod native;
+mod patches;
 
 use command::{capture, run};
 use download::{download, sha256};
@@ -131,8 +132,6 @@ async fn main() -> Result<()> {
     ] {
         copy_file(&build.join(filename), &root.join(filename))?;
     }
-    bytecode::compile(root)?;
-    internalize_symlinks(root)?;
     let output = Command::new(&uv)
         .args([
             "pip",
@@ -147,6 +146,9 @@ async fn main() -> Result<()> {
         return Err("cannot record installed Python packages".into());
     }
     let packages: Value = serde_json::from_slice(&output.stdout)?;
+    let source_patches = patches::apply(build, root, &lock, &packages)?;
+    bytecode::compile(root)?;
+    internalize_symlinks(root)?;
     let python_version = lock["python"]["version"]
         .as_str()
         .ok_or("missing Python version")?;
@@ -173,7 +175,7 @@ async fn main() -> Result<()> {
         &json!({"schema_version": 1, "sources": lock,
         "sources_sha256": sources_hash, "builder_sha256": builder_hash,
         "requirements_sha256": requirements_hash, "packages": packages, "apt_packages": apt,
-        "native_libraries": native, "gpu_bake_performed": false,
+        "native_libraries": native, "source_patches": source_patches, "gpu_bake_performed": false,
         "python_bytecode_invalidation": bytecode::INVALIDATION_MODE}),
     )?;
     write_json(
