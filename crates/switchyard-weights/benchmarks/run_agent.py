@@ -51,6 +51,11 @@ parser.add_argument(
     help="Exact engine args JSON; {model_root} expands to owned model path",
 )
 parser.add_argument("--agent", type=Path, required=True)
+parser.add_argument(
+    "--cpu-restore",
+    type=Path,
+    help="CPU snapshot adapter binary; enables local CRIU privileges and host PID namespace",
+)
 parser.add_argument("--image", default="ghcr.io/lxe/switchyard-runtime:ubuntu24.04")
 parser.add_argument("--model-delay", type=float, default=0)
 parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="both")
@@ -386,6 +391,8 @@ try:
         for assignment in args.runtime_env:
             key, value = assignment.split("=", 1)
             runtime["environment"][key] = value
+        if args.cpu_restore:
+            runtime["environment"]["VLLM_CPU_SNAPSHOT_PROGRAM"] = "/cpu-restore"
         current_ticket = {
             "model": "qwen-local",
             "revision": "2fc06364715b967f1860aea9cf38778875588b17",
@@ -487,6 +494,17 @@ try:
         ]
         if timeline:
             timeline.emit("container_launch_started")
+        if args.cpu_restore:
+            # The snapshot was prepared with this same local namespace policy.
+            # This fixture does not establish provider checkpoint privileges.
+            position = command.index("--entrypoint")
+            command[position:position] = [
+                "--privileged",
+                "--pid",
+                "host",
+                "-v",
+                str(args.cpu_restore.resolve()) + ":/cpu-restore:ro",
+            ]
         subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
         if timeline:
             timeline.emit("container_launch_returned")
@@ -503,10 +521,14 @@ try:
                 with (root / "engine-startup.jsonl").open("w") as raw:
                     for line in log_process.stdout:
                         marker = next(
-                            (prefix for prefix in (
-                                "SWITCHYARD_ENGINE_STARTUP ",
-                                "SWITCHYARD_CPU_SNAPSHOT ",
-                            ) if prefix in line),
+                            (
+                                prefix
+                                for prefix in (
+                                    "SWITCHYARD_ENGINE_STARTUP ",
+                                    "SWITCHYARD_CPU_SNAPSHOT ",
+                                )
+                                if prefix in line
+                            ),
                             None,
                         )
                         if marker is not None:
