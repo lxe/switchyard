@@ -1,0 +1,801 @@
+{
+  "receipt": {
+    "run": "results/cloud-vllm-0.8b-sampling-aot-mo",
+    "started_at": "2026-10-11T04:34:20.956265+00:00",
+    "controller_exit": 0,
+    "elapsed_s": 99.64407415299866,
+    "reason": null,
+    "estimated_rental_usd": 0.028267852787870546,
+    "receipts": [
+      {
+        "cleanup_failures": [],
+        "estimated_rental_usd": 0.028267852787870546,
+        "pods": [
+          {
+            "allocated_s": 1.623879332,
+            "ended_s": 94.056275906,
+            "pod": {
+              "cost": 1.09,
+              "data_center": "US-MO-1",
+              "id": "zopjp5wws3356l",
+              "name": "switchyard-1a3138439f5119ef-0",
+              "status": "running"
+            },
+            "profile": 0,
+            "quoted": {
+              "availability": "LOW",
+              "data_center": "US-MO-1",
+              "disk_usd_per_hour": 0.010958904109589041,
+              "gpu": "NVIDIA L40S",
+              "gpu_memory_gb": 48,
+              "gpu_usd_per_hour": 1.09,
+              "quoted_at_unix_s": 1791693261
+            }
+          }
+        ]
+      }
+    ],
+    "cleanup": [
+      {
+        "pod_id": "zopjp5wws3356l",
+        "name": "switchyard-1a3138439f5119ef-0",
+        "get_status": 404
+      }
+    ],
+    "all_absent": true
+  },
+  "startup_milestones": [
+    {
+      "event": "runtime_hydration_started",
+      "elapsed_s": 1.356207318
+    },
+    {
+      "event": "model_hydration_started",
+      "elapsed_s": 1.367174854
+    },
+    {
+      "event": "model_hydration_finished",
+      "elapsed_s": 21.577532618
+    },
+    {
+      "event": "runtime_hydration_finished",
+      "elapsed_s": 38.759188889
+    },
+    {
+      "event": "engine_spawned",
+      "elapsed_s": 38.759980153
+    },
+    {
+      "event": "model_gate_released",
+      "elapsed_s": 38.760006863
+    },
+    {
+      "event": "inference_verified",
+      "elapsed_s": 68.878786458
+    }
+  ],
+  "native_stage_observations": [
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 47.847858907000045,
+      "ts": "2026-10-11T04:35:08.741333321Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10379007.472062279, \"pid\": 550}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 56.418296806998114,
+      "ts": "2026-10-11T04:35:15.800059871Z",
+      "line": "switchyard preimport completed in 7.055s"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 59.196695188999,
+      "ts": "2026-10-11T04:35:20.093263343Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10379018.82393328, \"pid\": 916}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 64.92609547499887,
+      "ts": "2026-10-11T04:35:20.094822830Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10379018.825545397, \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 65.67080604500006,
+      "ts": "2026-10-11T04:35:26.568596551Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379025.299384328, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 66.37380871099958,
+      "ts": "2026-10-11T04:35:27.273265497Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.7046583369374275, \"event\": \"end\", \"monotonic_s\": 10379026.004042525, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 66.71248645499873,
+      "ts": "2026-10-11T04:35:27.273316128Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379026.004118556, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 66.71254945100009,
+      "ts": "2026-10-11T04:35:27.273319818Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379026.004177516, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 69.89005185699716,
+      "ts": "2026-10-11T04:35:30.461823210Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 3.1884502321481705, \"event\": \"end\", \"monotonic_s\": 10379029.1926286, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 69.89009468999939,
+      "ts": "2026-10-11T04:35:30.461865051Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 3.188653213903308, \"event\": \"end\", \"monotonic_s\": 10379029.192770513, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 69.89017002099718,
+      "ts": "2026-10-11T04:35:30.462810637Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"free_memory_bytes\": 47210430464, \"monotonic_s\": 10379029.193723729, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 917, \"total_memory_bytes\": 47665709056}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 69.89019419599936,
+      "ts": "2026-10-11T04:35:30.470134922Z",
+      "line": "(EngineCore pid=917) INFO 10-11 04:35:30 [startup_plan.py:123] Startup plan not applied: current free memory (43.97 GiB) is below the recorded baseline (43.97 GiB); falling back to full memory profiling."
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 69.8902142299994,
+      "ts": "2026-10-11T04:35:30.785879702Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379029.5166281, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 71.30233411600057,
+      "ts": "2026-10-11T04:35:31.810073853Z",
+      "line": "(EngineCore pid=917) INFO 10-11 04:35:31 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 71.70010890999765,
+      "ts": "2026-10-11T04:35:32.599707623Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.813782598823309, \"event\": \"end\", \"monotonic_s\": 10379031.3304114, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 72.34666117899906,
+      "ts": "2026-10-11T04:35:33.246517275Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379031.97722898, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85006477099887,
+      "ts": "2026-10-11T04:35:34.196515913Z",
+      "line": "(EngineCore pid=917) INFO 10-11 04:35:34 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.06 GiB"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85009153599822,
+      "ts": "2026-10-11T04:35:34.196570974Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.9500759113579988, \"event\": \"end\", \"monotonic_s\": 10379032.9273021, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85017405399776,
+      "ts": "2026-10-11T04:35:34.537887459Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 4.075024904683232, \"event\": \"end\", \"monotonic_s\": 10379033.268747048, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.8502172970002,
+      "ts": "2026-10-11T04:35:34.539259453Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.270159991, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85024361499745,
+      "ts": "2026-10-11T04:35:34.594452582Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.05502493679523468, \"event\": \"end\", \"monotonic_s\": 10379033.32518808, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85027242999786,
+      "ts": "2026-10-11T04:35:34.594524543Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.32525747, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.8502960529986,
+      "ts": "2026-10-11T04:35:34.594596894Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.325416105, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85147213599703,
+      "ts": "2026-10-11T04:35:34.611013433Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.341829373, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85152502799974,
+      "ts": "2026-10-11T04:35:34.641190527Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.03007752075791359, \"event\": \"end\", \"monotonic_s\": 10379033.371907404, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85154738299752,
+      "ts": "2026-10-11T04:35:34.641226077Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.371937575, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85165004299779,
+      "ts": "2026-10-11T04:35:34.696311834Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0551507081836462, \"event\": \"end\", \"monotonic_s\": 10379033.427089471, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85168295499898,
+      "ts": "2026-10-11T04:35:34.696320824Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.427122733, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85172273999706,
+      "ts": "2026-10-11T04:35:34.699641071Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.003329286351799965, \"event\": \"end\", \"monotonic_s\": 10379033.430451708, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85174114300025,
+      "ts": "2026-10-11T04:35:34.699648631Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.4304738, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.8517638739977,
+      "ts": "2026-10-11T04:35:34.917989034Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.21823120303452015, \"event\": \"end\", \"monotonic_s\": 10379033.648707, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85178897199876,
+      "ts": "2026-10-11T04:35:34.918030395Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.648744661, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85180755200054,
+      "ts": "2026-10-11T04:35:34.918085246Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.4020671844482422e-05, \"event\": \"end\", \"monotonic_s\": 10379033.648768011, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85183125599724,
+      "ts": "2026-10-11T04:35:34.918095586Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.648779891, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85184944299908,
+      "ts": "2026-10-11T04:35:34.918137527Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.452924132347107e-06, \"event\": \"end\", \"monotonic_s\": 10379033.648788933, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85187163799856,
+      "ts": "2026-10-11T04:35:34.918143367Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.648805471, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85188946500057,
+      "ts": "2026-10-11T04:35:34.918148917Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 8.141621947288513e-06, \"event\": \"end\", \"monotonic_s\": 10379033.648813324, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85191176799708,
+      "ts": "2026-10-11T04:35:34.918154617Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.648823325, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85192981399814,
+      "ts": "2026-10-11T04:35:34.918188688Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00012736022472381592, \"event\": \"end\", \"monotonic_s\": 10379033.648950804, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85197264999806,
+      "ts": "2026-10-11T04:35:34.918195298Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.648962727, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85199399299745,
+      "ts": "2026-10-11T04:35:34.918201638Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.6980414986610413e-05, \"event\": \"end\", \"monotonic_s\": 10379033.648989256, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85201726599917,
+      "ts": "2026-10-11T04:35:34.918215078Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.649008617, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85203474599984,
+      "ts": "2026-10-11T04:35:34.918227959Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.8849968910217285e-05, \"event\": \"end\", \"monotonic_s\": 10379033.649018727, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85205675599718,
+      "ts": "2026-10-11T04:35:34.918238619Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.649026996, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85207528699902,
+      "ts": "2026-10-11T04:35:34.918246219Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.1758878827095032e-05, \"event\": \"end\", \"monotonic_s\": 10379033.649038495, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85209284299708,
+      "ts": "2026-10-11T04:35:34.918256889Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.649047168, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85211009100021,
+      "ts": "2026-10-11T04:35:34.918264689Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 8.393079042434692e-06, \"event\": \"end\", \"monotonic_s\": 10379033.649055175, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85213186699912,
+      "ts": "2026-10-11T04:35:34.918795508Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.324260825291276, \"event\": \"end\", \"monotonic_s\": 10379033.649676427, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85215527499895,
+      "ts": "2026-10-11T04:35:34.918820129Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.649693359, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85217355900022,
+      "ts": "2026-10-11T04:35:34.918827779Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.649709558, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85219160699853,
+      "ts": "2026-10-11T04:35:34.924056088Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.654851796, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85220903599838,
+      "ts": "2026-10-11T04:35:35.064517547Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.1403701789677143, \"event\": \"end\", \"monotonic_s\": 10379033.795224205, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85223150199818,
+      "ts": "2026-10-11T04:35:35.064905333Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.795753513, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.852255288999,
+      "ts": "2026-10-11T04:35:35.087552959Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.818332896, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85227209799996,
+      "ts": "2026-10-11T04:35:35.087606130Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.818358475, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85228839299816,
+      "ts": "2026-10-11T04:35:35.087703131Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.81851634, \"name\": \"flashinfer.jit.core.JitSpecNvcc.load\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85230529199907,
+      "ts": "2026-10-11T04:35:35.089644504Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0019667018204927444, \"event\": \"end\", \"monotonic_s\": 10379033.820483604, \"name\": \"flashinfer.jit.core.JitSpecNvcc.load\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85233242100003,
+      "ts": "2026-10-11T04:35:35.089688225Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00217425636947155, \"event\": \"end\", \"monotonic_s\": 10379033.820532324, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85235055799785,
+      "ts": "2026-10-11T04:35:35.089710715Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0022144075483083725, \"event\": \"end\", \"monotonic_s\": 10379033.820544304, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85236865099796,
+      "ts": "2026-10-11T04:35:35.178846861Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.11383298598229885, \"event\": \"end\", \"monotonic_s\": 10379033.909588248, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85238493699944,
+      "ts": "2026-10-11T04:35:35.179018904Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.909891253, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85240660999989,
+      "ts": "2026-10-11T04:35:35.190336187Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.011269751936197281, \"event\": \"end\", \"monotonic_s\": 10379033.921161424, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85242301499966,
+      "ts": "2026-10-11T04:35:35.190373317Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.921187216, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85243972099852,
+      "ts": "2026-10-11T04:35:35.191471846Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.001103067770600319, \"event\": \"end\", \"monotonic_s\": 10379033.922291704, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.8524562249986,
+      "ts": "2026-10-11T04:35:35.191498797Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.922354206, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85247327399702,
+      "ts": "2026-10-11T04:35:35.201573168Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.010010860860347748, \"event\": \"end\", \"monotonic_s\": 10379033.932365665, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85249880999982,
+      "ts": "2026-10-11T04:35:35.201600418Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.932392726, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85251875199901,
+      "ts": "2026-10-11T04:35:35.202527474Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0009975489228963852, \"event\": \"end\", \"monotonic_s\": 10379033.933391484, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85253668699806,
+      "ts": "2026-10-11T04:35:35.202553165Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.933445204, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.8525534090004,
+      "ts": "2026-10-11T04:35:35.212306830Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.009709322825074196, \"event\": \"end\", \"monotonic_s\": 10379033.943155209, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85257201499917,
+      "ts": "2026-10-11T04:35:35.212327121Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.94318006, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85259336799936,
+      "ts": "2026-10-11T04:35:35.213333558Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0010448191314935684, \"event\": \"end\", \"monotonic_s\": 10379033.944226088, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85261061599886,
+      "ts": "2026-10-11T04:35:35.213399759Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.944273908, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85267523199946,
+      "ts": "2026-10-11T04:35:35.213469920Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00012189149856567383, \"event\": \"end\", \"monotonic_s\": 10379033.94439528, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85273657599828,
+      "ts": "2026-10-11T04:35:35.213612753Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.2948190961033106, \"event\": \"end\", \"monotonic_s\": 10379033.944528691, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85279536899907,
+      "ts": "2026-10-11T04:35:35.213619453Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.29484984651207924, \"event\": \"end\", \"monotonic_s\": 10379033.944542913, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 74.85282297499725,
+      "ts": "2026-10-11T04:35:35.213638613Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10379033.944562813, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 75.3085392039975,
+      "ts": "2026-10-11T04:35:36.205841939Z",
+      "line": "(EngineCore pid=917) INFO 10-11 04:35:36 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.05 GiB"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 75.83655137099777,
+      "ts": "2026-10-11T04:35:36.205901540Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.9920568242669106, \"event\": \"end\", \"monotonic_s\": 10379034.936620528, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 76.23006811199957,
+      "ts": "2026-10-11T04:35:37.127808681Z",
+      "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.5332686379551888, \"event\": \"end\", \"monotonic_s\": 10379035.858529627, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 917}"
+    },
+    {
+      "pod_id": "zopjp5wws3356l",
+      "at_s": 76.35536793699794,
+      "ts": "2026-10-11T04:35:37.127859892Z",
+      "line": "(EngineCore pid=917) INFO 10-11 04:35:37 [core.py:373] init engine (profile, create kv cache, warmup model) took 6.67 s (compilation: 0.49 s)"
+    }
+  ],
+  "cases": [
+    {
+      "name": "cold-single",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 5,
+      "elapsed_s": 74.588255387,
+      "output_tokens_per_s": 0.0670346822573819,
+      "ttft_p50_s": 74.53009305900001,
+      "ttft_p95_s": 74.53009305900001,
+      "response_p95_s": 74.530113431,
+      "service_ttft_p50_s": 0.1437649840000006,
+      "service_ttft_p95_s": 0.1437649840000006,
+      "cached_input_tokens": 0,
+      "input_tokens": 26,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 43.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      },
+      "literal_correct": 1
+    },
+    {
+      "name": "hot-single-long",
+      "requests": 4,
+      "completed": 4,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 384,
+      "elapsed_s": 1.7093213830000025,
+      "output_tokens_per_s": 224.65055654194634,
+      "ttft_p50_s": 0.6184162549999996,
+      "ttft_p95_s": 1.4395940929999966,
+      "response_p95_s": 1.7021751460000019,
+      "service_ttft_p50_s": 0.13221223800000814,
+      "service_ttft_p95_s": 0.13517119799999477,
+      "cached_input_tokens": 0,
+      "input_tokens": 136,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 136.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      }
+    },
+    {
+      "name": "hot-single",
+      "requests": 8,
+      "completed": 8,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 40,
+      "elapsed_s": 1.7763955549999935,
+      "output_tokens_per_s": 22.517507369016215,
+      "ttft_p50_s": 0.7802780699999943,
+      "ttft_p95_s": 1.6664772099999965,
+      "response_p95_s": 1.704292903999999,
+      "service_ttft_p50_s": 0.08995481499999869,
+      "service_ttft_p95_s": 0.09243623900000841,
+      "cached_input_tokens": 0,
+      "input_tokens": 208,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 208.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      },
+      "literal_correct": 8
+    },
+    {
+      "name": "shared-prefix-burst-32",
+      "requests": 32,
+      "completed": 32,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 2273,
+      "elapsed_s": 1.7109375920000076,
+      "output_tokens_per_s": 1328.5113440888088,
+      "ttft_p50_s": 0.5958262740000038,
+      "ttft_p95_s": 0.7078502210000011,
+      "response_p95_s": 1.0415798200000097,
+      "service_ttft_p50_s": 0.46590572799999563,
+      "service_ttft_p95_s": 0.5779055,
+      "cached_input_tokens": 52224,
+      "input_tokens": 66966,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 66966.0,
+        "vllm:prefix_cache_hits_total": 52224.0
+      }
+    },
+    {
+      "name": "shared-prefix-prime",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 23,
+      "elapsed_s": 0.38327194100000384,
+      "output_tokens_per_s": 60.00961077398507,
+      "ttft_p50_s": 0.30921570900000006,
+      "ttft_p95_s": 0.30921570900000006,
+      "response_p95_s": 0.34413879299999905,
+      "service_ttft_p50_s": 0.2290144659999953,
+      "service_ttft_p95_s": 0.2290144659999953,
+      "cached_input_tokens": 0,
+      "input_tokens": 2092,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 2092.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      }
+    },
+    {
+      "name": "shared-prefix-queue-64",
+      "requests": 64,
+      "completed": 64,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 2432,
+      "elapsed_s": 1.6735334910000006,
+      "output_tokens_per_s": 1453.2126265048848,
+      "ttft_p50_s": 0.6328292369999957,
+      "ttft_p95_s": 1.3109635130000044,
+      "response_p95_s": 1.4638771129999952,
+      "service_ttft_p50_s": 0.28697066799999504,
+      "service_ttft_p95_s": 0.43450560200000155,
+      "cached_input_tokens": 104448,
+      "input_tokens": 133878,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 133878.0,
+        "vllm:prefix_cache_hits_total": 104448.0
+      }
+    },
+    {
+      "name": "shared-prefix-single",
+      "requests": 8,
+      "completed": 8,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 176,
+      "elapsed_s": 1.9611303820000074,
+      "output_tokens_per_s": 89.7441606205249,
+      "ttft_p50_s": 1.0368801290000107,
+      "ttft_p95_s": 1.916388430000012,
+      "response_p95_s": 1.954015515000009,
+      "service_ttft_p50_s": 0.1533215279999922,
+      "service_ttft_p95_s": 0.30003816999999344,
+      "cached_input_tokens": 13056,
+      "input_tokens": 16744,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 16744.0,
+        "vllm:prefix_cache_hits_total": 13056.0
+      }
+    },
+    {
+      "name": "unique-prefix-burst-32",
+      "requests": 32,
+      "completed": 32,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 2648,
+      "elapsed_s": 1.8631227810000013,
+      "output_tokens_per_s": 1421.269723608193,
+      "ttft_p50_s": 0.8360401470000056,
+      "ttft_p95_s": 1.3315189660000044,
+      "response_p95_s": 1.7710260449999993,
+      "service_ttft_p50_s": 0.7076845830000025,
+      "service_ttft_p95_s": 1.2031017789999936,
+      "cached_input_tokens": 0,
+      "input_tokens": 67404,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 67404.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      }
+    },
+    {
+      "name": "unique-prefix-queue-64",
+      "requests": 64,
+      "completed": 64,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 2432,
+      "elapsed_s": 2.9802372909999946,
+      "output_tokens_per_s": 816.0424028463727,
+      "ttft_p50_s": 1.5334930249999985,
+      "ttft_p95_s": 2.4689861129999997,
+      "response_p95_s": 2.8902665509999963,
+      "service_ttft_p50_s": 0.4625694000000067,
+      "service_ttft_p95_s": 1.2134853789999909,
+      "cached_input_tokens": 0,
+      "input_tokens": 134764,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 134764.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      }
+    },
+    {
+      "name": "unique-prefix-single",
+      "requests": 8,
+      "completed": 8,
+      "failed": 0,
+      "unfinished": 0,
+      "budget_exceeded": false,
+      "invalid_actions": 0,
+      "output_tokens": 160,
+      "elapsed_s": 1.7644510390000079,
+      "output_tokens_per_s": 90.67976184291237,
+      "ttft_p50_s": 0.8370571800000022,
+      "ttft_p95_s": 1.7148853640000112,
+      "response_p95_s": 1.7523724230000113,
+      "service_ttft_p50_s": 0.15598837600001048,
+      "service_ttft_p95_s": 0.16082145599999365,
+      "cached_input_tokens": 0,
+      "input_tokens": 16816,
+      "prefix_metric_delta": {
+        "vllm:prefix_cache_queries_total": 16816.0,
+        "vllm:prefix_cache_hits_total": 0.0
+      }
+    }
+  ],
+  "source_cache_id": "20e8b951ce71aa0d436a4369a6069d93e60db646cf0885ebe74dc422039ad927",
+  "diagnostic_cache_id": "cde8f1703b0ffbe2674fed29b3e57e3e8e73effafe4c635390c954d26352827d"
+}

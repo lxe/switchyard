@@ -41,6 +41,7 @@ CLASSES = {
         'JitSpecNvcc': ['try_load', 'build', 'load'],
     },
 }
+ACTIVE = True
 
 def emit(**values):
     print('SWITCHYARD_STARTUP_PROFILE ' + json.dumps({
@@ -50,6 +51,9 @@ def emit(**values):
 def timed(function, name):
     @functools.wraps(function)
     def call(*args, **kwargs):
+        global ACTIVE
+        if not ACTIVE:
+            return function(*args, **kwargs)
         began = time.monotonic()
         observation = {}
         if name.endswith('determine_available_memory') and args:
@@ -62,6 +66,8 @@ def timed(function, name):
             return function(*args, **kwargs)
         finally:
             emit(event='end', name=name, duration_s=time.monotonic() - began)
+            if name.endswith('compile_or_warm_up_model'):
+                ACTIVE = False
     return call
 
 class Loader:

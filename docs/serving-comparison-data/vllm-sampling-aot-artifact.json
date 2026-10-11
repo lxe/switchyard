@@ -1,0 +1,36 @@
+{
+  "id": "96dc8d146ba12e84ccbe9387241608e039d4b2e61961dc51c2e79e60767c9f5b",
+  "metadata": {
+    "kind": "cache",
+    "compatibility": {
+      "architecture": "x86_64",
+      "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+      "gpu": "NVIDIA L40S",
+      "gpu_compute_capability": "8.9",
+      "model_archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+      "model_repository": "Qwen/Qwen3.5-0.8B",
+      "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+      "runtime_launch_configuration": "fbad7e2562be8ae0a248140137f04d0a9ad24c326ca0c76dcb22e54d27528d84"
+    },
+    "attributes": {
+      "derivation": "original cache entries unchanged; native vLLM 0.31 AOT controls",
+      "flashinfer_shim_sha256": "314d97ea8c3d288d0afce09e9f3dc823a83d4a219c02b85097de71ee143cf0fb",
+      "sampling_provider": "native FlashInfer 0.7 provider API; baked sm89 sampling binary; JIT disabled",
+      "source_cache_id": "20e8b951ce71aa0d436a4369a6069d93e60db646cf0885ebe74dc422039ad927"
+    }
+  },
+  "entry_count": 1786,
+  "compressed_bytes": 5993911,
+  "original_entries_unchanged": true,
+  "publication": {
+    "id": "96dc8d146ba12e84ccbe9387241608e039d4b2e61961dc51c2e79e60767c9f5b",
+    "prefix": "switchyard/serving-comparison/cache/96dc8d146ba12e84ccbe9387241608e039d4b2e61961dc51c2e79e60767c9f5b",
+    "manifest_created": true,
+    "chunks_created": {
+      "3e8901ca1032e2f137af76e3a934cceb3d51f4a6dc3b773da563c70924bd384a.tar.zst": true
+    }
+  },
+  "diagnostic_launch_verified": true,
+  "without_profile_launch_verified": false
+}
