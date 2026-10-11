@@ -6,6 +6,9 @@ use std::{collections::BTreeMap, fs, time::Instant};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DependencyBudget {
     pub model_bytes: u64,
+    /// New model/sidecar output required by this boot, excluding trusted reuse.
+    #[serde(default)]
+    pub model_output_required_bytes: u64,
     pub runtime_output_bytes: u64,
     pub compressed_backing_bytes: u64,
     pub decoder_history_bound_bytes: u64,
@@ -13,7 +16,11 @@ pub struct DependencyBudget {
     pub required_ram_bytes: u64,
     pub preflight_seconds: f64,
 }
-pub(super) fn check(ticket: &Ticket, roots: &RootPaths) -> Result<DependencyBudget> {
+pub(super) fn check(
+    ticket: &Ticket,
+    roots: &RootPaths,
+    model_required: Option<u64>,
+) -> Result<DependencyBudget> {
     use std::os::unix::fs::MetadataExt;
     let epoch = Instant::now();
     let model_bytes = match &ticket.source {
@@ -26,6 +33,7 @@ pub(super) fn check(ticket: &Ticket, roots: &RootPaths) -> Result<DependencyBudg
                 .ok_or_else(|| Error::Manifest("model capacity overflow".into()))?
         }
     };
+    let model_output_required_bytes = model_required.unwrap_or(model_bytes);
     let runtime = ticket.runtime.as_ref();
     let file_bytes = |m: &switchyard_artifacts::Manifest| {
         m.entries
@@ -89,7 +97,7 @@ pub(super) fn check(ticket: &Ticket, roots: &RootPaths) -> Result<DependencyBudg
     let mut devices = BTreeMap::<u64, (u64, u64)>::new();
     let mut memory: Option<u64> = None;
     for (path, bytes) in [
-        (roots.models.as_path(), model_bytes),
+        (roots.models.as_path(), model_output_required_bytes),
         (roots.runtime.parent().unwrap(), runtime_output_bytes),
         (roots.caches.as_path(), cache_bytes),
         (roots.chunks.as_path(), compressed_backing_bytes),
@@ -137,6 +145,7 @@ pub(super) fn check(ticket: &Ticket, roots: &RootPaths) -> Result<DependencyBudg
     }
     Ok(DependencyBudget {
         model_bytes,
+        model_output_required_bytes,
         runtime_output_bytes,
         compressed_backing_bytes,
         decoder_history_bound_bytes,

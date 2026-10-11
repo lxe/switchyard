@@ -479,6 +479,28 @@ async fn explicit_trusted_reuse_accepts_repacked_content_without_network() {
         Err(Error::DestinationExists)
     ));
     let requested = state.requested.load(Ordering::Relaxed);
+    let repacked = pack_extents(
+        &fixture.root.join("source"),
+        &fixture.root.join("repacked"),
+        fixture.manifest.metadata.clone(),
+        8192,
+    )
+    .unwrap();
+    assert_eq!(repacked.content_id, fixture.manifest.content_id);
+    assert_ne!(repacked.id, fixture.manifest.id);
+    let origin = reqwest::Url::parse(ticket.urls.values().next().unwrap())
+        .unwrap()
+        .origin()
+        .ascii_serialization();
+    let ticket = ExtentTicket {
+        urls: repacked
+            .extents
+            .iter()
+            .map(|e| (e.object.clone(), format!("{origin}/{}", e.object)))
+            .collect(),
+        manifest: repacked,
+    };
+    assert!(ExtentHydration::trusted_publication_reusable(&ticket.manifest, &destination).unwrap());
     options.reuse_existing = true;
     let reused = ExtentHydration::prepare(ticket, &destination, options).unwrap();
     let report = reused.run().await.unwrap();

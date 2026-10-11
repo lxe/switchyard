@@ -215,6 +215,180 @@ async fn fixture() -> (Ticket, Server) {
 }
 
 #[tokio::test]
+async fn trusted_model_reuse_passes_capacity_without_another_model_copy_or_transfer() {
+    use crate::{
+        Chunk, FileInfo,
+        model::{ExtentModel, ExtentSource, LegacySource, ModelSource},
+    };
+    use std::os::unix::fs::PermissionsExt;
+    use switchyard_artifacts::{
+        Entry,
+        extents::{Extent, ExtentManifest, ExtentTicket},
+    };
+    for extents in [false, true] {
+        let (mut ticket, server) = fixture().await;
+        ticket.runtime.as_mut().unwrap().caches.clear();
+        ticket.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+        ticket.startup.require_model_ram = false;
+        let scratch = TempDir::new();
+        let roots = RootPaths::under(&scratch.0);
+        fs::create_dir_all(&roots.models).unwrap();
+        // Sparse output exceeds free space without consuming it. The trusted
+        // receipt represents an existing publication; no content verification
+        // or native model loading is claimed by this capacity regression.
+        let huge = crate::startup::observe(&roots.models, 0)
+            .unwrap()
+            .available_bytes
+            + 128 * 1024 * 1024;
+        let origin = reqwest::Url::parse(
+            ticket
+                .runtime
+                .as_ref()
+                .unwrap()
+                .artifact
+                .urls
+                .values()
+                .next()
+                .unwrap(),
+        )
+        .unwrap()
+        .origin()
+        .ascii_serialization();
+        ticket.source = if extents {
+            ModelSource::Extents(ExtentSource {
+                model_source: ExtentModel::Extents {
+                    artifact: ExtentTicket {
+                        manifest: ExtentManifest {
+                            format: "switchyard-extents-v1".into(),
+                            id: "1".repeat(64),
+                            content_id: "2".repeat(64),
+                            metadata: Metadata {
+                                kind: "weights".into(),
+                                compatibility: BTreeMap::new(),
+                                attributes: BTreeMap::new(),
+                            },
+                            entries: vec![
+                                Entry::File {
+                                    path: "config.json".into(),
+                                    mode: 0o644,
+                                    size: 2,
+                                    sha256: "0".repeat(64),
+                                },
+                                Entry::File {
+                                    path: "model.safetensors".into(),
+                                    mode: 0o644,
+                                    size: huge,
+                                    sha256: "0".repeat(64),
+                                },
+                            ],
+                            extents: vec![
+                                Extent {
+                                    entry: 0,
+                                    offset: 0,
+                                    length: 2,
+                                    object: "config".into(),
+                                    object_offset: 0,
+                                    object_size: 2,
+                                    sha256: "0".repeat(64),
+                                },
+                                Extent {
+                                    entry: 1,
+                                    offset: 0,
+                                    length: huge,
+                                    object: "weights".into(),
+                                    object_offset: 0,
+                                    object_size: huge,
+                                    sha256: "0".repeat(64),
+                                },
+                            ],
+                        },
+                        urls: BTreeMap::from([
+                            ("config".into(), format!("{origin}/config")),
+                            ("weights".into(), format!("{origin}/weights")),
+                        ]),
+                    },
+                    loader: Default::default(),
+                },
+            })
+        } else {
+            ModelSource::Legacy(LegacySource {
+                manifest: Manifest {
+                    format: "shards-v1".into(),
+                    compress: "none".into(),
+                    total_size: huge + 1024,
+                    raw_size: huge + 1024,
+                    sha256: "0".repeat(64),
+                    chunks: vec![Chunk {
+                        name: "weights".into(),
+                        size: huge + 1024,
+                        raw: huge + 1024,
+                        shard: 0,
+                        seq: 0,
+                        sha256: "0".repeat(64),
+                    }],
+                    files: BTreeMap::from([(
+                        "model.safetensors".into(),
+                        FileInfo {
+                            size: huge,
+                            sha256: None,
+                        },
+                    )]),
+                },
+                urls: BTreeMap::from([("weights".into(), format!("{origin}/weights"))]),
+            })
+        };
+        let state = Arc::new(RwLock::new(State::new(&ticket)));
+        assert!(
+            crate::hydrate::preflight(&ticket, &roots.models, &state)
+                .await
+                .is_err()
+        );
+        let published = roots.models.join("model");
+        fs::create_dir(&published).unwrap();
+        fs::File::create(published.join("model.safetensors"))
+            .unwrap()
+            .set_len(huge)
+            .unwrap();
+        let marker = if extents {
+            fs::write(published.join("config.json"), b"{}").unwrap();
+            let marker = published.join(".switchyard-extents-id");
+            fs::write(&marker, format!("{}\n{}\n", "1".repeat(64), "2".repeat(64))).unwrap();
+            marker
+        } else {
+            let marker = published.join(".switchyard-archive");
+            fs::write(&marker, "0".repeat(64)).unwrap();
+            marker
+        };
+        fs::set_permissions(marker, fs::Permissions::from_mode(0o600)).unwrap();
+        crate::hydrate::preflight(&ticket, &roots.models, &state)
+            .await
+            .unwrap();
+        preflight(&ticket, &roots, &state).await.unwrap();
+        crate::hydrate::hydrate_with_limit(
+            &ticket,
+            &roots.models,
+            state.clone(),
+            Arc::new(tokio::sync::Semaphore::new(20)),
+        )
+        .await
+        .unwrap();
+        let state = state.read().await;
+        assert!(state.model_cached);
+        assert_eq!(
+            state
+                .dependency_budget
+                .as_ref()
+                .unwrap()
+                .model_output_required_bytes,
+            if extents { 2 } else { 0 }
+        );
+        assert!(state.dependency_budget.as_ref().unwrap().model_bytes >= huge);
+        assert_eq!(state.bytes_downloaded, 0);
+        assert_eq!(server.calls.load(Ordering::Relaxed), 0);
+    }
+}
+
+#[tokio::test]
 async fn decoder_budget_includes_independent_model_and_runtime_workers() {
     let (mut ticket, _server) = fixture().await;
     ticket.concurrency = 20;

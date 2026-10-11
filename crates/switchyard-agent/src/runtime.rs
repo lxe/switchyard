@@ -324,7 +324,13 @@ pub(crate) async fn preflight(
     state: &RwLock<State>,
 ) -> Result<()> {
     let Some(runtime) = &ticket.runtime else {
-        state.write().await.dependency_budget = Some(budget::check(ticket, roots)?);
+        let required = state
+            .read()
+            .await
+            .model_storage
+            .as_ref()
+            .map(|s| s.required_bytes);
+        state.write().await.dependency_budget = Some(budget::check(ticket, roots, required)?);
         return Ok(());
     };
     runtime.validate_launch(ticket.startup.mode)?;
@@ -359,7 +365,13 @@ pub(crate) async fn preflight(
     let observation = crate::startup::observe(roots.runtime.parent().unwrap(), required)?;
     state.write().await.runtime_storage = Some(observation.clone());
     crate::startup::check_capacity(&observation, false, 0)?;
-    state.write().await.dependency_budget = Some(budget::check(ticket, roots)?);
+    let required = state
+        .read()
+        .await
+        .model_storage
+        .as_ref()
+        .map(|s| s.required_bytes);
+    state.write().await.dependency_budget = Some(budget::check(ticket, roots, required)?);
     Ok(())
 }
 pub(crate) async fn command_preflighted_with_limit(
@@ -567,13 +579,16 @@ async fn hydrate_one(
                         state
                             .dependency_budget
                             .as_ref()
-                            .map_or(0, |b| b.model_bytes),
+                            .map_or(0, |b| b.model_output_required_bytes),
                     )
                 };
                 // Snapshot ownership/allocation before hydrate's current-free-space
                 // query. Intervening writes then leave a conservative pending claim.
-                reservation.additional_output_bytes =
-                    declared.saturating_sub(allocation.allocated_bytes()?);
+                reservation.additional_output_bytes = if declared == 0 {
+                    0
+                } else {
+                    declared.saturating_sub(allocation.allocated_bytes()?)
+                };
             }
             reservation.observer = Some(diagnostic.observer());
             Some(reservation)

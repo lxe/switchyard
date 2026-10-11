@@ -177,6 +177,46 @@ pub struct ExtentHydration {
     destination: PathBuf,
 }
 impl ExtentHydration {
+    /// Check only a caller-trusted completed publication receipt before capacity
+    /// planning. This neither scans file contents nor claims verified integrity.
+    pub fn trusted_publication_reusable(
+        manifest: &ExtentManifest,
+        destination: &Path,
+    ) -> Result<bool> {
+        let metadata = match fs::symlink_metadata(destination) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => return Err(error.into()),
+        };
+        if !metadata.is_dir() {
+            return Err(Error::DestinationExists);
+        }
+        paths::ancestors(destination)?;
+        let path = destination.join(RECEIPT);
+        let metadata = fs::symlink_metadata(&path)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if metadata.permissions().mode() & 0o777 != 0o600 {
+                return Err(Error::DestinationExists);
+            }
+        }
+        if !metadata.is_file() || metadata.len() != 130 {
+            return Err(Error::DestinationExists);
+        }
+        let mut receipt = String::new();
+        File::open(path)?.take(131).read_to_string(&mut receipt)?;
+        let mut lines = receipt.lines();
+        if lines
+            .next()
+            .is_none_or(|id| id.len() != 64 || !id.bytes().all(|b| b.is_ascii_hexdigit()))
+            || lines.next() != Some(manifest.content_id.as_str())
+            || lines.next().is_some()
+        {
+            return Err(Error::DestinationExists);
+        }
+        Ok(true)
+    }
     /// Allocated output blocks, capped per file to its declared byte size.
     /// The publication lock keeps metadata reads on this owner's current path.
     #[cfg(unix)]
@@ -276,14 +316,7 @@ impl ExtentHydration {
             {
                 return Err(Error::DestinationExists);
             }
-            paths::ancestors(destination)?;
-            let mut receipt = String::new();
-            File::open(destination.join(".switchyard-extents-id"))?
-                .take(256)
-                .read_to_string(&mut receipt)?;
-            if receipt.lines().nth(1) != Some(ticket.manifest.content_id.as_str())
-                || receipt.lines().count() != 2
-            {
+            if !Self::trusted_publication_reusable(&ticket.manifest, destination)? {
                 return Err(Error::DestinationExists);
             }
             let staging = parent.join(format!(".extents-{}.unused", paths::nonce()?));

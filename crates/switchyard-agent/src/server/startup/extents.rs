@@ -98,6 +98,7 @@ pub(super) async fn prepare(
         },
     )?);
     let allocation = state.read().await.model_allocation.clone();
+    let reused_model = state.read().await.model_cached;
     let owned_hydration = Arc::downgrade(&hydration);
     let owned_metadata = Arc::downgrade(&owner);
     let metadata_files = artifact
@@ -115,7 +116,11 @@ pub(super) async fn prepare(
         let Some(hydration) = owned_hydration.upgrade() else {
             return Ok(0);
         };
-        let model = hydration.allocated_output_bytes()?;
+        let model = if reused_model {
+            0
+        } else {
+            hydration.allocated_output_bytes()?
+        };
         let metadata = owned_metadata.upgrade().map_or(Ok(0), |owner| {
             crate::allocation::allocated_files(&owner.root.join("metadata"), &metadata_files)
         })?;

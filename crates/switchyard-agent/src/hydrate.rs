@@ -158,9 +158,17 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
             return Err(Error::Manifest("invalid extent transfer bounds".into()));
         }
         let metadata = crate::model::metadata_bytes(&artifact.manifest)?;
-        let required = artifact
-            .manifest
-            .total_bytes()?
+        let reused = ticket.startup.mode == HydrationMode::TrustedStreaming
+            && switchyard_artifacts::extents::ExtentHydration::trusted_publication_reusable(
+                &artifact.manifest,
+                &root.join("model"),
+            )?;
+        let model_required = if reused {
+            0
+        } else {
+            artifact.manifest.total_bytes()?
+        };
+        let required = model_required
             .checked_add(metadata)
             .ok_or_else(|| Error::Manifest("extent capacity overflow".into()))?;
         let observation = crate::startup::observe(root, required)?;
@@ -169,7 +177,9 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
             ticket.startup.require_model_ram,
             loader.pinned_bytes as u64 + (64 << 20),
         )?;
-        state.write().await.model_storage = Some(observation);
+        let mut state = state.write().await;
+        state.model_storage = Some(observation);
+        state.model_cached = reused;
         return Ok(());
     }
     let legacy = ticket.legacy()?;
@@ -200,6 +210,7 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
     // A trusted receipt is reusable without another copy or a content scan.
     if ticket.startup.mode == HydrationMode::TrustedStreaming && streaming::cached(ticket, root)? {
         observation.required_bytes = 0;
+        state.write().await.model_cached = true;
     }
     state.write().await.model_storage = Some(observation.clone());
     crate::startup::check_capacity(
@@ -222,6 +233,7 @@ pub(crate) async fn hydrate_with_limit(
             &root.join("model"),
             switchyard_artifacts::extents::ExtentOptions {
                 mode: ticket.startup.mode,
+                reuse_existing: ticket.startup.mode == HydrationMode::TrustedStreaming,
                 concurrency: ticket.concurrency,
                 download_limit: Some(limit),
                 request_timeout: Duration::from_secs(ticket.lifetime_s),
