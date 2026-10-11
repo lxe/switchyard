@@ -483,14 +483,28 @@ fn update_observation(
     };
     node.host.bytes_downloaded = model_received.saturating_add(
         if state.hydration_mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
-            state
-                .artifact_network_bytes_downloaded
-                .min(state.artifact_bytes_total)
-                .max(
-                    state
-                        .artifact_bytes_downloaded
-                        .min(state.artifact_bytes_total),
-                )
+            if state.artifacts.is_empty() {
+                // Preserve aggregate-only observations from older agents.
+                state
+                    .artifact_network_bytes_downloaded
+                    .min(state.artifact_bytes_total)
+                    .max(
+                        state
+                            .artifact_bytes_downloaded
+                            .min(state.artifact_bytes_total),
+                    )
+            } else {
+                // Cached and receiving artifacts can advance different counters.
+                // Combine each artifact's progress before adding contributions.
+                state.artifacts.iter().fold(0u64, |bytes, artifact| {
+                    bytes.saturating_add(
+                        artifact
+                            .network_bytes_downloaded
+                            .max(artifact.downloaded_bytes)
+                            .min(artifact.total_bytes),
+                    )
+                })
+            }
         } else {
             state.artifact_bytes_downloaded
         },
@@ -554,14 +568,8 @@ mod tests {
             assert_eq!(sample.bytes_per_s, 125.0);
         }
     }
-    #[test]
-    fn completed_probe_snapshot_updates_remaining_transfer_before_decision() {
-        let mut state = state();
-        state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
-        state.bytes_downloaded = state.bytes_total;
-        state.artifact_network_bytes_downloaded = state.artifact_bytes_total;
-        state.phase = Phase::Initializing;
-        let mut node = ObservedNode {
+    fn node() -> ObservedNode {
+        ObservedNode {
             profile: 0,
             warm: false,
             allocated_s: 0.0,
@@ -579,7 +587,88 @@ mod tests {
                 probe_attempted_s: None,
                 probe: None,
             },
-        };
+        }
+    }
+    #[test]
+    fn mixed_cached_and_receiving_artifacts_contribute_progress_individually() {
+        let mut state = state();
+        state.bytes_downloaded = state.bytes_total;
+        state.phase = Phase::Initializing;
+        state.artifacts[0].cached = true;
+        state.artifacts[0].phase = switchyard_agent::runtime::ArtifactPhase::Ready;
+        state.artifacts[0].total_bytes = 4000;
+        state.artifacts[0].downloaded_bytes = 4000;
+        state.artifacts[0].network_bytes_downloaded = 0;
+        let mut receiving = state.artifacts[0].clone();
+        receiving.name = "cache".into();
+        receiving.id = "cache1".into();
+        receiving.cached = false;
+        receiving.phase = switchyard_agent::runtime::ArtifactPhase::Downloading;
+        receiving.total_bytes = 6000;
+        receiving.downloaded_bytes = 0;
+        receiving.network_bytes_downloaded = 2000;
+        state.artifacts.push(receiving);
+        state.artifact_bytes_downloaded = 4000;
+        let mut node = node();
+        for (wire, phase, expected) in [
+            (
+                2000,
+                switchyard_agent::runtime::ArtifactPhase::Downloading,
+                7000,
+            ),
+            (
+                6000,
+                switchyard_agent::runtime::ArtifactPhase::Extracting,
+                11000,
+            ),
+            // Retry wire bytes must not exceed this artifact's contribution.
+            (
+                12000,
+                switchyard_agent::runtime::ArtifactPhase::Extracting,
+                11000,
+            ),
+        ] {
+            state.artifact_network_bytes_downloaded = wire;
+            state.artifacts[1].network_bytes_downloaded = wire;
+            state.artifacts[1].phase = phase;
+            state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+            update_observation(&mut node, &state, 2.0).unwrap();
+            assert_eq!(node.host.bytes_downloaded, expected);
+            assert_eq!(node.host.bytes_total, 11000);
+            assert_eq!(node.host.phase, StartupPhase::Initializing);
+            assert!(!node.is_ready);
+            state.hydration_mode = switchyard_artifacts::HydrationMode::Verified;
+            update_observation(&mut node, &state, 2.0).unwrap();
+            assert_eq!(node.host.bytes_downloaded, 5000);
+        }
+    }
+    #[test]
+    fn aggregate_only_artifact_progress_preserves_legacy_and_verified_semantics() {
+        let mut state = state();
+        state.artifacts.clear();
+        state.bytes_downloaded = state.bytes_total;
+        state.artifact_network_bytes_downloaded = 6000;
+        state.artifact_bytes_downloaded = 4000;
+        let mut node = node();
+        for (mode, expected) in [
+            (switchyard_artifacts::HydrationMode::TrustedStreaming, 7000),
+            (switchyard_artifacts::HydrationMode::Verified, 5000),
+        ] {
+            state.hydration_mode = mode;
+            update_observation(&mut node, &state, 2.0).unwrap();
+            assert_eq!(node.host.bytes_downloaded, expected);
+        }
+    }
+    #[test]
+    fn completed_probe_snapshot_updates_remaining_transfer_before_decision() {
+        let mut state = state();
+        state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+        state.bytes_downloaded = state.bytes_total;
+        state.artifact_network_bytes_downloaded = state.artifact_bytes_total;
+        // Legacy agents have aggregate counters without artifact entries.
+        state.artifacts.clear();
+        state.phase = Phase::Initializing;
+        let mut node = node();
         update_observation(&mut node, &state, 2.0).unwrap();
         assert_eq!(node.host.bytes_downloaded, node.host.bytes_total);
         assert_eq!(node.host.phase, StartupPhase::Initializing);
