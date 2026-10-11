@@ -98,6 +98,8 @@ class Policy:
             raise ValueError(
                 "guarded fork requires prepared strategy, runtime pin, and GPU capability"
             )
+        if policy.cache_policy == "required" and policy.compute_capability is None:
+            raise ValueError("required cache policy needs the selected GPU capability")
         return policy
 
 
@@ -161,6 +163,8 @@ def configure(policy):
         raise RuntimeError(
             "required cache policy needs native strict AOT and JIT-disabled flags"
         )
+    if policy.cache_policy == "required" and policy.compute_capability is None:
+        raise RuntimeError("required cache policy needs a declared GPU target")
     if (
         policy.memory_plan == "required"
         and os.environ.get("VLLM_ENABLE_STARTUP_PLAN") != "1"
@@ -306,8 +310,6 @@ def refresh_providers(policy):
     environment.FLASHINFER_AOT_DIRS = (environment.FLASHINFER_AOT_DIR,) + tuple(
         provider.jit_cache_dir for provider in providers
     )
-    # Do not call get_aot_artifacts here: automatic target detection can
-    # initialize CUDA in the API process and unnecessarily prevent safe fork.
     sampling = [
         provider
         for provider in providers
@@ -321,14 +323,31 @@ def refresh_providers(policy):
         sampling_providers=len(sampling),
     )
     if policy.cache_policy == "required":
+        # A declared architecture was installed before imports. This makes the
+        # native resolver use that target instead of querying CUDA in the API.
+        if policy.compute_capability is None:
+            raise RuntimeError("required cache policy needs a declared GPU target")
+        artifacts = environment.get_aot_artifacts("sampling")
         cache = (
             Path(os.environ["VLLM_CACHE_ROOT"])
             / "torch_compile_cache/torch_aot_compile"
         )
-        if not sampling or not cache.is_dir() or not any(cache.iterdir()):
+        if (
+            not sampling
+            or not artifacts
+            or not all(item.path.is_file() for item in artifacts)
+            or not cache.is_dir()
+            or not any(cache.iterdir())
+        ):
             raise RuntimeError(
                 "required native AOT cache or sampling provider is absent"
             )
+        record(
+            policy,
+            "strict_cache_ready",
+            sampling_artifacts=len(artifacts),
+            declared_compute_capability=policy.compute_capability,
+        )
 
 
 def main():

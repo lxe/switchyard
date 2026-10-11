@@ -35,7 +35,7 @@ class ObservedImports(PrerequisiteImports):
 
 policy = Policy(
     strategy="prepared",
-    compute_capability="8.9",
+    compute_capability=os.environ.get("PROBE_CUDA_ARCH", "8.9"),
     cache_policy="required",
     cache_aliases=["/late/alias"],
 )
@@ -67,6 +67,27 @@ try:
     os.environ["SWITCHYARD_STARTUP_GATE_RELEASED"] = "1"
     finder.release()
     preparation.join()
+    if os.environ.get("PROBE_EXPECT_CACHE_MISS") == "1":
+        try:
+            refresh_providers(policy)
+        except RuntimeError as error:
+            assert "required native AOT cache" in str(error)
+        else:
+            raise AssertionError("incompatible native AOT target was accepted")
+        import torch
+
+        assert not torch.cuda.is_initialized()
+        print(
+            json.dumps(
+                {
+                    "stage": "native_cache_target_rejected",
+                    "cuda_initialized": False,
+                    "gpu_execution_tested": False,
+                }
+            ),
+            flush=True,
+        )
+        sys.exit(0)
     refresh_providers(policy)
     import torch
     from flashinfer.jit import env

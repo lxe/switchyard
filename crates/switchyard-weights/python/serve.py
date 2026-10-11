@@ -2,4 +2,5 @@
 
 if __name__ == "__main__":
     from switchyard_vllm_startup import main
+
     main()

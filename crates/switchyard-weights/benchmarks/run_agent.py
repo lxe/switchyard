@@ -18,12 +18,19 @@ import time
 from pathlib import Path
 
 import requests
+from benchmark_artifacts import artifacts, named_directories, runtime_ticket
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
 parser.add_argument("--objects", type=Path, required=True)
 parser.add_argument("--legacy-ticket", type=Path, required=True)
 parser.add_argument("--runtime-objects", type=Path, required=True)
+parser.add_argument("--runtime-config", type=Path, help="Selected deployment or ServingRuntimeConfig JSON")
+parser.add_argument("--component-objects", action="append", default=[], metavar="NAME=PATH")
+parser.add_argument("--cache-objects", action="append", default=[], metavar="NAME=PATH")
+parser.add_argument("--component-delay", type=float, default=0, help="Per 64KiB supplemental response delay")
+parser.add_argument("--early-launch", action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument("--engine-args", type=Path, help="Exact engine args JSON; {model_root} expands to owned model path")
 parser.add_argument("--agent", type=Path, required=True)
 parser.add_argument("--image", default="ghcr.io/lxe/switchyard-runtime:ubuntu24.04")
 parser.add_argument("--model-delay", type=float, default=0)
@@ -52,9 +59,18 @@ runtime_objects = args.runtime_objects.resolve()
 manifest = json.loads((objects / "manifest.json").read_text())
 runtime_manifest = json.loads((runtime_objects / "manifest.json").read_text())
 legacy = json.loads(args.legacy_ticket.read_text())
-runtime_configuration = json.loads(
-    (repo / "configs/runpod/qwen-small.json").read_text()
-)["bootstrap"]["runtime"]
+configuration = json.loads((args.runtime_config or repo / "configs/runpod/qwen-small.json").read_text())
+runtime_configuration = configuration.get("bootstrap", {}).get("runtime", configuration)
+if args.runtime_config and runtime_configuration["artifact"]["id"] != runtime_manifest["id"]:
+    raise ValueError("selected boot artifact identity mismatch")
+component_directories = named_directories(args.component_objects)
+cache_directories = named_directories(args.cache_objects)
+components = artifacts(runtime_configuration.get("components", []), component_directories, "component")
+cache_configurations = configuration.get("models", [{}])[0].get("caches", []) if cache_directories else []
+caches = artifacts(cache_configurations, cache_directories, "cache")
+object_directories = {"runtime": runtime_objects, "model": objects,
+                      **{f"components-{name}": path for name, path in component_directories.items()},
+                      **{f"caches-{name}": path for name, path in cache_directories.items()}}
 gateway = subprocess.check_output(
     [
         "docker",
@@ -89,12 +105,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
         parts = self.path.strip("/").split("/")
         if (
             len(parts) != 2
-            or parts[0] not in ("runtime", "model")
+            or parts[0] not in object_directories
             or parts[1] in (".", "..")
         ):
             self.send_error(404)
             return
-        path = (runtime_objects if parts[0] == "runtime" else objects) / parts[1]
+        path = object_directories[parts[0]] / parts[1]
         if not path.is_file():
             self.send_error(404)
             return
@@ -108,6 +124,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 while block := source.read(65536):
                     if parts[0] == "model" and args.model_delay:
                         time.sleep(args.model_delay)
+                    if parts[0].startswith("components-") and args.component_delay:
+                        time.sleep(args.component_delay)
                     self.wfile.write(block)
                     received += len(block)
         except (BrokenPipeError, ConnectionResetError):
@@ -228,23 +246,7 @@ try:
         epoch = time.monotonic()
         ticket_before = len(ticket_requests)
         before = len(events)
-        runtime = {
-            k: runtime_configuration[k]
-            for k in ("program", "args", "environment", "compatibility")
-        }
-        runtime.update(
-            {
-                "artifact": {
-                    "manifest": runtime_manifest,
-                    "urls": {
-                        c["name"]: base + "/runtime/" + c["name"]
-                        for c in runtime_manifest["chunks"]
-                    },
-                },
-                "caches": [],
-                "hydration": {"retries": 0},
-            }
-        )
+        runtime = runtime_ticket(runtime_configuration, runtime_manifest, components, caches, base)
         if (
             args.profile_startup
             or args.env_override_source
@@ -285,7 +287,7 @@ try:
                 "mode": "trusted_streaming",
                 "model_root": "/dev/shm/switchyard",
                 "require_model_ram": True,
-                "early_launch": True,
+                "early_launch": args.early_launch,
             },
             "engine_args": [
                 "serve",
@@ -317,6 +319,9 @@ try:
             "stall_s": 120,
             "lifetime_s": 600,
         }
+        if args.engine_args:
+            current_ticket["engine_args"] = [argument.replace("{model_root}", "/dev/shm/switchyard/model")
+                                               for argument in json.loads(args.engine_args.read_text())]
         if mode == "legacy":
             current_ticket.update(
                 {
@@ -601,6 +606,11 @@ try:
                 "compiler_cache_seeded": args.warm_cache_from is not None,
                 "request_epoch_monotonic": epoch,
                 "agent_sha256": hashlib.sha256(args.agent.read_bytes()).hexdigest(),
+                "runtime_artifact_id": runtime_manifest["id"],
+                "component_artifact_ids": {item["name"]: item["manifest"]["id"] for item in components},
+                "cache_artifact_ids": {item["name"]: item["manifest"]["id"] for item in caches},
+                "early_launch": args.early_launch,
+                "engine_args": current_ticket["engine_args"],
                 "runtime_environment_overrides": args.runtime_env,
                 "native_profile_enabled": args.profile_startup,
                 "experimental_env_override_source": source_overlay,

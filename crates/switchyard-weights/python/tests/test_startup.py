@@ -36,6 +36,7 @@ class PolicyTests(unittest.TestCase):
             {"cache_aliases": "/tmp/cache"},
             {"compute_capability": "sm_89"},
             {"strategy": "prepared", "worker_method": "guarded_fork"},
+            {"cache_policy": "required"},
         ]:
             with (
                 self.subTest(value=value),
@@ -187,6 +188,12 @@ class GateTests(unittest.TestCase):
             os.close(write_fd)
 
     def test_prepared_launcher_imports_early_and_dispatches_after_gate(self):
+        self.launcher("prepared")
+
+    def test_explicit_native_strategy_does_not_block_main_import_on_its_gate(self):
+        self.launcher("native")
+
+    def launcher(self, strategy):
         # Fake native modules exercise a real process and the import finder.
         # The consumer path starts absent and is published while imports wait.
         with tempfile.TemporaryDirectory() as directory:
@@ -200,7 +207,11 @@ class GateTests(unittest.TestCase):
             ]:
                 package = root / name
                 package.mkdir(parents=True, exist_ok=True)
-                (package / "__init__.py").write_text("")
+                (package / "__init__.py").write_text(
+                    "import flashinfer_cubin\n"
+                    if name == "vllm" and strategy == "native"
+                    else ""
+                )
             (root / "torch.py").write_text(
                 "print('early native import', flush=True)\nclass cuda:\n @staticmethod\n def is_initialized(): return False\n"
             )
@@ -223,7 +234,7 @@ class GateTests(unittest.TestCase):
             environment = {
                 **os.environ,
                 "PYTHONPATH": os.pathsep.join([str(root), str(PYTHON), str(late)]),
-                "VLLM_ENGINE_STARTUP_POLICY": json.dumps({"strategy": "prepared"}),
+                "VLLM_ENGINE_STARTUP_POLICY": json.dumps({"strategy": strategy}),
                 "PYTHONDONTWRITEBYTECODE": "1",
             }
             process = subprocess.Popen(
@@ -238,9 +249,15 @@ class GateTests(unittest.TestCase):
                 prefix = []
                 for line in process.stdout:
                     prefix.append(line)
-                    if "import_waiting_for_prerequisites" in line:
+                    event = (
+                        "import_waiting_for_prerequisites"
+                        if strategy == "prepared"
+                        else "waiting_for_prerequisites"
+                    )
+                    if event in line:
                         break
-                self.assertIn("early native import", "".join(prefix))
+                if strategy == "prepared":
+                    self.assertIn("early native import", "".join(prefix))
                 self.assertNotIn("native engine dispatched", "".join(prefix))
                 late.mkdir()
                 (late / "flashinfer_cubin.py").write_text(
@@ -293,6 +310,9 @@ class CacheTests(unittest.TestCase):
             module = SimpleNamespace(
                 _get_aot_providers=lambda: [provider],
                 FLASHINFER_AOT_DIR=root / "native",
+                get_aot_artifacts=lambda _: [
+                    SimpleNamespace(path=provider_dir / "sampling/sampling.so")
+                ],
             )
             with (
                 patch.dict(os.environ, {"VLLM_CACHE_ROOT": str(root)}),
@@ -302,7 +322,11 @@ class CacheTests(unittest.TestCase):
                 ),
             ):
                 startup.refresh_providers(
-                    startup.Policy(cache_policy="required", telemetry=False)
+                    startup.Policy(
+                        cache_policy="required",
+                        compute_capability="8.9",
+                        telemetry=False,
+                    )
                 )
                 self.assertEqual(module.FLASHINFER_AOT_PROVIDERS, [provider])
                 self.assertEqual(
@@ -313,7 +337,11 @@ class CacheTests(unittest.TestCase):
                     RuntimeError, "sampling provider is absent"
                 ):
                     startup.refresh_providers(
-                        startup.Policy(cache_policy="required", telemetry=False)
+                        startup.Policy(
+                            cache_policy="required",
+                            compute_capability="8.9",
+                            telemetry=False,
+                        )
                     )
 
 
