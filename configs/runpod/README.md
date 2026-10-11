@@ -8,8 +8,10 @@
 
 `prices-2026-10-10.json` preserves the initial catalog quote. Availability is a snapshot. Every execution queries the catalog again with the configured minimum CUDA version and records the eligible offers in its receipt directory. The configured disk rate is $0.10 per GB per month, converted using 730 hours per month. Rental receipts are estimates until reconciled with provider billing.
 
-Capacity and startup values under `prior` are assumptions for planning, shared across the allowed GPUs. They are not benchmarks. The live reports measure end-to-end output throughput, streamed first-content latency, and actual token usage. Cold startup includes provider allocation, image preparation, hydration, engine initialization, and client transport.
+The 0.8B throughput and startup priors use the measured L40S smoke run in [the cache-reuse receipt](../../experiments/gpu-cache-reuse-l40s-0.8b.json). Its configured cache currently restricts that model to L40S offerings. The scheduler KV admission limit is 32 sequences × 4,096 context tokens, below the observed physical KV capacity. These values describe that model/runtime/engine configuration and short smoke corpus; they are estimates for new workloads, not guarantees. The 2B/4B priors and all prefill work factors remain unmeasured planning assumptions. The live reports measure end-to-end output throughput, streamed first-content latency, and actual token usage. Cold startup includes provider allocation, image preparation, hydration, engine initialization, and client transport.
 
 Credentials are named by environment variables. Credential files, presigned storage URLs, agent tokens, ownership journals, downloaded tokenizers, and raw run artifacts stay outside Git. The source configuration and workload definitions are checked in; every run saves the configuration it actually used.
 
 See [the live execution guide](../../docs/RUNPOD.md) for commands, recovery, and measurement limits.
+
+`gauntlet-l40s-0.8b.json` is a bounded L40S run of all ten gauntlet cases (1,406 calls) using the prepared 0.8B cache. Its $0.60 cap and 900-second deadline apply to the complete run, including elastic capacity. It pins the telemetry agent and disables runtime retries. This serving configuration provides a scheduler baseline with prefix caching disabled; the separate engine comparison tests enabled prefix reuse.

@@ -1,0 +1,163 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA L40S"
+    ],
+    "data_centers": [
+      "US-KS-2",
+      "US-IL-1",
+      "US-NC-1",
+      "US-TX-3",
+      "US-TX-4"
+    ],
+    "min_cuda": "12.9",
+    "disk_gb": 80,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "archive_prefix": "models/Qwen__Qwen3.5-0.8B/2fc06364715b967f1860aea9cf38778875588b17/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--enforce-eager",
+          "--no-enable-prefix-caching",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}",
+          "--max-num-batched-tokens",
+          "2048"
+        ]
+      },
+      "prior": {
+        "single_output_tps": 36.85305723409776,
+        "aggregate_output_tps": 655.8703805719649,
+        "input_work_per_token": 0.05,
+        "startup_s": 61.461594278,
+        "kv_tokens": 131072
+      },
+      "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+      "caches": [
+        {
+          "name": "compiled",
+          "gpu": "NVIDIA L40S",
+          "artifact": {
+            "prefix": "switchyard/artifacts/cache/2b3188be16a1a4f59cbc94f03b398b17887e620010d05251251dc4ad579cae14",
+            "id": "2b3188be16a1a4f59cbc94f03b398b17887e620010d05251251dc4ad579cae14"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "engine_configuration": "55cfe37edf43491aba80ecdc8c7aaf5f68624865146baa39779d2620248e886a",
+            "gpu": "NVIDIA L40S",
+            "gpu_compute_capability": "8.9",
+            "model_archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+            "model_repository": "Qwen/Qwen3.5-0.8B",
+            "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+            "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+            "runtime_launch_configuration": "8695e779e56a56e9d2b9495aa42f0fae4eb4634b06b1b17bc042167841b1f3b4"
+          }
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "max_instances": 2,
+    "max_usd_per_hour": 2.5,
+    "max_run_usd": 0.6,
+    "run_timeout_s": 900,
+    "startup_timeout_s": 600,
+    "request_timeout_s": 180,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 0.6,
+    "experiment_timeout_s": 900
+  },
+  "scheduling": {
+    "maximum_startup_s": 600,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/hydration-diagnostics/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "ae3e805f97859dae310e48d5ffaa2f51e0305fe41a33726729f9462b2b4159e0",
+    "ticket_prefix": "switchyard/bootstrap",
+    "runtime": {
+      "artifact": {
+        "id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+        "prefix": "switchyard/artifacts/runtime/8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda": "12.9",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "torch": "2.13.0+cu129",
+        "vllm": "0.31.0+cu129"
+      },
+      "program": "venv/bin/python",
+      "args": [
+        "-c",
+        "import sys, time\nstarted = time.monotonic()\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n':\n    raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nsys.argv[0] = 'vllm'\nmain()\n"
+      ],
+      "environment": {
+        "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+        "CC": "{runtime_root}/toolchain/bin/gcc",
+        "CXX": "{runtime_root}/toolchain/bin/g++",
+        "CUDA_HOME": "{runtime_root}/cuda",
+        "CUDA_PATH": "{runtime_root}/cuda",
+        "CUDACXX": "{runtime_root}/cuda/bin/nvcc",
+        "SSL_CERT_FILE": "{runtime_root}/certs/ca-certificates.crt",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "VLLM_NO_USAGE_STATS": "1",
+        "DO_NOT_TRACK": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HOME": "{cache_root}/compiled/huggingface",
+        "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+        "TORCHINDUCTOR_CACHE_DIR": "{cache_root}/compiled/torchinductor",
+        "VLLM_CACHE_ROOT": "{cache_root}/compiled/vllm",
+        "CUDA_CACHE_PATH": "{cache_root}/compiled/cuda",
+        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer",
+        "CUDA_CACHE_MAXSIZE": "4294967296",
+        "XDG_CACHE_HOME": "{cache_root}/compiled/xdg",
+        "TORCH_EXTENSIONS_DIR": "{cache_root}/compiled/torch-extensions",
+        "VLLM_ENABLE_STARTUP_PLAN": "1",
+        "FLASHINFER_CUBIN_CHECKSUM_DISABLED": "1",
+        "FLASHINFER_NO_DOWNLOAD": "1"
+      },
+      "hydration": {
+        "retries": 0
+      }
+    },
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/dev/shm/switchyard",
+      "require_model_ram": true,
+      "early_launch": true
+    }
+  }
+}

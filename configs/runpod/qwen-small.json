@@ -52,11 +52,11 @@
         ]
       },
       "prior": {
-        "single_output_tps": 180,
-        "aggregate_output_tps": 2500,
+        "single_output_tps": 36.85305723409776,
+        "aggregate_output_tps": 655.8703805719649,
         "input_work_per_token": 0.05,
-        "startup_s": 180,
-        "kv_tokens": 32768
+        "startup_s": 61.461594278,
+        "kv_tokens": 131072
       },
       "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
       "caches": [
@@ -160,8 +160,8 @@
   },
   "bootstrap": {
     "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
-    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.4.1/switchyard-agent-x86_64-linux-musl",
-    "agent_sha256": "2ae60a2d4313908f6dfa13bda9bcb9c2cb2d1ae64b4ccd7c9be3f8caf0ac0628",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/hydration-diagnostics/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "ae3e805f97859dae310e48d5ffaa2f51e0305fe41a33726729f9462b2b4159e0",
     "ticket_prefix": "switchyard/bootstrap",
     "runtime": {
       "artifact": {
@@ -208,6 +208,9 @@
         "VLLM_ENABLE_STARTUP_PLAN": "1",
         "FLASHINFER_CUBIN_CHECKSUM_DISABLED": "1",
         "FLASHINFER_NO_DOWNLOAD": "1"
+      },
+      "hydration": {
+        "retries": 0
       }
     },
     "startup": {
