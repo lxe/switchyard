@@ -13,6 +13,11 @@ import sys
 from pathlib import Path
 
 BUILD_JOB_SOURCE = Path(__file__).read_bytes()
+EXPORTED_BINARIES = {
+    "switchyard-engine",
+    "switchyard-engine-bake",
+    "switchyard-engine-bench",
+}
 
 
 def digest(value):
@@ -268,6 +273,7 @@ def build_target(args, arch, base, metadata, env, *, runner=run):
         runner=runner,
     )
     runtime_requirements = {}
+    excluded_binaries = []
     if not args.kernels_only:
         engine_id = next(
             p["id"] for p in metadata["packages"] if p["name"] == "switchyard-engine"
@@ -280,14 +286,12 @@ def build_target(args, arch, base, metadata, env, *, runner=run):
             and m.get("executable")
             and "bin" in m["target"]["kind"]
         }
-        if set(binaries) != {
-            "switchyard-engine",
-            "switchyard-engine-bake",
-            "switchyard-engine-bench",
-        }:
+        if not EXPORTED_BINARIES.issubset(binaries):
             raise RuntimeError("expected all three native engine binaries")
+        excluded_binaries = sorted(set(binaries) - EXPORTED_BINARIES)
         (target / "bin").mkdir()
-        for name, source in binaries.items():
+        for name in sorted(EXPORTED_BINARIES):
+            source = binaries[name]
             shutil.copy2(source, target / "bin" / name)
             elf = runner(
                 ["readelf", "--dynamic", "--version-info", str(source)],
@@ -315,6 +319,7 @@ def build_target(args, arch, base, metadata, env, *, runner=run):
         "compiler_cache_key": compiler_key,
         "ptx_isa_versions": versions,
         "runtime_requirements": runtime_requirements,
+        "excluded_binary_targets": excluded_binaries,
         "files": files,
         "gpu_execution_validated": False,
         "driver_jit_cache_included": False,
@@ -372,6 +377,10 @@ def build(args):
     ).absolute()
     if len(set(args.arch)) != len(args.arch):
         raise ValueError("duplicate architecture")
+    if args.source_commit and not re.fullmatch(
+        r"(?:[0-9a-f]{40}|[0-9a-f]{64})", args.source_commit
+    ):
+        raise ValueError("--source-commit must be a complete Git object ID")
     if args.out.exists() or args.out.is_symlink():
         raise ValueError("a fresh output directory is required")
     env = dict(os.environ)
@@ -435,9 +444,8 @@ def build(args):
         )
     base = {
         "backend": "candle-cuda",
-        "source_commit": run(
-            ["git", "rev-parse", "HEAD"], cwd=args.workspace, env=env
-        ).strip(),
+        "source_commit": args.source_commit
+        or run(["git", "rev-parse", "HEAD"], cwd=args.workspace, env=env).strip(),
         "source_inputs_sha256": source_inputs(args.workspace, metadata),
         "cargo_lock_sha256": file_info(args.workspace / "Cargo.lock")["sha256"],
         "cargo_configuration": cargo_configuration(args.workspace),
@@ -507,6 +515,10 @@ def main():
     )
     parser.add_argument(
         "--builder-id", help="immutable builder image identity for release builds"
+    )
+    parser.add_argument(
+        "--source-commit",
+        help="original Git revision for a caller-owned source snapshot; content is still hashed",
     )
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument(

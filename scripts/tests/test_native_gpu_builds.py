@@ -17,11 +17,14 @@ SPEC.loader.exec_module(build)
 class CompilerFixture:
     """Fake command boundary; file selection and receipts use real filesystem IO."""
 
-    def __init__(self, root, wrong_arch=None, fail=False, include_bins=False):
+    def __init__(
+        self, root, wrong_arch=None, fail=False, include_bins=False, extra_bins=()
+    ):
         self.root = root
         self.wrong_arch = wrong_arch
         self.fail = fail
         self.include_bins = include_bins
+        self.extra_bins = extra_bins
         self.commands = []
         self.target_dirs = []
 
@@ -51,6 +54,7 @@ class CompilerFixture:
                     "switchyard-engine",
                     "switchyard-engine-bake",
                     "switchyard-engine-bench",
+                    *self.extra_bins,
                 ):
                     executable = out / name
                     executable.write_bytes(b"\x7fELFfixture")
@@ -295,6 +299,32 @@ class BuildTests(unittest.TestCase):
         )
         self.assertNotEqual(first["compatibility_key"], second["compatibility_key"])
         self.assertEqual(compiler.target_dirs[0], compiler.target_dirs[1])
+
+    def test_offline_diagnostics_are_not_exported_with_runtime_binaries(self):
+        self.args.kernels_only = False
+        self.metadata["packages"].append(
+            {"id": "switchyard-engine", "name": "switchyard-engine"}
+        )
+        compiler = CompilerFixture(
+            self.root, include_bins=True, extra_bins=("switchyard-engine-merged-probe",)
+        )
+        output = build.build_target(
+            self.args, "89", self.base, self.metadata, self.env, runner=compiler
+        )
+        target = self.args.out / output["path"]
+        receipt = json.loads((target / "build.json").read_text())
+        self.assertEqual(
+            receipt["excluded_binary_targets"], ["switchyard-engine-merged-probe"]
+        )
+        self.assertFalse((target / "bin/switchyard-engine-merged-probe").exists())
+        self.assertFalse(any("merged-probe" in path for path in receipt["files"]))
+        self.assertEqual(set(receipt["runtime_requirements"]), build.EXPORTED_BINARIES)
+        self.assertEqual(
+            {path.name for path in (target / "bin").iterdir()},
+            build.EXPORTED_BINARIES,
+        )
+        for name, expected in receipt["files"].items():
+            self.assertEqual(build.file_info(target / name), expected)
 
 
 if __name__ == "__main__":

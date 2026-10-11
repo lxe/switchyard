@@ -20,6 +20,30 @@ Use `--plan` to resolve sources, dependencies, compiler identities, and targets 
 
 The output directory must be fresh. Each target's `build.json` appears only after all its files pass inspection. The top-level `build.json` appears only when every selected target succeeds. A failed job retains logs and `failure.json` but has no complete matrix receipt. Earlier successful target receipts remain usable individually; consumers must not treat an incomplete matrix as a completed release.
 
+## Ubuntu CUDA container build
+
+`scripts/build-native-gpu-container.py` runs the matrix job inside the digest-pinned CUDA 13.0.0 Ubuntu 24.04 builder. It builds both targets sequentially in one container invocation, then creates a runtime directory for each target using the existing native packager's receipt writer. Run this command after the final engine source is merged and committed:
+
+```sh
+python /home/lxe/switchyard/scripts/build-native-gpu-container.py \
+  --workspace /home/lxe/switchyard \
+  --arch 89 --arch 120a \
+  --image 'nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d' \
+  --out /home/lxe/switchyard/results/native-gpu-builds/ubuntu13-final-01 \
+  --cache-root /home/lxe/switchyard/target/native-gpu-container \
+  --jobs 2 --memory 8g
+```
+
+The image above is also the default. Docker must be available, and the builder needs network access to install Ubuntu build tools and Rust 1.98.1 and fetch locked Cargo dependencies. The image digest pins the CUDA base; Ubuntu package versions and compiler identities are recorded because package installation can change independently. CPU and memory limits apply to the container. Add `--plan` to inspect the source commit, image, target arguments, and Docker command without creating outputs or starting a container.
+
+The wrapper rejects uncommitted changes or untracked files under the Cargo manifests, `.cargo`, and `crates`. It archives the selected Git commit into a temporary source directory and mounts that snapshot read-only. The snapshot contains no `.git` directory, so the inner job receives the original commit through `--source-commit`; its receipt still hashes the actual engine and Candle input contents. The separately mounted build scripts are retained in `container-inputs`, and `producer.py` retains the exact inner matrix producer.
+
+The container receives no GPU devices and does not execute an engine or a bake. It retains `ubuntu-os-release.txt`, `ubuntu-packages.txt`, `ubuntu-libc.txt`, `ubuntu-rustc.txt`, and `ubuntu-nvcc.txt` at the output root. Each target keeps the matrix job's ELF library and symbol-version requirements. The wrapper validates the matrix and target identities, every exported executable and kernel file, and the retained producer hash before assembling that target's runtime.
+
+For the command above, pass `targets/sm_89/runtime` or `targets/sm_120a/runtime` under the output directory to the existing packager's `--runtime` option. Each contains `build.json` in the existing `switchyard-native-runtime-build-v1` format, `tree/bin/switchyard-engine`, `tree/bin/switchyard-engine-bake`, and `tree/lib` with the resolved CUDA toolkit and C++ runtime libraries. The wrapper records each executable's `ldd` output beside the runtime receipt. Ubuntu system libc libraries remain supplied by the serving base image, while the host NVIDIA driver supplies `libcuda.so.1`; neither driver libraries nor link-time driver stubs are bundled. An unresolved non-driver dependency fails assembly.
+
+The physical GPU capability in the runtime receipt is `8.9` or `12.0`, as required by the packager, while the matrix retains the exact `sm_89` or `sm_120a` compiler target. The packager requires the runtime source commit to match `engine_source_commit` in its configuration. The wrapper publishes the original matrix `build.json` at the output root only after both runtime directories are assembled, preserving the matrix identity. Failed container jobs retain `container.log`, partial output under `matrix`, and `container-failure.json`, without publishing a completed root matrix. Runtime directory creation does not establish GPU, numerical, serving, driver-cache, or model-bake acceptance.
+
 ## Artifact contents
 
 For `--arch 89`, the output paths are:
@@ -35,7 +59,9 @@ For `--arch 89`, the output paths are:
 | `targets/sm_89/build.json` | Compatibility inputs, file hashes, artifact identity, runtime library requirements, and validation state. |
 | `build.json` | Completed target list and matrix identity. |
 
-The native RunPod packager uses `bin/switchyard-engine` and `bin/switchyard-engine-bake` from the selected target, then assembles and verifies its toolkit-library closure. This build job does not modify RunPod configuration, runtime packaging, or its output directories. Driver libraries and link-time `libcuda` stubs are not copied into these artifacts.
+The matrix exporter requires the three binaries listed above and exports only those names. Additional Cargo binary targets, including the offline `switchyard-engine-merged-probe` diagnostic, are recorded in `excluded_binary_targets` and omitted from the artifact. They may still be compiled by Cargo's `--bins` command. The Ubuntu wrapper's runtime directory contains the serving and bake binaries; the benchmark remains available only in the matrix target's `bin` directory.
+
+The native RunPod packager uses the serving and bake binaries and verifies their toolkit-library closure. The container wrapper supplies its existing runtime input layout without modifying deployment scripts or configuration. Driver libraries and link-time `libcuda` stubs are not copied into these artifacts.
 
 Standalone cubins are build outputs for inspection and later backend integration. The current pinned Candle loader reads embedded PTX; merely shipping sibling cubins does not make that loader consume them or eliminate its driver JIT. A loader change needs its own modular backend implementation and hardware proof.
 
@@ -72,11 +98,13 @@ The pinned [Candle build script](https://github.com/huggingface/candle/blob/c68b
 Run the CPU fixtures with:
 
 ```sh
-python -m unittest discover -s scripts/tests -p test_native_gpu_builds.py
+python -m unittest discover -s scripts/tests -p 'test_native_gpu*.py'
 ```
 
-The fixtures verify target isolation, rejection of mismatched PTX and device archives, missing completion receipts on compiler failure, and source-key invalidation. Hardware acceptance remains separate: load the selected engine on each intended GPU and driver combination, run numerical and serving gates, measure cold/hot startup, and verify any GPU-dependent bake before publishing it as accepted. Compile success and device-object inspection do not establish those results.
+The fixtures verify target isolation, rejection of mismatched PTX and device archives, missing completion receipts on compiler failure, source-key invalidation, and exclusion of extra diagnostics. Container fixtures check the pinned CPU-only command, rejection of uncommitted Rust sources, driver exclusion, corruption checks for every export category and producer source, existing runtime receipt generation, and publication of the unchanged matrix identity. These fixtures do not launch Docker or compile CUDA.
+
+Hardware acceptance remains separate: load the selected engine on each intended GPU and driver combination, run numerical and serving gates, measure cold/hot startup, and verify any GPU-dependent bake before publishing it as accepted. Compile success and device-object inspection do not establish those results.
 
 The [CPU acceptance receipt](receipts/native-gpu-builds-cpu.json) records a real local build from source commit `600d6dd`, using CUDA 13.4 and a Linux GNU host. One invocation produced `sm_89` and `sm_120a` sets, each containing three executables, 11 PTX files, 11 standalone cubins, and one static CUDA archive. All 52 exported file hashes and the retained producer hash were verified. The serving executable in each set contains only its selected embedded PTX target; the bake and benchmark helpers do not embed PTX.
 
-The final export reused compiler outputs from the same sources and toolchain; it is not a cold-build timing result. PTX ISA 9.4 is recorded explicitly, so an older driver must not be assumed to load these particular local outputs. The receipt establishes compilation and inspection, with GPU execution, numerical acceptance, driver-cache portability, and model-bake acceptance still unvalidated. A production Ubuntu release remains a separate invocation in the pinned serving-compatible builder.
+The final export reused compiler outputs from the same sources and toolchain; it is not a cold-build timing result. PTX ISA 9.4 is recorded explicitly, so an older driver must not be assumed to load these particular local outputs. The receipt establishes compilation and inspection, with GPU execution, numerical acceptance, driver-cache portability, and model-bake acceptance still unvalidated. It does not establish Ubuntu CUDA 13.0 compatibility. The container wrapper has CPU fixture validation; its first production build remains pending the final engine source.
