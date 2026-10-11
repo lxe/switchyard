@@ -78,13 +78,13 @@ async fn until(mut f: impl FnMut() -> bool) {
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn boot_imports_before_dependencies_and_metadata_gate_precedes_tensor_payload() {
-    gated_fixture(false).await;
+    gated_fixture(false, true).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn cancellation_while_dependency_is_pending_stops_early_child_and_bridge() {
-    gated_fixture(true).await;
+    gated_fixture(true, true).await;
 }
-async fn gated_fixture(cancel_before_dependencies: bool) {
+async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
     let mut nonce = [0; 8];
     getrandom::fill(&mut nonce).unwrap();
     let scratch =
@@ -205,7 +205,7 @@ async fn gated_fixture(cancel_before_dependencies: bool) {
         lifetime_s: 30,
         startup: crate::startup::StartupPolicy {
             mode: crate::startup::HydrationMode::TrustedStreaming,
-            early_launch: true,
+            early_launch,
             ..Default::default()
         },
         runtime: Some(crate::runtime::RuntimeTicket {
@@ -251,6 +251,7 @@ async fn gated_fixture(cancel_before_dependencies: bool) {
     let state = Arc::new(RwLock::new(State::new(&ticket)));
     let observed = state.clone();
     let model_root = roots.models.clone();
+    let boot_root = roots.runtime.clone();
     let expected_python_suffix = format!(
         "{}/providers:{}/{}/compiled/sampling-provider",
         roots.runtime.display(),
@@ -277,7 +278,15 @@ async fn gated_fixture(cancel_before_dependencies: bool) {
         "runtime state writer was not queued"
     );
     drop(reader);
-    until(|| imported.exists()).await;
+    until(|| boot_root.exists()).await;
+    if early_launch {
+        until(|| imported.exists()).await;
+    } else {
+        assert!(
+            !imported.exists(),
+            "disabled early launch started before dependencies"
+        );
+    }
     assert!(
         !metadata_ready.exists(),
         "engine gate released before its dependency was published"
@@ -359,12 +368,22 @@ async fn gated_fixture(cancel_before_dependencies: bool) {
             .position(|m| std::mem::discriminant(&m.event) == std::mem::discriminant(&event))
             .unwrap()
     };
-    assert!(
-        position(StartupEvent::RuntimeBootReady) < position(StartupEvent::RuntimeHydrationFinished)
-    );
-    assert!(
-        position(StartupEvent::EngineSpawned) < position(StartupEvent::RuntimeHydrationFinished)
-    );
+    if early_launch {
+        assert!(
+            position(StartupEvent::RuntimeBootReady)
+                < position(StartupEvent::RuntimeHydrationFinished)
+        );
+        assert!(
+            position(StartupEvent::EngineSpawned)
+                < position(StartupEvent::RuntimeHydrationFinished)
+        );
+    } else {
+        assert!(
+            position(StartupEvent::RuntimeHydrationFinished)
+                < position(StartupEvent::RuntimeBootReady)
+        );
+        assert!(position(StartupEvent::RuntimeBootReady) < position(StartupEvent::EngineSpawned));
+    }
     assert!(
         position(StartupEvent::RuntimeHydrationFinished)
             < position(StartupEvent::EngineGateReleased)
@@ -375,4 +394,9 @@ async fn gated_fixture(cancel_before_dependencies: bool) {
     until(|| !owner.exists()).await;
     assert!(model_root.join("model/config.json").exists());
     server.abort();
+}
+
+#[tokio::test]
+async fn disabled_early_launch_waits_for_supplemental_runtime_publication() {
+    gated_fixture(false, false).await;
 }
