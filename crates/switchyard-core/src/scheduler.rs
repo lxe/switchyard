@@ -145,8 +145,12 @@ impl HostProbe {
 #[derive(Debug, Clone, Serialize)]
 pub struct HostObservation {
     pub phase: StartupPhase,
+    /// Confirmed transfer progress; a lower bound when retained progress is unknown.
     pub bytes_downloaded: u64,
     pub bytes_total: u64,
+    /// Whether remaining bytes can be estimated from the observed retained progress.
+    /// Wire volume alone cannot establish this when failed attempts can be discarded.
+    pub remaining_bytes_known: bool,
     pub probe_pending: bool,
     pub probe_attempted_s: Option<f64>,
     pub probe: Option<HostProbe>,

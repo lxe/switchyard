@@ -127,6 +127,7 @@ impl Scheduler for BuiltinScheduler {
                 let timed_out = fleet.now - node.allocated_s > fleet.scheduling.maximum_startup_s;
                 let slow = node.host.probe.as_ref().is_some_and(|probe| {
                     probe.fresh(fleet.now, &fleet.scheduling.probe)
+                        && node.host.remaining_bytes_known
                         && node.host.bytes_total > node.host.bytes_downloaded
                         && probe.volume_bytes_per_s < fleet.scheduling.minimum_hydration_bytes_per_s
                         && node
@@ -219,6 +220,7 @@ impl SchedulerWorld<'_> {
                 phase: StartupPhase::Booting,
                 bytes_downloaded: 0,
                 bytes_total: 0,
+                remaining_bytes_known: false,
                 probe_pending: false,
                 probe_attempted_s: None,
                 probe: None,

@@ -173,6 +173,7 @@ impl<P: Provider> LiveRuntime<P> {
                 phase: StartupPhase::Booting,
                 bytes_downloaded: 0,
                 bytes_total: p.host.model_bytes,
+                remaining_bytes_known: false,
                 probe_pending: false,
                 probe_attempted_s: None,
                 probe: None,
@@ -471,6 +472,55 @@ fn received_counters(state: &switchyard_agent::State) -> Vec<TransferCounter> {
     counters
 }
 
+fn artifact_progress(state: &switchyard_agent::State) -> (u64, bool) {
+    if state.artifacts.is_empty() {
+        // Aggregate wire volume can contain discarded retry attempts. Older
+        // observations without retained counters provide only a progress floor.
+        let completed = state
+            .artifact_bytes_downloaded
+            .min(state.artifact_bytes_total);
+        return if matches!(state.phase, Phase::Ready) {
+            (state.artifact_bytes_total, true)
+        } else {
+            (
+                completed,
+                state.hydration_mode == switchyard_artifacts::HydrationMode::Verified
+                    || completed == state.artifact_bytes_total,
+            )
+        };
+    }
+    state
+        .artifacts
+        .iter()
+        .fold((0u64, true), |(bytes, known), artifact| {
+            let completed = artifact.downloaded_bytes.min(artifact.total_bytes);
+            let (progress, observed) = if matches!(
+                artifact.phase,
+                switchyard_agent::runtime::ArtifactPhase::Ready
+            ) {
+                // Ready proves publication, including trusted cache reuse with zero
+                // wire and verified-byte counters.
+                (artifact.total_bytes, true)
+            } else if state.hydration_mode == switchyard_artifacts::HydrationMode::Verified {
+                (completed, true)
+            } else if let Some(reception) = &artifact.reception {
+                // Reserved reception rejects retries and writes each prefix once.
+                // Its cumulative storage counter includes consumed/reclaimed data.
+                (
+                    completed
+                        .max(reception.storage_written_bytes)
+                        .min(artifact.total_bytes),
+                    true,
+                )
+            } else {
+                // Retrying streaming has no retained compressed-byte counter. Keep
+                // proved progress without converting repeated wire bytes to progress.
+                (completed, completed == artifact.total_bytes)
+            };
+            (bytes.saturating_add(progress), known && observed)
+        })
+}
+
 fn update_observation(
     node: &mut ObservedNode,
     state: &switchyard_agent::State,
@@ -481,34 +531,9 @@ fn update_observation(
     } else {
         state.bytes_downloaded
     };
-    node.host.bytes_downloaded = model_received.saturating_add(
-        if state.hydration_mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
-            if state.artifacts.is_empty() {
-                // Preserve aggregate-only observations from older agents.
-                state
-                    .artifact_network_bytes_downloaded
-                    .min(state.artifact_bytes_total)
-                    .max(
-                        state
-                            .artifact_bytes_downloaded
-                            .min(state.artifact_bytes_total),
-                    )
-            } else {
-                // Cached and receiving artifacts can advance different counters.
-                // Combine each artifact's progress before adding contributions.
-                state.artifacts.iter().fold(0u64, |bytes, artifact| {
-                    bytes.saturating_add(
-                        artifact
-                            .network_bytes_downloaded
-                            .max(artifact.downloaded_bytes)
-                            .min(artifact.total_bytes),
-                    )
-                })
-            }
-        } else {
-            state.artifact_bytes_downloaded
-        },
-    );
+    let (artifact_received, progress_known) = artifact_progress(state);
+    node.host.bytes_downloaded = model_received.saturating_add(artifact_received);
+    node.host.remaining_bytes_known = progress_known;
     node.host.bytes_total = state.bytes_total.saturating_add(state.artifact_bytes_total);
     node.host.phase = match state.phase {
         Phase::Booting => StartupPhase::Booting,
@@ -583,6 +608,7 @@ mod tests {
                 phase: StartupPhase::Hydrating,
                 bytes_downloaded: 0,
                 bytes_total: 11000,
+                remaining_bytes_known: false,
                 probe_pending: false,
                 probe_attempted_s: None,
                 probe: None,
@@ -597,8 +623,10 @@ mod tests {
         state.artifacts[0].cached = true;
         state.artifacts[0].phase = switchyard_agent::runtime::ArtifactPhase::Ready;
         state.artifacts[0].total_bytes = 4000;
-        state.artifacts[0].downloaded_bytes = 4000;
+        // Trusted cache reuse reports Ready with both counters zero.
+        state.artifacts[0].downloaded_bytes = 0;
         state.artifacts[0].network_bytes_downloaded = 0;
+        state.artifacts[0].unpacked_bytes = state.artifacts[0].total_unpacked_bytes;
         let mut receiving = state.artifacts[0].clone();
         receiving.name = "cache".into();
         receiving.id = "cache1".into();
@@ -606,24 +634,31 @@ mod tests {
         receiving.phase = switchyard_agent::runtime::ArtifactPhase::Downloading;
         receiving.total_bytes = 6000;
         receiving.downloaded_bytes = 0;
+        receiving.unpacked_bytes = 0;
         receiving.network_bytes_downloaded = 2000;
+        receiving.reception = Some(switchyard_artifacts::ReceptionProgress {
+            storage_written_bytes: 2000,
+            ..Default::default()
+        });
         state.artifacts.push(receiving);
-        state.artifact_bytes_downloaded = 4000;
+        state.artifact_bytes_downloaded = 0;
         let mut node = node();
-        for (wire, phase, expected) in [
+        for (wire, stored, phase, expected) in [
             (
+                2000,
                 2000,
                 switchyard_agent::runtime::ArtifactPhase::Downloading,
                 7000,
             ),
             (
                 6000,
+                2000,
                 switchyard_agent::runtime::ArtifactPhase::Extracting,
-                11000,
+                7000,
             ),
-            // Retry wire bytes must not exceed this artifact's contribution.
             (
-                12000,
+                6000,
+                6000,
                 switchyard_agent::runtime::ArtifactPhase::Extracting,
                 11000,
             ),
@@ -631,9 +666,14 @@ mod tests {
             state.artifact_network_bytes_downloaded = wire;
             state.artifacts[1].network_bytes_downloaded = wire;
             state.artifacts[1].phase = phase;
+            let reception = state.artifacts[1].reception.as_mut().unwrap();
+            reception.network_received_bytes = wire;
+            reception.storage_written_bytes = stored;
+            reception.buffered_bytes = stored;
             state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
             update_observation(&mut node, &state, 2.0).unwrap();
             assert_eq!(node.host.bytes_downloaded, expected);
+            assert!(node.host.remaining_bytes_known);
             assert_eq!(node.host.bytes_total, 11000);
             assert_eq!(node.host.phase, StartupPhase::Initializing);
             assert!(!node.is_ready);
@@ -643,21 +683,62 @@ mod tests {
         }
     }
     #[test]
-    fn aggregate_only_artifact_progress_preserves_legacy_and_verified_semantics() {
+    fn retry_wire_bytes_do_not_complete_an_incomplete_transfer() {
+        let mut state = state();
+        state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+        state.bytes_downloaded = state.bytes_total;
+        state.artifacts[0].downloaded_bytes = 0;
+        state.artifacts[0].network_bytes_downloaded = 20000;
+        state.artifacts[0].phase = switchyard_agent::runtime::ArtifactPhase::Extracting;
+        state.artifact_bytes_downloaded = 0;
+        state.artifact_network_bytes_downloaded = 20000;
+        let mut node = node();
+        update_observation(&mut node, &state, 2.0).unwrap();
+        assert_eq!(node.host.bytes_downloaded, 1000);
+        assert!(node.host.bytes_downloaded < node.host.bytes_total);
+        assert!(!node.host.remaining_bytes_known);
+    }
+    #[test]
+    fn aggregate_only_progress_uses_verified_floor_without_trusting_retry_wire() {
         let mut state = state();
         state.artifacts.clear();
         state.bytes_downloaded = state.bytes_total;
         state.artifact_network_bytes_downloaded = 6000;
         state.artifact_bytes_downloaded = 4000;
         let mut node = node();
-        for (mode, expected) in [
-            (switchyard_artifacts::HydrationMode::TrustedStreaming, 7000),
-            (switchyard_artifacts::HydrationMode::Verified, 5000),
+        for (mode, known) in [
+            (switchyard_artifacts::HydrationMode::TrustedStreaming, false),
+            (switchyard_artifacts::HydrationMode::Verified, true),
         ] {
             state.hydration_mode = mode;
             update_observation(&mut node, &state, 2.0).unwrap();
-            assert_eq!(node.host.bytes_downloaded, expected);
+            assert_eq!(node.host.bytes_downloaded, 5000);
+            assert_eq!(node.host.remaining_bytes_known, known);
         }
+        state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+        state.phase = Phase::Ready;
+        state.artifact_bytes_downloaded = 0;
+        state.artifact_network_bytes_downloaded = 0;
+        update_observation(&mut node, &state, 3.0).unwrap();
+        assert_eq!(node.host.bytes_downloaded, node.host.bytes_total);
+        assert!(node.host.remaining_bytes_known);
+    }
+    #[test]
+    fn trusted_non_cached_ready_credits_publication_with_zero_verified_bytes() {
+        let mut state = state();
+        state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+        state.bytes_downloaded = state.bytes_total;
+        state.phase = Phase::Initializing;
+        state.artifacts[0].phase = switchyard_agent::runtime::ArtifactPhase::Ready;
+        state.artifacts[0].downloaded_bytes = 0;
+        state.artifacts[0].network_bytes_downloaded = 20000;
+        state.artifact_bytes_downloaded = 0;
+        state.artifact_network_bytes_downloaded = 20000;
+        let mut node = node();
+        update_observation(&mut node, &state, 2.0).unwrap();
+        assert_eq!(node.host.bytes_downloaded, node.host.bytes_total);
+        assert!(node.host.remaining_bytes_known);
+        assert!(!node.is_ready);
     }
     #[test]
     fn completed_probe_snapshot_updates_remaining_transfer_before_decision() {
@@ -665,6 +746,7 @@ mod tests {
         state.hydration_mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
         state.bytes_downloaded = state.bytes_total;
         state.artifact_network_bytes_downloaded = state.artifact_bytes_total;
+        state.artifact_bytes_downloaded = state.artifact_bytes_total;
         // Legacy agents have aggregate counters without artifact entries.
         state.artifacts.clear();
         state.phase = Phase::Initializing;

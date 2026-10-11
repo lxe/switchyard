@@ -97,6 +97,7 @@ fn learned_hydration_time_changes_provisioning_choices() {
             phase: StartupPhase::Ended,
             bytes_downloaded: 0,
             bytes_total: 1_000_000_000,
+            remaining_bytes_known: true,
             probe_pending: false,
             probe_attempted_s: Some(0.0),
             probe: Some(HostProbe {
@@ -214,6 +215,7 @@ fn allocation_cooldowns_change_new_placement_and_preserve_existing_host_routing(
             phase: StartupPhase::Ready,
             bytes_downloaded: 0,
             bytes_total: 0,
+            remaining_bytes_known: true,
             probe_pending: false,
             probe_attempted_s: None,
             probe: None,
@@ -342,6 +344,7 @@ fn loading_node(probe: Option<HostProbe>, remaining: u64) -> ObservedNode {
             phase: StartupPhase::Hydrating,
             bytes_total: 1_000_000_000,
             bytes_downloaded: 1_000_000_000 - remaining,
+            remaining_bytes_known: true,
             probe_pending: false,
             probe_attempted_s: probe.as_ref().map(|p| p.at_s),
             probe,
@@ -464,6 +467,31 @@ fn sustained_slow_payload_can_cancel_but_completed_transfer_cannot() {
             );
         }
     }
+}
+#[test]
+fn unknown_remaining_progress_preserves_learning_refresh_and_hard_deadline() {
+    let (profiles, _) = performance::workload(1);
+    let scheduling = Scheduling::default();
+    let mut node = loading_node(Some(measured(10.0, 1_000_000.0)), 1_000_000_000);
+    node.host.remaining_bytes_known = false;
+    node.host.probe_attempted_s = Some(0.0);
+    let mut fleet = probe_fleet(&profiles, &scheduling, node, 10.0);
+    let mut scheduler = BuiltinScheduler::new(Policy::Adaptive);
+    let actions = scheduler.decide(&fleet);
+    assert!(!actions.iter().any(|a| matches!(a, Action::Release { .. })));
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::ProbeHost { node: 0 }))
+    );
+    assert_eq!(scheduler.diagnostics()["host_beliefs"]["0"]["samples"], 1);
+    fleet.now = 181.0;
+    let actions = scheduler.decide(&fleet);
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::Release { node: 0 }))
+    );
 }
 #[test]
 fn hard_startup_deadline_survives_missing_or_stale_probes_and_completed_transfer() {

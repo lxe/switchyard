@@ -762,6 +762,7 @@ impl Simulation {
             } else {
                 0
             },
+            remaining_bytes_known: true,
             probe_pending: n.host.probe_pending,
             probe_attempted_s: n.host.probe_attempted_s,
             probe: n.host.probe.clone(),

@@ -274,6 +274,7 @@ async fn trusted_mode_skips_hashes_and_reuses_receipt_without_tree_rescan() {
         .await
         .unwrap();
     assert!(reused.already_present);
+    assert_eq!(reused.downloaded_bytes, 0);
     assert_eq!(reused.verified_bytes, 0);
     assert_eq!(state.requests.lock().unwrap().len(), 1);
     assert!(verify(&destination, &fixture.manifest).is_err());
