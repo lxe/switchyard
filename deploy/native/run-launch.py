@@ -119,12 +119,36 @@ def main():
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--cache-alternative", type=Path, action="append", default=[])
+    parser.add_argument("--family", type=Path)
+    parser.add_argument("--live-model", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     config = json.loads(args.config.read_text())
     prepared = json.loads(args.prepared.read_text())
     variants = [prepared] + [json.loads(p.read_text()) for p in args.cache_alternative]
+    family = json.loads(args.family.read_text()) if args.family else None
+    if family:
+        if (
+            not family["published"]
+            or args.cache_alternative
+            or "shared_runtime" not in prepared
+        ):
+            raise ValueError(
+                "published families require the shared runtime and their exact components"
+            )
+        variants = []
+        for driver, component in family["prepared_components"].items():
+            variant = json.loads(Path(component).read_text())
+            validate_prepared(config, variant)
+            if variant["cache_compatibility"]["driver_version"] != driver:
+                raise ValueError("family component driver mapping changed")
+            variant["component_cache"] = variant["cache"]
+            variant["cache"] = family["cache"]
+            variant["cache_compatibility"] = family["compatibility"]
+            variant["selected_driver"] = driver
+            variants.append(variant)
+        prepared = variants[0]
     by_driver = {}
     for variant in variants:
         validate_prepared(config, variant)
@@ -136,7 +160,10 @@ def main():
             raise ValueError(
                 "cache alternatives require identical runtime and model artifacts"
             )
-        driver = variant["cache_compatibility"]["driver_version"]
+        driver = (
+            variant.get("selected_driver")
+            or variant["cache_compatibility"]["driver_version"]
+        )
         if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", driver) or driver in by_driver:
             raise ValueError("cache driver must be numeric and unique")
         by_driver[driver] = variant
@@ -144,6 +171,26 @@ def main():
     token = secrets.token_hex(32)
     ticket_key = config["storage"]["prefix"] + "/tickets/" + uuid.uuid4().hex + ".json"
     legacy = json.loads(Path(prepared["legacy_manifest"]).read_text())
+    live_model = json.loads(args.live_model.read_text()) if args.live_model else None
+    if live_model:
+        if (
+            not live_model["published"]
+            or live_model["model"] != config["engine"]["model"]
+            or live_model["model_revision"] != config["model_revision"]
+            or live_model["native_artifact_id"] != prepared["model"]["id"]
+            or live_model["archive_sha256"] != legacy["sha256"]
+        ):
+            raise ValueError("live model archive differs from prepared native identity")
+        with urllib.request.urlopen(
+            control.url(live_model["archive_prefix"] + "/manifest.json"), timeout=30
+        ) as source:
+            if json.load(source) != legacy:
+                raise ValueError(
+                    "published live model manifest differs from prepared archive"
+                )
+    model_prefix = (
+        live_model["archive_prefix"] if live_model else prepared["model"]["prefix"]
+    )
     cache_labels = prepared["cache_compatibility"]
     runtime = {
         "artifact": ticket_artifact(control, prepared["runtime"]),
@@ -157,7 +204,7 @@ def main():
             "CUDA_CACHE_DISABLE": "0",
             "CUDA_CACHE_MAXSIZE": "536870912",
             "CUDA_VISIBLE_DEVICES": "0",
-            "NATIVE_ENGINE_EXPECTED_DRIVER": cache_labels["driver_version"],
+            "NATIVE_ENGINE_EXPECTED_DRIVER": cache_labels.get("driver_version", ""),
             "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": cache_labels[
                 "gpu_compute_capability"
             ],
@@ -170,12 +217,24 @@ def main():
             }
         ],
     }
+    if family:
+        runtime = {
+            **copy.deepcopy(prepared["shared_runtime"]),
+            "artifact": ticket_artifact(control, prepared["runtime"]),
+            "caches": [
+                {
+                    "name": "gpu-kernels",
+                    "artifact": ticket_artifact(control, prepared["cache"]),
+                    "compatibility": cache_labels,
+                }
+            ],
+        }
     ticket = {
         "model": config["engine"]["model"],
         "revision": config["model_revision"],
         "manifest": legacy,
         "urls": {
-            c["name"]: control.url(prepared["model"]["prefix"] + "/" + c["name"])
+            c["name"]: control.url(model_prefix + "/" + c["name"])
             for c in legacy["chunks"]
         },
         "engine_args": [
@@ -198,13 +257,24 @@ def main():
             "early_launch": False,
         },
     }
+    if family:
+        ticket["engine_args"] = [
+            "--config-json",
+            json.dumps(config["engine"]),
+            "serve",
+            "--bind",
+            "127.0.0.1:8000",
+        ]
     control.put_json(ticket, ticket_key)
     ticket_keys = [ticket_key]
     selector_environment = {"NATIVE_CACHE_TICKET_URL_0": control.url(ticket_key)}
     selector = 'case "$native_driver" in\n'
     for index, variant in enumerate(variants):
-        driver = variant["cache_compatibility"]["driver_version"]
-        if index:
+        driver = (
+            variant.get("selected_driver")
+            or variant["cache_compatibility"]["driver_version"]
+        )
+        if index and not family:
             variant_ticket = copy.deepcopy(ticket)
             variant_ticket["runtime"]["environment"][
                 "NATIVE_ENGINE_EXPECTED_DRIVER"
@@ -220,7 +290,8 @@ def main():
             selector_environment["NATIVE_CACHE_TICKET_URL_" + str(index)] = control.url(
                 key
             )
-        selector += f'  {driver}) export SWITCHYARD_TICKET_URL="$NATIVE_CACHE_TICKET_URL_{index}";;\n'
+        ticket_index = 0 if family else index
+        selector += f'  {driver}) export SWITCHYARD_TICKET_URL="$NATIVE_CACHE_TICKET_URL_{ticket_index}";;\n'
     selector += (
         '  *) printf "native_bootstrap_error=driver_mismatch\\n" >&2; exit 78;;\nesac\n'
     )
@@ -390,6 +461,20 @@ exec /opt/switchyard/agent
                 },
                 "runtime": prepared["runtime"],
                 "model": prepared["model"],
+                **(
+                    {
+                        "live_model_archive": {
+                            key: live_model[key]
+                            for key in [
+                                "archive_prefix",
+                                "archive_sha256",
+                                "native_artifact_id",
+                            ]
+                        }
+                    }
+                    if live_model
+                    else {}
+                ),
                 "cache": prepared["cache"],
                 "compatibility": cache_labels,
                 "bounds": config["engine"],

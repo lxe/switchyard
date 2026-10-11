@@ -82,6 +82,7 @@ def main():
     tree = args.output / "tree"
     tree.mkdir()
     components = {}
+    prepared_components = {}
     common = None
     configuration = None
     for path in args.prepared:
@@ -135,6 +136,8 @@ def main():
             or hardware[0] != labels["gpu"]
             or hardware[2] != driver
             or hardware[3] != labels["gpu_compute_capability"]
+            or int(hardware[4].split()[0]) * 1024 * 1024
+            < native["minimum_gpu_memory_bytes"]
             or (configuration is not None and receipt["config"] != configuration)
         ):
             raise ValueError("component bake receipt differs from family identity")
@@ -171,6 +174,7 @@ def main():
             "cache_files": receipt["cache_files"],
             "compatibility": labels,
         }
+        prepared_components[driver] = str(path.resolve())
     compatibility = {**bindings}
     for key, value in common.items():
         if key in compatibility and compatibility[key] != value:
@@ -214,6 +218,7 @@ def main():
             "compatibility": compatibility,
             "drivers": sorted(components),
             "published": False,
+            "prepared_components": prepared_components,
         },
     )
     if args.publish_config:
@@ -226,6 +231,12 @@ def main():
             + "/cache-families/"
             + packed["id"],
         )
+        family["cache"] = {
+            "id": packed["id"],
+            "prefix": family["prefix"],
+            "directory": str(artifact.resolve()),
+            "compressed_bytes": sum(chunk["size"] for chunk in packed["chunks"]),
+        }
         write(args.output / "family.json", family)
     print(
         json.dumps(

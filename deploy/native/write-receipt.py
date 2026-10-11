@@ -81,9 +81,9 @@ def main():
     }
     if not required.issubset({item["event"] for item in native}):
         raise ValueError("native phase telemetry is incomplete")
-    if (
-        gpu is None
-        or gpu["driver"] != prepared["cache_compatibility"]["driver_version"]
+    if gpu is None or gpu["driver"] != (
+        prepared.get("selected_driver")
+        or prepared["cache_compatibility"].get("driver_version")
     ):
         raise ValueError("serving hardware does not match native cache")
     artifacts = []
@@ -121,7 +121,25 @@ def main():
         "pod": launch["pod"],
         "runtime_build": read(args.build),
         "artifacts": artifacts,
+        **(
+            {"live_model_archive": launch["live_model_archive"]}
+            if "live_model_archive" in launch
+            else {}
+        ),
         "cache_compatibility": prepared["cache_compatibility"],
+        **(
+            {
+                "cache_family_selection": {
+                    "driver": prepared["selected_driver"],
+                    "component_cache_id": prepared["component_cache"]["id"],
+                    "layout": prepared["cache_compatibility"][
+                        "native_driver_cache_layout"
+                    ],
+                }
+            }
+            if "selected_driver" in prepared
+            else {}
+        ),
         "resource_bounds": {
             "engine": config["engine"],
             "platform": config["limits"],

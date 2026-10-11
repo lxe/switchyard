@@ -1,0 +1,1047 @@
+{
+  "format": "switchyard-native-cloud-evidence-v1",
+  "model": "qwen3.5-0.8b",
+  "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "allocation_started_utc": "2026-10-11T22:58:25.186909+00:00",
+  "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+  "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+  "accuracy": "accepted mixed native engine; F32 parity gated locally; BF16 approximate; cloud bake does not establish additional numerical parity",
+  "numerical_parity_measured_in_cloud": false,
+  "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "hardware": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-4759da3f-c22d-85a5-d984-9293e77fd972",
+    "driver": "580.159.04",
+    "compute_capability": "8.9",
+    "total_memory_mib": 24564
+  },
+  "pod": {
+    "id": "o70whvuqi6wpye",
+    "name": "switchyard-native-launch-61b3c9246bb1",
+    "cost": 0.89,
+    "dataCenterId": "EUR-IS-2",
+    "cudaVersion": "13.0"
+  },
+  "runtime_build": {
+    "format": "switchyard-native-runtime-build-v1",
+    "source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+    "builder_image": "nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d",
+    "os": "ubuntu24.04",
+    "architecture": "x86_64",
+    "cuda_build": "13.0.0",
+    "cuda_build_version_origin": "builder CUDA_VERSION with installed compiler validation",
+    "cuda_compiler_version": "13.0.48",
+    "cuda_compiler_target": "compute_89",
+    "cuda_package_versions": {
+      "cuda-cccl-13-0": "13.0.50-1",
+      "cuda-command-line-tools-13-0": "13.0.0-1",
+      "cuda-compat-13-0": "580.65.06-0ubuntu1",
+      "cuda-compiler-13-0": "13.0.0-1",
+      "cuda-crt-13-0": "13.0.48-1",
+      "cuda-cub-13-0": "",
+      "cuda-cudart-11-2": "",
+      "cuda-cudart-13-0": "13.0.48-1",
+      "cuda-cudart-dev-13-0": "13.0.48-1",
+      "cuda-culibos-dev-13-0": "13.0.39-1",
+      "cuda-cuobjdump-13-0": "13.0.39-1",
+      "cuda-cupti-13-0": "13.0.48-1",
+      "cuda-cupti-dev-13-0": "13.0.48-1",
+      "cuda-cuxxfilt-13-0": "13.0.39-1",
+      "cuda-driver-dev-13-0": "13.0.48-1",
+      "cuda-gdb-13-0": "13.0.39-1",
+      "cuda-libraries-13-0": "13.0.0-1",
+      "cuda-libraries-dev-13-0": "13.0.0-1",
+      "cuda-minimal-build-13-0": "13.0.0-1",
+      "cuda-nsight-compute-13-0": "13.0.0-1",
+      "cuda-nvcc-13": "",
+      "cuda-nvcc-13-0": "13.0.48-1",
+      "cuda-nvdisasm-13-0": "13.0.39-1",
+      "cuda-nvml-dev-13-0": "13.0.39-1",
+      "cuda-nvprune-13-0": "13.0.39-1",
+      "cuda-nvrtc-13-0": "13.0.48-1",
+      "cuda-nvrtc-dev-13-0": "13.0.48-1",
+      "cuda-nvtx-13-0": "13.0.39-1",
+      "cuda-opencl-13-0": "13.0.39-1",
+      "cuda-profiler-api-13-0": "13.0.39-1",
+      "cuda-sandbox-dev-13-0": "13.0.39-1",
+      "cuda-sanitizer-13-0": "13.0.48-1",
+      "cuda-thrust-13-0": "",
+      "cuda-toolkit-13-0-config-common": "13.0.48-1",
+      "cuda-toolkit-13-config-common": "13.0.48-1",
+      "cuda-toolkit-config-common": "13.0.48-1"
+    },
+    "gpu_compute_capability": "8.9",
+    "files": [
+      {
+        "path": "bin/switchyard-engine",
+        "bytes": 64334632,
+        "sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355"
+      },
+      {
+        "path": "bin/switchyard-engine-bake",
+        "bytes": 37084096,
+        "sha256": "68850c9c3343006a524bb2aba6e287880199d3f1ef9bafabf51371d8f1baf27d"
+      },
+      {
+        "path": "lib/libcublas.so.13",
+        "bytes": 52941016,
+        "sha256": "ea443b3d282af9c82e16be974860b5ba993020bbe98988a7be201bf0c0215e88"
+      },
+      {
+        "path": "lib/libcublasLt.so.13",
+        "bytes": 538836848,
+        "sha256": "c92c4c24c257d638a61130f8a5f7f31eb6d6262c24f8e19816ff56b58b73a857"
+      },
+      {
+        "path": "lib/libcudart.so.13",
+        "bytes": 704288,
+        "sha256": "6876f4841bdbe30b187dcf8d7a7d2d6579bf12a36eeb430c7b28484ccdeed89a"
+      },
+      {
+        "path": "lib/libcurand.so.10",
+        "bytes": 132698328,
+        "sha256": "b53732a66b302b11926e00f762e2c2ba67058347ff93cf4ae709de45e93e06da"
+      },
+      {
+        "path": "lib/libgcc_s.so.1",
+        "bytes": 183024,
+        "sha256": "02f3f192bf5f79b811f1e34a650fea443d407408703448906585232383957f60"
+      },
+      {
+        "path": "lib/libstdc++.so.6",
+        "bytes": 2592224,
+        "sha256": "a68762c86d371e6041f03f03a33a78fa235809ae7d81c90185940c93c3535aed"
+      }
+    ],
+    "runtime_bytes": 829374456,
+    "numerical_accuracy": "see source commit accuracy receipt; not measured by build",
+    "serving_python": false,
+    "torch": false,
+    "vllm": false,
+    "criu": false,
+    "gpu_process_snapshot": false
+  },
+  "artifacts": [
+    {
+      "role": "runtime",
+      "id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+      "prefix": "switchyard/native-engine/runtime/a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+      "compressed_bytes": 452739512,
+      "shards": 4,
+      "files": [
+        {
+          "path": "bin/launch-engine.sh",
+          "bytes": 1686
+        },
+        {
+          "path": "bin/switchyard-engine",
+          "bytes": 64334632
+        },
+        {
+          "path": "lib/libcublas.so.13",
+          "bytes": 52941016
+        },
+        {
+          "path": "lib/libcublasLt.so.13",
+          "bytes": 538836848
+        },
+        {
+          "path": "lib/libcudart.so.13",
+          "bytes": 704288
+        },
+        {
+          "path": "lib/libcurand.so.10",
+          "bytes": 132698328
+        },
+        {
+          "path": "lib/libgcc_s.so.1",
+          "bytes": 183024
+        },
+        {
+          "path": "lib/libstdc++.so.6",
+          "bytes": 2592224
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+      "prefix": "switchyard/native-engine/models/22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+      "compressed_bytes": 1178436852,
+      "shards": 3,
+      "files": [
+        {
+          "path": "LICENSE",
+          "bytes": 11544
+        },
+        {
+          "path": "chat_template.jinja",
+          "bytes": 7755
+        },
+        {
+          "path": "config.json",
+          "bytes": 2907
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 1504832320
+        },
+        {
+          "path": "switchyard-engine.json",
+          "bytes": 161
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 12807982
+        }
+      ]
+    },
+    {
+      "role": "cache",
+      "id": "801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47",
+      "prefix": "switchyard/native-engine/cache-families/801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47",
+      "compressed_bytes": 500383,
+      "shards": 1,
+      "files": [
+        {
+          "path": "driver-family.json",
+          "bytes": 2969
+        },
+        {
+          "path": "drivers/580.159.04/bake.json",
+          "bytes": 6497
+        },
+        {
+          "path": "drivers/580.159.04/component-manifest.json",
+          "bytes": 5442
+        },
+        {
+          "path": "drivers/580.159.04/cuda/3/3/2ad65ba471e342",
+          "bytes": 537752
+        },
+        {
+          "path": "drivers/580.159.04/cuda/5/0/1c73e3706d2e61",
+          "bytes": 4386726
+        },
+        {
+          "path": "drivers/580.159.04/cuda/7/0/a099cb909ed1ab",
+          "bytes": 1456338
+        },
+        {
+          "path": "drivers/580.159.04/cuda/8/e/5921d4cd41f031",
+          "bytes": 1979392
+        },
+        {
+          "path": "drivers/580.159.04/cuda/b/4/fdbafb25b1cab7",
+          "bytes": 428972
+        },
+        {
+          "path": "drivers/580.159.04/cuda/c/3/cdcd5d8ab2481d",
+          "bytes": 106954
+        },
+        {
+          "path": "drivers/580.159.04/cuda/d/f/94ccd91b761451",
+          "bytes": 813078
+        },
+        {
+          "path": "drivers/580.159.04/cuda/f/0/6a7372492bdd70",
+          "bytes": 114007
+        },
+        {
+          "path": "drivers/580.159.04/cuda/index",
+          "bytes": 144
+        },
+        {
+          "path": "drivers/580.159.04/generated.json",
+          "bytes": 18371
+        },
+        {
+          "path": "drivers/580.159.04/identity.tsv",
+          "bytes": 39
+        }
+      ]
+    },
+    {
+      "role": "preparation",
+      "id": "4c70ad04ab5ddafca2194970069c5c3d6ca7b7a1e9d96fa08b523bb675146653",
+      "prefix": "switchyard/native-engine/preparation/4c70ad04ab5ddafca2194970069c5c3d6ca7b7a1e9d96fa08b523bb675146653",
+      "compressed_bytes": 6982171,
+      "shards": 1,
+      "files": [
+        {
+          "path": "bake-requests.json",
+          "bytes": 4832
+        },
+        {
+          "path": "bin/switchyard-engine-bake",
+          "bytes": 37084096
+        },
+        {
+          "path": "native-build.json",
+          "bytes": 3471
+        },
+        {
+          "path": "native-config.json",
+          "bytes": 272
+        }
+      ]
+    }
+  ],
+  "live_model_archive": {
+    "archive_prefix": "switchyard/native-engine/live-models/3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+    "archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+    "native_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db"
+  },
+  "cache_compatibility": {
+    "engine_configuration": "5403650dddaf53d7d72e1cfbabc40fa96d53da0aaa302a625b1d6ec227b21e3a",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "model_archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+    "model_repository": "Qwen/Qwen3.5-0.8B",
+    "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+    "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+    "architecture": "x86_64",
+    "os": "ubuntu24.04",
+    "cuda_build": "13.0.0",
+    "gpu_compute_capability": "8.9",
+    "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+    "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+    "cuda_compiler_target": "compute_89",
+    "cuda_compiler_version": "13.0.48",
+    "native_config_sha256": "a6f76f7157b536a7014fc46ce3e503411c18b51a79a1d4c645199d11b21cb851",
+    "model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+    "native_driver_cache_layout": "native-cuda-driver-family-v1"
+  },
+  "cache_family_selection": {
+    "driver": "580.159.04",
+    "component_cache_id": "1e6fa9783c441341a557dcf206f9e69990120de3e119b8ed8ff530d5a26a1be9",
+    "layout": "native-cuda-driver-family-v1"
+  },
+  "resource_bounds": {
+    "engine": {
+      "model": "qwen3.5-0.8b",
+      "model_root": "/work/switchyard/model",
+      "device": {
+        "kind": "cuda",
+        "ordinal": 0
+      },
+      "dtype": "bf16",
+      "max_context": 128,
+      "max_weight_bytes": 1610612736,
+      "max_batch_size": 8,
+      "queue_capacity": 64,
+      "batch_wait_ms": 2
+    },
+    "platform": {
+      "max_active_owned_pods": 1,
+      "max_hourly_usd": 1.0,
+      "pod_timeout_s": 600,
+      "initial_gpu_admission_bytes": 8589934592,
+      "gpu_allocator_cap_enforced": false,
+      "download_concurrency": 20,
+      "download_piece_bytes": 65536,
+      "receive_channel_pieces": 4
+    },
+    "requested_host": {
+      "minimum_ram_gb": 32,
+      "minimum_vcpus": 8,
+      "container_disk_gb": 30
+    }
+  },
+  "timing_s": {
+    "agent_listener_allocation_s": 22.277891664998606,
+    "ready_allocation_s": 22.972108114001458,
+    "first_content_allocation_s": 24.074406639003428,
+    "request_to_first_content_s": 1.1021492700092494
+  },
+  "container_stages": [
+    {
+      "stage": "container_started",
+      "allocation_offset_s": 4.028753280639648,
+      "provider_ts": "2026-10-11T22:58:29.215947077Z"
+    },
+    {
+      "stage": "agent_downloaded",
+      "allocation_offset_s": 6.0050976276397705,
+      "provider_ts": "2026-10-11T22:58:31.192588246Z"
+    }
+  ],
+  "native_process_events": [
+    {
+      "provider_ts": "2026-10-11T22:58:46.289909433Z",
+      "details": {
+        "engine": "rust"
+      },
+      "elapsed_s": 1.2071e-05,
+      "event": "process_started"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:46.290274734Z",
+      "details": {
+        "kind": "cuda",
+        "ordinal": 0
+      },
+      "elapsed_s": 0.000456044,
+      "event": "device_initialization_started"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:46.505773184Z",
+      "details": {
+        "kind": "cuda",
+        "ordinal": 0
+      },
+      "elapsed_s": 0.215910713,
+      "event": "device_initialized"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:46.505869517Z",
+      "details": {
+        "bytes": 1504832320,
+        "files": 1
+      },
+      "elapsed_s": 0.216054457,
+      "event": "weights_read_started"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:46.897028707Z",
+      "details": {},
+      "elapsed_s": 0.607171546,
+      "event": "tokenizer_loaded"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:47.541394623Z",
+      "details": {
+        "bytes": 1504832320,
+        "tensors": 320
+      },
+      "elapsed_s": 1.248542252,
+      "event": "weights_read_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:47.879105844Z",
+      "details": {
+        "layers": 24,
+        "vocab": 248320
+      },
+      "elapsed_s": 1.589196901,
+      "event": "model_loaded"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:47.881674081Z",
+      "details": {
+        "address": "127.0.0.1:8000"
+      },
+      "elapsed_s": 1.5918645420000002,
+      "event": "http_listening"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:48.920747164Z",
+      "details": {
+        "jobs": 1,
+        "sequences": 1
+      },
+      "elapsed_s": 2.630861232,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:48.921001452Z",
+      "details": {
+        "batch_size": 1,
+        "prompt_tokens": 19
+      },
+      "elapsed_s": 2.631066628,
+      "event": "batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T22:58:49.237137323Z",
+      "details": {
+        "batch_size": 1,
+        "elapsed_s": 0.316199483
+      },
+      "elapsed_s": 2.947127607,
+      "event": "batch_finished"
+    }
+  ],
+  "provider_lifecycle_events": [
+    {
+      "source": "system",
+      "line": "create container ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+      "ts": "2026-10-11T22:58:26Z"
+    },
+    {
+      "source": "system",
+      "line": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136 Pulling from lxe/switchyard-runtime",
+      "ts": "2026-10-11T22:58:26Z"
+    },
+    {
+      "source": "system",
+      "line": "Digest: sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+      "ts": "2026-10-11T22:58:26Z"
+    },
+    {
+      "source": "system",
+      "line": "Status: Image is up to date for ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+      "ts": "2026-10-11T22:58:26Z"
+    },
+    {
+      "source": "system",
+      "line": "start container for ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136: begin",
+      "ts": "2026-10-11T22:58:28Z"
+    }
+  ],
+  "agent_state": {
+    "model": "qwen3.5-0.8b",
+    "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "phase": "ready",
+    "bytes_downloaded": 1178436852,
+    "bytes_total": 1178436852,
+    "hydration_seconds": 14.255497724,
+    "volume_bytes_per_s": 82759548.6323707,
+    "model_cached": false,
+    "image_cached": null,
+    "error": null,
+    "artifact_bytes_downloaded": 0,
+    "artifact_network_bytes_downloaded": 453239895,
+    "artifact_bytes_total": 453239895,
+    "artifact_volume_bytes_per_s": null,
+    "artifact_network_bytes_per_s": 84010028.4242151,
+    "artifacts": [
+      {
+        "name": "runtime",
+        "id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+        "phase": "ready",
+        "downloaded_bytes": 0,
+        "network_bytes_downloaded": 452739512,
+        "network_verified_bytes": 0,
+        "total_bytes": 452739512,
+        "unpacked_bytes": 792303104,
+        "total_unpacked_bytes": 792303104,
+        "verified_chunks": 0,
+        "total_chunks": 4,
+        "cached": false,
+        "chunk_cache_hits": 0,
+        "error": null,
+        "transport": {
+          "transfers": [
+            {
+              "object": "09aa1012d9147101ce004827a3d12550de41f8805d8418dbc5a097f3a6323e13.tar.zst",
+              "offset": 0,
+              "expected_bytes": 351423960,
+              "received_bytes": 351423960,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 5.336644311,
+              "body_wait_seconds": 4.234569355000002,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            },
+            {
+              "object": "53274d272378d79a5029ee7742ba5ffc2fad323af58cecdd67200b2f1b69d8b0.tar.zst",
+              "offset": 0,
+              "expected_bytes": 833659,
+              "received_bytes": 833659,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 0.524916539,
+              "body_wait_seconds": 0.13252465199999997,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            },
+            {
+              "object": "95ed98b9e2eb791bf76d87a6ddc9ed39b3161458e20b92d59c4ddaef40fc2edf.tar.zst",
+              "offset": 0,
+              "expected_bytes": 57021964,
+              "received_bytes": 57021964,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 1.740504168,
+              "body_wait_seconds": 1.0167770369999998,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            },
+            {
+              "object": "e83a60ba075b3aee6c342dd9eb5884c64c7fc0c6cf73cdf72d0e91ccec4c0c6d.tar.zst",
+              "offset": 0,
+              "expected_bytes": 43459929,
+              "received_bytes": 43459929,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 1.850035927,
+              "body_wait_seconds": 1.2293737489999994,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            }
+          ],
+          "omitted_transfers": 0,
+          "failure": null
+        }
+      },
+      {
+        "name": "gpu-kernels",
+        "id": "801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47",
+        "phase": "ready",
+        "downloaded_bytes": 0,
+        "network_bytes_downloaded": 500383,
+        "network_verified_bytes": 0,
+        "total_bytes": 500383,
+        "unpacked_bytes": 9877504,
+        "total_unpacked_bytes": 9877504,
+        "verified_chunks": 0,
+        "total_chunks": 1,
+        "cached": false,
+        "chunk_cache_hits": 0,
+        "error": null,
+        "transport": {
+          "transfers": [
+            {
+              "object": "eb136bf15c572d7c5de1f704ae3c78c88c32f31176f291c27828de7127a22e60.tar.zst",
+              "offset": 0,
+              "expected_bytes": 500383,
+              "received_bytes": 500383,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 0.759418571,
+              "body_wait_seconds": 0.10254034300000003,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            }
+          ],
+          "omitted_transfers": 0,
+          "failure": null
+        }
+      }
+    ],
+    "inference_verified": false,
+    "hydration_mode": "trusted_streaming",
+    "model_storage": {
+      "root": "/work/switchyard",
+      "filesystem": "overlay",
+      "mount_point": "/",
+      "source": "overlay",
+      "ram_backed": false,
+      "available_bytes": 32182165504,
+      "required_bytes": 1517662669,
+      "memory_available_bytes": 520941375488,
+      "cgroup_available_bytes": 99982438400
+    },
+    "runtime_storage": {
+      "root": "/opt/switchyard",
+      "filesystem": "overlay",
+      "mount_point": "/",
+      "source": "overlay",
+      "ram_backed": false,
+      "available_bytes": 32182165504,
+      "required_bytes": 792292046,
+      "memory_available_bytes": 520938516480,
+      "cgroup_available_bytes": 99982106624
+    },
+    "dependency_budget": {
+      "model_bytes": 1517662669,
+      "model_output_required_bytes": 1517662669,
+      "runtime_output_bytes": 792292046,
+      "compressed_backing_bytes": 0,
+      "decoder_history_bound_bytes": 3221225472,
+      "loader_staging_bytes": 0,
+      "required_ram_bytes": 3759407104,
+      "preflight_seconds": 0.004250108
+    },
+    "startup_milestones": [
+      {
+        "event": "runtime_hydration_started",
+        "elapsed_s": 0.685120273
+      },
+      {
+        "event": "model_hydration_started",
+        "elapsed_s": 0.712845538
+      },
+      {
+        "event": "runtime_hydration_finished",
+        "elapsed_s": 6.080262415
+      },
+      {
+        "event": "model_hydration_finished",
+        "elapsed_s": 14.982095866
+      },
+      {
+        "event": "engine_spawned",
+        "elapsed_s": 14.98254721
+      },
+      {
+        "event": "engine_health_polling_started",
+        "elapsed_s": 14.994463619
+      },
+      {
+        "event": "engine_health_ready",
+        "elapsed_s": 16.718013486
+      }
+    ],
+    "model_diagnostics": {
+      "elapsed_s": 17.62465317,
+      "available_permits": null,
+      "transfers": [
+        {
+          "name": "fdd3ffa31532b917653dcaf9a5db394cc27f66e62e397e6b986ed34e46cca5a5.tar.zst",
+          "shard": 0,
+          "seq": 0,
+          "expected_bytes": 6610,
+          "boundary": "complete",
+          "boundary_since_s": 0.589775882,
+          "boundary_age_s": 17.034877287999997,
+          "consumer_boundary": "complete",
+          "consumer_since_s": 0.589766421,
+          "consumer_age_s": 17.034886748999998,
+          "permit_wait_started_s": 5.6651e-05,
+          "permit_acquired_s": 5.7131e-05,
+          "permit_released_s": 0.589766281,
+          "permit_wait_s": 4.800000000000022e-07,
+          "permit_held_s": 0.5897091499999999,
+          "request_s": 5.9291e-05,
+          "headers_s": 0.584838773,
+          "first_body_s": 0.588579636,
+          "last_body_s": 0.589265976,
+          "body_eof_s": 0.589271026,
+          "consumed_s": 0.589766281,
+          "http_version": "HTTP/1.1",
+          "http_status": 200,
+          "declared_length": 6610,
+          "remote_socket": "172.64.190.1:443",
+          "received_bytes": 6610,
+          "delivered_bytes": 6610,
+          "consumed_bytes": 6610,
+          "decoded_bytes": 25600,
+          "channel_available_slots": 4,
+          "channel_slots": 4,
+          "channel_wait_s": 1.9469999999999998e-05,
+          "body_wait_s": 0.004401953,
+          "longest_body_wait_s": 0.003734603,
+          "error_class": null
+        },
+        {
+          "name": "0ae93cd6e9147fa41e97642bfea9844ad7e782b31de6f0507b67c7ccf658e4e3.tar.zst",
+          "shard": 1,
+          "seq": 0,
+          "expected_bytes": 1175062995,
+          "boundary": "complete",
+          "boundary_since_s": 14.23978675,
+          "boundary_age_s": 3.384866419999998,
+          "consumer_boundary": "complete",
+          "consumer_since_s": 14.23977214,
+          "consumer_age_s": 3.384881029999999,
+          "permit_wait_started_s": 0.000380161,
+          "permit_acquired_s": 0.000380421,
+          "permit_released_s": 14.23977196,
+          "permit_wait_s": 2.599999999999738e-07,
+          "permit_held_s": 14.239391539000001,
+          "request_s": 0.000396162,
+          "headers_s": 0.48479942,
+          "first_body_s": 0.491807681,
+          "last_body_s": 14.239285455,
+          "body_eof_s": 14.239289225,
+          "consumed_s": 14.23977196,
+          "http_version": "HTTP/1.1",
+          "http_status": 200,
+          "declared_length": 1175062995,
+          "remote_socket": "172.64.66.1:443",
+          "received_bytes": 1175062995,
+          "delivered_bytes": 1175062995,
+          "consumed_bytes": 1175062995,
+          "decoded_bytes": 1504834048,
+          "channel_available_slots": 4,
+          "channel_slots": 4,
+          "channel_wait_s": 1.9432406730000027,
+          "body_wait_s": 11.680437132000066,
+          "longest_body_wait_s": 0.074597696,
+          "error_class": null
+        },
+        {
+          "name": "dac730b49ccabb27a1d09625c6618f13402cbdbc5653f4b9e662816e505b4b38.tar.zst",
+          "shard": 2,
+          "seq": 0,
+          "expected_bytes": 3367247,
+          "boundary": "complete",
+          "boundary_since_s": 0.913534162,
+          "boundary_age_s": 16.711119007999997,
+          "consumer_boundary": "complete",
+          "consumer_since_s": 0.913530372,
+          "consumer_age_s": 16.711122797999998,
+          "permit_wait_started_s": 0.000706911,
+          "permit_acquired_s": 0.000707111,
+          "permit_released_s": 0.913530152,
+          "permit_wait_s": 2.0000000000000486e-07,
+          "permit_held_s": 0.912823041,
+          "request_s": 0.000708331,
+          "headers_s": 0.602058422,
+          "first_body_s": 0.602456234,
+          "last_body_s": 0.912501421,
+          "body_eof_s": 0.912553783,
+          "consumed_s": 0.913530152,
+          "http_version": "HTTP/1.1",
+          "http_status": 200,
+          "declared_length": 3367247,
+          "remote_socket": "172.64.66.1:443",
+          "received_bytes": 3367247,
+          "delivered_bytes": 3367247,
+          "consumed_bytes": 3367247,
+          "decoded_bytes": 12810752,
+          "channel_available_slots": 4,
+          "channel_slots": 4,
+          "channel_wait_s": 0.006385081000000001,
+          "body_wait_s": 0.30098292000000004,
+          "longest_body_wait_s": 0.051244573,
+          "error_class": null
+        }
+      ],
+      "shards": [
+        {
+          "shard": 0,
+          "active_seq": 0,
+          "boundary": "complete",
+          "boundary_since_s": 0.589900535,
+          "boundary_age_s": 17.034752634999997,
+          "decoded_bytes": 25600,
+          "file_written_bytes": 22206
+        },
+        {
+          "shard": 1,
+          "active_seq": 0,
+          "boundary": "complete",
+          "boundary_since_s": 14.255180374,
+          "boundary_age_s": 3.3694727959999984,
+          "decoded_bytes": 1504834048,
+          "file_written_bytes": 1504832320
+        },
+        {
+          "shard": 2,
+          "active_seq": 0,
+          "boundary": "complete",
+          "boundary_since_s": 0.91546172,
+          "boundary_age_s": 16.70919145,
+          "decoded_bytes": 12810752,
+          "file_written_bytes": 12808143
+        }
+      ],
+      "omitted_transfers": 0,
+      "omitted_shards": 0,
+      "failure": null
+    }
+  },
+  "request": {
+    "model": "qwen3.5-0.8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word Paris."
+      }
+    ],
+    "max_tokens": 4,
+    "temperature": 0,
+    "stream": true
+  },
+  "frames": [
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": "Paris",
+            "role": "assistant"
+          },
+          "finish_reason": null,
+          "index": 0,
+          "token_ids": [
+            57590
+          ]
+        }
+      ],
+      "created": 1791759528,
+      "id": "sy-83-1",
+      "model": "qwen3.5-0.8b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.256117294
+    },
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null,
+          "index": 0,
+          "token_ids": [
+            248046
+          ]
+        }
+      ],
+      "created": 1791759528,
+      "id": "sy-83-1",
+      "model": "qwen3.5-0.8b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.278595571
+    },
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": "\n"
+          },
+          "finish_reason": null,
+          "index": 0,
+          "token_ids": [
+            198
+          ]
+        }
+      ],
+      "created": 1791759528,
+      "id": "sy-83-1",
+      "model": "qwen3.5-0.8b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.295550481
+    },
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": "stop",
+          "index": 0,
+          "token_ids": [
+            248044
+          ]
+        }
+      ],
+      "created": 1791759528,
+      "id": "sy-83-1",
+      "model": "qwen3.5-0.8b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.316163532
+    }
+  ],
+  "workloads": null,
+  "offline_bake": {
+    "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+    "hardware": "NVIDIA GeForce RTX 4090, GPU-4759da3f-c22d-85a5-d984-9293e77fd972, 580.159.04, 8.9, 24564 MiB",
+    "native_generation_s": 17.210634342,
+    "cache_bytes": 9823363,
+    "cache_files": 9,
+    "controller_events": [
+      {
+        "stage": "allocation_started",
+        "elapsed_s": 0.00028777199622709304,
+        "name": "switchyard-native-bake-bf5f3c5c1ccd"
+      },
+      {
+        "stage": "allocation_accepted",
+        "elapsed_s": 1.256477257993538,
+        "id": "eah3t7xwkqjxed",
+        "name": "switchyard-native-bake-bf5f3c5c1ccd",
+        "status": "RUNNING",
+        "cost": 0.89,
+        "dataCenterId": "EUR-IS-2",
+        "cudaVersion": "13.0"
+      },
+      {
+        "stage": "bake_container_ready",
+        "elapsed_s": 29.04963688600401,
+        "pod_id": "eah3t7xwkqjxed"
+      },
+      {
+        "stage": "offline_bake_started",
+        "elapsed_s": 31.936399661004543
+      },
+      {
+        "stage": "offline_bake_finished",
+        "elapsed_s": 80.78453016199637
+      },
+      {
+        "stage": "cache_published",
+        "elapsed_s": 86.6477480570029,
+        "cache_id": "1e6fa9783c441341a557dcf206f9e69990120de3e119b8ed8ff530d5a26a1be9",
+        "driver": "580.159.04",
+        "gpu": "NVIDIA GeForce RTX 4090",
+        "cache_bytes": 9823363,
+        "cache_files": 9
+      },
+      {
+        "stage": "cleanup",
+        "elapsed_s": 88.25098470800731,
+        "pod_id": "eah3t7xwkqjxed",
+        "confirmed_absent": true
+      }
+    ],
+    "cleanup": {
+      "pod_id": "eah3t7xwkqjxed",
+      "name": "switchyard-native-bake-bf5f3c5c1ccd",
+      "confirmed_absent": true
+    }
+  },
+  "launch_controller_events": [
+    {
+      "stage": "allocation_started",
+      "elapsed_s": 6.3611007330036955,
+      "name": "switchyard-native-launch-61b3c9246bb1"
+    },
+    {
+      "stage": "allocation_accepted",
+      "elapsed_s": 7.591132707995712,
+      "id": "o70whvuqi6wpye",
+      "name": "switchyard-native-launch-61b3c9246bb1",
+      "status": "RUNNING",
+      "cost": 0.89,
+      "dataCenterId": "EUR-IS-2",
+      "cudaVersion": "13.0"
+    },
+    {
+      "stage": "provider_log_read_notice",
+      "elapsed_s": 12.951097102006315,
+      "error_type": "TimeoutError",
+      "http_status": null
+    },
+    {
+      "stage": "agent_listener_observed",
+      "elapsed_s": 28.63896691100672,
+      "allocation_s": 22.277891664998606
+    },
+    {
+      "stage": "native_ready_observed",
+      "elapsed_s": 29.333303507999517,
+      "allocation_s": 22.972108114001458
+    },
+    {
+      "stage": "first_streamed_content",
+      "elapsed_s": 30.435482383996714,
+      "allocation_s": 24.074406639003428,
+      "request_s": 1.1021492700092494,
+      "content": "Paris"
+    },
+    {
+      "stage": "cleanup",
+      "elapsed_s": 35.37006424900028,
+      "pod_id": "o70whvuqi6wpye",
+      "confirmed_absent": true
+    },
+    {
+      "stage": "rental_estimate",
+      "elapsed_s": 35.89472711899725,
+      "rental_duration_s": 29.533648276992608,
+      "estimated_usd": 0.00730137449013083
+    }
+  ],
+  "cleanup": {
+    "pod_id": "o70whvuqi6wpye",
+    "name": "switchyard-native-launch-61b3c9246bb1",
+    "confirmed_absent": true
+  },
+  "limitations": {
+    "hard_gpu_allocator_cap_enforced": false,
+    "direct_gpu_weight_chunk_consumer": false,
+    "native_weight_reader": "aggregate host buffer bounded by max_weight_bytes",
+    "model_transport": "bounded Rust archive streaming into native files",
+    "image_cache_residency": "unknown",
+    "serving_python": false,
+    "torch": false,
+    "vllm": false,
+    "criu": false,
+    "serving_content_hashes": false,
+    "inference_readiness_probe": false
+  }
+}
