@@ -102,7 +102,7 @@ The fresh-host native-provider run completed all 222 calls and all nine literal 
 
 That interval included 7.055 seconds of preimport, repeated worker imports and setup, 3.189 seconds of model loading, 4.075 seconds in memory planning, and 2.533 seconds in final warmup and graph capture. Timings inside memory planning and warmup are nested and must not be added to their parent durations. The native graph captures took about one second each. The exported Torch and Triton files were reused; the rejected startup-plan baseline explained the remaining memory profiling.
 
-A supported `VLLM_WORKER_MULTIPROC_METHOD=fork` experiment preserved the native safety guard. The API process had already initialized CUDA, so vLLM changed the method back to `spawn`. All 222 calls passed, but the 29.085-second post-gate interval did not establish an import reduction. A subsequent diagnostic identified the import-time query in `vllm/third_party/flash_linear_attention/ops/utils.py`: `_check_platform()` calls `get_available_device()`, which asks Triton's active driver for the current target and reaches `torch.cuda.current_device()`. No native guard was disabled and no installed engine source was patched. [Pinned FLA utility](https://github.com/vllm-project/vllm/blob/v0.31.0/vllm/third_party/flash_linear_attention/ops/utils.py)
+A supported `VLLM_WORKER_MULTIPROC_METHOD=fork` experiment preserved the native safety guard. The API process had already initialized CUDA, so vLLM changed the method back to `spawn`. All 222 calls passed, but the 29.085-second post-gate interval did not establish an import reduction. A subsequent diagnostic identified the import-time query in `vllm/third_party/flash_linear_attention/ops/utils.py`: `_check_platform()` calls `get_available_device()`, which asks Triton's active driver for the current target and reaches `torch.cuda.current_device()`. That experiment left the native guard and installed engine source unchanged. [Pinned FLA utility](https://github.com/vllm-project/vllm/blob/v0.31.0/vllm/third_party/flash_linear_attention/ops/utils.py)
 
 ### Scoped runtime assets
 
@@ -117,6 +117,37 @@ The scoped launch's scheduled-arrival time to first content was 62.790739 second
 Raw reception telemetry recorded 4,975,192,841 bytes received in 22.399301 seconds and extraction completing at 22.415217 seconds, only 16 milliseconds later. The buffer high-water mark was 749,007,400 bytes. The 25.046331-second consumer-wait total aggregates waits across concurrent consumers; it is not an additional wall-clock delay. These observations do not show a sustained extraction bottleneck in this run. The older controller drops the new reception fields in typed reports, so the evidence retains them from raw agent state.
 
 Compared with the earlier native-provider run, runtime publication was 12.147 seconds earlier, model publication was 9.205 seconds later, the critical model gate was 7.977 seconds earlier, and post-gate startup was 4.022 seconds shorter. First content was 11.739 seconds earlier. The agent version also changed and these are different fresh hosts, so that total cannot be attributed solely to pruning. A matched control with the same agent/controller was stopped before allocation during a hydration-lock investigation; it cost zero. No matched-repeat speedup is claimed.
+
+### Native FLA platform-query patch
+
+The pinned FLA utility initialized CUDA during API imports, which made vLLM select `spawn` and import the serving stack again in its worker. The source-pinned patch queries NVML only for one visible GPU before the CUDA driver has initialized. It accepts numeric visibility only when NVML reports one physical GPU; UUID visibility uses Torch's pinned parser, including abbreviated UUID resolution. Initialized drivers, ambiguous numeric ordering, and NVML failures retain the original queries. The existing CUDA and NUMA fork guards remain active. Eighteen semantic fixtures include different CUDA/NVML ordering and a device selected by another CUDA library. The driver probe calls `cuCtxGetCurrent` without `cuInit`, following the [CUDA Driver API initialization contract](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__INITIALIZE.html).
+
+The first fresh GPU attempt retained the API imports through fork and loaded Torch AOT, but failed closed at native sampling-provider lookup. Python had cached the original cache-prefix path as missing before the launcher created its alias. A native CPU reproduction found zero FlashInfer providers in the parent and forked child, but one in a fresh interpreter. After `importlib.invalidate_caches()`, all three found the provider. The launcher now invalidates those entries after creating the checked alias and before serving imports. The failed attempt cost $0.016435 and was independently confirmed deleted; no JIT fallback was enabled.
+
+The matched follow-up uses RC2 agent SHA `e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36` and controller SHA `f250162bdc2577164f690a7431517119b07c7889a176e5cd10588e92a2c19d6d`. Program, arguments, environment, model, and engine settings match between the patched scoped runtime and unpatched scoped control. Every compiler-cache entry remains unchanged. The new runtime changes only the FLA module, its shipped-Python bytecode, and provenance metadata relative to that control.
+
+| Metric | Patched FLA | Unpatched control |
+| --- | ---: | ---: |
+| Native worker method | fork | spawn |
+| CUDA initialized when API selects context | false | true |
+| API process marker to worker device initialization | 11.973 s | 18.026 s |
+| Engine spawn to verified inference | 24.099 s | 29.595 s |
+| Model gate to verified inference | 24.099 s | 26.099 s |
+| Scheduled arrival to first content | 64.865 s | 60.855 s |
+| Preimport | 7.107 s | 7.105 s |
+| Worker model loading | 2.249 s | 3.010 s |
+| Memory planning | 4.230 s | 4.007 s |
+| Final warmup and capture | 2.658 s | 2.545 s |
+| Native FlashInfer sampling module load | 0.002728 s | 0.002092 s |
+| Long serial output rate | 153.9 tokens/s | 154.8 tokens/s |
+| Shared burst / unique burst | 1314 / 978 tokens/s | 1372 / 1018 tokens/s |
+| Shared queue / unique queue | 802 / 543 tokens/s | 862 / 586 tokens/s |
+
+Both variants completed all 222 requests, all nine literal checks, and zero failed, unfinished, invalid-action, or budget-exceeded cases. Native logs directly record the selected multiprocessing method. The patched API has no CUDA lazy initialization; its worker initializes CUDA during device setup. Both variants explicitly load Torch AOT and one native sampling artifact, with FlashInfer JIT disabled and no `build` call. The GPU launcher also confirms the stale importer entry and shim visibility before and after invalidation.
+
+The patch reduces the measured process-start interval by 5.497 seconds and the API-to-worker interval by 6.054 seconds. These one-host-per-variant measurements do not establish an end-to-end first-token gain: runtime hydration, model hydration overlap, and bootstrap timing differ. Serial throughput differs by 0.6%; aggregate throughput is 4–7% lower in the patched sample, which remains an uncertainty for broader deployment. Memory planning still rejects the old free-memory baseline; its guard is preserved. The accepted source patch is scoped to the 0.8B archive-model workload on SM89. The parent's raw-extents loader and larger models require separate native acceptance.
+
+The exact patch descriptor, native reproduction, derivation guards, phase measurements, case counts, prefix counters, and cleanup receipts are in [fla-gpu-acceptance.json](serving-comparison-data/fla-gpu-acceptance.json). The checked `vllm-sm89-fla-nvml.json` configuration retains the verified launch identity and uses measured scheduler priors of 138 serial tokens/s, 488 aggregate tokens/s, and 72 seconds of startup. These priors use the existing conservative calibration rule; they do not change the engine fingerprint. [Runtime and per-model cache preparation](serving-runtime-preparation.md) records the reproducible packaging steps and all three model identities.
 
 ### Runtime provenance and reproduction
 
@@ -143,7 +174,7 @@ python scripts/serving-comparison/summarize.py \
   --ledger results/comparison-budget.json --out results/comparison-summary.json
 ```
 
-The derivative must be published with the artifact CLI before its generated configuration is used by the guarded gauntlet. The wrapper's reservation is cumulative, including failures, and an allocated pod is not considered gone until an independent GET returns 404. Tracked evidence is under `docs/serving-comparison-data`. `comparison-budget.json` includes failures and zero-cost preallocation stops; `comparison-summary.json` contains case counts, literal checks, arrival/service timing, prefix counters, native stage observations and raw reception fields. Artifact identity files contain full SHA-256 IDs, publication receipts and source provenance. All finalized owned pods were independently confirmed absent with GET 404. Finalized comparison rental spend is $0.6937564375247596, leaving $0.3062435624752404 of the authorized $1 reservation.
+The derivative must be published with the artifact CLI before its generated configuration is used by the guarded gauntlet. The wrapper's reservation is cumulative, including failures, and an allocated pod is not considered gone until an independent GET returns 404. Tracked evidence is under `docs/serving-comparison-data`. `comparison-budget.json` includes failures and zero-cost preallocation stops; `comparison-summary.json` contains case counts, literal checks, arrival/service timing, prefix counters, native stage observations and raw reception fields. Artifact identity files contain full SHA-256 IDs, publication receipts and source provenance. All finalized owned pods were independently confirmed absent with GET 404. Finalized comparison rental spend is $0.7625194009140106, leaving $0.2374805990859894 of the authorized $1 reservation.
 
 `runtime-profile.py --validate-only` checks source launch fingerprint, runtime labels, exact engine identity, model revision/archive and GPU binding before cloning. Negative checks reject changed launch environment, attention overrides (including equals/underscore forms), speculative settings, model revision and GPU binding. `runtime-profile.py` then verifies both complete source trees, derives the scoped runtime and cache artifacts, and emits a fresh configuration. Use `--agent-url` and `--agent-sha256` to reproduce the accepted new-agent pin. Publish both emitted artifacts before a guarded gauntlet.
 

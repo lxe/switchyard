@@ -20,5 +20,8 @@
   "same_engine": true,
   "controller_sha256": "f250162bdc2577164f690a7431517119b07c7889a176e5cd10588e92a2c19d6d",
   "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
-  "gpu_acceptance_required": true
+  "gpu_acceptance_required": false,
+  "gpu_acceptance_completed": true,
+  "native_fork_retained": true,
+  "acceptance_run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo-v2"
 }

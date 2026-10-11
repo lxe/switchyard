@@ -1,0 +1,169 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA L40S"
+    ],
+    "data_centers": [
+      "US-MO-1"
+    ],
+    "min_cuda": "13.0",
+    "disk_gb": 80,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "archive_prefix": "models/Qwen__Qwen3.5-0.8B/2fc06364715b967f1860aea9cf38778875588b17/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--enable-prefix-caching",
+          "--mamba-cache-mode",
+          "align",
+          "--enable-prompt-tokens-details",
+          "--max-cudagraph-capture-size",
+          "32",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}",
+          "--max-num-batched-tokens",
+          "2048"
+        ]
+      },
+      "prior": {
+        "single_output_tps": 138,
+        "aggregate_output_tps": 488,
+        "input_work_per_token": 0.05,
+        "startup_s": 72,
+        "kv_tokens": 131072
+      },
+      "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+      "caches": [
+        {
+          "name": "compiled",
+          "gpu": "NVIDIA L40S",
+          "artifact": {
+            "id": "ccc33cfaec8d0e669950f4b61b229fb5062ba46e8e17be1b76a613c10e349c69",
+            "prefix": "switchyard/serving-comparison/cache/ccc33cfaec8d0e669950f4b61b229fb5062ba46e8e17be1b76a613c10e349c69"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+            "gpu": "NVIDIA L40S",
+            "gpu_compute_capability": "8.9",
+            "model_archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+            "model_repository": "Qwen/Qwen3.5-0.8B",
+            "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+            "runtime_id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+            "runtime_launch_configuration": "2a5e73fc50491f692622b1cf171ad825a8c2276c00dadea90aac295d50ae6eb3"
+          }
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "max_instances": 1,
+    "max_usd_per_hour": 1.2,
+    "max_run_usd": 0.14,
+    "run_timeout_s": 410,
+    "startup_timeout_s": 360,
+    "request_timeout_s": 60,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 0.14,
+    "experiment_timeout_s": 410
+  },
+  "scheduling": {
+    "maximum_startup_s": 360,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.2/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+    "ticket_prefix": "switchyard/serving-comparison/tickets",
+    "runtime": {
+      "artifact": {
+        "id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+        "prefix": "switchyard/serving-comparison/runtime/808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "asset_profile": "qwen3.5-0.8b-bf16-sm89-flashattn",
+        "cuda": "12.9",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "source_patch": "5b935fc5f4eacaff29876d2c9304df0b54ebe69828c6c3da8916ba36e54135f5",
+        "torch": "2.13.0+cu129",
+        "vllm": "0.31.0+cu129"
+      },
+      "program": "venv/bin/python",
+      "args": [
+        "-c",
+        "import os,pathlib\nactual_cache=pathlib.Path(os.environ[\"SERVING_PROFILE_CACHE_ROOT\"]).resolve()\noriginal_cache=pathlib.Path('/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14')\nif original_cache.exists() or original_cache.is_symlink():\n    if original_cache.resolve() != actual_cache:\n        raise SystemExit(\"compiler cache prefix alias already belongs to another tree\")\nelse:\n    original_cache.symlink_to(actual_cache,target_is_directory=True)\nimport importlib.util,json,sys\nprovider_before=importlib.util.find_spec(\"flashinfer_jit_cache\") is not None\nprovider_path=os.environ.get(\"PYTHONPATH\",\"\")\nprovider_negative_before=any(path in sys.path_importer_cache and sys.path_importer_cache[path] is None for path in provider_path.split(os.pathsep))\nimport importlib\nimportlib.invalidate_caches()\nprint(\"SWITCHYARD_NATIVE_PROVIDER_DISCOVERY \"+json.dumps({\"pid\":os.getpid(),\"pythonpath\":provider_path,\"sys_path\":sys.path,\"negative_importer_before\":provider_negative_before,\"shim_visible_before\":provider_before,\"shim_visible_after\":importlib.util.find_spec(\"flashinfer_jit_cache\") is not None}),flush=True)\nprofile_dir=pathlib.Path(os.environ[\"VLLM_CACHE_ROOT\"]).parent/\"startup-profile\"\nprofile_dir.mkdir(exist_ok=True)\n(profile_dir/\"sitecustomize.py\").write_text('\"\"\"Diagnostic sitecustomize: time native startup calls without changing results.\\n\\nThe launcher writes this file outside the runtime and adds its directory to\\nPYTHONPATH for the diagnostic process and its children. It logs no arguments,\\nprompts, environment values, or credentials. Durations may overlap through\\nnesting; they must not be added together.\\n\"\"\"\\nimport functools\\nimport importlib.abc\\nimport importlib.machinery\\nimport json\\nimport os\\nimport sys\\nimport time\\nimport traceback\\n\\nFUNCTIONS = {\\n    \\'vllm.utils.system_utils\\': [\\'get_mp_context\\'],\\n    \\'torch.cuda\\': [\\'_lazy_init\\'],\\n    \\'vllm.v1.worker.gpu.warmup\\': [\\'warmup_kernels\\', \\'_warmup_kernels\\', \\'run_mixed_prefill_decode_warmup\\'],\\n    \\'vllm.model_executor.warmup.kernel_warmup\\': [\\n        \\'kernel_warmup\\', \\'cutedsl_warmup\\', \\'qwen_triton_warmup\\',\\n        \\'qwen_vl_triton_warmup\\', \\'mamba_triton_warmup\\', \\'is_deep_gemm_supported\\',\\n        \\'deep_gemm_warmup\\', \\'b12x_warmup\\', \\'minimax_m3_msa_warmup\\',\\n        \\'flashinfer_sparse_mla_decode_autotune_warmup\\',\\n        \\'deepseek_v4_sparse_mla_attention_warmup\\', \\'_warmup_gemm_rs_ar\\',\\n        \\'kimi_k3_triton_warmup\\', \\'watermark_sample_warmup\\', \\'qwen4_exp_qsa_triton_warmup\\',\\n    ],\\n}\\nCLASSES = {\\n    \\'vllm.v1.worker.gpu_worker\\': {\\'Worker\\': [\\n        \\'init_device\\', \\'load_model\\', \\'determine_available_memory\\',\\n        \\'initialize_from_config\\', \\'compile_or_warm_up_model\\',\\n        \\'execute_model\\', \\'sample_tokens\\',\\n    ]},\\n    \\'vllm.v1.worker.gpu.model_runner\\': {\\'GPUModelRunner\\': [\\n        \\'load_model\\', \\'profile_run\\', \\'capture_model\\',\\n    ]},\\n    \\'vllm.v1.worker.gpu_model_runner\\': {\\'GPUModelRunner\\': [\\n        \\'load_model\\', \\'profile_run\\', \\'capture_model\\',\\n    ]},\\n    \\'flashinfer.jit.core\\': {\\n        \\'JitSpec\\': [\\'build_and_load\\'],\\n        \\'JitSpecNvcc\\': [\\'try_load\\', \\'build\\', \\'load\\'],\\n    },\\n}\\nACTIVE = True\\nASSET_PATHS = set()\\n\\ndef audit_asset_access(event, args):\\n    if event != \\'open\\' or not args or not isinstance(args[0], (str, bytes)):\\n        return\\n    path = os.fsdecode(args[0])\\n    marker = \\'/site-packages/flashinfer_cubin/\\'\\n    if marker in path and path not in ASSET_PATHS:\\n        ASSET_PATHS.add(path)\\n        print(\\'SWITCHYARD_RUNTIME_ASSET_ACCESS \\' + json.dumps({\\n            \\'pid\\': os.getpid(), \\'path\\': \\'flashinfer_cubin/\\' + path.split(marker, 1)[1],\\n        }, sort_keys=True), flush=True)\\n\\nsys.addaudithook(audit_asset_access)\\n\\ndef emit(**values):\\n    print(\\'SWITCHYARD_STARTUP_PROFILE \\' + json.dumps({\\n        \\'pid\\': os.getpid(), \\'monotonic_s\\': time.monotonic(), **values,\\n    }, sort_keys=True), flush=True)\\n\\ndef timed(function, name):\\n    @functools.wraps(function)\\n    def call(*args, **kwargs):\\n        global ACTIVE\\n        if not ACTIVE:\\n            return function(*args, **kwargs)\\n        if name == \\'torch.cuda._lazy_init\\' and sys.modules[\\'torch.cuda\\'].is_initialized():\\n            return function(*args, **kwargs)\\n        began = time.monotonic()\\n        observation = {}\\n        if name == \\'torch.cuda._lazy_init\\':\\n            observation[\\'callers\\'] = [\\n                {\\'file\\': os.path.basename(frame.filename), \\'function\\': frame.name, \\'line\\': frame.lineno}\\n                for frame in traceback.extract_stack(limit=14)[:-1]\\n            ]\\n        if name == \\'flashinfer.jit.core.JitSpecNvcc.try_load\\' and args:\\n            env = sys.modules.get(\\'flashinfer.jit.env\\')\\n            observation = {\\'native_provider_count\\': len(env.FLASHINFER_AOT_PROVIDERS),\\n                           \\'native_aot_artifact_count\\': len(args[0].aot_artifacts)}\\n        if name.endswith(\\'determine_available_memory\\') and args:\\n            snapshot = getattr(args[0], \\'init_snapshot\\', None)\\n            if snapshot is not None:\\n                observation = {\\'free_memory_bytes\\': snapshot.free_memory,\\n                               \\'total_memory_bytes\\': snapshot.total_memory}\\n        emit(event=\\'begin\\', name=name, **observation)\\n        try:\\n            result = function(*args, **kwargs)\\n            if name == \\'vllm.utils.system_utils.get_mp_context\\':\\n                emit(event=\\'worker_context\\', method=result.get_start_method(),\\n                     cuda_initialized=sys.modules[\\'torch\\'].cuda.is_initialized())\\n            return result\\n        finally:\\n            emit(event=\\'end\\', name=name, duration_s=time.monotonic() - began)\\n            if name.endswith(\\'compile_or_warm_up_model\\'):\\n                ACTIVE = False\\n    return call\\n\\nclass Loader:\\n    def __init__(self, inner): self.inner = inner\\n    def create_module(self, spec): return self.inner.create_module(spec)\\n    def exec_module(self, module):\\n        self.inner.exec_module(module)\\n        for name in FUNCTIONS.get(module.__name__, []):\\n            function = getattr(module, name, None)\\n            if callable(function):\\n                setattr(module, name, timed(function, module.__name__ + \\'.\\' + name))\\n        for classname, methods in CLASSES.get(module.__name__, {}).items():\\n            cls = getattr(module, classname, None)\\n            if cls is not None:\\n                for name in methods:\\n                    function = getattr(cls, name, None)\\n                    if callable(function):\\n                        setattr(cls, name, timed(function, module.__name__ + \\'.\\' + classname + \\'.\\' + name))\\n\\nclass Finder(importlib.abc.MetaPathFinder):\\n    def find_spec(self, fullname, path=None, target=None):\\n        if fullname not in FUNCTIONS and fullname not in CLASSES: return None\\n        spec = importlib.machinery.PathFinder.find_spec(fullname, path)\\n        if spec and spec.loader: spec.loader = Loader(spec.loader)\\n        return spec\\n\\nsys.meta_path.insert(0, Finder())\\nemit(event=\\'process_started\\')\\n')\nos.environ[\"PYTHONPATH\"]=str(profile_dir)+os.pathsep+os.environ.get(\"PYTHONPATH\",\"\")\nimport sys\nsys.path.insert(0,str(profile_dir))\nimport sitecustomize\nimport sys, time, subprocess\nstarted = time.monotonic()\ngpu_info=subprocess.check_output(['nvidia-smi', '--query-gpu=name,driver_version,memory.total,compute_cap', '--format=csv,noheader,nounits'], text=True).strip()\nprint(gpu_info,flush=True)\nif len(gpu_info.splitlines()) != 1 or gpu_info.rsplit(',',1)[-1].strip() != '8.9':\n    raise SystemExit('runtime asset profile requires exactly one SM89 GPU')\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n':\n    raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nsys.argv[0] = 'vllm'\nmain()\n"
+      ],
+      "environment": {
+        "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+        "CC": "{runtime_root}/toolchain/bin/gcc",
+        "CXX": "{runtime_root}/toolchain/bin/g++",
+        "CUDA_HOME": "{runtime_root}/cuda",
+        "CUDA_PATH": "{runtime_root}/cuda",
+        "CUDACXX": "{runtime_root}/cuda/bin/nvcc",
+        "SSL_CERT_FILE": "{runtime_root}/certs/ca-certificates.crt",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "VLLM_NO_USAGE_STATS": "1",
+        "DO_NOT_TRACK": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HOME": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/huggingface",
+        "TRITON_CACHE_DIR": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/triton",
+        "TORCHINDUCTOR_CACHE_DIR": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/torchinductor",
+        "VLLM_CACHE_ROOT": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm",
+        "CUDA_CACHE_PATH": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/cuda",
+        "FLASHINFER_WORKSPACE_BASE": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/flashinfer",
+        "CUDA_CACHE_MAXSIZE": "4294967296",
+        "XDG_CACHE_HOME": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/xdg",
+        "TORCH_EXTENSIONS_DIR": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/torch-extensions",
+        "VLLM_ENABLE_STARTUP_PLAN": "1",
+        "FLASHINFER_NO_DOWNLOAD": "1",
+        "VLLM_FORCE_AOT_LOAD": "1",
+        "PYTHONPATH": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+        "FLASHINFER_DISABLE_JIT": "1",
+        "SERVING_PROFILE_CACHE_ROOT": "{cache_root}",
+        "VLLM_WORKER_MULTIPROC_METHOD": "fork"
+      },
+      "hydration": {
+        "retries": 0
+      }
+    },
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/dev/shm/switchyard",
+      "require_model_ram": true,
+      "early_launch": true
+    }
+  }
+}

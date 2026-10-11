@@ -63,7 +63,8 @@ for run in ledger['runs']:
         'Startup plan not applied','Directly load AOT','torch.compile took',
         'Initial profiling/warmup run took','Graph capturing finished','init engine (profile',
         'GPU KV cache size','Mamba Cache is allocated','KV Cache is allocated','SWITCHYARD_STARTUP_PROFILE',
-        'SWITCHYARD_RUNTIME_ASSET_ACCESS','Using FLASH_ATTN attention backend','Using FlashAttention version'])]
+        'SWITCHYARD_RUNTIME_ASSET_ACCESS','SWITCHYARD_NATIVE_PROVIDER_DISCOVERY',
+        'Using FLASH_ATTN attention backend','Using FlashAttention version'])]
  rows.append(row)
 unfinalized=[str(p) for p in Path('results').glob('cloud-*')
              if p.is_dir() and not (p/'independent-receipt.json').exists()

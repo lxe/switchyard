@@ -701,6 +701,141 @@
       "receipts": [],
       "cleanup": [],
       "all_absent": true
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo",
+      "started_at": "2026-10-11T05:29:06.859073+00:00",
+      "controller_exit": 1,
+      "elapsed_s": 74.97033135600213,
+      "reason": "agent failed; no retry",
+      "estimated_rental_usd": 0.016434732443464044,
+      "receipts": [
+        {
+          "cleanup_failures": [],
+          "estimated_rental_usd": 0.016434732443464044,
+          "pods": [
+            {
+              "allocated_s": 3.697769245,
+              "ended_s": 57.4373199,
+              "pod": {
+                "cost": 1.09,
+                "data_center": "US-MO-1",
+                "id": "lirpl003x4eu5j",
+                "name": "switchyard-8eb4bac445eb20d7-0",
+                "status": "running"
+              },
+              "profile": 0,
+              "quoted": {
+                "availability": "LOW",
+                "data_center": "US-MO-1",
+                "disk_usd_per_hour": 0.010958904109589041,
+                "gpu": "NVIDIA L40S",
+                "gpu_memory_gb": 48,
+                "gpu_usd_per_hour": 1.09,
+                "quoted_at_unix_s": 1791696547
+              }
+            }
+          ]
+        }
+      ],
+      "cleanup": [
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "name": "switchyard-8eb4bac445eb20d7-0",
+          "get_status": 404
+        }
+      ],
+      "all_absent": true
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo-v2",
+      "started_at": "2026-10-11T05:40:40.111345+00:00",
+      "controller_exit": 0,
+      "elapsed_s": 108.06599396399906,
+      "reason": null,
+      "estimated_rental_usd": 0.027263308361547944,
+      "receipts": [
+        {
+          "cleanup_failures": [],
+          "estimated_rental_usd": 0.027263308361547944,
+          "pods": [
+            {
+              "allocated_s": 2.579965534,
+              "ended_s": 91.727625574,
+              "pod": {
+                "cost": 1.09,
+                "data_center": "US-MO-1",
+                "id": "wuo4jkb9d02m6l",
+                "name": "switchyard-f981bd205c23d6c5-0",
+                "status": "running"
+              },
+              "profile": 0,
+              "quoted": {
+                "availability": "LOW",
+                "data_center": "US-MO-1",
+                "disk_usd_per_hour": 0.010958904109589041,
+                "gpu": "NVIDIA L40S",
+                "gpu_memory_gb": 48,
+                "gpu_usd_per_hour": 1.09,
+                "quoted_at_unix_s": 1791697241
+              }
+            }
+          ]
+        }
+      ],
+      "cleanup": [
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "name": "switchyard-f981bd205c23d6c5-0",
+          "get_status": 404
+        }
+      ],
+      "all_absent": true
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-control-rc2-mo",
+      "started_at": "2026-10-11T05:42:46.890036+00:00",
+      "controller_exit": 0,
+      "elapsed_s": 101.39887214099872,
+      "reason": null,
+      "estimated_rental_usd": 0.025064922584239046,
+      "receipts": [
+        {
+          "cleanup_failures": [],
+          "estimated_rental_usd": 0.025064922584239046,
+          "pods": [
+            {
+              "allocated_s": 2.8447868,
+              "ended_s": 84.803996146,
+              "pod": {
+                "cost": 1.09,
+                "data_center": "US-MO-1",
+                "id": "sbmcy794vwuq57",
+                "name": "switchyard-a751e3052ebb7c05-0",
+                "status": "running"
+              },
+              "profile": 0,
+              "quoted": {
+                "availability": "LOW",
+                "data_center": "US-MO-1",
+                "disk_usd_per_hour": 0.010958904109589041,
+                "gpu": "NVIDIA L40S",
+                "gpu_memory_gb": 48,
+                "gpu_usd_per_hour": 1.09,
+                "quoted_at_unix_s": 1791697367
+              }
+            }
+          ]
+        }
+      ],
+      "cleanup": [
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "name": "switchyard-a751e3052ebb7c05-0",
+          "get_status": 404
+        }
+      ],
+      "all_absent": true
     }
   ]
 }

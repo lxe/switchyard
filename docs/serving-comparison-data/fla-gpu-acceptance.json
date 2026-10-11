@@ -1,0 +1,2028 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "model": "Qwen/Qwen3.5-0.8B",
+    "dtype": "bfloat16",
+    "gpu": "NVIDIA L40S",
+    "compute_capability": "8.9",
+    "driver": "580.159.03"
+  },
+  "provenance": {
+    "runtime_id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+    "unpatched_scoped_runtime_id": "df7b2f985cb03bda92fbb33572969a85e963b9d2c3c2b7f8543b3fd75d39bc4e",
+    "cache_id": "ccc33cfaec8d0e669950f4b61b229fb5062ba46e8e17be1b76a613c10e349c69",
+    "source_cache_id": "96dc8d146ba12e84ccbe9387241608e039d4b2e61961dc51c2e79e60767c9f5b",
+    "control_cache_id": "2631027e09a258410ca39aa92688581f299dbf887b3c0cf4ff46c2e2373713ff",
+    "changed_runtime_entries": [
+      "artifact-metadata.json",
+      "build-info.json",
+      "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/__pycache__/utils.cpython-312.pyc",
+      "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/utils.py"
+    ],
+    "added_runtime_entries": [
+      "source-patches.json"
+    ],
+    "removed_relative_to_scoped_control": [],
+    "compiler_entries_unchanged": true,
+    "identical_launch_program_args_environment": true,
+    "same_agent": true,
+    "same_engine": true,
+    "controller_sha256": "f250162bdc2577164f690a7431517119b07c7889a176e5cd10588e92a2c19d6d",
+    "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+    "gpu_acceptance_required": false,
+    "gpu_acceptance_completed": true,
+    "native_fork_retained": true,
+    "acceptance_run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo-v2"
+  },
+  "runs": [
+    {
+      "run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo",
+      "controller_exit": 1,
+      "estimated_rental_usd": 0.016434732443464044,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "name": "switchyard-8eb4bac445eb20d7-0",
+          "get_status": 404
+        }
+      ],
+      "reason": "agent failed; no retry",
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.685728926
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 2.264587377
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 22.330361789
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 26.374602502
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 26.375114279
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 26.37517826
+        }
+      ],
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "d4eb0b630474f33076180dae24e4c2b6833fe85b7071393a3a1cf81c2a186d3f",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.468964138,
+            "network_received_bytes": 4975190259,
+            "storage_written_bytes": 4975190259,
+            "compressed_consumed_bytes": 4975190259,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 1136786130,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654338048,
+            "file_written_bytes": 13485036103,
+            "receiver_body_wait_seconds": 101.381642209,
+            "receiver_storage_write_seconds": 16.654929508,
+            "consumer_wait_seconds": 8.143999804,
+            "reception_complete_seconds": 17.831095403,
+            "extraction_complete_seconds": 21.187083187
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "74b1527137bff11bb8cffc4a0d35b09759b58d0b114da50b4616004607e58c27",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.022930191,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 4224418,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.493019987,
+            "receiver_storage_write_seconds": 0.006017712,
+            "consumer_wait_seconds": 0.440629652,
+            "reception_complete_seconds": 0.526101623,
+            "extraction_complete_seconds": 0.758333582
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485036103,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.004412427
+      },
+      "cases": [],
+      "provider_discovery": [],
+      "worker_contexts": [],
+      "process_start_markers": [
+        {
+          "event": "process_started",
+          "monotonic_s": 10382300.985835643,
+          "pid": 558
+        }
+      ],
+      "cuda_initialization": [
+        {
+          "callers": [
+            {
+              "file": "process.py",
+              "function": "run",
+              "line": 108
+            },
+            {
+              "file": "core.py",
+              "function": "run_engine_core",
+              "line": 1395
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 1151
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 140
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 89
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10382312.774323966,
+          "name": "torch.cuda._lazy_init",
+          "pid": 925
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 89
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 89
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10382312.897520075,
+          "name": "torch.cuda._lazy_init",
+          "pid": 925
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 89
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 89
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10382312.899049168,
+          "name": "torch.cuda._lazy_init",
+          "pid": 925
+        }
+      ],
+      "native_stage_durations": [
+        {
+          "duration_s": 0.8178993836045265,
+          "event": "end",
+          "monotonic_s": 10382313.56868732,
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "pid": 925
+        },
+        {
+          "duration_s": 2.1582562755793333,
+          "event": "end",
+          "monotonic_s": 10382315.727015968,
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "pid": 925
+        },
+        {
+          "duration_s": 4.15733040496707,
+          "event": "end",
+          "monotonic_s": 10382319.885577144,
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "pid": 925
+        },
+        {
+          "duration_s": 0.055140627548098564,
+          "event": "end",
+          "monotonic_s": 10382319.942223283,
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "pid": 925
+        },
+        {
+          "duration_s": 0.0009933561086654663,
+          "event": "end",
+          "monotonic_s": 10382320.429220285,
+          "name": "flashinfer.jit.core.JitSpec.build_and_load",
+          "pid": 925
+        },
+        {
+          "duration_s": 0.48704711347818375,
+          "event": "end",
+          "monotonic_s": 10382320.429351278,
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "pid": 925
+        }
+      ],
+      "native_sampling_provider_checks": [],
+      "native_flashinfer_build_calls": 0,
+      "native_aot_load_messages": [
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 68.87279893300001,
+          "ts": "2026-10-11T05:30:13.625078193Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:13 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        }
+      ],
+      "preimport_messages": [
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 57.82187427700046,
+          "ts": "2026-10-11T05:30:04.617555153Z",
+          "line": "switchyard preimport completed in 7.073s"
+        }
+      ]
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo-v2",
+      "controller_exit": 0,
+      "estimated_rental_usd": 0.027263308361547944,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "name": "switchyard-f981bd205c23d6c5-0",
+          "get_status": 404
+        }
+      ],
+      "reason": null,
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.338665705
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 1.924123671
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 25.39476167
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 28.582748693
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 28.58358464
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 28.583612171
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 52.68231049
+        }
+      ],
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.424553808,
+            "network_received_bytes": 4975190485,
+            "storage_written_bytes": 4975190485,
+            "compressed_consumed_bytes": 4975190485,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 1860150683,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654338048,
+            "file_written_bytes": 13485036736,
+            "receiver_body_wait_seconds": 97.84268032,
+            "receiver_storage_write_seconds": 13.025259829,
+            "consumer_wait_seconds": 5.099610664,
+            "reception_complete_seconds": 18.395236927,
+            "extraction_complete_seconds": 23.42956517
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "ccc33cfaec8d0e669950f4b61b229fb5062ba46e8e17be1b76a613c10e349c69",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.016597543,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 4158900,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.478065852,
+            "receiver_storage_write_seconds": 0.005281638,
+            "consumer_wait_seconds": 0.410339759,
+            "reception_complete_seconds": 0.504272395,
+            "extraction_complete_seconds": 0.771562228
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485036736,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.003841695
+      },
+      "cases": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 5,
+          "elapsed_s": 64.864703076,
+          "output_tokens_per_s": 0.07708352559853164,
+          "ttft_p50_s": 64.864506982,
+          "ttft_p95_s": 64.864506982,
+          "response_p95_s": 64.864640013,
+          "service_ttft_p50_s": 0.20134224500000641,
+          "service_ttft_p95_s": 0.20134224500000641,
+          "cached_input_tokens": 0,
+          "input_tokens": 26,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 43.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 1
+        },
+        {
+          "name": "hot-single-long",
+          "requests": 4,
+          "completed": 4,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 384,
+          "elapsed_s": 2.495004055999999,
+          "output_tokens_per_s": 153.90756543122836,
+          "ttft_p50_s": 0.9048677840000039,
+          "ttft_p95_s": 2.150466358999992,
+          "response_p95_s": 2.4578418990000017,
+          "service_ttft_p50_s": 0.21276658000000737,
+          "service_ttft_p95_s": 0.3823755930000061,
+          "cached_input_tokens": 0,
+          "input_tokens": 136,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 136.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "hot-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 40,
+          "elapsed_s": 2.009857820999997,
+          "output_tokens_per_s": 19.901905290045917,
+          "ttft_p50_s": 1.006757700999998,
+          "ttft_p95_s": 1.9674527530000034,
+          "response_p95_s": 1.9675697569999926,
+          "service_ttft_p50_s": 0.1484605280000011,
+          "service_ttft_p95_s": 0.2564128839999995,
+          "cached_input_tokens": 0,
+          "input_tokens": 208,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 208.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 8
+        },
+        {
+          "name": "shared-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2271,
+          "elapsed_s": 1.7283448870000058,
+          "output_tokens_per_s": 1313.9738585057025,
+          "ttft_p50_s": 1.1745347690000045,
+          "ttft_p95_s": 1.2539408869999988,
+          "response_p95_s": 1.5953276480000085,
+          "service_ttft_p50_s": 0.45581395800000735,
+          "service_ttft_p95_s": 0.5352040100000011,
+          "cached_input_tokens": 52224,
+          "input_tokens": 66966,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 66966.0,
+            "vllm:prefix_cache_hits_total": 52224.0
+          }
+        },
+        {
+          "name": "shared-prefix-prime",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 23,
+          "elapsed_s": 0.3978920979999998,
+          "output_tokens_per_s": 57.80461616505893,
+          "ttft_p50_s": 0.34263608999999917,
+          "ttft_p95_s": 0.34263608999999917,
+          "response_p95_s": 0.3436680749999965,
+          "service_ttft_p50_s": 0.24875238399999944,
+          "service_ttft_p95_s": 0.24875238399999944,
+          "cached_input_tokens": 0,
+          "input_tokens": 2092,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 2092.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "shared-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 3.0324304980000107,
+          "output_tokens_per_s": 801.9969465430404,
+          "ttft_p50_s": 1.8763002150000005,
+          "ttft_p95_s": 2.6136953050000074,
+          "response_p95_s": 2.764875924000009,
+          "service_ttft_p50_s": 0.3061600449999986,
+          "service_ttft_p95_s": 0.5099735480000049,
+          "cached_input_tokens": 104448,
+          "input_tokens": 133878,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 133878.0,
+            "vllm:prefix_cache_hits_total": 104448.0
+          }
+        },
+        {
+          "name": "shared-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 176,
+          "elapsed_s": 3.1202809960000053,
+          "output_tokens_per_s": 56.40517640097812,
+          "ttft_p50_s": 1.384530168000012,
+          "ttft_p95_s": 2.977213880000008,
+          "response_p95_s": 3.0530143710000033,
+          "service_ttft_p50_s": 0.22501283500000113,
+          "service_ttft_p95_s": 0.33184267400000067,
+          "cached_input_tokens": 13056,
+          "input_tokens": 16744,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16744.0,
+            "vllm:prefix_cache_hits_total": 13056.0
+          }
+        },
+        {
+          "name": "unique-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2621,
+          "elapsed_s": 2.6796395190000055,
+          "output_tokens_per_s": 978.1166389791531,
+          "ttft_p50_s": 1.5431547480000063,
+          "ttft_p95_s": 2.1552293090000063,
+          "response_p95_s": 2.581965542000006,
+          "service_ttft_p50_s": 0.7951293180000079,
+          "service_ttft_p95_s": 1.40735564900001,
+          "cached_input_tokens": 0,
+          "input_tokens": 67404,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 67404.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 4.478034492999996,
+          "output_tokens_per_s": 543.0954146962624,
+          "ttft_p50_s": 2.8230901189999997,
+          "ttft_p95_s": 3.942006248999988,
+          "response_p95_s": 4.322157646999997,
+          "service_ttft_p50_s": 0.5117977650000114,
+          "service_ttft_p95_s": 1.3667668429999935,
+          "cached_input_tokens": 0,
+          "input_tokens": 134764,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 134764.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 160,
+          "elapsed_s": 2.6006966850000026,
+          "output_tokens_per_s": 61.521976369958665,
+          "ttft_p50_s": 1.4152968009999967,
+          "ttft_p95_s": 2.541633218000001,
+          "response_p95_s": 2.542441261999997,
+          "service_ttft_p50_s": 0.1684471540000061,
+          "service_ttft_p95_s": 0.21627969800000812,
+          "cached_input_tokens": 0,
+          "input_tokens": 16816,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16816.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        }
+      ],
+      "provider_discovery": [
+        {
+          "pid": 562,
+          "pythonpath": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+          "sys_path": [
+            "",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+            "/opt/switchyard/runtime/python/lib/python312.zip",
+            "/opt/switchyard/runtime/python/lib/python3.12",
+            "/opt/switchyard/runtime/python/lib/python3.12/lib-dynload",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages"
+          ],
+          "negative_importer_before": true,
+          "shim_visible_before": false,
+          "shim_visible_after": true
+        }
+      ],
+      "worker_contexts": [
+        {
+          "cuda_initialized": false,
+          "event": "worker_context",
+          "method": "fork",
+          "monotonic_s": 7474747.29014672,
+          "pid": 562
+        },
+        {
+          "cuda_initialized": false,
+          "event": "worker_context",
+          "method": "fork",
+          "monotonic_s": 7474747.389880973,
+          "pid": 929
+        }
+      ],
+      "process_start_markers": [
+        {
+          "event": "process_started",
+          "monotonic_s": 7474735.56175389,
+          "pid": 562
+        }
+      ],
+      "cuda_initialization": [
+        {
+          "callers": [
+            {
+              "file": "process.py",
+              "function": "run",
+              "line": 108
+            },
+            {
+              "file": "core.py",
+              "function": "run_engine_core",
+              "line": 1395
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 1151
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 140
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 7474747.547812544,
+          "name": "torch.cuda._lazy_init",
+          "pid": 929
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 7474747.705887526,
+          "name": "torch.cuda._lazy_init",
+          "pid": 929
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 7474747.707784154,
+          "name": "torch.cuda._lazy_init",
+          "pid": 929
+        }
+      ],
+      "native_stage_durations": [
+        {
+          "duration_s": 0.8090684041380882,
+          "event": "end",
+          "monotonic_s": 7474748.343337933,
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "pid": 929
+        },
+        {
+          "duration_s": 2.248887394554913,
+          "event": "end",
+          "monotonic_s": 7474750.592288689,
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "pid": 929
+        },
+        {
+          "duration_s": 4.229847891256213,
+          "event": "end",
+          "monotonic_s": 7474754.823367901,
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "pid": 929
+        },
+        {
+          "duration_s": 0.05521067976951599,
+          "event": "end",
+          "monotonic_s": 7474754.880103075,
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "pid": 929
+        },
+        {
+          "duration_s": 0.0024176519364118576,
+          "event": "end",
+          "monotonic_s": 7474755.395925657,
+          "name": "flashinfer.jit.core.JitSpecNvcc.load",
+          "pid": 929
+        },
+        {
+          "duration_s": 0.002728014253079891,
+          "event": "end",
+          "monotonic_s": 7474755.395989868,
+          "name": "flashinfer.jit.core.JitSpec.build_and_load",
+          "pid": 929
+        },
+        {
+          "duration_s": 2.657954248599708,
+          "event": "end",
+          "monotonic_s": 7474757.538178446,
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "pid": 929
+        }
+      ],
+      "native_sampling_provider_checks": [
+        {
+          "event": "begin",
+          "monotonic_s": 7474755.393438764,
+          "name": "flashinfer.jit.core.JitSpecNvcc.try_load",
+          "native_aot_artifact_count": 1,
+          "native_provider_count": 1,
+          "pid": 929
+        }
+      ],
+      "native_flashinfer_build_calls": 0,
+      "native_aot_load_messages": [
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 70.65361831200062,
+          "ts": "2026-10-11T05:41:50.412793739Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:50 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        }
+      ],
+      "preimport_messages": [
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 62.56042262399933,
+          "ts": "2026-10-11T05:41:40.990672654Z",
+          "line": "switchyard preimport completed in 7.107s"
+        }
+      ],
+      "model_gate_to_inference_verified_s": 24.098698319,
+      "engine_spawn_to_inference_verified_s": 24.098725849999997,
+      "api_marker_to_worker_init_s": 11.972515059635043,
+      "arrival_to_first_content_s": 64.864506982,
+      "total_completed": 222,
+      "literal_correct": 9
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-control-rc2-mo",
+      "controller_exit": 0,
+      "estimated_rental_usd": 0.025064922584239046,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "name": "switchyard-a751e3052ebb7c05-0",
+          "get_status": 404
+        }
+      ],
+      "reason": null,
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.273909038
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 1.866324927
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 24.210903886
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 24.211585257
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 27.707300331
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 27.707599566
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 53.806903556
+        }
+      ],
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "df7b2f985cb03bda92fbb33572969a85e963b9d2c3c2b7f8543b3fd75d39bc4e",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.4235757,
+            "network_received_bytes": 4975192841,
+            "storage_written_bytes": 4975192841,
+            "compressed_consumed_bytes": 4975192841,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 803958192,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654331904,
+            "file_written_bytes": 13485031132,
+            "receiver_body_wait_seconds": 94.258959611,
+            "receiver_storage_write_seconds": 16.353675779,
+            "consumer_wait_seconds": 12.699089059,
+            "reception_complete_seconds": 19.323344852,
+            "extraction_complete_seconds": 19.438851376
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "2631027e09a258410ca39aa92688581f299dbf887b3c0cf4ff46c2e2373713ff",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.024948401,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 3080177,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.479958792,
+            "receiver_storage_write_seconds": 0.00784682,
+            "consumer_wait_seconds": 0.317232226,
+            "reception_complete_seconds": 0.526459021,
+            "extraction_complete_seconds": 0.647851316
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485031132,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.004523339
+      },
+      "cases": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 5,
+          "elapsed_s": 60.904670011,
+          "output_tokens_per_s": 0.08209551088770285,
+          "ttft_p50_s": 60.855323957,
+          "ttft_p95_s": 60.855323957,
+          "response_p95_s": 60.855435895,
+          "service_ttft_p50_s": 0.1533861600000037,
+          "service_ttft_p95_s": 0.1533861600000037,
+          "cached_input_tokens": 0,
+          "input_tokens": 26,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 43.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 1
+        },
+        {
+          "name": "hot-single-long",
+          "requests": 4,
+          "completed": 4,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 384,
+          "elapsed_s": 2.4802402449999974,
+          "output_tokens_per_s": 154.8237114425181,
+          "ttft_p50_s": 0.6827287609999999,
+          "ttft_p95_s": 2.0778042990000003,
+          "response_p95_s": 2.382961040000005,
+          "service_ttft_p50_s": 0.10241565399999786,
+          "service_ttft_p95_s": 0.10326536499999861,
+          "cached_input_tokens": 0,
+          "input_tokens": 136,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 136.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "hot-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 40,
+          "elapsed_s": 1.7693411340000011,
+          "output_tokens_per_s": 22.607285407744314,
+          "ttft_p50_s": 0.7945861709999988,
+          "ttft_p95_s": 1.671262204999998,
+          "response_p95_s": 1.7151120250000034,
+          "service_ttft_p50_s": 0.10324922099999867,
+          "service_ttft_p95_s": 0.10941905600000013,
+          "cached_input_tokens": 0,
+          "input_tokens": 208,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 208.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 8
+        },
+        {
+          "name": "shared-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2233,
+          "elapsed_s": 1.6278200139999939,
+          "output_tokens_per_s": 1371.773280089434,
+          "ttft_p50_s": 1.1383778980000017,
+          "ttft_p95_s": 1.2263074899999964,
+          "response_p95_s": 1.5646369069999935,
+          "service_ttft_p50_s": 0.4192248439999986,
+          "service_ttft_p95_s": 0.5071255619999988,
+          "cached_input_tokens": 52224,
+          "input_tokens": 66966,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 66966.0,
+            "vllm:prefix_cache_hits_total": 52224.0
+          }
+        },
+        {
+          "name": "shared-prefix-prime",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 23,
+          "elapsed_s": 0.4974523650000009,
+          "output_tokens_per_s": 46.235582777860465,
+          "ttft_p50_s": 0.3967322829999915,
+          "ttft_p95_s": 0.3967322829999915,
+          "response_p95_s": 0.43415757600000404,
+          "service_ttft_p50_s": 0.3041014880000006,
+          "service_ttft_p95_s": 0.3041014880000006,
+          "cached_input_tokens": 0,
+          "input_tokens": 2092,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 2092.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "shared-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 2.82051414499999,
+          "output_tokens_per_s": 862.2541405478428,
+          "ttft_p50_s": 1.7575500720000008,
+          "ttft_p95_s": 2.444663430999995,
+          "response_p95_s": 2.6243860470000016,
+          "service_ttft_p50_s": 0.2767199879999964,
+          "service_ttft_p95_s": 0.4260312500000083,
+          "cached_input_tokens": 104448,
+          "input_tokens": 133878,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 133878.0,
+            "vllm:prefix_cache_hits_total": 104448.0
+          }
+        },
+        {
+          "name": "shared-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 176,
+          "elapsed_s": 2.3475202810000013,
+          "output_tokens_per_s": 74.97272821218276,
+          "ttft_p50_s": 1.0841070679999945,
+          "ttft_p95_s": 2.2949048339999933,
+          "response_p95_s": 2.3343196699999993,
+          "service_ttft_p50_s": 0.14946913299999665,
+          "service_ttft_p95_s": 0.3037036639999968,
+          "cached_input_tokens": 13056,
+          "input_tokens": 16744,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16744.0,
+            "vllm:prefix_cache_hits_total": 13056.0
+          }
+        },
+        {
+          "name": "unique-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2631,
+          "elapsed_s": 2.584499441999995,
+          "output_tokens_per_s": 1017.9920944242963,
+          "ttft_p50_s": 1.5853340139999972,
+          "ttft_p95_s": 2.082265634999999,
+          "response_p95_s": 2.5274419019999925,
+          "service_ttft_p50_s": 0.7207128720000071,
+          "service_ttft_p95_s": 1.2177861010000015,
+          "cached_input_tokens": 0,
+          "input_tokens": 67404,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 67404.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 4.147835006000008,
+          "output_tokens_per_s": 586.3299761157364,
+          "ttft_p50_s": 2.6400286150000056,
+          "ttft_p95_s": 3.6451013160000088,
+          "response_p95_s": 4.029328379000006,
+          "service_ttft_p50_s": 0.49361174599999913,
+          "service_ttft_p95_s": 1.1558249849999953,
+          "cached_input_tokens": 0,
+          "input_tokens": 134764,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 134764.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 160,
+          "elapsed_s": 2.394687908999998,
+          "output_tokens_per_s": 66.81455207531184,
+          "ttft_p50_s": 1.4833458899999954,
+          "ttft_p95_s": 2.344548003,
+          "response_p95_s": 2.3835305199999937,
+          "service_ttft_p50_s": 0.1746534380000071,
+          "service_ttft_p95_s": 0.19278956300000516,
+          "cached_input_tokens": 0,
+          "input_tokens": 16816,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16816.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        }
+      ],
+      "provider_discovery": [
+        {
+          "pid": 556,
+          "pythonpath": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+          "sys_path": [
+            "",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+            "/opt/switchyard/runtime/python/lib/python312.zip",
+            "/opt/switchyard/runtime/python/lib/python3.12",
+            "/opt/switchyard/runtime/python/lib/python3.12/lib-dynload",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages"
+          ],
+          "negative_importer_before": true,
+          "shim_visible_before": false,
+          "shim_visible_after": true
+        }
+      ],
+      "worker_contexts": [
+        {
+          "cuda_initialized": true,
+          "event": "worker_context",
+          "method": "spawn",
+          "monotonic_s": 10383126.796433743,
+          "pid": 556
+        },
+        {
+          "cuda_initialized": false,
+          "event": "worker_context",
+          "method": "spawn",
+          "monotonic_s": 10383132.56255578,
+          "pid": 923
+        }
+      ],
+      "process_start_markers": [
+        {
+          "event": "process_started",
+          "monotonic_s": 10383115.265513618,
+          "pid": 556
+        },
+        {
+          "event": "process_started",
+          "monotonic_s": 10383126.832932984,
+          "pid": 922
+        },
+        {
+          "event": "process_started",
+          "monotonic_s": 10383126.83611354,
+          "pid": 923
+        }
+      ],
+      "cuda_initialization": [
+        {
+          "callers": [
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "index.py",
+              "function": "<module>",
+              "line": 16
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_find_and_load",
+              "line": 1360
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_find_and_load_unlocked",
+              "line": 1331
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_load_unlocked",
+              "line": 935
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "utils.py",
+              "function": "<module>",
+              "line": 145
+            },
+            {
+              "file": "utils.py",
+              "function": "_check_platform",
+              "line": 130
+            },
+            {
+              "file": "utils.py",
+              "function": "get_available_device",
+              "line": 123
+            },
+            {
+              "file": "driver.py",
+              "function": "get_current_target",
+              "line": 341
+            },
+            {
+              "file": "__init__.py",
+              "function": "current_device",
+              "line": 1205
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10383123.11795528,
+          "name": "torch.cuda._lazy_init",
+          "pid": 556
+        },
+        {
+          "callers": [
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_load_unlocked",
+              "line": 935
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "utils.py",
+              "function": "<module>",
+              "line": 145
+            },
+            {
+              "file": "utils.py",
+              "function": "_check_platform",
+              "line": 130
+            },
+            {
+              "file": "utils.py",
+              "function": "get_available_device",
+              "line": 123
+            },
+            {
+              "file": "driver.py",
+              "function": "get_current_target",
+              "line": 341
+            },
+            {
+              "file": "__init__.py",
+              "function": "current_device",
+              "line": 1205
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10383123.197017357,
+          "name": "torch.cuda._lazy_init",
+          "pid": 556
+        },
+        {
+          "callers": [
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_load_unlocked",
+              "line": 935
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "utils.py",
+              "function": "<module>",
+              "line": 145
+            },
+            {
+              "file": "utils.py",
+              "function": "_check_platform",
+              "line": 130
+            },
+            {
+              "file": "utils.py",
+              "function": "get_available_device",
+              "line": 123
+            },
+            {
+              "file": "driver.py",
+              "function": "get_current_target",
+              "line": 341
+            },
+            {
+              "file": "__init__.py",
+              "function": "current_device",
+              "line": 1205
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10383123.198413728,
+          "name": "torch.cuda._lazy_init",
+          "pid": 556
+        },
+        {
+          "callers": [
+            {
+              "file": "process.py",
+              "function": "run",
+              "line": 108
+            },
+            {
+              "file": "core.py",
+              "function": "run_engine_core",
+              "line": 1395
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 1151
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 140
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10383133.292367736,
+          "name": "torch.cuda._lazy_init",
+          "pid": 923
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10383133.30901145,
+          "name": "torch.cuda._lazy_init",
+          "pid": 923
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 10383133.310395112,
+          "name": "torch.cuda._lazy_init",
+          "pid": 923
+        }
+      ],
+      "native_stage_durations": [
+        {
+          "duration_s": 0.5670122504234314,
+          "event": "end",
+          "monotonic_s": 10383133.858770927,
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "pid": 923
+        },
+        {
+          "duration_s": 3.009645812213421,
+          "event": "end",
+          "monotonic_s": 10383136.86847406,
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "pid": 923
+        },
+        {
+          "duration_s": 4.00687750428915,
+          "event": "end",
+          "monotonic_s": 10383140.876346149,
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "pid": 923
+        },
+        {
+          "duration_s": 0.05638699233531952,
+          "event": "end",
+          "monotonic_s": 10383140.93417849,
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "pid": 923
+        },
+        {
+          "duration_s": 0.0017635859549045563,
+          "event": "end",
+          "monotonic_s": 10383141.458873324,
+          "name": "flashinfer.jit.core.JitSpecNvcc.load",
+          "pid": 923
+        },
+        {
+          "duration_s": 0.002091631293296814,
+          "event": "end",
+          "monotonic_s": 10383141.458938444,
+          "name": "flashinfer.jit.core.JitSpec.build_and_load",
+          "pid": 923
+        },
+        {
+          "duration_s": 2.5446702372282743,
+          "event": "end",
+          "monotonic_s": 10383143.478922289,
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "pid": 923
+        }
+      ],
+      "native_sampling_provider_checks": [
+        {
+          "event": "begin",
+          "monotonic_s": 10383141.457038285,
+          "name": "flashinfer.jit.core.JitSpecNvcc.try_load",
+          "native_aot_artifact_count": 1,
+          "native_provider_count": 1,
+          "pid": 923
+        }
+      ],
+      "native_flashinfer_build_calls": 0,
+      "native_aot_load_messages": [
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 68.22104241999841,
+          "ts": "2026-10-11T05:43:54.785855109Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:54 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        }
+      ],
+      "preimport_messages": [
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 52.0925732709984,
+          "ts": "2026-10-11T05:43:38.927166678Z",
+          "line": "switchyard preimport completed in 7.105s"
+        }
+      ],
+      "model_gate_to_inference_verified_s": 26.099303990000003,
+      "engine_spawn_to_inference_verified_s": 29.595318299000002,
+      "api_marker_to_worker_init_s": 18.026244899258018,
+      "arrival_to_first_content_s": 60.855323957,
+      "total_completed": 222,
+      "literal_correct": 9
+    }
+  ],
+  "patched_minus_control_s": {
+    "arrival_to_first_content_s": 4.009183024999992,
+    "engine_spawn_to_inference_verified_s": -5.496592449000005,
+    "model_gate_to_inference_verified_s": -2.0006056710000024,
+    "api_marker_to_worker_init_s": -6.053729839622974
+  },
+  "estimated_comparison_total_usd": 0.7625194009140106,
+  "remaining_comparison_reservation_usd": 0.2374805990859894,
+  "all_owned_pods_absent": true,
+  "limitations": [
+    "One fresh host per successful variant; hydration and bootstrap intervals differ.",
+    "The process-start interval improved; these runs do not establish an end-to-end first-token gain.",
+    "Aggregate throughput is 4-7 percent lower in the patched sample; serial throughput differs by less than 1 percent.",
+    "This source-patch acceptance uses complete model archives; the parent raw-extents loader and larger models require their own acceptance."
+  ]
+}

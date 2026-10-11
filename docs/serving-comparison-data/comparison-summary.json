@@ -1,5 +1,5 @@
 {
-  "estimated_total_rental_usd": 0.6937564375247596,
+  "estimated_total_rental_usd": 0.7625194009140106,
   "all_finalized_owned_pods_absent": true,
   "all_owned_pods_absent": true,
   "unfinalized_runs": [],
@@ -6190,6 +6190,2532 @@
       "cleanup": [],
       "reason": null,
       "cases": []
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo",
+      "controller_exit": 1,
+      "estimated_rental_usd": 0.016434732443464044,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "name": "switchyard-8eb4bac445eb20d7-0",
+          "get_status": 404
+        }
+      ],
+      "reason": "agent failed; no retry",
+      "cases": [],
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.685728926
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 2.264587377
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 22.330361789
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 26.374602502
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 26.375114279
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 26.37517826
+        }
+      ],
+      "hydration_mode": "trusted_streaming",
+      "artifact_bytes_total": 4981184170,
+      "model_bytes_total": 1770045440,
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "d4eb0b630474f33076180dae24e4c2b6833fe85b7071393a3a1cf81c2a186d3f",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.468964138,
+            "network_received_bytes": 4975190259,
+            "storage_written_bytes": 4975190259,
+            "compressed_consumed_bytes": 4975190259,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 1136786130,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654338048,
+            "file_written_bytes": 13485036103,
+            "receiver_body_wait_seconds": 101.381642209,
+            "receiver_storage_write_seconds": 16.654929508,
+            "consumer_wait_seconds": 8.143999804,
+            "reception_complete_seconds": 17.831095403,
+            "extraction_complete_seconds": 21.187083187
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "74b1527137bff11bb8cffc4a0d35b09759b58d0b114da50b4616004607e58c27",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.022930191,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 4224418,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.493019987,
+            "receiver_storage_write_seconds": 0.006017712,
+            "consumer_wait_seconds": 0.440629652,
+            "reception_complete_seconds": 0.526101623,
+            "extraction_complete_seconds": 0.758333582
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485036103,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.004412427
+      },
+      "native_startup_observations": [
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 25.971429469002032,
+          "ts": "2026-10-11T05:29:32.770913986Z",
+          "line": "switchyard ticket received: bytes=37704233 download_s=1.540 decode_s=0.100"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 50.73687288200017,
+          "ts": "2026-10-11T05:29:57.541161689Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10382300.985835643, \"pid\": 558}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 57.82181425800081,
+          "ts": "2026-10-11T05:29:57.567498682Z",
+          "line": "NVIDIA L40S, 580.159.03, 46068, 8.9"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 57.82187427700046,
+          "ts": "2026-10-11T05:30:04.617555153Z",
+          "line": "switchyard preimport completed in 7.073s"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.811110007001844,
+          "ts": "2026-10-11T05:30:09.306106020Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382312.750795385, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.81114126200191,
+          "ts": "2026-10-11T05:30:09.329556440Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"process.py\", \"function\": \"run\", \"line\": 108}, {\"file\": \"core.py\", \"function\": \"run_engine_core\", \"line\": 1395}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"core.py\", \"function\": \"__init__\", \"line\": 1151}, {\"file\": \"core.py\", \"function\": \"__init__\", \"line\": 140}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 89}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}], \"event\": \"begin\", \"monotonic_s\": 10382312.774323966, \"name\": \"torch.cuda._lazy_init\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.81117605500185,
+          "ts": "2026-10-11T05:30:09.452802708Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 89}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 89}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_capability\", \"line\": 417}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 10382312.897520075, \"name\": \"torch.cuda._lazy_init\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.81120511300105,
+          "ts": "2026-10-11T05:30:09.452871749Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00032495707273483276, \"event\": \"end\", \"monotonic_s\": 10382312.897576945, \"name\": \"torch.cuda._lazy_init\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.81123458900038,
+          "ts": "2026-10-11T05:30:09.454193320Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 89}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 89}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_cubins\", \"line\": 438}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 10382312.899049168, \"name\": \"torch.cuda._lazy_init\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.811259021000296,
+          "ts": "2026-10-11T05:30:09.454207900Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00013757124543190002, \"event\": \"end\", \"monotonic_s\": 10382312.899076099, \"name\": \"torch.cuda._lazy_init\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.811278583001695,
+          "ts": "2026-10-11T05:30:09.455074183Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.12680882401764393, \"event\": \"end\", \"monotonic_s\": 10382312.899935411, \"name\": \"torch.cuda._lazy_init\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.81136664900259,
+          "ts": "2026-10-11T05:30:10.123917524Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.8178993836045265, \"event\": \"end\", \"monotonic_s\": 10382313.56868732, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.811385985001834,
+          "ts": "2026-10-11T05:30:10.123954095Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382313.568759592, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.81140550700002,
+          "ts": "2026-10-11T05:30:10.123957675Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382313.568817142, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 63.811571939000714,
+          "ts": "2026-10-11T05:30:10.578439630Z",
+          "line": "SWITCHYARD_RUNTIME_ASSET_ACCESS {\"path\": \"flashinfer_cubin/__pycache__/__init__.cpython-312.pyc\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 64.35275200400065,
+          "ts": "2026-10-11T05:30:10.578620483Z",
+          "line": "SWITCHYARD_RUNTIME_ASSET_ACCESS {\"path\": \"flashinfer_cubin/__pycache__/_build_meta.cpython-312.pyc\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 64.35284865300127,
+          "ts": "2026-10-11T05:30:11.155871830Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:11 [cuda.py:526] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']."
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 64.46511905599982,
+          "ts": "2026-10-11T05:30:11.156180295Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:11 [flash_attn.py:1167] Using FlashAttention version 2"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.4514854400004,
+          "ts": "2026-10-11T05:30:11.543284187Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:11 [default_loader.py:484] Loading weights took 0.27 seconds"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.45152023100309,
+          "ts": "2026-10-11T05:30:12.254566989Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:12 [model_runner.py:407] Model loading took 1.53 GiB memory and 2.130303 seconds"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.83779229700303,
+          "ts": "2026-10-11T05:30:12.280561087Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.1566389445215464, \"event\": \"end\", \"monotonic_s\": 10382315.725456856, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.83784485400247,
+          "ts": "2026-10-11T05:30:12.282152852Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.1582562755793333, \"event\": \"end\", \"monotonic_s\": 10382315.727015968, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.83799594000084,
+          "ts": "2026-10-11T05:30:12.283343740Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"free_memory_bytes\": 47210430464, \"monotonic_s\": 10382315.728247948, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 925, \"total_memory_bytes\": 47665709056}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.838034376,
+          "ts": "2026-10-11T05:30:12.287835429Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:12 [startup_plan.py:123] Startup plan not applied: current free memory (43.97 GiB) is below the recorded baseline (43.97 GiB); falling back to full memory profiling."
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 65.83806675800224,
+          "ts": "2026-10-11T05:30:12.640294770Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382316.084988236, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 68.87279893300001,
+          "ts": "2026-10-11T05:30:13.625078193Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:13 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 68.87291299000208,
+          "ts": "2026-10-11T05:30:13.625181455Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:13 [monitor.py:53] torch.compile took 0.46 s in total"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 68.8730038720023,
+          "ts": "2026-10-11T05:30:13.909577314Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:13 [monitor.py:81] Initial profiling/warmup run took 0.28 s"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 68.87307334400248,
+          "ts": "2026-10-11T05:30:14.378543241Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.7381930593401194, \"event\": \"end\", \"monotonic_s\": 10382317.823182777, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 68.87313944400012,
+          "ts": "2026-10-11T05:30:15.097620922Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382318.542309696, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.27140917600263,
+          "ts": "2026-10-11T05:30:16.071859953Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:16 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.06 GiB"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.68054714500249,
+          "ts": "2026-10-11T05:30:16.071922104Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.9742993507534266, \"event\": \"end\", \"monotonic_s\": 10382319.51660652, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74691847900249,
+          "ts": "2026-10-11T05:30:16.440765317Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 4.15733040496707, \"event\": \"end\", \"monotonic_s\": 10382319.885577144, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74698915000045,
+          "ts": "2026-10-11T05:30:16.442238580Z",
+          "line": "(EngineCore pid=925) INFO 10-11 05:30:16 [kv_cache_utils.py:2464] GPU KV cache size: 1,579,008 tokens, Maximum concurrency for 4,096 tokens per request: 385.50x"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74708504900264,
+          "ts": "2026-10-11T05:30:16.442266420Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382319.887080995, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74715245100015,
+          "ts": "2026-10-11T05:30:16.497504747Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.055140627548098564, \"event\": \"end\", \"monotonic_s\": 10382319.942223283, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74721948099977,
+          "ts": "2026-10-11T05:30:16.497543707Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382319.942304092, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74728138200226,
+          "ts": "2026-10-11T05:30:16.497635339Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382319.942483095, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74749052200059,
+          "ts": "2026-10-11T05:30:16.516608439Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382319.961394327, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 69.74760728100227,
+          "ts": "2026-10-11T05:30:16.546986795Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.030348636209964752, \"event\": \"end\", \"monotonic_s\": 10382319.991742851, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.0301329540016,
+          "ts": "2026-10-11T05:30:16.547017286Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382319.99177042, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.03032036100194,
+          "ts": "2026-10-11T05:30:16.603799766Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.05676720105111599, \"event\": \"end\", \"monotonic_s\": 10382320.048538491, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.03039036100017,
+          "ts": "2026-10-11T05:30:16.603808276Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.048572581, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.03054474000237,
+          "ts": "2026-10-11T05:30:16.607116277Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0033416226506233215, \"event\": \"end\", \"monotonic_s\": 10382320.051913664, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.03061081000124,
+          "ts": "2026-10-11T05:30:16.607123787Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.051936304, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.03067236900097,
+          "ts": "2026-10-11T05:30:16.820457796Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.21315332874655724, \"event\": \"end\", \"monotonic_s\": 10382320.26509137, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16022086000157,
+          "ts": "2026-10-11T05:30:16.820512037Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265131332, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16032455200184,
+          "ts": "2026-10-11T05:30:16.820520147Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.4508684873580933e-05, \"event\": \"end\", \"monotonic_s\": 10382320.26515516, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16042523000215,
+          "ts": "2026-10-11T05:30:16.820526217Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265166381, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.1604921160033,
+          "ts": "2026-10-11T05:30:16.820531917Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.311363101005554e-06, \"event\": \"end\", \"monotonic_s\": 10382320.265175262, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16055462200165,
+          "ts": "2026-10-11T05:30:16.820537617Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265193492, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16061690800052,
+          "ts": "2026-10-11T05:30:16.820544238Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 7.5194984674453735e-06, \"event\": \"end\", \"monotonic_s\": 10382320.265200833, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16069994600184,
+          "ts": "2026-10-11T05:30:16.820550618Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265211022, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16076809100196,
+          "ts": "2026-10-11T05:30:16.820588248Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00014806166291236877, \"event\": \"end\", \"monotonic_s\": 10382320.265359335, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16082681999978,
+          "ts": "2026-10-11T05:30:16.820608999Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265372084, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16088394000326,
+          "ts": "2026-10-11T05:30:16.820635549Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.806819975376129e-05, \"event\": \"end\", \"monotonic_s\": 10382320.265399676, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16095519800001,
+          "ts": "2026-10-11T05:30:16.820659189Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265408264, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16101324800184,
+          "ts": "2026-10-11T05:30:16.820679480Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.210780262947083e-06, \"event\": \"end\", \"monotonic_s\": 10382320.265417276, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16106926000066,
+          "ts": "2026-10-11T05:30:16.820694230Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265425043, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16112421900107,
+          "ts": "2026-10-11T05:30:16.820708790Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.8982216715812683e-05, \"event\": \"end\", \"monotonic_s\": 10382320.265443835, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16119397100192,
+          "ts": "2026-10-11T05:30:16.820718700Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.265452236, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16124972300167,
+          "ts": "2026-10-11T05:30:16.820733130Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.1660158634185791e-05, \"event\": \"end\", \"monotonic_s\": 10382320.265463665, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16130368200174,
+          "ts": "2026-10-11T05:30:16.821331360Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.32367795892059803, \"event\": \"end\", \"monotonic_s\": 10382320.266160917, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16135725800268,
+          "ts": "2026-10-11T05:30:16.821364250Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.266180696, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16142302300068,
+          "ts": "2026-10-11T05:30:16.821372440Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.266197467, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16147793800337,
+          "ts": "2026-10-11T05:30:16.827371682Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.2721601, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.16153678800038,
+          "ts": "2026-10-11T05:30:16.959620659Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.13215420581400394, \"event\": \"end\", \"monotonic_s\": 10382320.404315993, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39742282800216,
+          "ts": "2026-10-11T05:30:16.959942234Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.404815001, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39753308299987,
+          "ts": "2026-10-11T05:30:16.983479555Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.428228732, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39760531400316,
+          "ts": "2026-10-11T05:30:16.983513405Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.4282529, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39767363900319,
+          "ts": "2026-10-11T05:30:16.983521945Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 8.967146277427673e-05, \"event\": \"end\", \"monotonic_s\": 10382320.428342821, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.3977632970018,
+          "ts": "2026-10-11T05:30:16.984231076Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10382320.429077884, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.3978293800028,
+          "ts": "2026-10-11T05:30:16.984243987Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 5.919113755226135e-05, \"event\": \"end\", \"monotonic_s\": 10382320.429136736, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39789204400222,
+          "ts": "2026-10-11T05:30:16.984321738Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0009933561086654663, \"event\": \"end\", \"monotonic_s\": 10382320.429220285, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39796156000011,
+          "ts": "2026-10-11T05:30:16.984328588Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.024432923644781113, \"event\": \"end\", \"monotonic_s\": 10382320.429246606, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39802431400312,
+          "ts": "2026-10-11T05:30:16.984334328Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.16305923834443092, \"event\": \"end\", \"monotonic_s\": 10382320.429256516, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.39813269099977,
+          "ts": "2026-10-11T05:30:16.984427189Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.1630932278931141, \"event\": \"end\", \"monotonic_s\": 10382320.429273617, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 925}"
+        },
+        {
+          "pod_id": "lirpl003x4eu5j",
+          "at_s": 70.398224544002,
+          "ts": "2026-10-11T05:30:16.984516941Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.48704711347818375, \"event\": \"end\", \"monotonic_s\": 10382320.429351278, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 925}"
+        }
+      ]
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-nvml-rc2-mo-v2",
+      "controller_exit": 0,
+      "estimated_rental_usd": 0.027263308361547944,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "name": "switchyard-f981bd205c23d6c5-0",
+          "get_status": 404
+        }
+      ],
+      "reason": null,
+      "cases": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 5,
+          "elapsed_s": 64.864703076,
+          "output_tokens_per_s": 0.07708352559853164,
+          "ttft_p50_s": 64.864506982,
+          "ttft_p95_s": 64.864506982,
+          "response_p95_s": 64.864640013,
+          "service_ttft_p50_s": 0.20134224500000641,
+          "service_ttft_p95_s": 0.20134224500000641,
+          "cached_input_tokens": 0,
+          "input_tokens": 26,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 43.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 1
+        },
+        {
+          "name": "hot-single-long",
+          "requests": 4,
+          "completed": 4,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 384,
+          "elapsed_s": 2.495004055999999,
+          "output_tokens_per_s": 153.90756543122836,
+          "ttft_p50_s": 0.9048677840000039,
+          "ttft_p95_s": 2.150466358999992,
+          "response_p95_s": 2.4578418990000017,
+          "service_ttft_p50_s": 0.21276658000000737,
+          "service_ttft_p95_s": 0.3823755930000061,
+          "cached_input_tokens": 0,
+          "input_tokens": 136,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 136.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "hot-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 40,
+          "elapsed_s": 2.009857820999997,
+          "output_tokens_per_s": 19.901905290045917,
+          "ttft_p50_s": 1.006757700999998,
+          "ttft_p95_s": 1.9674527530000034,
+          "response_p95_s": 1.9675697569999926,
+          "service_ttft_p50_s": 0.1484605280000011,
+          "service_ttft_p95_s": 0.2564128839999995,
+          "cached_input_tokens": 0,
+          "input_tokens": 208,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 208.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 8
+        },
+        {
+          "name": "shared-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2271,
+          "elapsed_s": 1.7283448870000058,
+          "output_tokens_per_s": 1313.9738585057025,
+          "ttft_p50_s": 1.1745347690000045,
+          "ttft_p95_s": 1.2539408869999988,
+          "response_p95_s": 1.5953276480000085,
+          "service_ttft_p50_s": 0.45581395800000735,
+          "service_ttft_p95_s": 0.5352040100000011,
+          "cached_input_tokens": 52224,
+          "input_tokens": 66966,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 66966.0,
+            "vllm:prefix_cache_hits_total": 52224.0
+          }
+        },
+        {
+          "name": "shared-prefix-prime",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 23,
+          "elapsed_s": 0.3978920979999998,
+          "output_tokens_per_s": 57.80461616505893,
+          "ttft_p50_s": 0.34263608999999917,
+          "ttft_p95_s": 0.34263608999999917,
+          "response_p95_s": 0.3436680749999965,
+          "service_ttft_p50_s": 0.24875238399999944,
+          "service_ttft_p95_s": 0.24875238399999944,
+          "cached_input_tokens": 0,
+          "input_tokens": 2092,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 2092.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "shared-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 3.0324304980000107,
+          "output_tokens_per_s": 801.9969465430404,
+          "ttft_p50_s": 1.8763002150000005,
+          "ttft_p95_s": 2.6136953050000074,
+          "response_p95_s": 2.764875924000009,
+          "service_ttft_p50_s": 0.3061600449999986,
+          "service_ttft_p95_s": 0.5099735480000049,
+          "cached_input_tokens": 104448,
+          "input_tokens": 133878,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 133878.0,
+            "vllm:prefix_cache_hits_total": 104448.0
+          }
+        },
+        {
+          "name": "shared-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 176,
+          "elapsed_s": 3.1202809960000053,
+          "output_tokens_per_s": 56.40517640097812,
+          "ttft_p50_s": 1.384530168000012,
+          "ttft_p95_s": 2.977213880000008,
+          "response_p95_s": 3.0530143710000033,
+          "service_ttft_p50_s": 0.22501283500000113,
+          "service_ttft_p95_s": 0.33184267400000067,
+          "cached_input_tokens": 13056,
+          "input_tokens": 16744,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16744.0,
+            "vllm:prefix_cache_hits_total": 13056.0
+          }
+        },
+        {
+          "name": "unique-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2621,
+          "elapsed_s": 2.6796395190000055,
+          "output_tokens_per_s": 978.1166389791531,
+          "ttft_p50_s": 1.5431547480000063,
+          "ttft_p95_s": 2.1552293090000063,
+          "response_p95_s": 2.581965542000006,
+          "service_ttft_p50_s": 0.7951293180000079,
+          "service_ttft_p95_s": 1.40735564900001,
+          "cached_input_tokens": 0,
+          "input_tokens": 67404,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 67404.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 4.478034492999996,
+          "output_tokens_per_s": 543.0954146962624,
+          "ttft_p50_s": 2.8230901189999997,
+          "ttft_p95_s": 3.942006248999988,
+          "response_p95_s": 4.322157646999997,
+          "service_ttft_p50_s": 0.5117977650000114,
+          "service_ttft_p95_s": 1.3667668429999935,
+          "cached_input_tokens": 0,
+          "input_tokens": 134764,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 134764.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 160,
+          "elapsed_s": 2.6006966850000026,
+          "output_tokens_per_s": 61.521976369958665,
+          "ttft_p50_s": 1.4152968009999967,
+          "ttft_p95_s": 2.541633218000001,
+          "response_p95_s": 2.542441261999997,
+          "service_ttft_p50_s": 0.1684471540000061,
+          "service_ttft_p95_s": 0.21627969800000812,
+          "cached_input_tokens": 0,
+          "input_tokens": 16816,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16816.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        }
+      ],
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.338665705
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 1.924123671
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 25.39476167
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 28.582748693
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 28.58358464
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 28.583612171
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 52.68231049
+        }
+      ],
+      "hydration_mode": "trusted_streaming",
+      "artifact_bytes_total": 4981184396,
+      "model_bytes_total": 1770045440,
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.424553808,
+            "network_received_bytes": 4975190485,
+            "storage_written_bytes": 4975190485,
+            "compressed_consumed_bytes": 4975190485,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 1860150683,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654338048,
+            "file_written_bytes": 13485036736,
+            "receiver_body_wait_seconds": 97.84268032,
+            "receiver_storage_write_seconds": 13.025259829,
+            "consumer_wait_seconds": 5.099610664,
+            "reception_complete_seconds": 18.395236927,
+            "extraction_complete_seconds": 23.42956517
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "ccc33cfaec8d0e669950f4b61b229fb5062ba46e8e17be1b76a613c10e349c69",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.016597543,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 4158900,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.478065852,
+            "receiver_storage_write_seconds": 0.005281638,
+            "consumer_wait_seconds": 0.410339759,
+            "reception_complete_seconds": 0.504272395,
+            "extraction_complete_seconds": 0.771562228
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485036736,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.003841695
+      },
+      "native_startup_observations": [
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 26.48612894600228,
+          "ts": "2026-10-11T05:41:06.538696545Z",
+          "line": "switchyard ticket received: bytes=37705578 download_s=1.181 decode_s=0.111"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 53.82609426400086,
+          "ts": "2026-10-11T05:41:33.880190175Z",
+          "line": "SWITCHYARD_NATIVE_PROVIDER_DISCOVERY {\"pid\": 562, \"pythonpath\": \"/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider\", \"sys_path\": [\"\", \"/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages\", \"/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages\", \"/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider\", \"/opt/switchyard/runtime/python/lib/python312.zip\", \"/opt/switchyard/runtime/python/lib/python3.12\", \"/opt/switchyard/runtime/python/lib/python3.12/lib-dynload\", \"/opt/switchyard/runtime/venv/lib/python3.12/site-packages\"], \"negative_importer_before\": true, \"shim_visible_before\": false, \"shim_visible_after\": true}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 62.5603133149998,
+          "ts": "2026-10-11T05:41:33.882382465Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 7474735.56175389, \"pid\": 562}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 62.560388607002096,
+          "ts": "2026-10-11T05:41:33.929166098Z",
+          "line": "NVIDIA L40S, 580.159.03, 46068, 8.9"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 62.56042262399933,
+          "ts": "2026-10-11T05:41:40.990672654Z",
+          "line": "switchyard preimport completed in 7.107s"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 65.55511846800073,
+          "ts": "2026-10-11T05:41:45.610457592Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474747.289804567, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 562}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67879103100131,
+          "ts": "2026-10-11T05:41:45.610631814Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"cuda_initialized\": false, \"event\": \"worker_context\", \"method\": \"fork\", \"monotonic_s\": 7474747.29014672, \"pid\": 562}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.6789504619992,
+          "ts": "2026-10-11T05:41:45.610641944Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0003641229122877121, \"event\": \"end\", \"monotonic_s\": 7474747.29016252, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 562}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67906051300088,
+          "ts": "2026-10-11T05:41:45.710170125Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474747.38953101, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.679134410002,
+          "ts": "2026-10-11T05:41:45.710363197Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"cuda_initialized\": false, \"event\": \"worker_context\", \"method\": \"fork\", \"monotonic_s\": 7474747.389880973, \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67920482300178,
+          "ts": "2026-10-11T05:41:45.710370547Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00037751346826553345, \"event\": \"end\", \"monotonic_s\": 7474747.389895643, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67941222700028,
+          "ts": "2026-10-11T05:41:45.854863603Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474747.534268949, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67950802199994,
+          "ts": "2026-10-11T05:41:45.868433399Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"process.py\", \"function\": \"run\", \"line\": 108}, {\"file\": \"core.py\", \"function\": \"run_engine_core\", \"line\": 1395}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"core.py\", \"function\": \"__init__\", \"line\": 1151}, {\"file\": \"core.py\", \"function\": \"__init__\", \"line\": 140}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}], \"event\": \"begin\", \"monotonic_s\": 7474747.547812544, \"name\": \"torch.cuda._lazy_init\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67960537700128,
+          "ts": "2026-10-11T05:41:46.026613422Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_capability\", \"line\": 417}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 7474747.705887526, \"name\": \"torch.cuda._lazy_init\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67968427800224,
+          "ts": "2026-10-11T05:41:46.026657593Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0003268430009484291, \"event\": \"end\", \"monotonic_s\": 7474747.705942067, \"name\": \"torch.cuda._lazy_init\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67978889799997,
+          "ts": "2026-10-11T05:41:46.028384719Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_cubins\", \"line\": 438}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 7474747.707784154, \"name\": \"torch.cuda._lazy_init\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67986297800235,
+          "ts": "2026-10-11T05:41:46.028411369Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00013470090925693512, \"event\": \"end\", \"monotonic_s\": 7474747.707811384, \"name\": \"torch.cuda._lazy_init\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.67994558099963,
+          "ts": "2026-10-11T05:41:46.029589330Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.16243612207472324, \"event\": \"end\", \"monotonic_s\": 7474747.709022815, \"name\": \"torch.cuda._lazy_init\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.68026103500233,
+          "ts": "2026-10-11T05:41:46.663958448Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.8090684041380882, \"event\": \"end\", \"monotonic_s\": 7474748.343337933, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.680354291002,
+          "ts": "2026-10-11T05:41:46.664002189Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474748.343401594, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.68042441199941,
+          "ts": "2026-10-11T05:41:46.664009649Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474748.343457764, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.68087508200188,
+          "ts": "2026-10-11T05:41:47.093049658Z",
+          "line": "SWITCHYARD_RUNTIME_ASSET_ACCESS {\"path\": \"flashinfer_cubin/__pycache__/__init__.cpython-312.pyc\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.68093333800061,
+          "ts": "2026-10-11T05:41:47.093205109Z",
+          "line": "SWITCHYARD_RUNTIME_ASSET_ACCESS {\"path\": \"flashinfer_cubin/__pycache__/_build_meta.cpython-312.pyc\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.68098848299996,
+          "ts": "2026-10-11T05:41:47.698390868Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:47 [cuda.py:526] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']."
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 67.75923808800144,
+          "ts": "2026-10-11T05:41:47.698742361Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:47 [flash_attn.py:1167] Using FlashAttention version 2"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 68.14879214400207,
+          "ts": "2026-10-11T05:41:48.204273138Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:48 [default_loader.py:484] Loading weights took 0.39 seconds"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 68.82994998700087,
+          "ts": "2026-10-11T05:41:48.884379600Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:48 [model_runner.py:407] Model loading took 1.53 GiB memory and 2.220109 seconds"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 69.20440482499907,
+          "ts": "2026-10-11T05:41:48.911306089Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.247354651801288, \"event\": \"end\", \"monotonic_s\": 7474750.590813455, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 69.20447906299887,
+          "ts": "2026-10-11T05:41:48.912772822Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.248887394554913, \"event\": \"end\", \"monotonic_s\": 7474750.592288689, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 69.20456925600229,
+          "ts": "2026-10-11T05:41:48.913978343Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"free_memory_bytes\": 47210430464, \"monotonic_s\": 7474750.59352158, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 929, \"total_memory_bytes\": 47665709056}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 69.20459138099977,
+          "ts": "2026-10-11T05:41:48.918656137Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:48 [startup_plan.py:123] Startup plan not applied: current free memory (43.97 GiB) is below the recorded baseline (43.97 GiB); falling back to full memory profiling."
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 69.20461264000187,
+          "ts": "2026-10-11T05:41:49.258757913Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474750.938092898, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 70.65361831200062,
+          "ts": "2026-10-11T05:41:50.412793739Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:50 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 70.6537141230001,
+          "ts": "2026-10-11T05:41:50.412902150Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:50 [monitor.py:53] torch.compile took 0.61 s in total"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 70.65376733700032,
+          "ts": "2026-10-11T05:41:50.708644386Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:50 [monitor.py:81] Initial profiling/warmup run took 0.30 s"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 72.73038362399893,
+          "ts": "2026-10-11T05:41:51.150352602Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.8916118489578366, \"event\": \"end\", \"monotonic_s\": 7474752.829704747, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 72.73051240700079,
+          "ts": "2026-10-11T05:41:51.844732226Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474753.524107651, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 72.73076710399982,
+          "ts": "2026-10-11T05:41:52.784159727Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:52 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.06 GiB"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.08922324500236,
+          "ts": "2026-10-11T05:41:52.784218397Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.9394992711022496, \"event\": \"end\", \"monotonic_s\": 7474754.463605342, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20128104600008,
+          "ts": "2026-10-11T05:41:53.143918955Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 4.229847891256213, \"event\": \"end\", \"monotonic_s\": 7474754.823367901, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20131129600122,
+          "ts": "2026-10-11T05:41:53.145362298Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:53 [kv_cache_utils.py:2464] GPU KV cache size: 1,579,008 tokens, Maximum concurrency for 4,096 tokens per request: 385.50x"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20135098800165,
+          "ts": "2026-10-11T05:41:53.145388469Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.824889585, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20137708200127,
+          "ts": "2026-10-11T05:41:53.200706890Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.05521067976951599, \"event\": \"end\", \"monotonic_s\": 7474754.880103075, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20139850900159,
+          "ts": "2026-10-11T05:41:53.200746451Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.880221217, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20141788399997,
+          "ts": "2026-10-11T05:41:53.200922712Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.880433609, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20148169499953,
+          "ts": "2026-10-11T05:41:53.222613173Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.902107749, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.20152101900021,
+          "ts": "2026-10-11T05:41:53.254075484Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.03137897979468107, \"event\": \"end\", \"monotonic_s\": 7474754.933486959, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.49036660799902,
+          "ts": "2026-10-11T05:41:53.254104594Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.93351627, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.49055615700127,
+          "ts": "2026-10-11T05:41:53.316334650Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.062238735146820545, \"event\": \"end\", \"monotonic_s\": 7474754.995755965, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.49062540299929,
+          "ts": "2026-10-11T05:41:53.316341840Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.995788316, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.4907705450023,
+          "ts": "2026-10-11T05:41:53.319704041Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0033623911440372467, \"event\": \"end\", \"monotonic_s\": 7474754.999149967, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.49084125900117,
+          "ts": "2026-10-11T05:41:53.319711181Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474754.999171007, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.49090974200226,
+          "ts": "2026-10-11T05:41:53.538967070Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.2191226677969098, \"event\": \"end\", \"monotonic_s\": 7474755.218296174, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.6396032470002,
+          "ts": "2026-10-11T05:41:53.539020790Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218345145, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.63970537800196,
+          "ts": "2026-10-11T05:41:53.539028090Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.5029294192790985e-05, \"event\": \"end\", \"monotonic_s\": 7474755.218369515, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.63980117100073,
+          "ts": "2026-10-11T05:41:53.539033760Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218381135, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.63987118300065,
+          "ts": "2026-10-11T05:41:53.539039150Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.560026228427887e-06, \"event\": \"end\", \"monotonic_s\": 7474755.218390255, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.63993949400174,
+          "ts": "2026-10-11T05:41:53.539044650Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218410205, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64000551999925,
+          "ts": "2026-10-11T05:41:53.539050040Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 7.960014045238495e-06, \"event\": \"end\", \"monotonic_s\": 7474755.218418125, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64009118800095,
+          "ts": "2026-10-11T05:41:53.539055470Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218428425, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64015648799977,
+          "ts": "2026-10-11T05:41:53.539178032Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0001873113214969635, \"event\": \"end\", \"monotonic_s\": 7474755.218615937, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64022122700044,
+          "ts": "2026-10-11T05:41:53.539210662Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218628297, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64028372699977,
+          "ts": "2026-10-11T05:41:53.539218102Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.7910806238651276e-05, \"event\": \"end\", \"monotonic_s\": 7474755.218655768, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64036288699936,
+          "ts": "2026-10-11T05:41:53.539224492Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218664878, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64043146200129,
+          "ts": "2026-10-11T05:41:53.539237372Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.729526937007904e-06, \"event\": \"end\", \"monotonic_s\": 7474755.218674378, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64051489800113,
+          "ts": "2026-10-11T05:41:53.539249412Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218682418, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64057609700103,
+          "ts": "2026-10-11T05:41:53.539255762Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.8829479813575745e-05, \"event\": \"end\", \"monotonic_s\": 7474755.218701148, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64063489900218,
+          "ts": "2026-10-11T05:41:53.539261172Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.218715208, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64070845800234,
+          "ts": "2026-10-11T05:41:53.539268322Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.1379830539226532e-05, \"event\": \"end\", \"monotonic_s\": 7474755.218726388, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64078651900127,
+          "ts": "2026-10-11T05:41:53.540069130Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.3391377469524741, \"event\": \"end\", \"monotonic_s\": 7474755.219572396, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64084687200011,
+          "ts": "2026-10-11T05:41:53.540099810Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.219591826, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64090654599931,
+          "ts": "2026-10-11T05:41:53.540106730Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.219608216, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.6409625990018,
+          "ts": "2026-10-11T05:41:53.546337328Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.225786963, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.64103402000183,
+          "ts": "2026-10-11T05:41:53.689727684Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.14330505579710007, \"event\": \"end\", \"monotonic_s\": 7474755.369093909, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75529618300061,
+          "ts": "2026-10-11T05:41:53.690157098Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.369667374, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.7554097659995,
+          "ts": "2026-10-11T05:41:53.713774577Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.393264993, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75548386399896,
+          "ts": "2026-10-11T05:41:53.713913738Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.393438764, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"native_aot_artifact_count\": 1, \"native_provider_count\": 1, \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75557795599889,
+          "ts": "2026-10-11T05:41:53.713978329Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.393507265, \"name\": \"flashinfer.jit.core.JitSpecNvcc.load\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75564713000131,
+          "ts": "2026-10-11T05:41:53.716471432Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0024176519364118576, \"event\": \"end\", \"monotonic_s\": 7474755.395925657, \"name\": \"flashinfer.jit.core.JitSpecNvcc.load\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75572553299935,
+          "ts": "2026-10-11T05:41:53.716499912Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0026852451264858246, \"event\": \"end\", \"monotonic_s\": 7474755.395976838, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75579369900152,
+          "ts": "2026-10-11T05:41:53.716507002Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.002728014253079891, \"event\": \"end\", \"monotonic_s\": 7474755.395989868, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 73.75587852399985,
+          "ts": "2026-10-11T05:41:53.809513902Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.11921446304768324, \"event\": \"end\", \"monotonic_s\": 7474755.488883617, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34554763300184,
+          "ts": "2026-10-11T05:41:53.809673914Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.4891951, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34565883600226,
+          "ts": "2026-10-11T05:41:53.818567806Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.008862322196364403, \"event\": \"end\", \"monotonic_s\": 7474755.498057272, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34573174099933,
+          "ts": "2026-10-11T05:41:53.818586816Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.498081583, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34579881500031,
+          "ts": "2026-10-11T05:41:53.819787167Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00121346116065979, \"event\": \"end\", \"monotonic_s\": 7474755.499296164, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34696374600026,
+          "ts": "2026-10-11T05:41:53.819857928Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.499365034, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34701425100138,
+          "ts": "2026-10-11T05:41:53.831010081Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.011083882302045822, \"event\": \"end\", \"monotonic_s\": 7474755.510449087, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34704187700117,
+          "ts": "2026-10-11T05:41:53.831038452Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.510478367, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34706707800069,
+          "ts": "2026-10-11T05:41:53.832202652Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0011865412816405296, \"event\": \"end\", \"monotonic_s\": 7474755.511665198, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34710442299911,
+          "ts": "2026-10-11T05:41:53.832227583Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.511744879, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34713156200087,
+          "ts": "2026-10-11T05:41:53.839868703Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.007611430250108242, \"event\": \"end\", \"monotonic_s\": 7474755.519356109, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.3471762170011,
+          "ts": "2026-10-11T05:41:53.839900634Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.51937952, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34720714700234,
+          "ts": "2026-10-11T05:41:53.840980324Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0010928511619567871, \"event\": \"end\", \"monotonic_s\": 7474755.52047366, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34723654299887,
+          "ts": "2026-10-11T05:41:53.841024294Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.52052664, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.3472662330023,
+          "ts": "2026-10-11T05:41:53.841170895Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00016171205788850784, \"event\": \"end\", \"monotonic_s\": 7474755.520688322, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34729694600173,
+          "ts": "2026-10-11T05:41:53.841233166Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.301168535836041, \"event\": \"end\", \"monotonic_s\": 7474755.520777282, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34732764599903,
+          "ts": "2026-10-11T05:41:53.841241626Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.3012052271515131, \"event\": \"end\", \"monotonic_s\": 7474755.520796223, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.34735962400009,
+          "ts": "2026-10-11T05:41:53.841285656Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 7474755.520829513, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 74.83581532500102,
+          "ts": "2026-10-11T05:41:54.890245800Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:54 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.05 GiB"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 75.39459570100007,
+          "ts": "2026-10-11T05:41:54.890314881Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.048813482746482, \"event\": \"end\", \"monotonic_s\": 7474756.569644316, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 77.84057351000229,
+          "ts": "2026-10-11T05:41:55.858847701Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.657954248599708, \"event\": \"end\", \"monotonic_s\": 7474757.538178446, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 929}"
+        },
+        {
+          "pod_id": "wuo4jkb9d02m6l",
+          "at_s": 77.84068220799963,
+          "ts": "2026-10-11T05:41:55.858902991Z",
+          "line": "(EngineCore pid=929) INFO 10-11 05:41:55 [core.py:373] init engine (profile, create kv cache, warmup model) took 6.95 s (compilation: 0.61 s)"
+        }
+      ]
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-control-rc2-mo",
+      "controller_exit": 0,
+      "estimated_rental_usd": 0.025064922584239046,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "name": "switchyard-a751e3052ebb7c05-0",
+          "get_status": 404
+        }
+      ],
+      "reason": null,
+      "cases": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 5,
+          "elapsed_s": 60.904670011,
+          "output_tokens_per_s": 0.08209551088770285,
+          "ttft_p50_s": 60.855323957,
+          "ttft_p95_s": 60.855323957,
+          "response_p95_s": 60.855435895,
+          "service_ttft_p50_s": 0.1533861600000037,
+          "service_ttft_p95_s": 0.1533861600000037,
+          "cached_input_tokens": 0,
+          "input_tokens": 26,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 43.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 1
+        },
+        {
+          "name": "hot-single-long",
+          "requests": 4,
+          "completed": 4,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 384,
+          "elapsed_s": 2.4802402449999974,
+          "output_tokens_per_s": 154.8237114425181,
+          "ttft_p50_s": 0.6827287609999999,
+          "ttft_p95_s": 2.0778042990000003,
+          "response_p95_s": 2.382961040000005,
+          "service_ttft_p50_s": 0.10241565399999786,
+          "service_ttft_p95_s": 0.10326536499999861,
+          "cached_input_tokens": 0,
+          "input_tokens": 136,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 136.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "hot-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 40,
+          "elapsed_s": 1.7693411340000011,
+          "output_tokens_per_s": 22.607285407744314,
+          "ttft_p50_s": 0.7945861709999988,
+          "ttft_p95_s": 1.671262204999998,
+          "response_p95_s": 1.7151120250000034,
+          "service_ttft_p50_s": 0.10324922099999867,
+          "service_ttft_p95_s": 0.10941905600000013,
+          "cached_input_tokens": 0,
+          "input_tokens": 208,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 208.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 8
+        },
+        {
+          "name": "shared-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2233,
+          "elapsed_s": 1.6278200139999939,
+          "output_tokens_per_s": 1371.773280089434,
+          "ttft_p50_s": 1.1383778980000017,
+          "ttft_p95_s": 1.2263074899999964,
+          "response_p95_s": 1.5646369069999935,
+          "service_ttft_p50_s": 0.4192248439999986,
+          "service_ttft_p95_s": 0.5071255619999988,
+          "cached_input_tokens": 52224,
+          "input_tokens": 66966,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 66966.0,
+            "vllm:prefix_cache_hits_total": 52224.0
+          }
+        },
+        {
+          "name": "shared-prefix-prime",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 23,
+          "elapsed_s": 0.4974523650000009,
+          "output_tokens_per_s": 46.235582777860465,
+          "ttft_p50_s": 0.3967322829999915,
+          "ttft_p95_s": 0.3967322829999915,
+          "response_p95_s": 0.43415757600000404,
+          "service_ttft_p50_s": 0.3041014880000006,
+          "service_ttft_p95_s": 0.3041014880000006,
+          "cached_input_tokens": 0,
+          "input_tokens": 2092,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 2092.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "shared-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 2.82051414499999,
+          "output_tokens_per_s": 862.2541405478428,
+          "ttft_p50_s": 1.7575500720000008,
+          "ttft_p95_s": 2.444663430999995,
+          "response_p95_s": 2.6243860470000016,
+          "service_ttft_p50_s": 0.2767199879999964,
+          "service_ttft_p95_s": 0.4260312500000083,
+          "cached_input_tokens": 104448,
+          "input_tokens": 133878,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 133878.0,
+            "vllm:prefix_cache_hits_total": 104448.0
+          }
+        },
+        {
+          "name": "shared-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 176,
+          "elapsed_s": 2.3475202810000013,
+          "output_tokens_per_s": 74.97272821218276,
+          "ttft_p50_s": 1.0841070679999945,
+          "ttft_p95_s": 2.2949048339999933,
+          "response_p95_s": 2.3343196699999993,
+          "service_ttft_p50_s": 0.14946913299999665,
+          "service_ttft_p95_s": 0.3037036639999968,
+          "cached_input_tokens": 13056,
+          "input_tokens": 16744,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16744.0,
+            "vllm:prefix_cache_hits_total": 13056.0
+          }
+        },
+        {
+          "name": "unique-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2631,
+          "elapsed_s": 2.584499441999995,
+          "output_tokens_per_s": 1017.9920944242963,
+          "ttft_p50_s": 1.5853340139999972,
+          "ttft_p95_s": 2.082265634999999,
+          "response_p95_s": 2.5274419019999925,
+          "service_ttft_p50_s": 0.7207128720000071,
+          "service_ttft_p95_s": 1.2177861010000015,
+          "cached_input_tokens": 0,
+          "input_tokens": 67404,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 67404.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 4.147835006000008,
+          "output_tokens_per_s": 586.3299761157364,
+          "ttft_p50_s": 2.6400286150000056,
+          "ttft_p95_s": 3.6451013160000088,
+          "response_p95_s": 4.029328379000006,
+          "service_ttft_p50_s": 0.49361174599999913,
+          "service_ttft_p95_s": 1.1558249849999953,
+          "cached_input_tokens": 0,
+          "input_tokens": 134764,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 134764.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 160,
+          "elapsed_s": 2.394687908999998,
+          "output_tokens_per_s": 66.81455207531184,
+          "ttft_p50_s": 1.4833458899999954,
+          "ttft_p95_s": 2.344548003,
+          "response_p95_s": 2.3835305199999937,
+          "service_ttft_p50_s": 0.1746534380000071,
+          "service_ttft_p95_s": 0.19278956300000516,
+          "cached_input_tokens": 0,
+          "input_tokens": 16816,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16816.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        }
+      ],
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.273909038
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 1.866324927
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 24.210903886
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 24.211585257
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 27.707300331
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 27.707599566
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 53.806903556
+        }
+      ],
+      "hydration_mode": "trusted_streaming",
+      "artifact_bytes_total": 4981186752,
+      "model_bytes_total": 1770045440,
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "df7b2f985cb03bda92fbb33572969a85e963b9d2c3c2b7f8543b3fd75d39bc4e",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.4235757,
+            "network_received_bytes": 4975192841,
+            "storage_written_bytes": 4975192841,
+            "compressed_consumed_bytes": 4975192841,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 803958192,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654331904,
+            "file_written_bytes": 13485031132,
+            "receiver_body_wait_seconds": 94.258959611,
+            "receiver_storage_write_seconds": 16.353675779,
+            "consumer_wait_seconds": 12.699089059,
+            "reception_complete_seconds": 19.323344852,
+            "extraction_complete_seconds": 19.438851376
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "2631027e09a258410ca39aa92688581f299dbf887b3c0cf4ff46c2e2373713ff",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.024948401,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 3080177,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.479958792,
+            "receiver_storage_write_seconds": 0.00784682,
+            "consumer_wait_seconds": 0.317232226,
+            "reception_complete_seconds": 0.526459021,
+            "extraction_complete_seconds": 0.647851316
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485031132,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.004523339
+      },
+      "native_startup_observations": [
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 21.953458185998898,
+          "ts": "2026-10-11T05:43:08.784171263Z",
+          "line": "switchyard ticket received: bytes=37705100 download_s=1.120 decode_s=0.104"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 44.983799939000164,
+          "ts": "2026-10-11T05:43:31.818631289Z",
+          "line": "SWITCHYARD_NATIVE_PROVIDER_DISCOVERY {\"pid\": 556, \"pythonpath\": \"/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider\", \"sys_path\": [\"\", \"/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages\", \"/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages\", \"/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider\", \"/opt/switchyard/runtime/python/lib/python312.zip\", \"/opt/switchyard/runtime/python/lib/python3.12\", \"/opt/switchyard/runtime/python/lib/python3.12/lib-dynload\", \"/opt/switchyard/runtime/venv/lib/python3.12/site-packages\"], \"negative_importer_before\": true, \"shim_visible_before\": false, \"shim_visible_after\": true}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 52.09247356999913,
+          "ts": "2026-10-11T05:43:31.820772022Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10383115.265513618, \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 52.092542339996726,
+          "ts": "2026-10-11T05:43:31.845628682Z",
+          "line": "NVIDIA L40S, 580.159.03, 46068, 8.9"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 52.0925732709984,
+          "ts": "2026-10-11T05:43:38.927166678Z",
+          "line": "switchyard preimport completed in 7.105s"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.519504516996676,
+          "ts": "2026-10-11T05:43:39.673358685Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"<frozen importlib._bootstrap_external>\", \"function\": \"exec_module\", \"line\": 999}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_call_with_frames_removed\", \"line\": 488}, {\"file\": \"index.py\", \"function\": \"<module>\", \"line\": 16}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_find_and_load\", \"line\": 1360}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_find_and_load_unlocked\", \"line\": 1331}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_load_unlocked\", \"line\": 935}, {\"file\": \"<frozen importlib._bootstrap_external>\", \"function\": \"exec_module\", \"line\": 999}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_call_with_frames_removed\", \"line\": 488}, {\"file\": \"utils.py\", \"function\": \"<module>\", \"line\": 145}, {\"file\": \"utils.py\", \"function\": \"_check_platform\", \"line\": 130}, {\"file\": \"utils.py\", \"function\": \"get_available_device\", \"line\": 123}, {\"file\": \"driver.py\", \"function\": \"get_current_target\", \"line\": 341}, {\"file\": \"__init__.py\", \"function\": \"current_device\", \"line\": 1205}], \"event\": \"begin\", \"monotonic_s\": 10383123.11795528, \"name\": \"torch.cuda._lazy_init\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.519554223999876,
+          "ts": "2026-10-11T05:43:39.752346162Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_load_unlocked\", \"line\": 935}, {\"file\": \"<frozen importlib._bootstrap_external>\", \"function\": \"exec_module\", \"line\": 999}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_call_with_frames_removed\", \"line\": 488}, {\"file\": \"utils.py\", \"function\": \"<module>\", \"line\": 145}, {\"file\": \"utils.py\", \"function\": \"_check_platform\", \"line\": 130}, {\"file\": \"utils.py\", \"function\": \"get_available_device\", \"line\": 123}, {\"file\": \"driver.py\", \"function\": \"get_current_target\", \"line\": 341}, {\"file\": \"__init__.py\", \"function\": \"current_device\", \"line\": 1205}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_capability\", \"line\": 417}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 10383123.197017357, \"name\": \"torch.cuda._lazy_init\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.519589157000155,
+          "ts": "2026-10-11T05:43:39.752424613Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00023994408547878265, \"event\": \"end\", \"monotonic_s\": 10383123.197068308, \"name\": \"torch.cuda._lazy_init\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.519617983998614,
+          "ts": "2026-10-11T05:43:39.753569390Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_load_unlocked\", \"line\": 935}, {\"file\": \"<frozen importlib._bootstrap_external>\", \"function\": \"exec_module\", \"line\": 999}, {\"file\": \"<frozen importlib._bootstrap>\", \"function\": \"_call_with_frames_removed\", \"line\": 488}, {\"file\": \"utils.py\", \"function\": \"<module>\", \"line\": 145}, {\"file\": \"utils.py\", \"function\": \"_check_platform\", \"line\": 130}, {\"file\": \"utils.py\", \"function\": \"get_available_device\", \"line\": 123}, {\"file\": \"driver.py\", \"function\": \"get_current_target\", \"line\": 341}, {\"file\": \"__init__.py\", \"function\": \"current_device\", \"line\": 1205}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_cubins\", \"line\": 438}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 10383123.198413728, \"name\": \"torch.cuda._lazy_init\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.51966740499847,
+          "ts": "2026-10-11T05:43:39.753592711Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00010154210031032562, \"event\": \"end\", \"monotonic_s\": 10383123.198438698, \"name\": \"torch.cuda._lazy_init\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.519689517997904,
+          "ts": "2026-10-11T05:43:39.753795614Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.08123147115111351, \"event\": \"end\", \"monotonic_s\": 10383123.198676992, \"name\": \"torch.cuda._lazy_init\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 56.51977680900018,
+          "ts": "2026-10-11T05:43:43.351341984Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383126.796017908, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 62.38890407699728,
+          "ts": "2026-10-11T05:43:43.351552637Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"cuda_initialized\": true, \"event\": \"worker_context\", \"method\": \"spawn\", \"monotonic_s\": 10383126.796433743, \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 62.38893667799857,
+          "ts": "2026-10-11T05:43:43.351556757Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0004471149295568466, \"event\": \"end\", \"monotonic_s\": 10383126.796448143, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 556}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 62.388962117998744,
+          "ts": "2026-10-11T05:43:43.388241478Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10383126.832932984, \"pid\": 922}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 62.38899418499932,
+          "ts": "2026-10-11T05:43:43.391424996Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"process_started\", \"monotonic_s\": 10383126.83611354, \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 62.38901777099818,
+          "ts": "2026-10-11T05:43:49.117828263Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383132.562494598, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.01991141999679,
+          "ts": "2026-10-11T05:43:49.117872754Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"cuda_initialized\": false, \"event\": \"worker_context\", \"method\": \"spawn\", \"monotonic_s\": 10383132.56255578, \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.01997675899838,
+          "ts": "2026-10-11T05:43:49.117880334Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 7.596984505653381e-05, \"event\": \"end\", \"monotonic_s\": 10383132.562567208, \"name\": \"vllm.utils.system_utils.get_mp_context\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.020090862999496,
+          "ts": "2026-10-11T05:43:49.846995111Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383133.291758517, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.584185546998924,
+          "ts": "2026-10-11T05:43:49.847587640Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"process.py\", \"function\": \"run\", \"line\": 108}, {\"file\": \"core.py\", \"function\": \"run_engine_core\", \"line\": 1395}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"core.py\", \"function\": \"__init__\", \"line\": 1151}, {\"file\": \"core.py\", \"function\": \"__init__\", \"line\": 140}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}], \"event\": \"begin\", \"monotonic_s\": 10383133.292367736, \"name\": \"torch.cuda._lazy_init\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.5842775409983,
+          "ts": "2026-10-11T05:43:49.864190263Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_capability\", \"line\": 417}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 10383133.30901145, \"name\": \"torch.cuda._lazy_init\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.58432223399723,
+          "ts": "2026-10-11T05:43:49.864226214Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00018177367746829987, \"event\": \"end\", \"monotonic_s\": 10383133.309044452, \"name\": \"torch.cuda._lazy_init\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.58436681699823,
+          "ts": "2026-10-11T05:43:49.865508874Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"callers\": [{\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"abstract.py\", \"function\": \"__init__\", \"line\": 113}, {\"file\": \"uniproc_executor.py\", \"function\": \"_init_executor\", \"line\": 69}, {\"file\": \"worker_base.py\", \"function\": \"init_device\", \"line\": 343}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"otel.py\", \"function\": \"sync_wrapper\", \"line\": 175}, {\"file\": \"gpu_worker.py\", \"function\": \"init_device\", \"line\": 462}, {\"file\": \"__init__.py\", \"function\": \"set_device_index\", \"line\": 198}, {\"file\": \"sitecustomize.py\", \"function\": \"call\", \"line\": 94}, {\"file\": \"__init__.py\", \"function\": \"_lazy_init\", \"line\": 540}, {\"file\": \"__init__.py\", \"function\": \"_check_cubins\", \"line\": 438}, {\"file\": \"__init__.py\", \"function\": \"get_device_capability\", \"line\": 720}, {\"file\": \"__init__.py\", \"function\": \"get_device_properties\", \"line\": 737}], \"event\": \"begin\", \"monotonic_s\": 10383133.310395112, \"name\": \"torch.cuda._lazy_init\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.58442486700005,
+          "ts": "2026-10-11T05:43:49.865536224Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00011675246059894562, \"event\": \"end\", \"monotonic_s\": 10383133.310417552, \"name\": \"torch.cuda._lazy_init\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.58447131399953,
+          "ts": "2026-10-11T05:43:49.865740267Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.01855253241956234, \"event\": \"end\", \"monotonic_s\": 10383133.310634157, \"name\": \"torch.cuda._lazy_init\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.58462950499961,
+          "ts": "2026-10-11T05:43:50.414089993Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.5670122504234314, \"event\": \"end\", \"monotonic_s\": 10383133.858770927, \"name\": \"vllm.v1.worker.gpu_worker.Worker.init_device\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.83534918999794,
+          "ts": "2026-10-11T05:43:50.414143694Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383133.858829288, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 63.8354141139971,
+          "ts": "2026-10-11T05:43:50.414150834Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383133.85887836, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.56663493199812,
+          "ts": "2026-10-11T05:43:51.460284923Z",
+          "line": "SWITCHYARD_RUNTIME_ASSET_ACCESS {\"path\": \"flashinfer_cubin/__pycache__/__init__.cpython-312.pyc\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.56666815899735,
+          "ts": "2026-10-11T05:43:51.460486436Z",
+          "line": "SWITCHYARD_RUNTIME_ASSET_ACCESS {\"path\": \"flashinfer_cubin/__pycache__/_build_meta.cpython-312.pyc\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.56670331499845,
+          "ts": "2026-10-11T05:43:52.034618595Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:52 [cuda.py:526] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']."
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.56674042799932,
+          "ts": "2026-10-11T05:43:52.034908660Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:52 [flash_attn.py:1167] Using FlashAttention version 2"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.56704272099887,
+          "ts": "2026-10-11T05:43:52.739766276Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:52 [default_loader.py:484] Loading weights took 0.27 seconds"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.56707247499799,
+          "ts": "2026-10-11T05:43:53.398711591Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:53 [model_runner.py:407] Model loading took 1.53 GiB memory and 2.984381 seconds"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.92554783899686,
+          "ts": "2026-10-11T05:43:53.423438299Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 3.009460048750043, \"event\": \"end\", \"monotonic_s\": 10383136.868339248, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.92565167499924,
+          "ts": "2026-10-11T05:43:53.423555940Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 3.009645812213421, \"event\": \"end\", \"monotonic_s\": 10383136.86847406, \"name\": \"vllm.v1.worker.gpu_worker.Worker.load_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.92582552199747,
+          "ts": "2026-10-11T05:43:53.424573446Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"free_memory_bytes\": 47210430464, \"monotonic_s\": 10383136.869470224, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 923, \"total_memory_bytes\": 47665709056}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.92584734299817,
+          "ts": "2026-10-11T05:43:53.428923062Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:53 [startup_plan.py:123] Startup plan not applied: current free memory (43.97 GiB) is below the recorded baseline (43.97 GiB); falling back to full memory profiling."
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 66.92587118699885,
+          "ts": "2026-10-11T05:43:53.746004766Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383137.19067937, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 68.22104241999841,
+          "ts": "2026-10-11T05:43:54.785855109Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:54 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 68.22111115699954,
+          "ts": "2026-10-11T05:43:54.785956970Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:54 [monitor.py:53] torch.compile took 0.53 s in total"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 68.22114114999931,
+          "ts": "2026-10-11T05:43:55.055834512Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:55 [monitor.py:81] Initial profiling/warmup run took 0.27 s"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 68.59780745699754,
+          "ts": "2026-10-11T05:43:55.432128050Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.6861335467547178, \"event\": \"end\", \"monotonic_s\": 10383138.876814624, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67596161899928,
+          "ts": "2026-10-11T05:43:56.090924243Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383139.535595847, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67612636999911,
+          "ts": "2026-10-11T05:43:57.090252347Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:57 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.06 GiB"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67616155599899,
+          "ts": "2026-10-11T05:43:57.090300438Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.9993996545672417, \"event\": \"end\", \"monotonic_s\": 10383140.534992412, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67624137999883,
+          "ts": "2026-10-11T05:43:57.431560220Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 4.00687750428915, \"event\": \"end\", \"monotonic_s\": 10383140.876346149, \"name\": \"vllm.v1.worker.gpu_worker.Worker.determine_available_memory\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67626124399976,
+          "ts": "2026-10-11T05:43:57.432952421Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:57 [kv_cache_utils.py:2464] GPU KV cache size: 1,579,008 tokens, Maximum concurrency for 4,096 tokens per request: 385.50x"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67628202899868,
+          "ts": "2026-10-11T05:43:57.432979512Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383140.877788488, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67630984999778,
+          "ts": "2026-10-11T05:43:57.489471855Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.05638699233531952, \"event\": \"end\", \"monotonic_s\": 10383140.93417849, \"name\": \"vllm.v1.worker.gpu_worker.Worker.initialize_from_config\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67632952499844,
+          "ts": "2026-10-11T05:43:57.489505885Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383140.934248213, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 70.67634813199766,
+          "ts": "2026-10-11T05:43:57.489638057Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383140.934413293, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01181859799908,
+          "ts": "2026-10-11T05:43:57.506182030Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383140.950915545, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01187641299839,
+          "ts": "2026-10-11T05:43:57.536330130Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.03017359972000122, \"event\": \"end\", \"monotonic_s\": 10383140.981090007, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01190434899763,
+          "ts": "2026-10-11T05:43:57.536357311Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383140.981119636, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01198878200012,
+          "ts": "2026-10-11T05:43:57.591201159Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.054844748228788376, \"event\": \"end\", \"monotonic_s\": 10383141.035965104, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen_vl_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01201089299866,
+          "ts": "2026-10-11T05:43:57.591209339Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.035999035, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01205901799767,
+          "ts": "2026-10-11T05:43:57.594561570Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0033350009471178055, \"event\": \"end\", \"monotonic_s\": 10383141.039333746, \"name\": \"vllm.model_executor.warmup.kernel_warmup.mamba_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01207771400004,
+          "ts": "2026-10-11T05:43:57.594569240Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.039355537, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.01209567999831,
+          "ts": "2026-10-11T05:43:57.845781967Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.2511101644486189, \"event\": \"end\", \"monotonic_s\": 10383141.290467862, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kimi_k3_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15794150299917,
+          "ts": "2026-10-11T05:43:57.845820468Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290505592, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15801010299765,
+          "ts": "2026-10-11T05:43:57.845828378Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.360902726650238e-05, \"event\": \"end\", \"monotonic_s\": 10383141.290528083, \"name\": \"vllm.model_executor.warmup.kernel_warmup.watermark_sample_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15804056900015,
+          "ts": "2026-10-11T05:43:57.845834518Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290539471, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15806406199772,
+          "ts": "2026-10-11T05:43:57.845840268Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.100884199142456e-06, \"event\": \"end\", \"monotonic_s\": 10383141.290548151, \"name\": \"vllm.model_executor.warmup.kernel_warmup.qwen4_exp_qsa_triton_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.1580953729972,
+          "ts": "2026-10-11T05:43:57.845845998Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290564675, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15811665999718,
+          "ts": "2026-10-11T05:43:57.845851698Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 8.169561624526978e-06, \"event\": \"end\", \"monotonic_s\": 10383141.290572613, \"name\": \"vllm.model_executor.warmup.kernel_warmup._warmup_gemm_rs_ar\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15813982899999,
+          "ts": "2026-10-11T05:43:57.845862098Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290582554, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.1581630849978,
+          "ts": "2026-10-11T05:43:57.845954630Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00013562291860580444, \"event\": \"end\", \"monotonic_s\": 10383141.290718036, \"name\": \"vllm.model_executor.warmup.kernel_warmup.cutedsl_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15818726999714,
+          "ts": "2026-10-11T05:43:57.845987430Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290730987, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15820710299886,
+          "ts": "2026-10-11T05:43:57.845999981Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.2601336240768433e-05, \"event\": \"end\", \"monotonic_s\": 10383141.290752647, \"name\": \"vllm.model_executor.warmup.kernel_warmup.flashinfer_sparse_mla_decode_autotune_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15822628099704,
+          "ts": "2026-10-11T05:43:57.846016581Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290761488, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15824393199728,
+          "ts": "2026-10-11T05:43:57.846032411Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 9.991228580474854e-06, \"event\": \"end\", \"monotonic_s\": 10383141.290771356, \"name\": \"vllm.model_executor.warmup.kernel_warmup.deepseek_v4_sparse_mla_attention_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15826302499772,
+          "ts": "2026-10-11T05:43:57.846047301Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290779227, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15828620499815,
+          "ts": "2026-10-11T05:43:57.846093632Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 1.1026859283447266e-05, \"event\": \"end\", \"monotonic_s\": 10383141.290790215, \"name\": \"vllm.model_executor.warmup.kernel_warmup.is_deep_gemm_supported\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15830473299866,
+          "ts": "2026-10-11T05:43:57.846158493Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.290798169, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15832211199813,
+          "ts": "2026-10-11T05:43:57.846178933Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 8.432194590568542e-06, \"event\": \"end\", \"monotonic_s\": 10383141.290806336, \"name\": \"vllm.model_executor.warmup.kernel_warmup.b12x_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15833891999864,
+          "ts": "2026-10-11T05:43:57.846614930Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.35706716403365135, \"event\": \"end\", \"monotonic_s\": 10383141.291480139, \"name\": \"vllm.model_executor.warmup.kernel_warmup.kernel_warmup\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15836375199797,
+          "ts": "2026-10-11T05:43:57.846637130Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.291498318, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15839300899825,
+          "ts": "2026-10-11T05:43:57.846646240Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.291514687, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15841453399844,
+          "ts": "2026-10-11T05:43:57.851900691Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.296683757, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.15843506499732,
+          "ts": "2026-10-11T05:43:57.989497472Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.13746966049075127, \"event\": \"end\", \"monotonic_s\": 10383141.434154876, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26414235099946,
+          "ts": "2026-10-11T05:43:57.989862358Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.434653064, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26420500499808,
+          "ts": "2026-10-11T05:43:58.012105538Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.456849651, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26423620700007,
+          "ts": "2026-10-11T05:43:58.012230660Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.457038285, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"native_aot_artifact_count\": 1, \"native_provider_count\": 1, \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26426744299897,
+          "ts": "2026-10-11T05:43:58.012254240Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.457108917, \"name\": \"flashinfer.jit.core.JitSpecNvcc.load\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26431147499898,
+          "ts": "2026-10-11T05:43:58.014115858Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0017635859549045563, \"event\": \"end\", \"monotonic_s\": 10383141.458873324, \"name\": \"flashinfer.jit.core.JitSpecNvcc.load\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.2643376929991,
+          "ts": "2026-10-11T05:43:58.014139689Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.002050541341304779, \"event\": \"end\", \"monotonic_s\": 10383141.458926097, \"name\": \"flashinfer.jit.core.JitSpecNvcc.try_load\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26435727199714,
+          "ts": "2026-10-11T05:43:58.014146569Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.002091631293296814, \"event\": \"end\", \"monotonic_s\": 10383141.458938444, \"name\": \"flashinfer.jit.core.JitSpec.build_and_load\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.26437565399829,
+          "ts": "2026-10-11T05:43:58.098545828Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.10860037803649902, \"event\": \"end\", \"monotonic_s\": 10383141.543255525, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82347177599877,
+          "ts": "2026-10-11T05:43:58.098710571Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.543544259, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.8235367189991,
+          "ts": "2026-10-11T05:43:58.110135625Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.011310111731290817, \"event\": \"end\", \"monotonic_s\": 10383141.55485403, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82356682199679,
+          "ts": "2026-10-11T05:43:58.110161195Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.55488256, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.8235896039987,
+          "ts": "2026-10-11T05:43:58.111227752Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0011609569191932678, \"event\": \"end\", \"monotonic_s\": 10383141.5560445, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.8236277319993,
+          "ts": "2026-10-11T05:43:58.111255712Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.55610697, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82365493599718,
+          "ts": "2026-10-11T05:43:58.121518929Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.01018083468079567, \"event\": \"end\", \"monotonic_s\": 10383141.566288736, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82367630399676,
+          "ts": "2026-10-11T05:43:58.121543479Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.566315465, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82370538599935,
+          "ts": "2026-10-11T05:43:58.122447773Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.0009863842278718948, \"event\": \"end\", \"monotonic_s\": 10383141.567303011, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82373527799791,
+          "ts": "2026-10-11T05:43:58.122488444Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.56735666, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82377657399775,
+          "ts": "2026-10-11T05:43:58.132240003Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00966387428343296, \"event\": \"end\", \"monotonic_s\": 10383141.577020869, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82380181899862,
+          "ts": "2026-10-11T05:43:58.132265043Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.57704552, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82382892899841,
+          "ts": "2026-10-11T05:43:58.133316939Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.001131497323513031, \"event\": \"end\", \"monotonic_s\": 10383141.578178028, \"name\": \"vllm.v1.worker.gpu_worker.Worker.sample_tokens\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82385704199987,
+          "ts": "2026-10-11T05:43:58.133328649Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.578224896, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82388668400017,
+          "ts": "2026-10-11T05:43:58.133472081Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.00011960417032241821, \"event\": \"end\", \"monotonic_s\": 10383141.57834408, \"name\": \"vllm.v1.worker.gpu_worker.Worker.execute_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82392391199755,
+          "ts": "2026-10-11T05:43:58.133520642Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.28689563274383545, \"event\": \"end\", \"monotonic_s\": 10383141.57841006, \"name\": \"vllm.v1.worker.gpu.warmup._warmup_kernels\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82395713399819,
+          "ts": "2026-10-11T05:43:58.133533982Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.28692649118602276, \"event\": \"end\", \"monotonic_s\": 10383141.5784242, \"name\": \"vllm.v1.worker.gpu.warmup.warmup_kernels\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 71.82399621999866,
+          "ts": "2026-10-11T05:43:58.133540803Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"event\": \"begin\", \"monotonic_s\": 10383141.578444412, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 72.29377413699694,
+          "ts": "2026-10-11T05:43:59.128558151Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:43:59 [model_runner.py:1087] Graph capturing finished in 1 secs, took 0.05 GiB"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 72.81587988599858,
+          "ts": "2026-10-11T05:43:59.128618822Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 0.9948114138096571, \"event\": \"end\", \"monotonic_s\": 10383142.573257556, \"name\": \"vllm.v1.worker.gpu.model_runner.GPUModelRunner.capture_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 73.20738981799877,
+          "ts": "2026-10-11T05:44:00.034300875Z",
+          "line": "SWITCHYARD_STARTUP_PROFILE {\"duration_s\": 2.5446702372282743, \"event\": \"end\", \"monotonic_s\": 10383143.478922289, \"name\": \"vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model\", \"pid\": 923}"
+        },
+        {
+          "pod_id": "sbmcy794vwuq57",
+          "at_s": 75.35084619899862,
+          "ts": "2026-10-11T05:44:00.034380787Z",
+          "line": "(EngineCore pid=923) INFO 10-11 05:44:00 [core.py:373] init engine (profile, create kv cache, warmup model) took 6.61 s (compilation: 0.53 s)"
+        }
+      ]
     }
   ]
 }
