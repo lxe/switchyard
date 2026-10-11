@@ -92,7 +92,10 @@ class Timeline:
                 "objects_preserved",
                 "gpu_use",
                 "profile_run_skipped",
+                "profiling_forward_skipped",
+                "automatic_memory_sizing",
                 "kv_cache_memory_bytes",
+                "runtime_headroom_bytes",
                 "tensor_count",
                 "tensor_bytes",
             )
