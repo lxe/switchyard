@@ -676,6 +676,32 @@ async fn single_call_does_not_duplicate_cold_capacity_and_hot_burst_conserves_us
     assert_eq!(cold.launches, 1);
     assert_eq!(cold.completed, 1);
     assert_eq!(cold.invalid_actions, 0);
+    // Evidence is readable while the runtime is still live, before cleanup
+    // writes its aggregate summaries. Interrupted runs retain these records.
+    let decisions = std::fs::read_to_string(out.join("scheduler-decisions.ndjson")).unwrap();
+    let decisions = decisions
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert!(decisions.iter().any(|record| {
+        record["actions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|action| action["kind"] == "provision")
+    }));
+    assert!(decisions.iter().any(|record| {
+        record["actions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|action| action["kind"] == "route")
+    }));
+    let observations = std::fs::read_to_string(out.join("agent-observations.ndjson")).unwrap();
+    assert!(observations.lines().all(|line| {
+        serde_json::from_str::<serde_json::Value>(line).unwrap()["state"].is_object()
+    }));
+    assert!(!out.join("agent-observations.json").exists());
     runtime.set_policy(Policy::WarmOnly);
     let burst = runtime
         .run_workload("burst", &calls(32), 200.0, 10.0)

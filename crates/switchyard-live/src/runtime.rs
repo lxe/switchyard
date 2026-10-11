@@ -8,6 +8,7 @@ mod lifecycle;
 mod profiles;
 mod report;
 mod routing;
+mod telemetry;
 mod workload;
 
 use crate::model::ModelManifest;

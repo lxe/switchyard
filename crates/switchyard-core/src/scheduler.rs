@@ -151,7 +151,8 @@ pub struct FleetView<'a> {
     pub build_probability: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Action {
     Provision {
         profile: usize,

@@ -210,9 +210,10 @@ impl<P: Provider> LiveRuntime<P> {
             }
             match node.endpoint.state().await {
                 Ok(state) => {
-                    self.observations.push(
-                        serde_json::json!({"at_s":now,"pod":node.owned.pod.id,"state":state}),
-                    );
+                    let observation =
+                        serde_json::json!({"at_s":now,"pod":node.owned.pod.id,"state":state});
+                    super::telemetry::append(&self.out, "agent-observations.ndjson", &observation)?;
+                    self.observations.push(observation);
                     node.observed.host.bytes_downloaded = state.bytes_downloaded.saturating_add(
                         if state.hydration_mode
                             == switchyard_artifacts::HydrationMode::TrustedStreaming
@@ -279,6 +280,15 @@ impl<P: Provider> LiveRuntime<P> {
                         .volume_bytes_per_s
                         .or(state.artifact_volume_bytes_per_s)
                 };
+            super::telemetry::append(
+                &self.out,
+                "host-probes.ndjson",
+                &serde_json::json!({"at_s": self.epoch.elapsed().as_secs_f64(), "node": id,
+                    "phase": state.phase, "rate_bytes_per_s": rate,
+                    "model_bytes_received": state.bytes_downloaded,
+                    "artifact_bytes_received": state.artifact_network_bytes_downloaded,
+                    "model_bytes_total": state.bytes_total, "artifact_bytes_total": state.artifact_bytes_total}),
+            )?;
             let Some(rate) = rate.filter(|r| r.is_finite() && *r > 0.0) else {
                 return Ok(());
             };

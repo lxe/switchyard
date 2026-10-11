@@ -201,6 +201,21 @@ impl<P: Provider> LiveRuntime<P> {
             };
             while self.tasks.try_join_next().is_some() {}
             let actions = self.controller.decide(&fleet);
+            if !actions.is_empty() {
+                let nodes = fleet.nodes.iter().enumerate().map(|(id, node)| serde_json::json!({
+                    "id": id, "profile": node.profile, "allocated_s": node.allocated_s,
+                    "ready_s": node.ready_s, "ended_s": node.ended_s, "is_ready": node.is_ready,
+                    "active_requests": node.active.iter().map(|request| request.id).collect::<Vec<_>>(),
+                    "host": node.host,
+                })).collect::<Vec<_>>();
+                super::telemetry::append(
+                    &self.out,
+                    "scheduler-decisions.ndjson",
+                    &serde_json::json!({"at_s": fleet.now, "workload": name,
+                        "scheduler": self.controller.name(), "actions": actions,
+                        "nodes": nodes, "scheduling": self.scheduling, "diagnostics": self.controller.diagnostics()}),
+                )?;
+            }
             for action in actions {
                 match action {
                     Action::Provision { profile } => {

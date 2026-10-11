@@ -37,6 +37,8 @@ The checked serving configuration disables thinking and prefix caching, uses eag
 
 ## Measurements and recovery
 
+Live evidence is written incrementally before final cleanup summaries. `agent-observations.ndjson` records each observed state, `host-probes.ndjson` records the exact rate and byte counters considered by a host probe, and `scheduler-decisions.ndjson` records actions, the observed nodes and probes, and scheduler diagnostics before applying those actions. Every record uses the controller's elapsed-time clock. These files remain available if a workload is interrupted; they contain no prompts, credentials, or presigned URLs. The final JSON reports remain the convenient aggregate summaries.
+
 Reports contain streamed first-content latency, response latency, output tokens per wall second, final usage, scheduler diagnostics, allocation counts, and estimated rent. A throughput target is a scheduling objective, not a guarantee. The reports measure the complete client/runtime/provider path; they are not isolated GPU kernel benchmarks. Partial generated token counts are estimates obtained by tokenizing streamed text, while final usage comes from vLLM.
 
 The runtime journals a unique launch name before allocation and the pod ID as soon as ownership is known. It never repeats a failed allocation POST blindly. On normal completion, request failure, or Ctrl-C, it aborts outstanding requests, terminates only its own pods, confirms their termination, and deletes its bootstrap tickets. After a process or machine crash, recover the specific model directory:
