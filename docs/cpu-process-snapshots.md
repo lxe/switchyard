@@ -18,7 +18,7 @@ The Rust wrapper consumes the agent's existing `switchyard-metadata-ready-v1` st
 
 The restored process checks retained object identities and its CPU boundary, applies fresh environment and Python module search paths, installs the current serving policy, and releases the vLLM import thread. It then runs the existing native startup adapter. A private stdin pipe supplies that adapter's normal metadata gate. CUDA initialization and weight loading proceed normally, including the adapter's existing fork or spawn decision. Telemetry reports CPU CRIU restore separately from worker process creation.
 
-`SWITCHYARD_CPU_SNAPSHOT` records use the current host's `CLOCK_MONOTONIC` time. Checkpoint and restore records include their operation durations. The CPU probe exits after retained-state checks without resuming platform selection or using a GPU.
+`SWITCHYARD_CPU_SNAPSHOT` records emitted by Rust use the supervising process's `CLOCK_MONOTONIC` time. CRIU can restore a time namespace whose clock excludes the interval spent as images, so the wrapper calibrates the resumed Python clock against the supervisor with a bounded control exchange. It passes an explicit offset and uncertainty to native telemetry; local operation durations remain unchanged. Checkpoint and restore records include their operation durations. The CPU probe exits after retained-state checks without resuming platform selection or using a GPU.
 
 ## Compatibility and privileges
 

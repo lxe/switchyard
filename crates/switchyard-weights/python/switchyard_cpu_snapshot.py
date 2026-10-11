@@ -168,7 +168,6 @@ def main():
     # CRIU snapshots this blocked read. The original preparer is killed by dump;
     # restoration supplies a fresh externally remapped Unix socket endpoint.
     marker, ancillary, flags, _ = control.recvmsg(1, socket.CMSG_SPACE(3 * array.array("i").itemsize))
-    resumed_at = time.monotonic()
     if marker != b"F" or flags & socket.MSG_CTRUNC:
         raise RuntimeError("restore stdio binding is absent or truncated")
     descriptors = array.array("i")
@@ -178,6 +177,7 @@ def main():
     if len(descriptors) != 3:
         raise RuntimeError("restore must bind exactly stdin/stdout/stderr")
     request = receive(control)
+    resumed_at = time.monotonic()
     if set(request) != {"schema_version", "environment", "args", "probe", "runtime_id"} or request["schema_version"] != 1:
         raise ValueError("invalid fresh restore configuration")
     if request["runtime_id"] != config["runtime_id"]:
@@ -189,9 +189,12 @@ def main():
         raise RuntimeError("CPU preparation objects were reconstructed")
     if tokenizer is not None and tokenizer.encode("Switchyard CPU checkpoint retains tokenizer state.").ids != tokens:
         raise RuntimeError("restored tokenizer output differs")
-    send(control, {"event": "cpu_restored", "monotonic_s": resumed_at, "pid": os.getpid(), "objects": after,
+    send(control, {"event": "cpu_restored", "child_monotonic_s": resumed_at, "pid": os.getpid(), "objects": after,
                    "objects_preserved": True, "tokenizer_sha256": tokenizer_sha,
                    "tokenizer_tokens": tokens, **safe})
+    calibration = receive(control)
+    if set(calibration) != {"event", "offset_s", "uncertainty_s"} or calibration["event"] != "clock_calibration":
+        raise ValueError("invalid restore clock calibration")
     for destination, descriptor in enumerate(descriptors):
         os.dup2(descriptor, destination)
     for descriptor in descriptors:
@@ -202,6 +205,10 @@ def main():
     sys.stderr = io.TextIOWrapper(io.FileIO(2, "w", closefd=False), encoding="utf-8", write_through=True)
     os.environ.clear()
     os.environ.update(request["environment"])
+    # CRIU can restore a time namespace whose monotonic clock excludes the time
+    # spent as images. Correct telemetry timestamps explicitly, never global time.
+    os.environ["VLLM_CPU_SNAPSHOT_CLOCK_OFFSET_S"] = str(calibration["offset_s"])
+    os.environ["VLLM_CPU_SNAPSHOT_CLOCK_UNCERTAINTY_S"] = str(calibration["uncertainty_s"])
     for directory in reversed(os.environ.get("PYTHONPATH", "").split(os.pathsep)):
         if directory and directory not in sys.path:
             sys.path.insert(0, directory)
@@ -209,7 +216,7 @@ def main():
     sys.meta_path.remove(fence)
     control.close()
     if request["probe"]:
-        print("SWITCHYARD_CPU_SNAPSHOT " + json.dumps({"event": "cpu_probe_complete", "monotonic_s": time.monotonic(), "objects_preserved": True, **safe}), flush=True)
+        print("SWITCHYARD_CPU_SNAPSHOT " + json.dumps({"event": "cpu_probe_complete", "monotonic_s": time.monotonic() + calibration["offset_s"], "clock_uncertainty_s": calibration["uncertainty_s"], "objects_preserved": True, **safe}), flush=True)
         os._exit(0)
     # The existing native adapter performs policy selection, provider/worker
     # imports, normal CUDA guards and normal model/weight construction after gate.

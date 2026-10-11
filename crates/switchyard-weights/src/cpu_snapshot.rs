@@ -45,11 +45,14 @@ fn write<T: Serialize>(path: &Path, value: &T) -> Result<()> {
 fn read<T: for<'a> Deserialize<'a>>(path: &Path) -> Result<T> {
     Ok(serde_json::from_slice(&fs::read(path)?)?)
 }
-fn emit(event: &str, start: Instant, values: Value) {
+fn monotonic() -> f64 {
     let clock = rustix::time::clock_gettime(rustix::time::ClockId::Monotonic);
+    clock.tv_sec as f64 + clock.tv_nsec as f64 / 1e9
+}
+fn emit(event: &str, start: Instant, values: Value) {
     println!(
         "SWITCHYARD_CPU_SNAPSHOT {}",
-        json!({"event":event,"monotonic_s":clock.tv_sec as f64 + clock.tv_nsec as f64 / 1e9,"elapsed_s":start.elapsed().as_secs_f64(),"values":values})
+        json!({"event":event,"monotonic_s":monotonic(),"elapsed_s":start.elapsed().as_secs_f64(),"values":values})
     );
 }
 fn receive(socket: &mut UnixStream) -> Result<Value> {
@@ -530,17 +533,31 @@ pub fn restore(options: Restore) -> Result<Value> {
         options.runtime_id.clone(),
     );
     environment.insert("OMP_NUM_THREADS".into(), "1".into());
+    let clock_send = monotonic();
     send(
         &mut control,
         &json!({"schema_version":1,"environment":environment,"args":options.args,"probe":options.probe,"runtime_id":options.runtime_id}),
     )?;
-    let reply = receive(&mut control)?;
+    let mut reply = receive(&mut control)?;
+    let clock_received = monotonic();
     if reply["objects"] != snapshot.prepared["objects"]
         || reply["objects_preserved"] != true
         || reply["cuda_initialized"] != false
     {
         return Err("CPU restore state validation failed".into());
     }
+    let child_clock = reply["child_monotonic_s"]
+        .as_f64()
+        .filter(|clock| clock.is_finite())
+        .ok_or("restored CPU clock sample is absent")?;
+    let clock_offset = (clock_send + clock_received) / 2.0 - child_clock;
+    let clock_uncertainty = (clock_received - clock_send) / 2.0;
+    send(
+        &mut control,
+        &json!({"event":"clock_calibration","offset_s":clock_offset,"uncertainty_s":clock_uncertainty}),
+    )?;
+    reply["clock_offset_s"] = json!(clock_offset);
+    reply["clock_uncertainty_s"] = json!(clock_uncertainty);
     write(&work.join("receipt.json"), &reply)?;
     let mut telemetry = reply.clone();
     telemetry["duration_s"] = json!(restore_start.elapsed().as_secs_f64());
