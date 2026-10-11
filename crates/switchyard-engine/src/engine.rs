@@ -2,6 +2,7 @@ use crate::{Error, Result, config::Config, models::ModelFactory, telemetry::Tele
 use candle_core::{DType, Tensor};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, time::Instant};
+mod mixed;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -76,6 +77,11 @@ impl Engine {
         for (i, request) in requests.iter().enumerate() {
             self.validate(request)?;
             groups.entry(request.prompt.len()).or_default().push(i);
+        }
+        if groups.len() > 1
+            && let Some(session) = self.model.mixed_session(self.config.max_batch_size)?
+        {
+            return self.generate_mixed(requests, session, &mut observer);
         }
         let mut results: Vec<Option<Generation>> = vec![None; requests.len()];
         for (length, indices) in groups {

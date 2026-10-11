@@ -2,6 +2,8 @@
 use crate::{Error, Result, config::Config, models::ModelFactory};
 use candle_core::{DType, Tensor};
 use serde::{Deserialize, Serialize};
+mod merged;
+pub use merged::probe_merged;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]

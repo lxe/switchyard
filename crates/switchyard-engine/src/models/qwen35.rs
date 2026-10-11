@@ -4,6 +4,14 @@ use candle_core::{D, DType, Device, Module, Result, Tensor};
 use candle_nn::{Activation, Conv1d, Conv1dConfig, VarBuilder, conv1d_no_bias};
 use candle_nn::{Linear, linear_b, linear_no_bias};
 use std::sync::Arc;
+mod state;
+pub use state::SequenceState;
+
+#[derive(Clone, Copy)]
+enum Positions<'a> {
+    Shared(usize),
+    Rows(&'a Tensor),
+}
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub struct Config {
@@ -431,10 +439,32 @@ impl Qwen3_5TextRotaryEmbedding {
     }
 
     pub fn apply(&self, q: &Tensor, k: &Tensor, seqlen_offset: usize) -> Result<(Tensor, Tensor)> {
+        self.apply_positions(q, k, Positions::Shared(seqlen_offset))
+    }
+
+    fn apply_positions(
+        &self,
+        q: &Tensor,
+        k: &Tensor,
+        positions: Positions<'_>,
+    ) -> Result<(Tensor, Tensor)> {
         let (_b_sz, _h, seq_len, _n_embd) = q.dims4()?;
-        let cos = self.cos.narrow(0, seqlen_offset, seq_len)?;
-        let sin = self.sin.narrow(0, seqlen_offset, seq_len)?;
-        let rotary_dim = cos.dim(1)? * 2;
+        let (cos, sin) = match positions {
+            Positions::Shared(offset) => (
+                self.cos.narrow(0, offset, seq_len)?,
+                self.sin.narrow(0, offset, seq_len)?,
+            ),
+            Positions::Rows(ids) => {
+                if seq_len != 1 {
+                    candle_core::bail!("Per-row positions require single-token decode");
+                }
+                (
+                    self.cos.index_select(ids, 0)?.unsqueeze(1)?.contiguous()?,
+                    self.sin.index_select(ids, 0)?.unsqueeze(1)?.contiguous()?,
+                )
+            }
+        };
+        let rotary_dim = cos.dim(D::Minus1)? * 2;
         let apply = |x: &Tensor| -> Result<Tensor> {
             let rotated = candle_nn::rotary_emb::rope(
                 &x.narrow(3, 0, rotary_dim)?.contiguous()?,
@@ -529,14 +559,19 @@ impl Qwen3_5Attention {
         attention_mask: Option<&Tensor>,
         seqlen_offset: usize,
     ) -> Result<Tensor> {
-        self.forward_internal(hidden_states, attention_mask, seqlen_offset, None)
+        self.forward_internal(
+            hidden_states,
+            attention_mask,
+            Positions::Shared(seqlen_offset),
+            None,
+        )
     }
 
     fn forward_internal(
         &mut self,
         hidden_states: &Tensor,
         attention_mask: Option<&Tensor>,
-        seqlen_offset: usize,
+        positions: Positions<'_>,
         mut captured: Option<&mut super::LayerTrace>,
     ) -> Result<Tensor> {
         let (b_sz, q_len, _) = hidden_states.dims3()?;
@@ -577,7 +612,7 @@ impl Qwen3_5Attention {
 
         let (query_states, key_states) =
             self.rotary_emb
-                .apply(&query_states, &key_states, seqlen_offset)?;
+                .apply_positions(&query_states, &key_states, positions)?;
         if let Some(c) = captured.as_mut() {
             c.push(("q_rope".into(), query_states.clone()));
             c.push(("k_rope".into(), key_states.clone()));
@@ -732,7 +767,7 @@ impl Qwen3_5DecoderLayer {
         hidden_states: &Tensor,
         residual: Option<&Tensor>,
         attention_mask: Option<&Tensor>,
-        seqlen_offset: usize,
+        positions: Positions<'_>,
         captured: Option<&mut super::LayerTrace>,
     ) -> Result<(Tensor, Tensor)> {
         let (norm_hidden_states, residual) = match residual {
@@ -745,7 +780,7 @@ impl Qwen3_5DecoderLayer {
 
         let mixed_states = match &mut self.token_mixer {
             TokenMixer::FullAttention(attn) => {
-                attn.forward_internal(&norm_hidden_states, attention_mask, seqlen_offset, captured)?
+                attn.forward_internal(&norm_hidden_states, attention_mask, positions, captured)?
             }
             TokenMixer::LinearAttention(attn) => attn.forward(&norm_hidden_states)?,
         };
@@ -775,6 +810,9 @@ pub struct Model {
     norm: Qwen3_5RmsNorm,
     device: Device,
     dtype: DType,
+    state_owner: Arc<()>,
+    state_positions: Vec<usize>,
+    max_positions: usize,
 }
 
 impl Model {
@@ -811,6 +849,9 @@ impl Model {
             norm,
             device: vb.device().clone(),
             dtype: vb.dtype(),
+            state_owner: Arc::new(()),
+            state_positions: Vec::new(),
+            max_positions: cfg.text_config.max_position_embeddings,
         })
     }
 
@@ -842,15 +883,41 @@ impl Model {
         &mut self,
         input_ids: &Tensor,
         seqlen_offset: usize,
-        mut captured: Option<&mut super::LayerTrace>,
+        captured: Option<&mut super::LayerTrace>,
     ) -> Result<Tensor> {
         let (b_size, seq_len) = input_ids.dims2()?;
+        let end = seqlen_offset
+            .checked_add(seq_len)
+            .filter(|&end| end <= self.max_positions)
+            .ok_or_else(|| {
+                candle_core::Error::Msg("Sequence exceeds prepared context limit".into())
+            })?;
+        if b_size == 0 || seq_len == 0 {
+            candle_core::bail!("Empty sequence cohort");
+        }
         let attention_mask = if seq_len <= 1 {
             None
         } else {
             Some(self.prepare_causal_attention_mask(b_size, seq_len, seqlen_offset)?)
         };
 
+        let output = self.forward_with_positions(
+            input_ids,
+            attention_mask.as_ref(),
+            Positions::Shared(seqlen_offset),
+            captured,
+        )?;
+        self.state_positions = vec![end; b_size];
+        Ok(output)
+    }
+
+    fn forward_with_positions(
+        &mut self,
+        input_ids: &Tensor,
+        attention_mask: Option<&Tensor>,
+        positions: Positions<'_>,
+        mut captured: Option<&mut super::LayerTrace>,
+    ) -> Result<Tensor> {
         let mut xs = self.embed_tokens.forward(input_ids)?;
         if let Some(captured) = captured.as_mut() {
             captured.push(("embedding".into(), xs.clone()));
@@ -866,13 +933,8 @@ impl Model {
             } else {
                 None
             };
-            let (hidden, next_residual) = layer.forward(
-                &xs,
-                residual.as_ref(),
-                attention_mask.as_ref(),
-                seqlen_offset,
-                tap,
-            )?;
+            let (hidden, next_residual) =
+                layer.forward(&xs, residual.as_ref(), attention_mask, positions, tap)?;
             xs = hidden;
             residual = Some(next_residual);
             if let Some(captured) = captured.as_mut() {
@@ -892,6 +954,7 @@ impl Model {
         for layer in self.layers.iter_mut() {
             layer.clear_kv_cache();
         }
+        self.state_positions.clear();
     }
 }
 
@@ -930,6 +993,12 @@ impl ModelForCausalLM {
 
     pub fn clear_kv_cache(&mut self) {
         self.base_model.clear_kv_cache();
+    }
+
+    pub fn decode_rows(&mut self, input_ids: &Tensor, positions: &[usize]) -> Result<Tensor> {
+        self.base_model
+            .decode_rows(input_ids, positions)?
+            .apply(&self.lm_head)
     }
 }
 

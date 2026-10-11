@@ -1,4 +1,5 @@
 //! Model adapters share immutable weights; each batch owns its sequence state.
+mod mixed;
 pub mod qwen35;
 use crate::weights::Weights;
 use crate::{
@@ -7,6 +8,7 @@ use crate::{
     telemetry::Telemetry,
 };
 use candle_core::{DType, Device, Tensor};
+pub use mixed::QwenMixedSession;
 pub type LayerTrace = Vec<(String, Tensor)>;
 
 /// Execution contract for one cohort of equal-length token sequences.
@@ -14,11 +16,23 @@ pub type LayerTrace = Vec<(String, Tensor)>;
 pub trait ModelSession: Send {
     fn forward(&mut self, tokens: &Tensor, position: usize) -> Result<Tensor>;
 }
+/// Independently prefilled rows join one decode cohort. No new prefill is allowed
+/// after decoding starts. Row IDs stay stable through completion/cancellation.
+pub trait MixedModelSession: Send {
+    fn prefill(&mut self, rows: &[usize], tokens: &Tensor) -> Result<Tensor>;
+    fn decode(&mut self, rows: &[usize], tokens: &Tensor, positions: &[usize]) -> Result<Tensor>;
+    /// Called after token IDs have reached the host, completing this step's CUDA
+    /// work. Implementations release only the named rows' private model state.
+    fn release(&mut self, rows: &[usize]) -> Result<()>;
+}
 pub trait ModelFactory: Send {
     fn session(&self) -> Box<dyn ModelSession>;
     fn device(&self) -> &Device;
     fn vocab_size(&self) -> usize;
     fn eos_token(&self) -> u32;
+    fn mixed_session(&self, _max_rows: usize) -> Result<Option<Box<dyn MixedModelSession>>> {
+        Ok(None)
+    }
     /// Offline layer inspection; unsupported adapters need not implement it.
     fn inspect_layers(&self, _: &Tensor) -> Result<LayerTrace> {
         Err(Error::Config(
@@ -27,10 +41,20 @@ pub trait ModelFactory: Send {
     }
 }
 
-struct QwenSession {
+pub struct QwenSession {
     model: qwen35::ModelForCausalLM,
     position: usize,
     rows: Option<usize>,
+}
+impl QwenSession {
+    pub fn new(mut model: qwen35::ModelForCausalLM) -> Self {
+        model.clear_kv_cache();
+        Self {
+            model,
+            position: 0,
+            rows: None,
+        }
+    }
 }
 impl ModelSession for QwenSession {
     fn forward(&mut self, tokens: &Tensor, position: usize) -> Result<Tensor> {
@@ -59,11 +83,7 @@ struct QwenFactory {
 }
 impl ModelFactory for QwenFactory {
     fn session(&self) -> Box<dyn ModelSession> {
-        Box::new(QwenSession {
-            model: self.weights.clone(),
-            position: 0,
-            rows: None,
-        })
+        Box::new(QwenSession::new(self.weights.clone()))
     }
     fn device(&self) -> &Device {
         &self.device
@@ -73,6 +93,12 @@ impl ModelFactory for QwenFactory {
     }
     fn eos_token(&self) -> u32 {
         self.eos
+    }
+    fn mixed_session(&self, max_rows: usize) -> Result<Option<Box<dyn MixedModelSession>>> {
+        Ok(Some(Box::new(QwenMixedSession::new(
+            self.weights.clone(),
+            max_rows,
+        )?)))
     }
     fn inspect_layers(&self, tokens: &Tensor) -> Result<LayerTrace> {
         let mut model = self.weights.clone();
