@@ -5,18 +5,17 @@ This module supplies completed CPU views to vLLM's ordinary model.load_weights p
 It does not open incomplete files through safetensors.safe_open.
 """
 
-import json
-import socket
-import time
-
 # A spawned worker opens its own lease; inherited API descriptors alone are
 # insufficient because multiprocessing may close descriptors during spawn.
 import fcntl
+import json
 import os
+import socket
+import time
 
 _loader_lease = None
 if lease_path := os.environ.get("SWITCHYARD_LOADER_LEASE"):
-    _loader_lease = open(lease_path, "rb")
+    _loader_lease = open(lease_path, "rb")  # noqa: SIM115 - lease lasts for the process
     fcntl.flock(_loader_lease, fcntl.LOCK_SH | fcntl.LOCK_NB)
 
 import torch
