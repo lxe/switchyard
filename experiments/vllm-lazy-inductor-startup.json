@@ -1,0 +1,674 @@
+{
+  "schema_version": 1,
+  "decision": "experimental_not_selected",
+  "reason": "The standalone vllm import improves, but the matched endpoint profile moves most cost into configuration imports. The two endpoint pairs do not establish a stable reduction in total first useful token.",
+  "scope": "Local RTX 5090, canonical Qwen 0.8B weights and actual fixed agent/runtime reception. Both variants use the same pristine artifact-v1 runtime with a benchmark-only module source overlay at the identical pathname. No patched runtime or cache is published or relabeled.",
+  "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "model_content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+  "common_cache_seed": {
+    "source_run": "qwen-profile-agent-06-lazy",
+    "files": 1185,
+    "bytes": 635436827,
+    "tree_sha256": "6ea9d6befb0c10b515a8039ae4fc53ffb35a55bbd1ebf0189a8cf786b626e9e0",
+    "hash_definition": "Sorted relative file path bytes, NUL, and raw SHA-256 digest of each file. Symlink targets are followed for regular files.",
+    "copy": "cp --archive before the request epoch; caches[] is empty in the ticket."
+  },
+  "harness_sha256": "07f31dd9e2d919c0e6a9280e94165db82c1933272c4213fc7fff4bd998420732",
+  "profile_helper_sha256": "0e7cbf3fe44033cd8da00d21dfeec944d779962212618b99461eaaa24c373efe",
+  "fresh_cpu_imports": [
+    {
+      "seconds": 1.712783593997301,
+      "lowering_loaded": true,
+      "graph_loaded": true,
+      "vllm_version": "0.31.0",
+      "variant": "pristine"
+    },
+    {
+      "seconds": 0.7563831280021986,
+      "lowering_loaded": false,
+      "graph_loaded": false,
+      "vllm_version": "0.31.0",
+      "variant": "patched"
+    },
+    {
+      "seconds": 0.7300574460023199,
+      "lowering_loaded": false,
+      "graph_loaded": false,
+      "vllm_version": "0.31.0",
+      "variant": "patched"
+    },
+    {
+      "seconds": 1.6898337270031334,
+      "lowering_loaded": true,
+      "graph_loaded": true,
+      "vllm_version": "0.31.0",
+      "variant": "pristine"
+    },
+    {
+      "seconds": 1.7337938640011998,
+      "lowering_loaded": true,
+      "graph_loaded": true,
+      "vllm_version": "0.31.0",
+      "variant": "pristine"
+    },
+    {
+      "seconds": 0.7283828120016551,
+      "lowering_loaded": false,
+      "graph_loaded": false,
+      "vllm_version": "0.31.0",
+      "variant": "patched"
+    }
+  ],
+  "fresh_cpu_import_median_seconds": {
+    "pristine": 1.712783593997301,
+    "patched": 0.7300574460023199
+  },
+  "native_semantic_import_orders": [
+    {
+      "order": "vllm-first",
+      "passed": true,
+      "seconds": 1.6907309160014847,
+      "native_lowering_entries": 2,
+      "vllm_version": "0.31.0"
+    },
+    {
+      "order": "lowering-first",
+      "passed": true,
+      "seconds": 1.65868121099993,
+      "native_lowering_entries": 2,
+      "vllm_version": "0.31.0"
+    },
+    {
+      "order": "graph-first",
+      "passed": true,
+      "seconds": 1.6535317480011145,
+      "native_lowering_entries": 2,
+      "vllm_version": "0.31.0"
+    }
+  ],
+  "runs": [
+    {
+      "variant": "pristine",
+      "run": "qwen-matched-overlay-07-pristine",
+      "native_profile_enabled": true,
+      "request_to_ready_seconds": 30.111485462999553,
+      "request_to_first_useful_token_seconds": 30.18769618999795,
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "original_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+        "staged_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+        "staged_path": "/opt/switchyard/startup-profile/env_override.py",
+        "scope": "Python module source staged and hashed before the request epoch. Original source hash comes from the pinned runtime manifest. This is a private diagnostic overlay; the original artifact ID and caches[] do not identify a published patched runtime or cache."
+      },
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "agent_epoch_request_seconds_bounds": [
+        3.742011858994374,
+        3.758887274998415
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.299111639
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.303403174
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.857202193
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.6904649059999999
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.559264553
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.559504711
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 23.012538951
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 26.290774832
+        }
+      ],
+      "native_startup_plan_applied": true,
+      "startup_plan_observations": [
+        "(EngineCore pid=177) INFO 10-11 05:26:28 [startup_plan.py:153] Applying persisted startup plan (fingerprint 43e46542da0db929): kv_cache_memory_bytes=6292101120 (5.86 GiB), recorded free-memory baseline 26.58 GiB, current 26.66 GiB. Memory profiling will be skipped."
+      ],
+      "native_post_load_observations": [
+        "(EngineCore pid=177) INFO 10-11 05:26:29 [core.py:380] init engine (profile, create kv cache, warmup model) took 1.32 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.1777371060015867,
+        "latency_min_seconds": 0.05796695900062332,
+        "latency_median_seconds": 0.3810535129996424,
+        "latency_max_seconds": 0.4018314020031539
+      },
+      "native_spans": [
+        {
+          "kind": "import",
+          "name": "torch._inductor",
+          "process": "api",
+          "started_request_seconds": 14.130853260998265,
+          "ended_request_seconds": 15.216065118998813,
+          "duration_seconds": 1.085211858000548
+        },
+        {
+          "kind": "import",
+          "name": "vllm.env_override",
+          "process": "api",
+          "started_request_seconds": 13.340090145000431,
+          "ended_request_seconds": 15.21681547299886,
+          "duration_seconds": 1.8767253279984288
+        },
+        {
+          "kind": "import",
+          "name": "vllm",
+          "process": "api",
+          "started_request_seconds": 13.338925461001054,
+          "ended_request_seconds": 15.216839083997911,
+          "duration_seconds": 1.8779136229968572
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config.compilation",
+          "process": "api",
+          "started_request_seconds": 15.345359650000319,
+          "ended_request_seconds": 15.352383009998448,
+          "duration_seconds": 0.007023359998129308
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config",
+          "process": "api",
+          "started_request_seconds": 15.336577755999315,
+          "ended_request_seconds": 16.633984382999188,
+          "duration_seconds": 1.297406626999873
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.benchmark.main",
+          "process": "api",
+          "started_request_seconds": 15.217127370000526,
+          "ended_request_seconds": 16.903936562997842,
+          "duration_seconds": 1.6868091929973161
+        },
+        {
+          "kind": "import",
+          "name": "vllm",
+          "process": "engine_worker",
+          "started_request_seconds": 20.448589952000475,
+          "ended_request_seconds": 20.44859426000039,
+          "duration_seconds": 4.307999915909022e-06
+        },
+        {
+          "kind": "import",
+          "name": "torch._inductor",
+          "process": "engine_worker",
+          "started_request_seconds": 21.236126965999574,
+          "ended_request_seconds": 22.28231605399924,
+          "duration_seconds": 1.0461890879996645
+        },
+        {
+          "kind": "import",
+          "name": "vllm.env_override",
+          "process": "engine_worker",
+          "started_request_seconds": 20.44858074899821,
+          "ended_request_seconds": 22.283031951999874,
+          "duration_seconds": 1.834451203001663
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config.compilation",
+          "process": "engine_worker",
+          "started_request_seconds": 22.326909119998163,
+          "ended_request_seconds": 22.333761998001137,
+          "duration_seconds": 0.006852878002973739
+        },
+        {
+          "kind": "import",
+          "name": "vllm.v1.engine.core",
+          "process": "engine_worker",
+          "started_request_seconds": 20.44827052799883,
+          "ended_request_seconds": 24.167117376000533,
+          "duration_seconds": 3.7188468480017036
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "process": "engine_worker",
+          "started_request_seconds": 24.63994570700015,
+          "ended_request_seconds": 24.952669899998,
+          "duration_seconds": 0.31272419299784815
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "process": "engine_worker",
+          "started_request_seconds": 24.952713334998407,
+          "ended_request_seconds": 27.57923356700121,
+          "duration_seconds": 2.626520232002804
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "process": "engine_worker",
+          "started_request_seconds": 27.58082718500009,
+          "ended_request_seconds": 28.533098472998972,
+          "duration_seconds": 0.952271287998883
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "process": "engine_worker",
+          "started_request_seconds": 28.540772750999167,
+          "ended_request_seconds": 28.898180428997875,
+          "duration_seconds": 0.3574076779987081
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "process": "api",
+          "started_request_seconds": 18.345999242999824,
+          "ended_request_seconds": 28.905600791000325,
+          "duration_seconds": 10.5596015480005
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "process": "api",
+          "started_request_seconds": 28.968196503999934,
+          "ended_request_seconds": 29.408429977000196,
+          "duration_seconds": 0.44023347300026217
+        }
+      ]
+    },
+    {
+      "variant": "patched",
+      "run": "qwen-matched-overlay-08-lazy",
+      "native_profile_enabled": true,
+      "request_to_ready_seconds": 30.00228722599786,
+      "request_to_first_useful_token_seconds": 30.073920077000366,
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "original_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+        "staged_sha256": "f6612e9f0d2f4a9712f4cc86261cb3eac2468c189fbc4705d81c96ffa05f5c70",
+        "staged_path": "/opt/switchyard/startup-profile/env_override.py",
+        "scope": "Python module source staged and hashed before the request epoch. Original source hash comes from the pinned runtime manifest. This is a private diagnostic overlay; the original artifact ID and caches[] do not identify a published patched runtime or cache."
+      },
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "agent_epoch_request_seconds_bounds": [
+        3.7152519289957127,
+        3.724751624999044
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.28105038
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.285293024
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.848879666
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.327014135
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.15258128
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.152835947
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 23.026081628
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 26.267502518
+        }
+      ],
+      "native_startup_plan_applied": true,
+      "startup_plan_observations": [
+        "(EngineCore pid=178) INFO 10-11 05:27:40 [startup_plan.py:153] Applying persisted startup plan (fingerprint 43e46542da0db929): kv_cache_memory_bytes=6292101120 (5.86 GiB), recorded free-memory baseline 26.58 GiB, current 26.65 GiB. Memory profiling will be skipped."
+      ],
+      "native_post_load_observations": [
+        "(EngineCore pid=178) INFO 10-11 05:27:42 [core.py:380] init engine (profile, create kv cache, warmup model) took 1.37 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.109746851001546,
+        "latency_min_seconds": 0.05507800800114637,
+        "latency_median_seconds": 0.3611949035002908,
+        "latency_max_seconds": 0.384764564998477
+      },
+      "native_spans": [
+        {
+          "kind": "import",
+          "name": "vllm.env_override",
+          "process": "api",
+          "started_request_seconds": 12.89632500999869,
+          "ended_request_seconds": 13.85299475499778,
+          "duration_seconds": 0.9566697449990897
+        },
+        {
+          "kind": "import",
+          "name": "vllm",
+          "process": "api",
+          "started_request_seconds": 12.89543270699869,
+          "ended_request_seconds": 13.853014131000236,
+          "duration_seconds": 0.9575814240015461
+        },
+        {
+          "kind": "import",
+          "name": "torch._inductor.custom_graph_pass",
+          "process": "api",
+          "started_request_seconds": 14.017386326999258,
+          "ended_request_seconds": 14.580617725998309,
+          "duration_seconds": 0.5632313989990507
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config.compilation",
+          "process": "api",
+          "started_request_seconds": 14.016885450997506,
+          "ended_request_seconds": 14.585979829997086,
+          "duration_seconds": 0.5690943789995799
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config",
+          "process": "api",
+          "started_request_seconds": 14.009325650997198,
+          "ended_request_seconds": 15.860239587000251,
+          "duration_seconds": 1.850913936003053
+        },
+        {
+          "kind": "import",
+          "name": "vllm.entrypoints.cli.benchmark.main",
+          "process": "api",
+          "started_request_seconds": 13.853337041000486,
+          "ended_request_seconds": 16.644890313997166,
+          "duration_seconds": 2.79155327299668
+        },
+        {
+          "kind": "import",
+          "name": "vllm",
+          "process": "engine_worker",
+          "started_request_seconds": 20.27976082099849,
+          "ended_request_seconds": 20.27976743799809,
+          "duration_seconds": 6.616999598918483e-06
+        },
+        {
+          "kind": "import",
+          "name": "vllm.env_override",
+          "process": "engine_worker",
+          "started_request_seconds": 20.279747188997135,
+          "ended_request_seconds": 21.161800711997785,
+          "duration_seconds": 0.8820535230006499
+        },
+        {
+          "kind": "import",
+          "name": "torch._inductor.custom_graph_pass",
+          "process": "engine_worker",
+          "started_request_seconds": 21.207740149999154,
+          "ended_request_seconds": 21.795744110997475,
+          "duration_seconds": 0.5880039609983214
+        },
+        {
+          "kind": "import",
+          "name": "vllm.config.compilation",
+          "process": "engine_worker",
+          "started_request_seconds": 21.20701737499985,
+          "ended_request_seconds": 21.80151945399848,
+          "duration_seconds": 0.5945020789986302
+        },
+        {
+          "kind": "import",
+          "name": "vllm.v1.engine.core",
+          "process": "engine_worker",
+          "started_request_seconds": 20.2794236669979,
+          "ended_request_seconds": 24.22710347300017,
+          "duration_seconds": 3.94767980600227
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "process": "engine_worker",
+          "started_request_seconds": 24.72746696199829,
+          "ended_request_seconds": 25.096801321000385,
+          "duration_seconds": 0.3693343590020959
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "process": "engine_worker",
+          "started_request_seconds": 25.09683514399876,
+          "ended_request_seconds": 27.44149411899707,
+          "duration_seconds": 2.3446589749983104
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "process": "engine_worker",
+          "started_request_seconds": 27.442399124000076,
+          "ended_request_seconds": 28.465047109999432,
+          "duration_seconds": 1.022647985999356
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "process": "engine_worker",
+          "started_request_seconds": 28.472970806000376,
+          "ended_request_seconds": 28.81029015799868,
+          "duration_seconds": 0.3373193519983033
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "process": "api",
+          "started_request_seconds": 18.096416116997716,
+          "ended_request_seconds": 28.818339194996952,
+          "duration_seconds": 10.721923077999236
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "process": "api",
+          "started_request_seconds": 28.886658604998956,
+          "ended_request_seconds": 29.316717519999656,
+          "duration_seconds": 0.4300589150006999
+        }
+      ]
+    },
+    {
+      "variant": "patched",
+      "run": "qwen-matched-overlay-09-lazy-unprofiled",
+      "native_profile_enabled": false,
+      "request_to_ready_seconds": 30.617401193998376,
+      "request_to_first_useful_token_seconds": 30.719413832997816,
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "original_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+        "staged_sha256": "f6612e9f0d2f4a9712f4cc86261cb3eac2468c189fbc4705d81c96ffa05f5c70",
+        "staged_path": "/opt/switchyard/startup-profile/env_override.py",
+        "scope": "Python module source staged and hashed before the request epoch. Original source hash comes from the pinned runtime manifest. This is a private diagnostic overlay; the original artifact ID and caches[] do not identify a published patched runtime or cache."
+      },
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "agent_epoch_request_seconds_bounds": [
+        3.7262741579979775,
+        3.739295232000586
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.29269797
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.297059898
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.850808678
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.416510481
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.587150225
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.587662838
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 23.571561736
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 26.827250683
+        }
+      ],
+      "native_startup_plan_applied": true,
+      "startup_plan_observations": [
+        "(EngineCore pid=177) INFO 10-11 05:29:17 [startup_plan.py:153] Applying persisted startup plan (fingerprint 43e46542da0db929): kv_cache_memory_bytes=6292101120 (5.86 GiB), recorded free-memory baseline 26.58 GiB, current 26.66 GiB. Memory profiling will be skipped."
+      ],
+      "native_post_load_observations": [
+        "(EngineCore pid=177) INFO 10-11 05:29:19 [core.py:380] init engine (profile, create kv cache, warmup model) took 1.29 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.1365340720003587,
+        "latency_min_seconds": 0.05385313800070435,
+        "latency_median_seconds": 0.36063329549870105,
+        "latency_max_seconds": 0.40824323299966636
+      }
+    },
+    {
+      "variant": "pristine",
+      "run": "qwen-matched-overlay-10-pristine-unprofiled",
+      "native_profile_enabled": false,
+      "request_to_ready_seconds": 31.373754721000296,
+      "request_to_first_useful_token_seconds": 31.45657146099984,
+      "completion": "Paris",
+      "tokenized_count": 19,
+      "native_inference_verified": true,
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "original_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+        "staged_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+        "staged_path": "/opt/switchyard/startup-profile/env_override.py",
+        "scope": "Python module source staged and hashed before the request epoch. Original source hash comes from the pinned runtime manifest. This is a private diagnostic overlay; the original artifact ID and caches[] do not identify a published patched runtime or cache."
+      },
+      "runtime_environment_overrides": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "agent_epoch_request_seconds_bounds": [
+        3.952628733997699,
+        3.968627305002883
+      ],
+      "startup_milestones_agent_seconds": [
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.308447532
+        },
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.313087855
+        },
+        {
+          "event": "model_metadata_ready",
+          "elapsed_s": 0.858108759
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 1.499581863
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.388206035
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 9.388449888
+        },
+        {
+          "event": "tensor_loading_finished",
+          "elapsed_s": 22.095504235
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 27.337875475
+        }
+      ],
+      "native_startup_plan_applied": true,
+      "startup_plan_observations": [
+        "(EngineCore pid=176) INFO 10-11 05:30:19 [startup_plan.py:153] Applying persisted startup plan (fingerprint 43e46542da0db929): kv_cache_memory_bytes=6292101120 (5.86 GiB), recorded free-memory baseline 26.58 GiB, current 26.66 GiB. Memory profiling will be skipped."
+      ],
+      "native_post_load_observations": [
+        "(EngineCore pid=176) INFO 10-11 05:30:22 [core.py:380] init engine (profile, create kv cache, warmup model) took 3.06 s"
+      ],
+      "concurrency_correctness": {
+        "accepted_requests": 24,
+        "maximum_inflight": 8,
+        "all_completions_equal": "Paris",
+        "elapsed_seconds": 1.068278503997135,
+        "latency_min_seconds": 0.053108512998733204,
+        "latency_median_seconds": 0.34656255600020813,
+        "latency_max_seconds": 0.36610544599898276
+      }
+    }
+  ],
+  "paired_first_useful_token_difference_pristine_minus_patched_seconds": {
+    "profiled": 0.11377611299758428,
+    "unprofiled_reverse_order": 0.7371576280020236
+  },
+  "limits": [
+    "One pair in each mode is insufficient to estimate a stable timing effect.",
+    "Import and operation spans nest; do not add them to obtain elapsed time.",
+    "The burst uses identical short prompts and prefix caching; it proves bounded concurrency correctness, not throughput.",
+    "Semantic checks cover completed vllm-first, lowering-first and graph-first imports. The native helper inheritedly returns if lowering is partially initialized before FALLBACK_ALLOW_LIST exists; this candidate does not repair that partial-module case.",
+    "The prior 39.76-second run has a different loader generation and rejected memory plan; it is not a control for these runs."
+  ]
+}

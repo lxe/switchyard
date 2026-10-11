@@ -1,0 +1,58 @@
+--- a/venv/lib/python3.12/site-packages/vllm/env_override.py
++++ b/venv/lib/python3.12/site-packages/vllm/env_override.py
+@@ -905,16 +905,45 @@
+     #   from torch._inductor.lowering import FALLBACK_ALLOW_LIST
+     # so we also need to overwrite the local binding in the graph module if
+     # it has already been imported.
+-    try:
+-        from torch._inductor import graph as _graph
+-
+-        if hasattr(_graph, "FALLBACK_ALLOW_LIST"):
+-            _graph.FALLBACK_ALLOW_LIST = _lowering.FALLBACK_ALLOW_LIST
+-    except ImportError:
+-        pass
+-
+-
+-_patch_inductor_fallback_allow_list()
++    import sys
++
++    _graph = sys.modules.get("torch._inductor.graph")
++    if _graph is not None and hasattr(_graph, "FALLBACK_ALLOW_LIST"):
++        _graph.FALLBACK_ALLOW_LIST = _lowering.FALLBACK_ALLOW_LIST
++
++
++def _defer_inductor_fallback_allow_list_patch() -> None:
++    """Apply the fallback backport when native Inductor lowering imports."""
++    import sys
++
++    target_name = "torch._inductor.lowering"
++    if target_name in sys.modules:
++        _patch_inductor_fallback_allow_list()
++        return
++
++    import importlib.abc
++
++    class _FallbackAllowListPatchFinder(importlib.abc.MetaPathFinder):
++        def find_spec(self, fullname, path, target=None):
++            if fullname != target_name:
++                return None
++            sys.meta_path.remove(self)
++            spec = importlib.util.find_spec(fullname)
++            if spec is None or spec.loader is None:
++                return None
++            original_exec = spec.loader.exec_module
++
++            def _exec_then_patch(module):
++                original_exec(module)
++                _patch_inductor_fallback_allow_list()
++
++            spec.loader.exec_module = _exec_then_patch  # type: ignore[method-assign]
++            return spec
++
++    sys.meta_path.insert(0, _FallbackAllowListPatchFinder())
++
++
++_defer_inductor_fallback_allow_list_patch()
+ 
+ 
+ def _apply_inductor_pattern_matcher_patch() -> None:

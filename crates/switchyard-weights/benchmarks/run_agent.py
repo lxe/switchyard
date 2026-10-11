@@ -6,6 +6,7 @@ No provider allocation or credential is needed.
 """
 
 import argparse
+import concurrent.futures
 import hashlib
 import http.server
 import json
@@ -29,8 +30,13 @@ parser.add_argument("--model-delay", type=float, default=0)
 parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="both")
 parser.add_argument("--warm-cache-from", type=Path)
 parser.add_argument("--profile-startup", action="store_true")
+parser.add_argument("--env-override-source", type=Path)
+parser.add_argument("--verify-concurrency", type=int, default=0, metavar="REQUESTS")
+parser.add_argument("--concurrency", type=int, default=8)
 parser.add_argument("--runtime-env", action="append", default=[], metavar="KEY=VALUE")
 args = parser.parse_args()
+if args.verify_concurrency < 0 or args.concurrency < 1:
+    parser.error("request count must be nonnegative and concurrency must be positive")
 repo = Path(__file__).resolve().parents[3]
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -126,12 +132,28 @@ try:
         root.mkdir()
         installation = root / "installation"
         installation.mkdir()
-        if args.profile_startup:
+        source_overlay = None
+        if args.profile_startup or args.env_override_source:
             profile = installation / "startup-profile"
             profile.mkdir()
             (profile / "sitecustomize.py").write_bytes(
                 (Path(__file__).parent / "startup_profile.py").read_bytes()
             )
+            if args.env_override_source:
+                original = next(
+                    entry
+                    for entry in runtime_manifest["entries"]
+                    if entry["path"]
+                    == "venv/lib/python3.12/site-packages/vllm/env_override.py"
+                )
+                source = args.env_override_source.read_bytes()
+                (profile / "env_override.py").write_bytes(source)
+                source_overlay = {
+                    "original_sha256": original["sha256"],
+                    "staged_sha256": hashlib.sha256(source).hexdigest(),
+                    "staged_path": "/opt/switchyard/startup-profile/env_override.py",
+                    "scope": "Python module source staged and hashed before the request epoch. Original source hash comes from the pinned runtime manifest. This is a private diagnostic overlay; the original artifact ID and caches[] do not identify a published patched runtime or cache.",
+                }
         if args.warm_cache_from:
             subprocess.run(
                 [
@@ -173,14 +195,19 @@ try:
                 "hydration": {"retries": 0},
             }
         )
-        if args.profile_startup:
+        if args.profile_startup or args.env_override_source:
             runtime["environment"]["PYTHONPATH"] = (
                 "/opt/switchyard/startup-profile:"
                 + runtime["environment"].get("PYTHONPATH", "")
             )
-            runtime["environment"]["NATIVE_STARTUP_PROFILE"] = (
-                "/opt/switchyard/startup-profile/events.jsonl"
-            )
+            if args.profile_startup:
+                runtime["environment"]["NATIVE_STARTUP_PROFILE"] = (
+                    "/opt/switchyard/startup-profile/events.jsonl"
+                )
+            if args.env_override_source:
+                runtime["environment"]["NATIVE_ENV_OVERRIDE_SOURCE"] = source_overlay[
+                    "staged_path"
+                ]
         for assignment in args.runtime_env:
             key, value = assignment.split("=", 1)
             runtime["environment"][key] = value
@@ -390,11 +417,55 @@ try:
                             if first is None and text.strip():
                                 first = time.monotonic() - epoch
             assert first is not None
+            assert "".join(fragments).strip() == "Paris"
+            concurrent_verification = None
+            if args.verify_concurrency:
+                verification_started = time.monotonic()
+
+                def verify_request(unused, endpoint=endpoint):
+                    started = time.monotonic()
+                    response = requests.post(
+                        endpoint + "/v1/chat/completions",
+                        headers=headers,
+                        json={
+                            "model": "qwen-local",
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": "Reply with exactly the word Paris.",
+                                }
+                            ],
+                            "chat_template_kwargs": {"enable_thinking": False},
+                            "max_tokens": 4,
+                            "temperature": 0,
+                        },
+                        timeout=60,
+                    )
+                    response.raise_for_status()
+                    completion = response.json()["choices"][0]["message"]["content"]
+                    assert completion.strip() == "Paris"
+                    return time.monotonic() - started
+
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=args.concurrency
+                ) as executor:
+                    latencies = list(
+                        executor.map(verify_request, range(args.verify_concurrency))
+                    )
+                concurrent_verification = {
+                    "accepted_requests": len(latencies),
+                    "maximum_inflight": args.concurrency,
+                    "all_completions_equal": "Paris",
+                    "elapsed_seconds": time.monotonic() - verification_started,
+                    "request_seconds": latencies,
+                    "scope": "Bounded correctness burst after the first useful token; identical short prompts with prefix caching. This is not a throughput benchmark.",
+                }
             result = {
                 "request_to_ready_seconds": ready_at,
                 "request_to_first_useful_token_seconds": first,
                 "completion": "".join(fragments),
                 "tokenized_count": tokenized.json()["count"],
+                "concurrent_verification": concurrent_verification,
                 "agent_state": last,
                 "http": [
                     {
@@ -410,6 +481,7 @@ try:
                 "agent_sha256": hashlib.sha256(args.agent.read_bytes()).hexdigest(),
                 "runtime_environment_overrides": args.runtime_env,
                 "native_profile_enabled": args.profile_startup,
+                "experimental_env_override_source": source_overlay,
                 "agent_process_start_monotonic_bounds": process_start_bounds,
                 "agent_epoch_monotonic_bounds": [
                     pre_exec_lower,

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "vllm-0.31.0-lazy-inductor-fallback",
+  "target": "venv/lib/python3.12/site-packages/vllm/env_override.py",
+  "package": {
+    "name": "vllm",
+    "version": "0.31.0+cu129"
+  },
+  "before_sha256": "8a22650f862565a9ce2ba4441d39a99afbcecc2b60664be2272dd18e2df1cd1d",
+  "after_sha256": "f6612e9f0d2f4a9712f4cc86261cb3eac2468c189fbc4705d81c96ffa05f5c70",
+  "replacements": [
+    {
+      "before": "    try:\n        from torch._inductor import graph as _graph\n\n        if hasattr(_graph, \"FALLBACK_ALLOW_LIST\"):\n            _graph.FALLBACK_ALLOW_LIST = _lowering.FALLBACK_ALLOW_LIST\n    except ImportError:\n        pass\n",
+      "after": "    import sys\n\n    _graph = sys.modules.get(\"torch._inductor.graph\")\n    if _graph is not None and hasattr(_graph, \"FALLBACK_ALLOW_LIST\"):\n        _graph.FALLBACK_ALLOW_LIST = _lowering.FALLBACK_ALLOW_LIST\n"
+    },
+    {
+      "before": "_patch_inductor_fallback_allow_list()\n\n\ndef _apply_inductor_pattern_matcher_patch()",
+      "after": "def _defer_inductor_fallback_allow_list_patch() -> None:\n    \"\"\"Apply the fallback backport when native Inductor lowering imports.\"\"\"\n    import sys\n\n    target_name = \"torch._inductor.lowering\"\n    if target_name in sys.modules:\n        _patch_inductor_fallback_allow_list()\n        return\n\n    import importlib.abc\n\n    class _FallbackAllowListPatchFinder(importlib.abc.MetaPathFinder):\n        def find_spec(self, fullname, path, target=None):\n            if fullname != target_name:\n                return None\n            sys.meta_path.remove(self)\n            spec = importlib.util.find_spec(fullname)\n            if spec is None or spec.loader is None:\n                return None\n            original_exec = spec.loader.exec_module\n\n            def _exec_then_patch(module):\n                original_exec(module)\n                _patch_inductor_fallback_allow_list()\n\n            spec.loader.exec_module = _exec_then_patch  # type: ignore[method-assign]\n            return spec\n\n    sys.meta_path.insert(0, _FallbackAllowListPatchFinder())\n\n\n_defer_inductor_fallback_allow_list_patch()\n\n\ndef _apply_inductor_pattern_matcher_patch()"
+    }
+  ]
+}

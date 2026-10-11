@@ -7,6 +7,7 @@ durations must not be added together. Arguments and error messages are omitted.
 import builtins
 import functools
 import importlib
+import importlib.abc
 import inspect
 import json
 import os
@@ -66,6 +67,23 @@ IMPORTS = {"torch", "transformers", "vllm", *TARGETS}
 patched = set()
 imported = set()
 local = threading.local()
+
+# A benchmark-only source overlay tests a pinned patch before repacking a
+# runtime. Both source hashes remain explicit in its receipt; this does not
+# identify a new published artifact or a compatible baked cache.
+if source_override := os.environ.get("NATIVE_ENV_OVERRIDE_SOURCE"):
+
+    class EnvOverrideFinder(importlib.abc.MetaPathFinder):
+        def find_spec(self, fullname, path, target=None):
+            if fullname != "vllm.env_override":
+                return None
+            sys.meta_path.remove(self)
+            original = importlib.util.find_spec(fullname)
+            if original is None or original.origin is None:
+                raise RuntimeError("native env_override source is absent")
+            return importlib.util.spec_from_file_location(fullname, source_override)
+
+    sys.meta_path.insert(0, EnvOverrideFinder())
 
 
 def record(event):
