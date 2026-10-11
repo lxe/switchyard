@@ -535,6 +535,7 @@ try:
                                 for prefix in (
                                     "SWITCHYARD_ENGINE_STARTUP ",
                                     "SWITCHYARD_CPU_SNAPSHOT ",
+                                    "SWITCHYARD_WEIGHT_STREAM ",
                                 )
                                 if prefix in line
                             ),

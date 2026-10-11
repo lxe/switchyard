@@ -67,7 +67,13 @@ class Timeline:
                 "started_monotonic", item.get("monotonic_s", item.get("monotonic"))
             ),
         )
-        values = {**item.get("values", {}), **item}
+        progress = item.get("progress", {})
+        values = {
+            **progress.get("progress", {}),
+            **progress,
+            **item.get("values", {}),
+            **item,
+        }
         details = {
             key: values[key]
             for key in (
@@ -99,6 +105,27 @@ class Timeline:
                 "runtime_headroom_bytes",
                 "clock_offset_s",
                 "clock_uncertainty_s",
+                "chunk_id",
+                "chunks",
+                "lifecycle",
+                "bytes",
+                "location",
+                "received_bytes",
+                "ram_bytes",
+                "spool_bytes",
+                "peak_ram_bytes",
+                "peak_spool_bytes",
+                "reclaimed_bytes",
+                "exhausted_buffer_seconds",
+                "network_wait_seconds",
+                "spool_write_seconds",
+                "consumer_wait_seconds",
+                "consumer_available",
+                "pinned_bytes",
+                "transfer_concurrency",
+                "direct_gpu_destinations",
+                "gpu_dma_seconds",
+                "staging_seconds",
                 "tensor_count",
                 "tensor_bytes",
             )
