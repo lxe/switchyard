@@ -4,18 +4,18 @@ This adapter does not construct a model or change native CUDA/NUMA guards.
 Runtime and cache compatibility belong to the selected, fingerprinted ticket.
 """
 
-from dataclasses import dataclass, fields
 import importlib
 import importlib.abc
 import importlib.metadata
 import json
 import os
-from pathlib import Path
 import re
 import selectors
 import sys
 import threading
 import time
+from dataclasses import dataclass, fields
+from pathlib import Path
 
 GATE = "switchyard-metadata-ready-v1\n"
 NVML_PATCH = "5b935fc5f4eacaff29876d2c9304df0b54ebe69828c6c3da8916ba36e54135f5"
@@ -27,7 +27,13 @@ PREPARE_MODULES = (
     "vllm.entrypoints.cli.serve",
     "vllm.v1.worker.gpu_worker",
 )
-PREREQUISITE_MODULES = {"flashinfer", "flashinfer_cubin", "flashinfer_jit_cache", "cutlass", "nvidia_cutlass_dsl"}
+PREREQUISITE_MODULES = {
+    "flashinfer",
+    "flashinfer_cubin",
+    "flashinfer_jit_cache",
+    "cutlass",
+    "nvidia_cutlass_dsl",
+}
 
 
 @dataclass(frozen=True)
@@ -49,7 +55,9 @@ class Policy:
         if raw is None:
             return None
         value = json.loads(raw)
-        if not isinstance(value, dict) or set(value) - {field.name for field in fields(cls)}:
+        if not isinstance(value, dict) or set(value) - {
+            field.name for field in fields(cls)
+        }:
             raise ValueError("unknown vLLM startup policy field")
         policy = cls(**value)
         if type(policy.schema_version) is not int or policy.schema_version != 1:
@@ -57,13 +65,23 @@ class Policy:
         if policy.strategy not in {"native", "prepared"}:
             raise ValueError("unsupported vLLM startup strategy")
         if policy.worker_method not in {"spawn", "guarded_fork"}:
-            raise ValueError("vLLM 0.31 supports native spawn or guarded fork, not forkserver")
-        if policy.cache_policy not in {"native", "required"} or policy.memory_plan not in {"native", "required"}:
+            raise ValueError(
+                "vLLM 0.31 supports native spawn or guarded fork, not forkserver"
+            )
+        if policy.cache_policy not in {
+            "native",
+            "required",
+        } or policy.memory_plan not in {"native", "required"}:
             raise ValueError("unsupported native cache or memory-plan policy")
-        if type(policy.tokenizer_preload) is not bool or type(policy.telemetry) is not bool:
+        if (
+            type(policy.tokenizer_preload) is not bool
+            or type(policy.telemetry) is not bool
+        ):
             raise ValueError("vLLM startup boolean policy field")
-        if not isinstance(policy.cache_aliases, (list, tuple)) or len(policy.cache_aliases) > 8 or any(
-            not isinstance(path, str) for path in policy.cache_aliases
+        if (
+            not isinstance(policy.cache_aliases, (list, tuple))
+            or len(policy.cache_aliases) > 8
+            or any(not isinstance(path, str) for path in policy.cache_aliases)
         ):
             raise ValueError("vLLM startup cache alias list")
         if policy.compute_capability is not None and (
@@ -77,7 +95,9 @@ class Policy:
             or re.fullmatch(r"[0-9a-f]{64}", policy.fork_runtime_id) is None
             or policy.compute_capability is None
         ):
-            raise ValueError("guarded fork requires prepared strategy, runtime pin, and GPU capability")
+            raise ValueError(
+                "guarded fork requires prepared strategy, runtime pin, and GPU capability"
+            )
         return policy
 
 
@@ -86,9 +106,17 @@ def record(policy, event, **values):
         return
     now = time.monotonic()
     epoch = float(os.environ.get("SWITCHYARD_STARTUP_EPOCH", now))
-    message = {"event": event, "pid": os.getpid(), "monotonic_s": now,
-               "elapsed_s": now - epoch, **values}
-    print("SWITCHYARD_ENGINE_STARTUP " + json.dumps(message, separators=(",", ":")), flush=True)
+    message = {
+        "event": event,
+        "pid": os.getpid(),
+        "monotonic_s": now,
+        "elapsed_s": now - epoch,
+        **values,
+    }
+    print(
+        "SWITCHYARD_ENGINE_STARTUP " + json.dumps(message, separators=(",", ":")),
+        flush=True,
+    )
 
 
 def configure(policy):
@@ -104,11 +132,14 @@ def configure(policy):
         # its small receipt, rather than rehashing immutable runtime files.
         receipt = json.loads((root / "build-info.json").read_text())
         patches = receipt.get("source_patches", [])
-        if not any(isinstance(patch, dict) and patch.get("descriptor_sha256") == NVML_PATCH
-                   and patch.get("after_sha256") == NVML_RESULT
-                   and patch.get("target") == NVML_TARGET
-                   and patch.get("package") == {"name": "vllm", "version": version}
-                   for patch in patches):
+        if not any(
+            isinstance(patch, dict)
+            and patch.get("descriptor_sha256") == NVML_PATCH
+            and patch.get("after_sha256") == NVML_RESULT
+            and patch.get("target") == NVML_TARGET
+            and patch.get("package") == {"name": "vllm", "version": version}
+            for patch in patches
+        ):
             raise RuntimeError("guarded fork requires the baked pinned NVML FLA patch")
         os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "fork"
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -119,12 +150,28 @@ def configure(policy):
         if previous is not None and previous != policy.compute_capability:
             raise RuntimeError("FlashInfer architecture differs from selected GPU")
         os.environ["FLASHINFER_CUDA_ARCH_LIST"] = policy.compute_capability
-    if policy.cache_policy == "required" and any(os.environ.get(name) != "1" for name in
-        ["VLLM_FORCE_AOT_LOAD", "FLASHINFER_DISABLE_JIT", "FLASHINFER_NO_DOWNLOAD"]):
-        raise RuntimeError("required cache policy needs native strict AOT and JIT-disabled flags")
-    if policy.memory_plan == "required" and os.environ.get("VLLM_ENABLE_STARTUP_PLAN") != "1":
+    if policy.cache_policy == "required" and any(
+        os.environ.get(name) != "1"
+        for name in [
+            "VLLM_FORCE_AOT_LOAD",
+            "FLASHINFER_DISABLE_JIT",
+            "FLASHINFER_NO_DOWNLOAD",
+        ]
+    ):
+        raise RuntimeError(
+            "required cache policy needs native strict AOT and JIT-disabled flags"
+        )
+    if (
+        policy.memory_plan == "required"
+        and os.environ.get("VLLM_ENABLE_STARTUP_PLAN") != "1"
+    ):
         raise RuntimeError("required memory plan needs the native startup-plan flag")
-    record(policy, "policy_selected", strategy=policy.strategy, worker_method=policy.worker_method)
+    record(
+        policy,
+        "policy_selected",
+        strategy=policy.strategy,
+        worker_method=policy.worker_method,
+    )
 
 
 class PrerequisiteImports(importlib.abc.MetaPathFinder):
@@ -142,7 +189,6 @@ class PrerequisiteImports(importlib.abc.MetaPathFinder):
             self.ready.wait()
             if self.cancelled:
                 raise RuntimeError("native import prerequisite gate cancelled")
-        return None
 
     def release(self, cancelled=False):
         self.cancelled = cancelled
@@ -154,17 +200,29 @@ class Preparation:
         self.policy = policy
         self.error = None
         self.read_fd, self.write_fd = os.pipe()
-        self.thread = threading.Thread(target=self.run, name="switchyard-native-imports", daemon=True)
+        self.thread = threading.Thread(
+            target=self.run, name="switchyard-native-imports", daemon=True
+        )
 
     def run(self):
         try:
             for name in PREPARE_MODULES:
                 began = time.monotonic()
                 importlib.import_module(name)
-                record(self.policy, "module_prepared", module=name, duration_s=time.monotonic() - began)
-        except BaseException as error:
+                record(
+                    self.policy,
+                    "module_prepared",
+                    module=name,
+                    duration_s=time.monotonic() - began,
+                )
+        # Return every thread exit to the joining process, including SystemExit.
+        except BaseException as error:  # noqa: BLE001
             self.error = error
-            record(self.policy, "import_preparation_failed", error_type=type(error).__name__)
+            record(
+                self.policy,
+                "import_preparation_failed",
+                error_type=type(error).__name__,
+            )
         finally:
             os.write(self.write_fd, b"E" if self.error is not None else b"D")
 
@@ -208,8 +266,15 @@ def cache_aliases(policy):
         raise RuntimeError("cache alias target is not ready")
     for value in policy.cache_aliases:
         alias = Path(value)
-        if not alias.is_absolute() or str(alias) != value or alias.parent != root.parent or ".." in alias.parts:
-            raise ValueError("cache alias must be a normalized sibling of the selected cache root")
+        if (
+            not alias.is_absolute()
+            or str(alias) != value
+            or alias.parent != root.parent
+            or ".." in alias.parts
+        ):
+            raise ValueError(
+                "cache alias must be a normalized sibling of the selected cache root"
+            )
         if alias == root:
             continue
         if alias.is_symlink():
@@ -230,7 +295,10 @@ def refresh_providers(policy):
     if policy.cache_policy != "required" and "flashinfer.jit.env" not in sys.modules:
         record(policy, "providers_deferred", reason="native_cache_policy")
         return
-    if importlib.metadata.version("flashinfer-python").split("+", 1)[0] != "0.7.0.post1":
+    if (
+        importlib.metadata.version("flashinfer-python").split("+", 1)[0]
+        != "0.7.0.post1"
+    ):
         raise RuntimeError("native provider refresh requires FlashInfer 0.7.0.post1")
     environment = importlib.import_module("flashinfer.jit.env")
     providers = environment._get_aot_providers()
@@ -240,24 +308,40 @@ def refresh_providers(policy):
     )
     # Do not call get_aot_artifacts here: automatic target detection can
     # initialize CUDA in the API process and unnecessarily prevent safe fork.
-    sampling = [provider for provider in providers if "sampling" in provider.modules
-                and (provider.jit_cache_dir / "sampling/sampling.so").is_file()]
-    record(policy, "providers_ready", providers=len(providers), sampling_providers=len(sampling))
+    sampling = [
+        provider
+        for provider in providers
+        if "sampling" in provider.modules
+        and (provider.jit_cache_dir / "sampling/sampling.so").is_file()
+    ]
+    record(
+        policy,
+        "providers_ready",
+        providers=len(providers),
+        sampling_providers=len(sampling),
+    )
     if policy.cache_policy == "required":
-        cache = Path(os.environ["VLLM_CACHE_ROOT"]) / "torch_compile_cache/torch_aot_compile"
+        cache = (
+            Path(os.environ["VLLM_CACHE_ROOT"])
+            / "torch_compile_cache/torch_aot_compile"
+        )
         if not sampling or not cache.is_dir() or not any(cache.iterdir()):
-            raise RuntimeError("required native AOT cache or sampling provider is absent")
+            raise RuntimeError(
+                "required native AOT cache or sampling provider is absent"
+            )
 
 
 def main():
     policy = Policy.from_environment()
     if policy is None:
         # Preserve the legacy launcher and its native CLI defaults.
-        import vllm  # noqa: F401
+        import vllm
+
         if not wait_gate(None):
             raise RuntimeError("metadata readiness gate cancelled")
         sys.stdin.close()
         import runpy
+
         sys.argv = ["vllm", *sys.argv[1:]]
         runpy.run_module("vllm.entrypoints.cli.main", run_name="__main__")
         return
@@ -285,13 +369,20 @@ def main():
         sys.meta_path.remove(finder)
         refresh_providers(policy)
         from switchyard_vllm_hooks import install
+
         install(policy)
         import torch
+
         os.environ["SWITCHYARD_PREPARED_PID"] = str(os.getpid())
-        record(policy, "engine_construction_allowed", cuda_initialized=torch.cuda.is_initialized())
+        record(
+            policy,
+            "engine_construction_allowed",
+            cuda_initialized=torch.cuda.is_initialized(),
+        )
         sys.argv = ["vllm", *sys.argv[1:]]
         # The native parser, validator and ServeSubcommand dispatch still run.
         from vllm.entrypoints.cli.main import main as native_main
+
         native_main()
     finally:
         finder.release(cancelled=True)

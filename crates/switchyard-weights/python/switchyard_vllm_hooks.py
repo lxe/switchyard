@@ -57,17 +57,26 @@ class TokenizerPreparation:
         try:
             require_gate()
             self.registry.cached_tokenizer_from_config(self.model_config)
-            record(self.policy, "tokenizer_prepared", duration_s=time.monotonic() - began)
-        except BaseException as error:
+            record(
+                self.policy, "tokenizer_prepared", duration_s=time.monotonic() - began
+            )
+        # Return every thread exit to the joining process, including SystemExit.
+        except BaseException as error:  # noqa: BLE001
             self.error = error
-            record(self.policy, "tokenizer_preparation_failed", error_type=type(error).__name__)
+            record(
+                self.policy,
+                "tokenizer_preparation_failed",
+                error_type=type(error).__name__,
+            )
 
     def start(self):
         if self.policy.worker_method == "guarded_fork":
             self.run()
             self.join()
         else:
-            self.thread = threading.Thread(target=self.run, name="switchyard-tokenizer", daemon=True)
+            self.thread = threading.Thread(
+                target=self.run, name="switchyard-tokenizer", daemon=True
+            )
             self.thread.start()
 
     def join(self):
@@ -89,9 +98,15 @@ def model_preparation(policy, engine_args, registry):
             # Load the selected native class once in the clean API process.
             # The child then inherits its module; no model is instantiated.
             from vllm.model_executor.models.registry import ModelRegistry
+
             began = time.monotonic()
             cls, _ = ModelRegistry.resolve_model_cls(result.architectures, result)
-            record(policy, "model_class_prepared", module=cls.__module__, duration_s=time.monotonic() - began)
+            record(
+                policy,
+                "model_class_prepared",
+                module=cls.__module__,
+                duration_s=time.monotonic() - began,
+            )
         if policy.tokenizer_preload and not result.skip_tokenizer_init:
             preload = TokenizerPreparation(policy, result, registry)
             _preloads.append(preload)
@@ -125,9 +140,14 @@ def process_method(policy, system):
         before = os.environ.get("VLLM_WORKER_MULTIPROC_METHOD")
         result = original(*args, **kwargs)
         import torch
-        record(policy, "native_worker_method", requested=before,
-               selected=os.environ.get("VLLM_WORKER_MULTIPROC_METHOD"),
-               cuda_initialized=torch.cuda.is_initialized())
+
+        record(
+            policy,
+            "native_worker_method",
+            requested=before,
+            selected=os.environ.get("VLLM_WORKER_MULTIPROC_METHOD"),
+            cuda_initialized=torch.cuda.is_initialized(),
+        )
         return result
 
     native_guard._switchyard_native = original
@@ -144,9 +164,13 @@ def memory_plan(policy, module):
         result = original(worker, *args, **kwargs)
         after = worker.cache_config.kv_cache_memory_bytes
         accepted = before is None and after is not None
-        record(policy, "native_memory_plan", applied=accepted,
-               explicit_memory_limit=before is not None,
-               free_memory_bytes=worker.init_snapshot.free_memory)
+        record(
+            policy,
+            "native_memory_plan",
+            applied=accepted,
+            explicit_memory_limit=before is not None,
+            free_memory_bytes=worker.init_snapshot.free_memory,
+        )
         if policy.memory_plan == "required" and not accepted:
             raise RuntimeError("required memory plan was not accepted by native guards")
         return result
@@ -184,13 +208,22 @@ def worker_start():
         return
     install(policy)
     import torch
+
     method = multiprocessing.get_start_method(allow_none=True)
-    record(policy, "engine_worker_start", actual_start_method=method,
-           cuda_initialized=torch.cuda.is_initialized(),
-           prepared_parent_pid=os.environ.get("SWITCHYARD_PREPARED_PID"),
-           fork_inheritance=method == "fork" and os.environ.get("SWITCHYARD_PREPARED_PID") is not None,
-           prepared_modules_present=[name for name in
-               ["torch", "transformers", "vllm.v1.worker.gpu_worker"] if name in sys.modules])
+    record(
+        policy,
+        "engine_worker_start",
+        actual_start_method=method,
+        cuda_initialized=torch.cuda.is_initialized(),
+        prepared_parent_pid=os.environ.get("SWITCHYARD_PREPARED_PID"),
+        fork_inheritance=method == "fork"
+        and os.environ.get("SWITCHYARD_PREPARED_PID") is not None,
+        prepared_modules_present=[
+            name
+            for name in ["torch", "transformers", "vllm.v1.worker.gpu_worker"]
+            if name in sys.modules
+        ],
+    )
 
 
 def join_preloads():
