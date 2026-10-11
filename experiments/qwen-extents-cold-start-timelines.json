@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "scope": "Latest three fresh-pod strict native-AOT raw-extent cache-reuse smoke runs on L40S; one cold call per model. This is not full-gauntlet acceptance or causal optimization proof.",
+  "clock_semantics": "Agent milestones share an agent epoch. Controller allocation and request timestamps use the controller epoch. Reception times use the buffered hydration epoch. Outside-agent residual is derived, not an independently measured container-start interval. Model and runtime hydration overlap. Concurrent wait sums are not elapsed durations.",
+  "runs": [
+    {
+      "model": "qwen3.5-0.8b",
+      "configuration": "configs/runpod/preparation/qwen-0.8b-extents-reuse.json",
+      "source_receipt": "experiments/qwen-0.8b-extents-cache-reuse.json",
+      "cold_ttft_s": 67.65520038999999,
+      "controller_allocation_s": 3.8742996209999974,
+      "agent_milestones": [
+        {
+          "elapsed_s": 1.843079133,
+          "event": "model_hydration_started"
+        },
+        {
+          "elapsed_s": 1.869308346,
+          "event": "runtime_hydration_started"
+        },
+        {
+          "elapsed_s": 3.097891069,
+          "event": "model_metadata_ready"
+        },
+        {
+          "elapsed_s": 10.882072073,
+          "event": "model_hydration_finished"
+        },
+        {
+          "elapsed_s": 31.607629552,
+          "event": "runtime_hydration_finished"
+        },
+        {
+          "elapsed_s": 31.608722451,
+          "event": "engine_spawned"
+        },
+        {
+          "elapsed_s": 52.50142509,
+          "event": "tensor_loading_finished"
+        },
+        {
+          "elapsed_s": 59.564215015,
+          "event": "inference_verified"
+        }
+      ],
+      "runtime_hydration_s": 29.738321206,
+      "model_hydration_s": 9.03899294,
+      "engine_spawn_to_first_tensor_s": 20.645824109000003,
+      "tensor_assignment_s": 0.2468785299999965,
+      "remaining_init_and_verification_s": 7.062789925000004,
+      "outside_agent_residual_s": 4.216685753999991,
+      "runtime_reception": {
+        "buffer_high_water_bytes": 2057174605,
+        "buffered_bytes": 0,
+        "compressed_consumed_bytes": 5432616775,
+        "consumer_wait_seconds": 16.43063833,
+        "decoded_bytes": 20276901888,
+        "extraction_complete_seconds": 25.618384718,
+        "file_written_bytes": 20031196806,
+        "network_received_bytes": 5432616775,
+        "receiver_body_wait_seconds": 239.17458514,
+        "receiver_storage_write_seconds": 13.869493173,
+        "reception_complete_seconds": 20.668808758,
+        "reclaimed_bytes": 5432868864,
+        "reservation_seconds": 0.573688284,
+        "reserved_bytes": 5432868864,
+        "storage_written_bytes": 5432616775
+      },
+      "runtime_received_bytes": 5432616775,
+      "average_runtime_reception_decimal_MB_per_s": 262.84131023744993,
+      "runtime_extraction_tail_s": 4.949575960000001,
+      "runtime_other_hydration_s": 4.119936487999997,
+      "weight_loading": {
+        "assignment_complete_seconds": 52.501232957,
+        "bytes_delivered": 1746882752,
+        "first_tensor_seconds": 52.25454656,
+        "gpu": {
+          "bytes": 1746882752,
+          "copies": 488,
+          "dma_seconds": 0.0716382079650648,
+          "first_copy_finished_seconds": 52.254996398463845,
+          "last_copy_finished_seconds": 52.49893444869667,
+          "staging_seconds": 0.05051432270556688
+        },
+        "tensors_delivered": 488
+      }
+    },
+    {
+      "model": "qwen3.5-2b",
+      "configuration": "configs/runpod/preparation/qwen-2b-extents-probe-diagnostic.json",
+      "source_receipt": "experiments/qwen-2b-extents-cache-reuse.json",
+      "cold_ttft_s": 74.60195937099999,
+      "controller_allocation_s": 3.777777505999998,
+      "agent_milestones": [
+        {
+          "elapsed_s": 1.250631818,
+          "event": "model_hydration_started"
+        },
+        {
+          "elapsed_s": 1.276834964,
+          "event": "runtime_hydration_started"
+        },
+        {
+          "elapsed_s": 2.421943811,
+          "event": "model_metadata_ready"
+        },
+        {
+          "elapsed_s": 33.293274909,
+          "event": "model_hydration_finished"
+        },
+        {
+          "elapsed_s": 38.68823434,
+          "event": "runtime_hydration_finished"
+        },
+        {
+          "elapsed_s": 38.689274061,
+          "event": "engine_spawned"
+        },
+        {
+          "elapsed_s": 59.724512821,
+          "event": "tensor_loading_finished"
+        },
+        {
+          "elapsed_s": 66.792331674,
+          "event": "inference_verified"
+        }
+      ],
+      "runtime_hydration_s": 37.411399376,
+      "model_hydration_s": 32.042643090999995,
+      "engine_spawn_to_first_tensor_s": 20.634412874,
+      "tensor_assignment_s": 0.4008258859999998,
+      "remaining_init_and_verification_s": 7.067818852999999,
+      "outside_agent_residual_s": 4.031850190999998,
+      "runtime_reception": {
+        "buffer_high_water_bytes": 1482881586,
+        "buffered_bytes": 0,
+        "compressed_consumed_bytes": 5432616775,
+        "consumer_wait_seconds": 59.742450643,
+        "decoded_bytes": 20276901888,
+        "extraction_complete_seconds": 33.471632438,
+        "file_written_bytes": 20031196806,
+        "network_received_bytes": 5432616775,
+        "receiver_body_wait_seconds": 310.788846213,
+        "receiver_storage_write_seconds": 12.067309281,
+        "reception_complete_seconds": 33.445730995,
+        "reclaimed_bytes": 5432868864,
+        "reservation_seconds": 0.468681745,
+        "reserved_bytes": 5432868864,
+        "storage_written_bytes": 5432616775
+      },
+      "runtime_received_bytes": 5432616775,
+      "average_runtime_reception_decimal_MB_per_s": 162.4307979936858,
+      "runtime_extraction_tail_s": 0.02590144300000219,
+      "runtime_other_hydration_s": 3.939766937999998,
+      "weight_loading": {
+        "assignment_complete_seconds": 59.724282689,
+        "bytes_delivered": 4548144832,
+        "first_tensor_seconds": 59.323686935,
+        "gpu": {
+          "bytes": 4548144832,
+          "copies": 632,
+          "dma_seconds": 0.17843286456912755,
+          "first_copy_finished_seconds": 59.32410727068782,
+          "last_copy_finished_seconds": 59.72207205556333,
+          "staging_seconds": 0.07932479493319988
+        },
+        "tensors_delivered": 632
+      }
+    },
+    {
+      "model": "qwen3.5-4b",
+      "configuration": "configs/runpod/preparation/qwen-4b-extents-reuse.json",
+      "source_receipt": "experiments/qwen-4b-extents-cache-reuse.json",
+      "cold_ttft_s": 100.74116034,
+      "controller_allocation_s": 3.642202383999993,
+      "agent_milestones": [
+        {
+          "elapsed_s": 1.547695112,
+          "event": "runtime_hydration_started"
+        },
+        {
+          "elapsed_s": 2.465849005,
+          "event": "model_hydration_started"
+        },
+        {
+          "elapsed_s": 2.798480229,
+          "event": "model_metadata_ready"
+        },
+        {
+          "elapsed_s": 58.747810983,
+          "event": "model_hydration_finished"
+        },
+        {
+          "elapsed_s": 62.373479311,
+          "event": "runtime_hydration_finished"
+        },
+        {
+          "elapsed_s": 62.374519899,
+          "event": "engine_spawned"
+        },
+        {
+          "elapsed_s": 83.695164792,
+          "event": "tensor_loading_finished"
+        },
+        {
+          "elapsed_s": 91.760991907,
+          "event": "inference_verified"
+        }
+      ],
+      "runtime_hydration_s": 60.825784199,
+      "model_hydration_s": 56.281961978,
+      "engine_spawn_to_first_tensor_s": 20.558502009,
+      "tensor_assignment_s": 0.7621428839999993,
+      "remaining_init_and_verification_s": 8.065827115000005,
+      "outside_agent_residual_s": 5.337966048999996,
+      "runtime_reception": {
+        "buffer_high_water_bytes": 1368407313,
+        "buffered_bytes": 0,
+        "compressed_consumed_bytes": 5432616775,
+        "consumer_wait_seconds": 91.870990296,
+        "decoded_bytes": 20276901888,
+        "extraction_complete_seconds": 56.418994318,
+        "file_written_bytes": 20031196806,
+        "network_received_bytes": 5432616775,
+        "receiver_body_wait_seconds": 389.260209916,
+        "receiver_storage_write_seconds": 14.706783493,
+        "reception_complete_seconds": 56.377970048,
+        "reclaimed_bytes": 5432868864,
+        "reservation_seconds": 0.533168703,
+        "reserved_bytes": 5432868864,
+        "storage_written_bytes": 5432616775
+      },
+      "runtime_received_bytes": 5432616775,
+      "average_runtime_reception_decimal_MB_per_s": 96.36063111840829,
+      "runtime_extraction_tail_s": 0.041024270000001195,
+      "runtime_other_hydration_s": 4.406789880999995,
+      "weight_loading": {
+        "assignment_complete_seconds": 83.694945738,
+        "bytes_delivered": 9319737856,
+        "first_tensor_seconds": 82.933021908,
+        "gpu": {
+          "bytes": 9319737856,
+          "copies": 738,
+          "dma_seconds": 0.35904665622115134,
+          "first_copy_finished_seconds": 83.00509555451572,
+          "last_copy_finished_seconds": 83.69202373642474,
+          "staging_seconds": 0.17474661581218243
+        },
+        "tensors_delivered": 738
+      }
+    }
+  ]
+}
