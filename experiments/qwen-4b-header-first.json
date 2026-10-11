@@ -1,0 +1,31 @@
+{
+  "model": "Qwen/Qwen3.5-4B",
+  "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "scope": "Header-first artifact preparation and immutable R2 publication. No inference endpoint, GPU cache, startup latency or throughput measurement.",
+  "source": {
+    "legacy_archive_sha256": "b2e9df73151107b3b8188eff3dc6393b010eccd8adcee15f76c153a3a5bea3ca",
+    "original_file_digests_preserved": 14
+  },
+  "layout": {
+    "format": "switchyard-extents-v1",
+    "id": "a51d79850d8a018e39961356ca80de6d6b31a3f729d57f32edaa8a42779780d6",
+    "content_id": "d7545c853741122e1554a189fc6867d0b6277d79a058ca8bb5864126a747c1a6",
+    "extent_bytes": 16777216,
+    "extents": 570,
+    "total_file_bytes": 9342907469,
+    "weight_header_bytes": 90240,
+    "manifest_file": "qwen-4b-header-first.manifest.json"
+  },
+  "publication": {
+    "prefix": "switchyard/weights/qwen3.5-4b/header-first-v1/a51d79850d8a018e39961356ca80de6d6b31a3f729d57f32edaa8a42779780d6",
+    "manifest_created": true,
+    "objects": 570,
+    "objects_created": 570,
+    "manifest_readback_matches": true,
+    "header_object_digest_matches": true
+  },
+  "preparation": {
+    "header_validated_at_pack": true,
+    "whole_file_hashes_at_endpoint_startup": false
+  }
+}
