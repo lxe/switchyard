@@ -494,6 +494,9 @@ pub fn restore(options: Restore) -> Result<Value> {
                 snapshot.control_socket_inode
             ))
             .args([
+                // The restored process belongs to this launch's cgroup, not
+                // the preparation container's resource accounting hierarchy.
+                "--manage-cgroups=ignore",
                 "--cpu-cap=all",
                 "--shell-job",
                 "--restore-detached",
