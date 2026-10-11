@@ -18,7 +18,6 @@ use tokio::sync::RwLock;
 mod admission;
 mod cache_export;
 mod engine;
-mod readiness;
 mod startup;
 
 #[derive(Clone)]
@@ -250,7 +249,7 @@ async fn run_engine(
         {
             break;
         }
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_millis(100)).await;
     }
     crate::startup::milestone(
         &state,
@@ -258,20 +257,8 @@ async fn run_engine(
         crate::startup::StartupEvent::EngineHealthReady,
     )
     .await;
-    readiness::verify_observed(&client, "http://127.0.0.1:8000", &ticket.model, |event| {
-        let state = state.clone();
-        async move { crate::startup::milestone(&state, epoch, event).await }
-    })
-    .await?;
-    crate::startup::milestone(
-        &state,
-        epoch,
-        crate::startup::StartupEvent::InferenceVerified,
-    )
-    .await;
     {
         let mut st = state.write().await;
-        st.inference_verified = true;
         st.phase = Phase::Ready;
     }
     tokio::select! {

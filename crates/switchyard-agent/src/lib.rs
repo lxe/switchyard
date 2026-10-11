@@ -100,7 +100,7 @@ pub struct State {
     pub artifact_network_bytes_per_s: Option<f64>,
     #[serde(default)]
     pub artifacts: Vec<runtime::ArtifactState>,
-    /// True after health, tokenization, and a minimal nonstream inference succeed.
+    /// Historical wire field. New launches do not run inference readiness checks.
     #[serde(default)]
     pub inference_verified: bool,
     /// Trusted mode reports transferred data without claiming content verification.
