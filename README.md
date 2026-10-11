@@ -11,6 +11,7 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Provider adapters](crates/switchyard-provider) | Timestamped rental offers, owned pod lifecycle, and S3-compatible storage signing |
 | [Pod agent](crates/switchyard-agent) | Rust hydration, observed startup progress, and authenticated model transport |
 | [Artifacts](crates/switchyard-artifacts) | Deterministic archives, integrity checks, bounded transfer, and atomic hydration without cloud or engine dependencies |
+| [Weight loading](crates/switchyard-weights) | Safetensors metadata discovery and completion leases for loading received tensor ranges; agent integration is in development |
 | [Artifact tools](crates/switchyard-artifact-tools) | Independent build, pack, publish, verify, and hydrate commands |
 | [Runtime builder](crates/switchyard-runtime-build) | Locked serving environment assembly inside an isolated Docker build |
 | [Shared contracts](crates/switchyard-core) | Configuration, known request inputs, observable fleet state, and the pluggable `Scheduler` interface |
@@ -120,6 +121,7 @@ crates/
   switchyard-provider/   # GPU cloud and storage adapters
   switchyard-agent/      # Hydration and vLLM pod transport
   switchyard-artifacts/  # Generic archive format and configurable filesystem hydration
+  switchyard-weights/    # Incremental safetensors discovery and loading bridge
   switchyard-artifact-tools/ # Local preparation and object-storage integration
   switchyard-runtime-build/ # Out-of-band serving environment assembly
   switchyard-live/       # Real workload execution and recovery

@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-10",
+  "experiment": "full 0.8B scheduler gauntlet stopped during cold hydration",
+  "source_commit": "49b0038a3b18c4de7a26c9ec887bbf2127579e78",
+  "configuration": "configs/runpod/gauntlet-l40s-0.8b.json",
+  "configuration_sha256": "9cfd9c54bf5e16c66b0922b84582913b4cbc2c30034ca5693653f4083ca5b457",
+  "workloads": "configs/runpod/gauntlet.json",
+  "workloads_sha256": "0425a3de00ac5d917f9cce9b09d4dd8b0b19d9ad9f1d4fe7c27e8fc827aed69d",
+  "gpu": "NVIDIA L40S",
+  "data_center": "US-IL-1",
+  "model": "Qwen/Qwen3.5-0.8B",
+  "outcome": "failed_before_endpoint_readiness",
+  "inference_calls_completed": 0,
+  "startup_milestones": [
+    {
+      "event": "runtime_hydration_started",
+      "elapsed_s": 1.406230884
+    },
+    {
+      "event": "model_hydration_started",
+      "elapsed_s": 1.414263858
+    },
+    {
+      "event": "runtime_hydration_finished",
+      "elapsed_s": 62.994937478
+    },
+    {
+      "event": "engine_spawned",
+      "elapsed_s": 62.995524991
+    }
+  ],
+  "first_transport_failure": {
+    "elapsed_since_model_hydration_start_s": 80.596948717,
+    "piece": "chunk-00011",
+    "error_class": "request_timeout",
+    "transfer": {
+      "expected_bytes": 134217728,
+      "received_bytes": 724672,
+      "delivered_bytes": 724672,
+      "consumed_bytes": 719277,
+      "request_s": 0.002950455,
+      "headers_s": 1.000193132,
+      "first_body_s": 1.000199662,
+      "last_body_s": 80.596595561,
+      "channel_wait_s": 79.593606643,
+      "body_wait_s": 0.003089671,
+      "longest_body_wait_s": 0.0007675,
+      "http_version": "HTTP/1.1",
+      "http_status": 200
+    },
+    "host_snapshot_complete": false
+  },
+  "controller_error": "hydration transfer failed: model extraction stopped",
+  "guard": {
+    "reason": "agent_failed",
+    "exit_code": 1,
+    "elapsed_s": 182.67230155200014,
+    "termination_confirmations": [
+      {
+        "pod": "tohqpvixw9mhge",
+        "termination_confirmed": true
+      }
+    ]
+  },
+  "rental": {
+    "cleanup_failures": [],
+    "estimated_rental_usd": 0.05312083581652055,
+    "pods": [
+      {
+        "allocated_s": 3.673738803,
+        "ended_s": 177.372328483,
+        "pod": {
+          "cost": 1.09,
+          "data_center": "US-IL-1",
+          "id": "tohqpvixw9mhge",
+          "name": "switchyard-751c0a698885a87e-0",
+          "status": "running"
+        },
+        "profile": 0,
+        "quoted": {
+          "availability": "LOW",
+          "data_center": "US-IL-1",
+          "disk_usd_per_hour": 0.010958904109589041,
+          "gpu": "NVIDIA L40S",
+          "gpu_memory_gb": 48,
+          "gpu_usd_per_hour": 1.09,
+          "quoted_at_unix_s": 1791687941
+        }
+      }
+    ]
+  },
+  "termination": {
+    "pod": "tohqpvixw9mhge",
+    "http_status": 404
+  },
+  "claim_limit": "The first recorded transport failure is request_timeout after substantial consumer backpressure. The underlying timeout cause is not established. The empty host snapshot cannot diagnose host or TCP state. No inference workload result was produced."
+}
