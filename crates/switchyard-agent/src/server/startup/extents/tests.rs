@@ -13,11 +13,20 @@ struct Objects {
     bytes: Arc<BTreeMap<String, Vec<u8>>>,
     held: String,
     gate: watch::Receiver<bool>,
+    held_runtime: String,
+    runtime_gate: watch::Receiver<bool>,
+    runtime_requested: Arc<tokio::sync::Notify>,
 }
 async fn object(
     HttpState(mut source): HttpState<Objects>,
     HttpPath(name): HttpPath<String>,
 ) -> Body {
+    if name == source.held_runtime {
+        source.runtime_requested.notify_one();
+        while !*source.runtime_gate.borrow() {
+            source.runtime_gate.changed().await.unwrap();
+        }
+    }
     if name == source.held {
         while !*source.gate.borrow() {
             source.gate.changed().await.unwrap();
@@ -114,6 +123,8 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
         );
     }
     let (gate, waiting) = watch::channel(false);
+    let (runtime_gate, runtime_waiting) = watch::channel(false);
+    let runtime_requested = Arc::new(tokio::sync::Notify::new());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let app = Router::new()
@@ -122,6 +133,9 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
             bytes: Arc::new(bytes),
             held,
             gate: waiting,
+            held_runtime: runtime_manifest.chunks[0].name.clone(),
+            runtime_gate: runtime_waiting,
+            runtime_requested: runtime_requested.clone(),
         });
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let roots = RootPaths::under(&scratch.0.join("hydrated"));
@@ -196,6 +210,20 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
 
     let mut pending =
         tokio::spawn(async move { prepare(&ticket, &roots, state, Instant::now()).await });
+    tokio::time::timeout(Duration::from_secs(5), runtime_requested.notified())
+        .await
+        .unwrap();
+    // A control-plane reader holds the state while runtime reception queues an
+    // update. Leave it held across multiple observer ticks. Both futures must
+    // keep being polled when the reader releases the queued state writers.
+    let reader = observed.read().await;
+    runtime_gate.send(true).unwrap();
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert!(
+        observed.try_read().is_err(),
+        "runtime state writer was not queued"
+    );
+    drop(reader);
     tokio::select! {
         _ = until(|| metadata_ready.exists()) => {},
         result = &mut pending => match result {

@@ -247,35 +247,44 @@ pub(super) async fn prepare(
     let work = async { tokio::try_join!(network, loader_bridge, metadata_gate) };
     tokio::pin!(work);
     tokio::pin!(environment);
-    let mut process = None;
+    let mut process: Option<engine::Process> = None;
     let mut completed = false;
     let mut tick = tokio::time::interval(Duration::from_millis(50));
     loop {
         if completed && process.is_some() {
             break;
         }
+        // The other futures can also wait for the lifecycle state lock. Poll
+        // this whole update in select: awaiting a second writer in a selected
+        // branch would stop polling a writer already queued by environment.
+        let launching = process.is_none();
+        let observing = async {
+            tick.tick().await;
+            if let Some(process) = process.as_mut()
+                && process.child.try_wait()?.is_some()
+            {
+                return Err(Error::Transfer(
+                    "engine exited while receiving weights".into(),
+                ));
+            }
+            let progress = hydration.progress();
+            let loading = rx.borrow_and_update().clone();
+            let mut snapshot = state.write().await;
+            snapshot.bytes_downloaded = progress.received_bytes;
+            snapshot.volume_bytes_per_s =
+                Some(progress.received_bytes as f64 / epoch.elapsed().as_secs_f64().max(0.001));
+            snapshot.weight_loading = loading;
+            Ok::<_, Error>(())
+        };
         tokio::select! {
             result = &mut work, if !completed => {
                 result?;
                 completed = true;
             },
-            result = &mut environment, if process.is_none() => {
+            result = &mut environment, if launching => {
                 process = Some(result?);
             },
-            _ = tick.tick() => {
-                if let Some(process) = process.as_mut()
-                    && process.child.try_wait()?.is_some()
-                {
-                    return Err(Error::Transfer("engine exited while receiving weights".into()));
-                }
-                let progress = hydration.progress();
-                let mut snapshot = state.write().await;
-                snapshot.bytes_downloaded = progress.received_bytes;
-                snapshot.volume_bytes_per_s = Some(
-                    progress.received_bytes as f64 / epoch.elapsed().as_secs_f64().max(0.001),
-                );
-                snapshot.weight_loading = rx.borrow_and_update().clone();
-            }
+            result = observing => result?,
         }
     }
     let process =
