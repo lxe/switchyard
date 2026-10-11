@@ -29,6 +29,16 @@ journal, reconcile that exact name, and release recovered pods before retrying.
 A missing pod's read returns `None`; termination treats an explicit HTTP 404
 as success.
 
+A confirmed `POST /pods` refusal with HTTP 400 or 403 returns
+`Error::AllocationRejected { status }`. HTTP 400 can mean either unavailable
+capacity or a request-rule violation; HTTP 403 can indicate pool access
+restrictions. The caller decides whether to try another quoted candidate or
+wait before retrying. The adapter keeps the selected GPU and data center exact
+and does not repeat the allocation request. Other HTTP refusals, including
+insufficient balance (402) and validation failure (422), remain `Error::Http`.
+Vendor response bodies are excluded from both error formatting and diagnostics
+because they can echo environment values or credentials.
+
 ## Capacity and storage configuration
 
 `ComputeConfig` contains RunPod API access, cloud selection, GPU and data-center

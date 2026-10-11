@@ -83,6 +83,14 @@ pub struct PendingLaunch {
     #[serde(default)]
     pub resolved: bool,
 }
+#[derive(Debug, Serialize)]
+struct AllocationRejection {
+    at_s: f64,
+    profile: usize,
+    name: String,
+    status: u16,
+    retry_at_s: f64,
+}
 struct Node {
     owned: OwnedPod,
     endpoint: Endpoint,
@@ -102,6 +110,8 @@ pub struct LiveRuntime<P: Provider> {
     pub profiles: Vec<Profile>,
     nodes: Vec<Node>,
     pending: Vec<PendingLaunch>,
+    provisioning_cooldowns: BTreeMap<usize, f64>,
+    allocation_rejections: Vec<AllocationRejection>,
     observations: Vec<serde_json::Value>,
     manifests: BTreeMap<String, Manifest>,
     runtime_manifest: Option<switchyard_artifacts::Manifest>,
@@ -158,6 +168,8 @@ impl<P: Provider> LiveRuntime<P> {
             profiles,
             nodes: vec![],
             pending: vec![],
+            provisioning_cooldowns: BTreeMap::new(),
+            allocation_rejections: vec![],
             observations: vec![],
             manifests,
             runtime_manifest,

@@ -102,6 +102,7 @@ struct Source {
     corrupt: Option<String>,
     fail_first: bool,
     attempts: Arc<Mutex<BTreeMap<String, usize>>>,
+    frame_delay: Option<Duration>,
 }
 impl Source {
     fn new(bodies: BTreeMap<String, Vec<u8>>) -> Self {
@@ -111,6 +112,7 @@ impl Source {
             corrupt: None,
             fail_first: false,
             attempts: Arc::new(Mutex::new(BTreeMap::new())),
+            frame_delay: None,
         }
     }
 }
@@ -142,7 +144,19 @@ async fn source_server(source: Source) -> SourceServer {
         if source.corrupt.as_deref() == Some(&name) && (!source.fail_first || attempt == 1) {
             body[0] ^= 1;
         }
-        Response::new(Body::from(body))
+        if let Some(delay) = source.frame_delay {
+            let frames = body
+                .chunks(64 << 10)
+                .map(|bytes| bytes.to_vec())
+                .collect::<Vec<_>>();
+            let stream = futures_util::stream::iter(frames).then(move |bytes| async move {
+                tokio::time::sleep(delay).await;
+                Ok::<_, io::Error>(bytes)
+            });
+            Response::new(Body::from_stream(stream))
+        } else {
+            Response::new(Body::from(body))
+        }
     }
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
@@ -434,11 +448,18 @@ async fn trusted_streaming_extracts_split_zstd_without_hashing_and_reuses_receip
 }
 
 fn large_fixture() -> (Manifest, BTreeMap<String, Vec<u8>>) {
-    let weights = vec![42; 4 << 20];
+    streaming_fixture(4 << 20, 128 << 10)
+}
+
+fn streaming_fixture(
+    weight_size: usize,
+    piece_size: usize,
+) -> (Manifest, BTreeMap<String, Vec<u8>>) {
+    let weights = vec![42; weight_size];
     let raw = tar_files(&[("config.json", b"{}"), ("weights.bin", &weights)]);
     let mut bodies = BTreeMap::new();
     let chunks = raw
-        .chunks(128 << 10)
+        .chunks(piece_size)
         .enumerate()
         .map(|(seq, raw)| {
             let name = format!("piece-{seq:04}");
@@ -734,4 +755,68 @@ async fn trusted_shards_progress_with_contended_slots_and_out_of_order_responses
     }
     drop(other_artifact);
     assert_eq!(limit.available_permits(), 20);
+}
+
+#[tokio::test]
+async fn trusted_large_pieces_refill_twenty_stream_window_across_multiple_rounds() {
+    let (mut manifest, mut bodies) = streaming_fixture(80 << 20, 2 << 20);
+    assert!(manifest.chunks.len() > 40);
+    assert!(manifest.chunks[0].size > ((4 * 64) << 10));
+    // Match a large weights TAR plus several small independent metadata TARs.
+    for shard in 1..8 {
+        let path = format!("metadata-{shard}.json");
+        let raw = tar_files(&[(&path, b"{}")]);
+        let name = format!("metadata-{shard}");
+        manifest.chunks.push(Chunk {
+            name: name.clone(),
+            size: raw.len() as u64,
+            raw: raw.len() as u64,
+            shard,
+            seq: 0,
+            sha256: sha(&raw),
+        });
+        manifest.files.insert(
+            path,
+            FileInfo {
+                size: 2,
+                sha256: Some(sha(b"{}")),
+            },
+        );
+        bodies.insert(name, raw);
+    }
+    manifest.total_size = manifest.chunks.iter().map(|chunk| chunk.size).sum();
+    manifest.raw_size = manifest.chunks.iter().map(|chunk| chunk.raw).sum();
+    let mut source = Source::new(bodies);
+    source.frame_delay = Some(Duration::from_millis(1));
+    let server = source_server(source.clone()).await;
+    let mut ticket = ticket(manifest, &server.base);
+    ticket.concurrency = 20;
+    ticket.stall_s = 1;
+    ticket.startup.mode = HydrationMode::TrustedStreaming;
+    let root = TempDir::new();
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    let limit = Arc::new(tokio::sync::Semaphore::new(20));
+    preflight(&ticket, &root.0, &state).await.unwrap();
+    let result = tokio::time::timeout(
+        Duration::from_secs(8),
+        hydrate_with_limit(&ticket, &root.0, state.clone(), limit.clone()),
+    )
+    .await;
+    assert!(
+        matches!(result, Ok(Ok(()))),
+        "{result:?}; state={:?}; requests={:?}",
+        state.read().await,
+        source.attempts.lock().unwrap()
+    );
+    assert_eq!(
+        std::fs::metadata(root.0.join("model/weights.bin"))
+            .unwrap()
+            .len(),
+        80 << 20
+    );
+    assert_eq!(limit.available_permits(), 20);
+    assert_eq!(
+        state.read().await.bytes_downloaded,
+        ticket.manifest.total_size
+    );
 }

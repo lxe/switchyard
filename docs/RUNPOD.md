@@ -25,7 +25,7 @@ cargo run --features live -- live gauntlet --env-file /path/to/credentials.env \
 
 ## Hydration and model serving
 
-The storage adapter signs S3 requests using AWS SigV4 with R2's `auto` signing region. It reads a `shards-v1` manifest whose chunks describe independent tar shards split into ordered slices. The fleet configuration pins the archive identity, which commits to the ordered chunk hashes. Chunk sizes and SHA256 hashes are checked during transfer. Extraction permits only relative regular files and directories. Declared file sizes and optional hashes are checked before the model directory is published.
+The storage adapter signs S3 requests using AWS SigV4 with R2's `auto` signing region. A model's `shards-v1` manifest describes independent TAR shards split into ordered pieces. The fleet configuration pins the archive identity, which commits to the ordered chunk hashes. The agent's verified mode checks chunk and optional file hashes. The checked fleet selects trusted streaming, which skips content hashing and feeds downloaded pieces directly into extraction. Both modes enforce relative paths, supported entry types, and declared sizes before publishing the model directory.
 
 Long-lived storage credentials stay on the client. The client writes a short-lived bootstrap ticket containing signed GET capabilities for the selected model's chunks and configured vLLM arguments. A pod receives the ticket URL and a random agent token. It downloads a checksum-pinned static Rust agent, hydrates the model, then starts vLLM on loopback port 8000. The agent exposes authenticated `/state`, `/probe`, and model-serving paths on port 8080. The provider constructs the RunPod HTTP proxy address.
 
@@ -33,7 +33,7 @@ Agent observations include hydration progress, elapsed time, observed download r
 
 The checked fleet uses `bootstrap.startup.mode: "trusted_streaming"`, twenty shared runtime/model HTTP streams, RAM-backed model storage, and an early-import stdin gate. See [serving hydration](HYDRATION.md) for these policies and the compiler-cache preparation workflow. RunPod-specific `compute.min_ram_per_gpu_gb` and `compute.min_vcpu_count_per_gpu` set host placement floors. They do not configure `/dev/shm`; the agent measures its actual capacity before hydration.
 
-The initial serving configuration disables thinking and prefix caching, uses eager execution, and bounds context and engine concurrency. These choices make the first experiment easier to compare; they are configurable performance tradeoffs. Input planning renders the pinned Hugging Face chat template with MiniJinja and counts tokens using the Rust `tokenizers` library. Before admitting the first request to a pod, the runtime compares its count with vLLM's `/tokenize` result. Every completed stream must report matching input usage and obey its output bound.
+The checked serving configuration disables thinking and prefix caching, uses eager execution, and bounds context and engine concurrency. These settings participate in compiler-cache compatibility and can be changed for another serving profile. Input planning renders the pinned Hugging Face chat template with MiniJinja and counts tokens using the Rust `tokenizers` library. Before admitting the first request to a pod, the runtime compares its count with vLLM's `/tokenize` result. Every completed stream must report matching input usage and obey its output bound.
 
 ## Measurements and recovery
 
@@ -47,6 +47,8 @@ cargo run --features live -- live recover --env-file /path/to/credentials.env \
 ```
 
 Recovery checks both the saved pod ID and exact name. Pending allocation names also let it reconcile a successful provider allocation whose response was lost. Preserve these journals until cleanup is confirmed. Agent lifetime limits stop serving, but terminating GPU rental requires the runtime or recovery command.
+
+A confirmed allocation HTTP 400 or 403 resolves that launch attempt and records its status in `allocation-rejections.json`. The runtime applies the configured profile retry cooldown and replans against observed hosts; requests can continue using existing capacity or another offering. Later actions referring to the rejected allocation are discarded before replanning. RunPod uses HTTP 400 for both request-rule violations and unavailable capacity, so the receipt cannot infer which occurred from status alone. Other request errors remain terminal, and uncertain allocation outcomes still require inventory reconciliation before another paid mutation.
 
 ## Extension boundaries
 

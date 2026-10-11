@@ -456,30 +456,78 @@ fn endpoint_configuration_rejects_embedded_credentials_and_remote_cleartext() {
 }
 
 #[tokio::test]
-async fn direct_rejected_creation_does_not_reconcile_or_repeat_paid_mutation() {
-    let mock = Mock::start(vec![
-        inventory(vec![]),
-        Reply {
-            status: 400,
-            body: json!({"error":"FAKE_PRIVATE_TICKET"}),
-        },
-    ])
+async fn candidate_rejection_does_not_reconcile_or_repeat_paid_mutation() {
+    for status in [400, 403] {
+        let mock = Mock::start(vec![
+            inventory(vec![]),
+            Reply {
+                status,
+                body: json!({
+                    "title": "FAKE_PRIVATE_KEY",
+                    "detail": "FAKE_PRIVATE_TICKET",
+                    "env": {"APP_TOKEN": "FAKE_PRIVATE_CONTAINER"},
+                    "signed_url": "https://example.test/ticket?X-Amz-Signature=FAKE_PRIVATE_SIGNATURE",
+                }),
+            },
+        ])
+        .await;
+        let error = provider(&mock.url).create(launch()).await.unwrap_err();
+        assert!(
+            matches!(&error, Error::AllocationRejected { status: actual } if *actual == status)
+        );
+        for diagnostic in [error.to_string(), format!("{error:?}")] {
+            assert!(!diagnostic.contains("FAKE_PRIVATE"));
+            assert!(!diagnostic.contains("X-Amz-Signature"));
+            assert!(!diagnostic.contains("https://"));
+        }
+        let requests = mock.state.captured.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[0].method, "GET");
+        assert_eq!(requests[1].method, "POST");
+        drop(requests);
+        mock.assert_finished();
+    }
+}
+
+#[tokio::test]
+async fn non_candidate_creation_errors_remain_fatal_and_sanitized() {
+    for status in [402, 422] {
+        let mock = Mock::start(vec![
+            inventory(vec![]),
+            Reply {
+                status,
+                body: json!({"detail": "FAKE_PRIVATE_TICKET"}),
+            },
+        ])
+        .await;
+        let error = provider(&mock.url).create(launch()).await.unwrap_err();
+        assert!(matches!(&error, Error::Http { status: actual, .. } if *actual == status));
+        assert!(!error.to_string().contains("FAKE_PRIVATE"));
+        assert!(!format!("{error:?}").contains("FAKE_PRIVATE"));
+        let requests = mock.state.captured.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[0].method, "GET");
+        assert_eq!(requests[1].method, "POST");
+        drop(requests);
+        mock.assert_finished();
+    }
+}
+
+#[tokio::test]
+async fn inventory_rejection_is_not_an_allocation_rejection() {
+    let mock = Mock::start(vec![Reply {
+        status: 400,
+        body: json!({"detail": "FAKE_PRIVATE_TICKET"}),
+    }])
     .await;
-    let api = provider(&mock.url);
     assert!(matches!(
-        api.create(launch()).await,
+        provider(&mock.url).create(launch()).await,
         Err(Error::Http { status: 400, .. })
     ));
-    assert_eq!(
-        mock.state
-            .captured
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|r| r.method == "POST")
-            .count(),
-        1
-    );
+    let requests = mock.state.captured.lock().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert_eq!(requests[0].method, "GET");
+    drop(requests);
     mock.assert_finished();
 }
 

@@ -8,32 +8,30 @@ Run these commands from the repository root:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --locked --workspace --all-targets -- -D warnings
-cargo test --locked --workspace --all-targets
-RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps
+cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
+cargo test --locked --workspace --all-features --all-targets
+RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --all-features --no-deps
 cargo run --locked --release -- init --out data/current
 cargo run --locked --release -- fuzz --cases 1000 --seed 42 --out results/final-fuzz
 cargo run --locked --release -- suite --seed 7 --seeds 3 --out results/final-suite
 cargo run --locked --release -- bench --sizes 1,100,1000,10000 --repetitions 3
 ```
 
-The October 10, 2026 local run passed 51 tests, strict Clippy, formatting, and documentation compilation. The generated-workload test exercises 128 seeds across all five policies. A separate release-mode run exercised 1,000 seeds, beginning at 42, across five policies: 5,000 simulations with no invariant failures. This is seeded generative fuzzing; it does not use coverage-guided mutation.
+The workspace validation passes 209 tests with all features enabled, strict Clippy, formatting, and rustdoc with warnings denied. The generated-workload test exercises 128 seeds across all five policies. A separate release-mode run exercised 1,000 seeds, beginning at 42, across five policies: 5,000 simulations with no invariant failures. This is seeded generative fuzzing; it does not use coverage-guided mutation.
 
 | Check | Behavior established |
 | --- | --- |
 | Analytical service fixtures | Shared GPU work, exact completion within a tick, adapter waits, and mixed-adapter penalties |
 | Admission and accounting | Hard output-bound KV reservation, slot limits, minimum billing, retries, and request/token conservation |
 | Observation fixtures | Unknown output and startup remain private; unannounced work stays absent; probes and rejected traffic do not perturb future draws |
-| Scheduling regressions | Pending capacity prevents duplicate provisioning, memory-fitting requests can overtake a blocked head, and observed hydration changes future profile choices |
+| Scheduling regressions | Pending capacity prevents duplicate provisioning, memory-fitting requests can overtake a blocked head, and observed hydration changes future profile choices, and confirmed allocation rejection restricts new placement while preserving routing to existing hosts |
 | HTTP contract | Atomic admission, bounded queues and bodies, error envelopes, lifecycle/probe timing, JSON and SSE, and manual-clock shutdown |
 | Generated workloads | One to four models, text and vision inputs, adapters, dependency chains, inaccurate output estimates, failures, and uncertain hydration |
 | Software benchmark | Every measured run drains its workload and passes accounting and admission invariants |
 
 HTTP was also exercised over a real loopback TCP listener in manual-clock mode. The Rust example completed 100 requests through the stable routing endpoint and 100 through the provider API, including provisioning, readiness polling, probing, admission, usage collection, and release. A separate streaming request emitted content, final usage, and `[DONE]`, with receipt usage matching the 20 delivered synthetic tokens. These are transport and serving-contract checks against the simulator.
 
-The Switchyard workspace refactor was revalidated on October 10: all 51 tests passed, along with strict workspace Clippy and rustdoc. The 1,000-seed corpus again passed all 5,000 simulations. One repetition per policy and size passed a two-second software execution budget, with the slowest 10,000-request run taking 1.107 seconds on the local host. This is a software timing receipt, not GPU performance evidence.
-
-GitHub Actions runs the local checks and a smaller generated/performance corpus. The [v0.2 integration checkpoint](https://github.com/lxe/switchyard/actions/runs/38094061673) passed on October 10, 2026.
+GitHub Actions runs the workspace checks and a smaller generated/performance corpus. A [validation run](https://github.com/lxe/switchyard/actions/runs/38103328465) passed on October 10, 2026.
 
 ## Policy comparisons
 
@@ -87,7 +85,7 @@ The default catalog includes boundary-adjusted and documented historical text me
 
 ## Live adapter verification
 
-The workspace passes 204 tests, strict Clippy, formatting, and rustdoc with warnings denied. Contracts cover catalog filtering, uncertain allocation ownership, authenticated streaming, token-usage conservation, cancellation, cache compatibility, export, and GPU cleanup despite receipt failures. Streaming regressions distinguish network stalls from extraction backpressure and exercise ordered TAR pieces under shared transfer contention. A dependency guard keeps production integrations outside core, scheduler, and simulator.
+Contracts cover catalog filtering, uncertain allocation ownership, authenticated streaming, token-usage conservation, cancellation, cache compatibility, export, and GPU cleanup despite receipt failures. Streaming regressions distinguish network stalls from extraction backpressure and exercise ordered TAR pieces under shared transfer contention. A dependency guard keeps production integrations outside core, scheduler, and simulator.
 
 Seeded fuzzing covered 1,000 workloads across five policies (5,000 runs) with no invariant failures. A local one-repetition performance pass covered 1, 100, 1,000, and 10,000 requests; the slowest 10,000-request run took 1.299 seconds. These are software execution measurements on the development host.
 

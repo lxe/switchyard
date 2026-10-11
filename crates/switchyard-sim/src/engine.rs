@@ -539,6 +539,7 @@ impl Simulation {
             now: self.now,
             allow_scale,
             profiles: &self.profiles,
+            provisioning_cooldowns: Default::default(),
             requests: self
                 .plans
                 .iter()

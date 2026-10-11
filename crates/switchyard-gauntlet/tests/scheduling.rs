@@ -66,6 +66,7 @@ fn learned_hydration_time_changes_provisioning_choices() {
         now: 0.0,
         allow_scale: true,
         profiles: &profiles,
+        provisioning_cooldowns: BTreeMap::new(),
         requests: plans,
         states,
         nodes: vec![],
@@ -125,6 +126,110 @@ fn learned_hydration_time_changes_provisioning_choices() {
         1,
         "polling must not count a probe twice"
     );
+}
+
+#[test]
+fn allocation_cooldowns_change_new_placement_and_preserve_existing_host_routing() {
+    let (mut profiles, trace) = performance::workload(1);
+    profiles.truncate(1);
+    profiles[0].usd_per_hour = 0.1;
+    let mut alternative = profiles[0].clone();
+    alternative.id = "alternative".into();
+    alternative.usd_per_hour = 10.0;
+    profiles.push(alternative);
+    let mut fleet = FleetView {
+        now: 0.0,
+        allow_scale: true,
+        profiles: &profiles,
+        provisioning_cooldowns: BTreeMap::new(),
+        requests: BTreeMap::from([(0, PlannedRequest::from(&trace.requests[0]))]),
+        states: BTreeMap::from([(
+            0,
+            ObservedRequest {
+                state: RequestStatus::Queued,
+                completed_s: None,
+            },
+        )]),
+        nodes: vec![],
+        jobs: BTreeMap::from([(0, trace.jobs[0].clone())]),
+        scheduling: &trace.scheduling,
+        max_nodes_per_model: 1,
+        idle_timeout_s: 30.0,
+        reactive_delay_s: 0.0,
+        build_probability: 0.0,
+    };
+    for policy in POLICIES
+        .into_iter()
+        .filter(|policy| *policy != Policy::WarmOnly)
+    {
+        fleet.now = 0.0;
+        fleet.provisioning_cooldowns.clear();
+        let mut scheduler = BuiltinScheduler::new(policy);
+        assert!(
+            scheduler
+                .decide(&fleet)
+                .iter()
+                .any(|action| matches!(action, Action::Provision { profile: 0 })),
+            "{policy:?} prefers the cheaper available profile"
+        );
+        fleet.provisioning_cooldowns.insert(0, 10.0);
+        let alternate = scheduler.decide(&fleet);
+        assert!(
+            alternate
+                .iter()
+                .any(|action| matches!(action, Action::Provision { profile: 1 })),
+            "{policy:?} uses another profile during cooldown"
+        );
+        assert!(
+            !alternate
+                .iter()
+                .any(|action| matches!(action, Action::Provision { profile: 0 }))
+        );
+        fleet.now = 10.0;
+        assert!(
+            scheduler
+                .decide(&fleet)
+                .iter()
+                .any(|action| matches!(action, Action::Provision { profile: 0 })),
+            "{policy:?} permits a new attempt at expiry"
+        );
+    }
+    fleet.now = 0.0;
+    fleet.provisioning_cooldowns.insert(0, 10.0);
+    fleet.nodes.push(ObservedNode {
+        profile: 0,
+        warm: true,
+        allocated_s: 0.0,
+        ready_s: 0.0,
+        ended_s: None,
+        active: vec![],
+        adapters: VecDeque::new(),
+        last_used_s: 0.0,
+        is_ready: true,
+        host: HostObservation {
+            phase: StartupPhase::Ready,
+            bytes_downloaded: 0,
+            bytes_total: 0,
+            probe_pending: false,
+            probe: None,
+        },
+    });
+    for policy in POLICIES {
+        assert!(
+            BuiltinScheduler::new(policy)
+                .decide(&fleet)
+                .iter()
+                .any(|action| matches!(
+                    action,
+                    Action::Route {
+                        request: 0,
+                        node: 0,
+                        ..
+                    }
+                )),
+            "{policy:?} still routes to a ready host of the cooled profile"
+        );
+    }
 }
 
 #[test]

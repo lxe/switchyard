@@ -137,6 +137,9 @@ pub struct FleetView<'a> {
     pub now: f64,
     pub allow_scale: bool,
     pub profiles: &'a [Profile],
+    /// Earliest retry time for profiles whose allocation was observably rejected.
+    /// These observations restrict new provisioning, not routing to existing hosts.
+    pub provisioning_cooldowns: BTreeMap<usize, f64>,
     pub requests: BTreeMap<usize, PlannedRequest>,
     pub states: BTreeMap<usize, ObservedRequest>,
     pub nodes: Vec<ObservedNode>,

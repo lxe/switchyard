@@ -13,6 +13,13 @@ pub enum Error {
     Config(String),
     #[error("provider returned HTTP {status} for {operation}")]
     Http { status: u16, operation: String },
+    /// The provider definitively refused the selected allocation candidate.
+    /// HTTP 400 does not distinguish unavailable capacity from a request-rule violation.
+    /// Return this only when no allocation was created; uncertain outcomes use `UnknownLaunch`.
+    #[error(
+        "provider rejected allocation with HTTP {status}; HTTP 400 can indicate a request rule or unavailable capacity, and HTTP 403 can indicate pool access restrictions"
+    )]
+    AllocationRejected { status: u16 },
     #[error("transport failed for {0}")]
     Transport(String),
     #[error("invalid provider response: {0}")]

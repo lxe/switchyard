@@ -8,7 +8,7 @@ use axum::{
 };
 use serde_json::json;
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, VecDeque},
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -23,6 +23,8 @@ struct MockProvider {
     pods: Arc<Mutex<Vec<Pod>>>,
     unknown: bool,
     bake: Option<MockBake>,
+    rejected_allocations: Arc<Mutex<VecDeque<u16>>>,
+    allocation_attempts: Arc<Mutex<Vec<String>>>,
 }
 impl Provider for MockProvider {
     fn endpoint_url(&self, _: &Pod, _: u16) -> String {
@@ -40,6 +42,13 @@ impl Provider for MockProvider {
         }])
     }
     async fn create(&self, launch: Launch) -> switchyard_provider::Result<Pod> {
+        self.allocation_attempts
+            .lock()
+            .unwrap()
+            .push(launch.name.clone());
+        if let Some(status) = self.rejected_allocations.lock().unwrap().pop_front() {
+            return Err(switchyard_provider::Error::AllocationRejected { status });
+        }
         if let Some(bake) = &self.bake {
             let mut state = bake.state.lock().unwrap();
             state.token = Some(launch.container.environment["SWITCHYARD_AGENT_TOKEN"].clone());
@@ -442,6 +451,8 @@ async fn fixture_with_cache_export(
         pods: Arc::new(Mutex::new(vec![])),
         unknown,
         bake,
+        rejected_allocations: Arc::new(Mutex::new(VecDeque::new())),
+        allocation_attempts: Arc::new(Mutex::new(vec![])),
     };
     let storage = Storage::with_keys(&config.storage, "fake".into(), "fake".into()).unwrap();
     let runtime = LiveRuntime::new(
@@ -494,6 +505,103 @@ fn calls(count: usize) -> Vec<WorkCall> {
             depends_on: vec![],
         })
         .collect()
+}
+
+#[tokio::test]
+async fn allocation_rejection_replans_without_losing_hot_capacity_or_launch_ownership() {
+    struct RejectExpansion {
+        attempted: bool,
+        inner: switchyard_scheduler::BuiltinScheduler,
+        cooldown_observed: Arc<Mutex<bool>>,
+    }
+    impl Scheduler for RejectExpansion {
+        fn name(&self) -> &str {
+            "rejected-expansion"
+        }
+        fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<switchyard_core::Action> {
+            if !self.attempted {
+                self.attempted = true;
+                return vec![
+                    switchyard_core::Action::Provision { profile: 0 },
+                    switchyard_core::Action::Route {
+                        request: 0,
+                        node: fleet.nodes.len(),
+                        service_weight: 1.0,
+                    },
+                ];
+            }
+            *self.cooldown_observed.lock().unwrap() |= fleet
+                .provisioning_cooldowns
+                .get(&0)
+                .is_some_and(|until| *until > fleet.now);
+            self.inner.decide(fleet)
+        }
+    }
+    let scheduling = Scheduling {
+        retry_cooldown_s: 0.5,
+        plan_interval_s: 0.01,
+        ..Scheduling::default()
+    };
+    let (mut runtime, provider, out, server) =
+        fixture_with_scheduling(false, false, Some(scheduling)).await;
+    provider.rejected_allocations.lock().unwrap().push_back(400);
+    let cold = runtime
+        .run_workload("rejected-cold", &calls(1), 200.0, 10.0)
+        .await
+        .unwrap();
+    assert_eq!(cold.completed, 1);
+    assert_eq!(cold.invalid_actions, 0);
+    assert_eq!(provider.allocation_attempts.lock().unwrap().len(), 2);
+    assert_eq!(provider.pods.lock().unwrap().len(), 1);
+
+    provider.rejected_allocations.lock().unwrap().push_back(403);
+    let cooldown_observed = Arc::new(Mutex::new(false));
+    runtime = runtime.with_scheduler(RejectExpansion {
+        attempted: false,
+        inner: switchyard_scheduler::BuiltinScheduler::new(Policy::WarmOnly),
+        cooldown_observed: cooldown_observed.clone(),
+    });
+    let hot = runtime
+        .run_workload("rejected-expansion", &calls(32), 200.0, 10.0)
+        .await
+        .unwrap();
+    assert_eq!(hot.completed, 32);
+    assert_eq!(hot.output_tokens, 32);
+    assert_eq!(
+        hot.invalid_actions, 0,
+        "discard routes to an unallocated node"
+    );
+    assert!(*cooldown_observed.lock().unwrap());
+    {
+        let attempts = provider.allocation_attempts.lock().unwrap();
+        assert_eq!(attempts.len(), 3);
+        assert_eq!(
+            attempts
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
+            3
+        );
+    }
+    let rejected: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(out.join("allocation-rejections.json")).unwrap())
+            .unwrap();
+    assert_eq!(rejected[0]["status"], 400);
+    assert_eq!(rejected[1]["status"], 403);
+    let pending: Vec<switchyard_live::runtime::PendingLaunch> =
+        serde_json::from_slice(&std::fs::read(out.join("pending-launches.json")).unwrap()).unwrap();
+    assert!(pending.iter().all(|launch| launch.resolved));
+    runtime.cleanup().await.unwrap();
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
+    );
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
 }
 
 #[tokio::test]

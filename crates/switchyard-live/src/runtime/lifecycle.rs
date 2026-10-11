@@ -1,5 +1,5 @@
 //! Ownership-safe provisioning, observations, and resource cleanup.
-use super::{LiveRuntime, Node, OwnedPod, PendingLaunch, nonce, rental_rate};
+use super::{AllocationRejection, LiveRuntime, Node, OwnedPod, PendingLaunch, nonce, rental_rate};
 use crate::{Error, Result, serving::Endpoint};
 use std::{collections::VecDeque, time::Duration};
 use switchyard_agent::{Phase, Ticket};
@@ -8,6 +8,13 @@ use switchyard_provider::{Launch, Provider};
 
 impl<P: Provider> LiveRuntime<P> {
     pub(super) async fn provision(&mut self, profile: usize) -> Result<bool> {
+        if self
+            .provisioning_cooldowns
+            .get(&profile)
+            .is_some_and(|until| *until > self.now())
+        {
+            return Ok(false);
+        }
         if self
             .nodes
             .iter()
@@ -38,7 +45,7 @@ impl<P: Provider> LiveRuntime<P> {
             .find(|m| m.id == p.model)
             .ok_or_else(|| Error::Config("profile model missing".into()))?;
         let offering = self.profile_offerings[profile].clone();
-        let name = format!("switchyard-{}-{}", self.run_id, self.nodes.len());
+        let name = format!("switchyard-{}-{}", self.run_id, self.pending.len());
         let ticket_key = format!("{}/{name}.json", self.config.bootstrap.ticket_prefix);
         self.pending.push(PendingLaunch {
             name: name.clone(),
@@ -125,6 +132,20 @@ impl<P: Provider> LiveRuntime<P> {
                 if !matches!(error, switchyard_provider::Error::UnknownLaunch { .. }) {
                     self.pending.last_mut().expect("journaled launch").resolved = true;
                     self.save("pending-launches.json", &self.pending)?;
+                }
+                if let switchyard_provider::Error::AllocationRejected { status } = error {
+                    let at_s = self.now();
+                    let retry_at_s = at_s + self.scheduling.retry_cooldown_s;
+                    self.provisioning_cooldowns.insert(profile, retry_at_s);
+                    self.allocation_rejections.push(AllocationRejection {
+                        at_s,
+                        profile,
+                        name,
+                        status,
+                        retry_at_s,
+                    });
+                    self.save("allocation-rejections.json", &self.allocation_rejections)?;
+                    return Ok(false);
                 }
                 return Err(error.into());
             }

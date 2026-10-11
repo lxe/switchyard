@@ -291,6 +291,10 @@ impl Provider for RunPod {
         }
         match self.pod(Method::POST, "/pods", Some(body)).await {
             Ok(pod) if pod.name == launch.name && valid_pod(&pod) => Ok(pod),
+            Err(Error::Http {
+                status: status @ (400 | 403),
+                ..
+            }) => Err(Error::AllocationRejected { status }),
             // A malformed success can also follow allocation. Do not lose ownership.
             Ok(_)
             | Err(

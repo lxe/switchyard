@@ -88,7 +88,12 @@ impl Scheduler for BuiltinScheduler {
             states: fleet.states.clone(),
             nodes: fleet.nodes.clone(),
             actions: vec![],
-            avoided_profiles: vec![],
+            avoided_profiles: fleet
+                .provisioning_cooldowns
+                .iter()
+                .filter(|(_, until)| **until > fleet.now)
+                .map(|(profile, _)| *profile)
+                .collect(),
             startup_extra: self
                 .beliefs
                 .iter()
@@ -142,12 +147,12 @@ impl Scheduler for BuiltinScheduler {
                         .insert(node.profile, fleet.now + fleet.scheduling.retry_cooldown_s);
                 }
             }
-            world.avoided_profiles = self
-                .blocked_profiles
-                .iter()
-                .filter(|(_, until)| **until > fleet.now)
-                .map(|(profile, _)| *profile)
-                .collect();
+            world.avoided_profiles.extend(
+                self.blocked_profiles
+                    .iter()
+                    .filter(|(_, until)| **until > fleet.now)
+                    .map(|(profile, _)| *profile),
+            );
         }
         if fleet.allow_scale {
             for (id, node) in world.nodes.iter_mut().enumerate() {

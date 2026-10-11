@@ -188,6 +188,7 @@ impl<P: Provider> LiveRuntime<P> {
                 now,
                 allow_scale,
                 profiles: &self.profiles,
+                provisioning_cooldowns: self.provisioning_cooldowns.clone(),
                 requests: requests.clone(),
                 states: states.clone(),
                 nodes,
@@ -203,7 +204,11 @@ impl<P: Provider> LiveRuntime<P> {
             for action in actions {
                 match action {
                     Action::Provision { profile } => {
-                        self.provision(profile).await?;
+                        if !self.provision(profile).await? {
+                            // Later actions can refer to the planned new node. Replan
+                            // from observed hosts if that allocation did not happen.
+                            break;
+                        }
                     }
                     Action::Release { node } => {
                         if self
