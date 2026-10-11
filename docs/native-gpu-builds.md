@@ -119,3 +119,5 @@ The [Ubuntu matrix receipt](receipts/native-gpu-builds-ubuntu.json) records the 
 | SM120a | `28873160d343e377e74792abe8510cfae44c8a2ec2c09f55c18a03e20379f9d8` |
 
 These identities differ from the earlier local CUDA 13.4 engine. Each requires its own exact-binary driver-cache bake and hardware acceptance; earlier caches and serving measurements cannot be relabeled for this build.
+
+The [SM120a local fleet acceptance](receipts/native-fleet-ubuntu-rtx5090.json) separately records fresh driver-cache bakes, fresh-process HTTP first-token measurements and 51 useful live-client streams across 0.8B, 2B and 4B on an RTX 5090 with driver 615.71.09. The executable used its exported CUDA 13.0 libraries. These BF16 serving measurements do not repeat the F32 reference gate or establish SM89 cloud acceptance.

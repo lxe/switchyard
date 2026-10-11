@@ -34,6 +34,8 @@ A local process-start measurement with existing model files is distinct from a R
 
 ## Integrated local fleet acceptance
 
+The [Ubuntu CUDA 13.0 fleet receipt](receipts/native-fleet-ubuntu-rtx5090.json) records all three models running on the RTX 5090 with the architecture-matrix SM120a engine, binary SHA-256 `28873160d343e377e74792abe8510cfae44c8a2ec2c09f55c18a03e20379f9d8`. Each received a fresh exact-binary driver-cache bake. Fresh-process first-token times were 0.970 s, 1.829 s and 4.161 s for 0.8B, 2B and 4B; 16-call bursts delivered 631, 550 and 325 output tokens/s respectively. All 51 live-client streams passed token accounting and completion framing. This validates the Ubuntu-built executable and its bundled CUDA libraries on the recorded local GPU/driver, with allocation and hydration excluded. The existing F32 reference gates remain separate; this BF16 serving run is not a new numerical-parity gate.
+
 The [integrated fleet receipt](receipts/native-fleet-local-rtx5090.json) binds engine binary `790e574b91e1b2b3874840c8d67a90359937b15a94dfdfa6861735dd39a81c70`, serving source `3adac950e9f7ea329539b1844a5ff659a458a1b2`, CUDA 13.4 and RTX 5090 driver 615.71.09. Every model received a separate exact-binary offline cache bake and a fresh serving process. A further 17 useful calls per model exercised the live Rust client, including equal and varied prompt lengths; all 51 streams passed token accounting and completion framing.
 
 | Model | Client listener | Launch to first streamed token | 16-call burst output tokens/s |
