@@ -145,7 +145,13 @@ def configure(policy):
     version = importlib.metadata.version("vllm")
     if version.split("+", 1)[0] != "0.31.0":
         raise RuntimeError("prepared startup requires pinned vLLM 0.31.0")
-    os.environ.setdefault("SWITCHYARD_STARTUP_EPOCH", str(time.monotonic()))
+    os.environ.setdefault(
+        "SWITCHYARD_STARTUP_EPOCH",
+        str(
+            time.monotonic()
+            + float(os.environ.get("VLLM_CPU_SNAPSHOT_CLOCK_OFFSET_S", "0"))
+        ),
+    )
     if policy.worker_method == "guarded_fork":
         if os.environ.get("SWITCHYARD_RUNTIME_ARTIFACT_ID") != policy.fork_runtime_id:
             raise RuntimeError("guarded fork runtime identity mismatch")

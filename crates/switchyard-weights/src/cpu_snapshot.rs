@@ -406,6 +406,7 @@ fn fresh_environment() -> BTreeMap<String, String> {
             matches!(
                 key.as_str(),
                 "PATH"
+                    | "PYTHONHOME"
                     | "LD_LIBRARY_PATH"
                     | "PYTHONPATH"
                     | "LANG"

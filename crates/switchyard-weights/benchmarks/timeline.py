@@ -67,8 +67,9 @@ class Timeline:
                 "started_monotonic", item.get("monotonic_s", item.get("monotonic"))
             ),
         )
+        values = {**item.get("values", {}), **item}
         details = {
-            key: item[key]
+            key: values[key]
             for key in (
                 "name",
                 "module",
@@ -101,7 +102,7 @@ class Timeline:
                 "tensor_count",
                 "tensor_bytes",
             )
-            if key in item
+            if key in values
         }
         duration = None
         if "ended_monotonic" in item and "started_monotonic" in item:
