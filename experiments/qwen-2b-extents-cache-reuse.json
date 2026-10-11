@@ -1,0 +1,129 @@
+{
+  "scope": "Native Torch AOT and FlashInfer JIT-disabled cache-reuse smoke test for the raw-extent 2B fleet. This is 34 calls, not the full scheduler gauntlet; the prior early-release failure did not reproduce and is not claimed fixed.",
+  "configuration": "configs/runpod/preparation/qwen-2b-extents-probe-diagnostic.json",
+  "workload": "configs/runpod/smoke.json",
+  "controller_source": "2fff830",
+  "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+  "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+  "model_artifact": {
+    "kind": "extents",
+    "prefix": "switchyard/weights/qwen3.5-2b/header-first-v1/5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+    "id": "5f69d906cb0eed9c402cb7c8da8999bc6377a94f9b071d3b2e549f54549f0158",
+    "content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+    "loader": {
+      "python_program": "venv/bin/python",
+      "cuda_stage": true,
+      "pinned_bytes": 16777216
+    }
+  },
+  "cache": {
+    "name": "compiled",
+    "gpu": "NVIDIA L40S",
+    "artifact": {
+      "id": "9c96f77edd1caf601673c0d594ef98e3456b0e71739536c97932a2f972269475",
+      "prefix": "switchyard/gauntlet/extents/cache/9c96f77edd1caf601673c0d594ef98e3456b0e71739536c97932a2f972269475"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "engine_arguments": "4034409be310a2a7ba0ef45bd43085e036e9b368d7c04c48b87b3a6bbce74776",
+      "engine_configuration": "2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40",
+      "gpu": "NVIDIA L40S",
+      "gpu_compute_capability": "8.9",
+      "model_content_id": "91aac048ec06b7d94b2fb6893a3c197d1f6b6842bcdf5a2139ffd955b2fb0b38",
+      "model_repository": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
+      "runtime_launch_configuration": "fbad7e2562be8ae0a248140137f04d0a9ad24c326ca0c76dcb22e54d27528d84",
+      "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
+    }
+  },
+  "source_cache_id": "e005a45a52d975987e1ccb214632e4cae6c74af41c6fdfa98c2632158c77c8c3",
+  "sampling_provider_shim_sha256": "314d97ea8c3d288d0afce09e9f3dc823a83d4a219c02b85097de71ee143cf0fb",
+  "enforced_runtime_environment": {
+    "VLLM_FORCE_AOT_LOAD": "1",
+    "FLASHINFER_DISABLE_JIT": "1",
+    "FLASHINFER_NO_DOWNLOAD": "1",
+    "PYTHONPATH": "{cache_root}/compiled/sampling-provider"
+  },
+  "verification": "The serving process completed all calls with native AOT loading required and JIT disabled. Original cache entries were checked offline before publication. Native memory-plan acceptance was not observed; no inference about that optimization is made.",
+  "workloads": [
+    {
+      "name": "cold-single",
+      "policy": "adaptive",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 32,
+      "output_tokens_per_s": 0.4280480521027244,
+      "ttft_p50_s": 74.60195937099999,
+      "ttft_p95_s": 74.60195937099999,
+      "response_p95_s": 74.751830376,
+      "elapsed_s": 74.757961969,
+      "launches": 1,
+      "probes": 1,
+      "releases": 0,
+      "invalid_actions": 0
+    },
+    {
+      "name": "hot-single",
+      "policy": "warm_only",
+      "requests": 1,
+      "completed": 1,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 32,
+      "output_tokens_per_s": 81.8332597822822,
+      "ttft_p50_s": 0.22281565999999486,
+      "ttft_p95_s": 0.22281565999999486,
+      "response_p95_s": 0.37190144699999905,
+      "elapsed_s": 0.3910390479999961,
+      "launches": 0,
+      "probes": 0,
+      "releases": 0,
+      "invalid_actions": 0
+    },
+    {
+      "name": "hot-burst-32",
+      "policy": "adaptive",
+      "requests": 32,
+      "completed": 32,
+      "failed": 0,
+      "unfinished": 0,
+      "output_tokens": 1019,
+      "output_tokens_per_s": 1244.6044671126185,
+      "ttft_p50_s": 0.4632619819999917,
+      "ttft_p95_s": 0.5541687269999898,
+      "response_p95_s": 0.7816138059999957,
+      "elapsed_s": 0.818734004999996,
+      "launches": 0,
+      "probes": 0,
+      "releases": 0,
+      "invalid_actions": 0
+    }
+  ],
+  "probe_records": [
+    {
+      "artifact_bytes_received": 3754016866,
+      "artifact_bytes_total": 5438623051,
+      "at_s": 27.136116523,
+      "model_bytes_received": 2606012484,
+      "model_bytes_total": 4571274023,
+      "node": 0,
+      "phase": "hydrating",
+      "rate_bytes_per_s": 199468991.82741264
+    }
+  ],
+  "telemetry": [
+    "agent-observations.ndjson",
+    "host-probes.ndjson",
+    "scheduler-decisions.ndjson"
+  ],
+  "estimated_rental_usd": 0.022654420429083905,
+  "cleanup": {
+    "all_absent": true,
+    "http_status": 404,
+    "allocations": 1
+  },
+  "timing_scope": "TTFT is controller request submission to first useful content and includes provisioning for the cold call. It cannot be compared causally with the fresh cache bake, which builds and warms compiler caches."
+}
