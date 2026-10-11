@@ -1,0 +1,33 @@
+{
+  "valid_descriptor_accepted": true,
+  "negative_cases": [
+    {
+      "case": "unsupported_schema",
+      "rejected_before_output_created": true
+    },
+    {
+      "case": "wrong_package",
+      "rejected_before_output_created": true
+    },
+    {
+      "case": "wrong_source_sha",
+      "rejected_before_output_created": true
+    },
+    {
+      "case": "wrong_result_sha",
+      "rejected_before_output_created": true
+    },
+    {
+      "case": "escaping_target",
+      "rejected_before_output_created": true
+    },
+    {
+      "case": "absolute_target",
+      "rejected_before_output_created": true
+    },
+    {
+      "case": "ambiguous_replacement",
+      "rejected_before_output_created": true
+    }
+  ]
+}

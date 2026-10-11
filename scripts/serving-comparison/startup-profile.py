@@ -15,6 +15,7 @@ import time
 import traceback
 
 FUNCTIONS = {
+    'vllm.utils.system_utils': ['get_mp_context'],
     'torch.cuda': ['_lazy_init'],
     'vllm.v1.worker.gpu.warmup': ['warmup_kernels', '_warmup_kernels', 'run_mixed_prefill_decode_warmup'],
     'vllm.model_executor.warmup.kernel_warmup': [
@@ -79,6 +80,10 @@ def timed(function, name):
                 {'file': os.path.basename(frame.filename), 'function': frame.name, 'line': frame.lineno}
                 for frame in traceback.extract_stack(limit=14)[:-1]
             ]
+        if name == 'flashinfer.jit.core.JitSpecNvcc.try_load' and args:
+            env = sys.modules.get('flashinfer.jit.env')
+            observation = {'native_provider_count': len(env.FLASHINFER_AOT_PROVIDERS),
+                           'native_aot_artifact_count': len(args[0].aot_artifacts)}
         if name.endswith('determine_available_memory') and args:
             snapshot = getattr(args[0], 'init_snapshot', None)
             if snapshot is not None:
@@ -86,7 +91,11 @@ def timed(function, name):
                                'total_memory_bytes': snapshot.total_memory}
         emit(event='begin', name=name, **observation)
         try:
-            return function(*args, **kwargs)
+            result = function(*args, **kwargs)
+            if name == 'vllm.utils.system_utils.get_mp_context':
+                emit(event='worker_context', method=result.get_start_method(),
+                     cuda_initialized=sys.modules['torch'].cuda.is_initialized())
+            return result
         finally:
             emit(event='end', name=name, duration_s=time.monotonic() - began)
             if name.endswith('compile_or_warm_up_model'):

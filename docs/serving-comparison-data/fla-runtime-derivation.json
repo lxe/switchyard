@@ -1,0 +1,24 @@
+{
+  "runtime_id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+  "unpatched_scoped_runtime_id": "df7b2f985cb03bda92fbb33572969a85e963b9d2c3c2b7f8543b3fd75d39bc4e",
+  "cache_id": "ccc33cfaec8d0e669950f4b61b229fb5062ba46e8e17be1b76a613c10e349c69",
+  "source_cache_id": "96dc8d146ba12e84ccbe9387241608e039d4b2e61961dc51c2e79e60767c9f5b",
+  "control_cache_id": "2631027e09a258410ca39aa92688581f299dbf887b3c0cf4ff46c2e2373713ff",
+  "changed_runtime_entries": [
+    "artifact-metadata.json",
+    "build-info.json",
+    "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/__pycache__/utils.cpython-312.pyc",
+    "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/utils.py"
+  ],
+  "added_runtime_entries": [
+    "source-patches.json"
+  ],
+  "removed_relative_to_scoped_control": [],
+  "compiler_entries_unchanged": true,
+  "identical_launch_program_args_environment": true,
+  "same_agent": true,
+  "same_engine": true,
+  "controller_sha256": "f250162bdc2577164f690a7431517119b07c7889a176e5cd10588e92a2c19d6d",
+  "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+  "gpu_acceptance_required": true
+}

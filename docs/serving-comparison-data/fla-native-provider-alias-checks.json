@@ -1,0 +1,28 @@
+{
+  "gpu_execution_tested": false,
+  "native_flashinfer_version": "0.7.0.post1",
+  "cases": [
+    {
+      "importer_cached_missing_before_alias": true,
+      "shim_visible_before_invalidation": false,
+      "shim_visible_after_optional_invalidation": false,
+      "native_parent_provider_count": 0,
+      "native_fork_provider_count": 0,
+      "native_fresh_interpreter_provider_count": 1,
+      "native_aot_sampling_artifact_count": 0,
+      "cuda_initialized": false,
+      "invalidation_enabled": false
+    },
+    {
+      "importer_cached_missing_before_alias": true,
+      "shim_visible_before_invalidation": false,
+      "shim_visible_after_optional_invalidation": true,
+      "native_parent_provider_count": 1,
+      "native_fork_provider_count": 1,
+      "native_fresh_interpreter_provider_count": 1,
+      "native_aot_sampling_artifact_count": 1,
+      "cuda_initialized": false,
+      "invalidation_enabled": true
+    }
+  ]
+}

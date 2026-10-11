@@ -1,8 +1,10 @@
 """Derive a scoped SM89 Qwen3.5 BF16 runtime without universal FlashInfer cubins.
 
-Preserve the pinned package code, native libraries, CUDA toolchain, headers,
-checksums, directories and compiler-cache entries. Remove only packaged cubin
-payload files under flashinfer_cubin/cubins. The generated 0.8B configuration
+Preserve native libraries, CUDA toolchain, headers, checksums, directories and
+compiler-cache entries. Remove packaged cubin payload files under
+flashinfer_cubin/cubins. An optional source-pinned descriptor replaces one module
+and rebuilds its bytecode with the shipped Python; provenance records both hashes.
+The generated 0.8B configuration
 checks SM89 before imports, disables downloads and FlashInfer JIT, and requires
 Torch AOT. A native GPU gauntlet must accept this derivative before deployment.
 Neither this script nor artifact publication allocates a GPU.
@@ -25,6 +27,8 @@ p.add_argument('--profile', action='store_true')
 p.add_argument('--validate-only', action='store_true', help='Check source configuration identity without cloning or packing')
 p.add_argument('--agent-url', help='Optional immutable agent release pin; requires --agent-sha256')
 p.add_argument('--agent-sha256', help='SHA-256 of the optional agent release')
+p.add_argument('--runtime-patch', type=Path, help='Pinned package/source replacement descriptor')
+p.add_argument('--worker-method', choices=['fork','spawn'], help='Native worker policy; retains vLLM CUDA and NUMA guards')
 a = p.parse_args()
 if a.out.exists():
     raise SystemExit('fresh output required')
@@ -66,6 +70,26 @@ source_launch_fingerprint = hashlib.sha256(json.dumps(launch, separators=(',', '
 assert compatibility['runtime_launch_configuration'] == source_launch_fingerprint, 'source launch configuration changed'
 assert runtime['environment']['FLASHINFER_DISABLE_JIT'] == '1'
 assert runtime['environment']['VLLM_FORCE_AOT_LOAD'] == '1'
+patch_record = None
+patched_text = None
+if a.runtime_patch:
+    patch = json.loads(a.runtime_patch.read_text())
+    assert patch['schema_version'] == 1
+    assert patch['package'] == {'name':'vllm','version':'0.31.0+cu129'}
+    target = Path(patch['target'])
+    assert not target.is_absolute() and '..' not in target.parts
+    assert not (a.runtime_tree / target).is_symlink()
+    installed = json.loads((a.runtime_tree / 'build-info.json').read_text())['packages']
+    assert any(pkg['name']=='vllm' and pkg['version']==patch['package']['version'] for pkg in installed)
+    original_text = (a.runtime_tree / target).read_text()
+    assert hashlib.sha256(original_text.encode()).hexdigest() == patch['before_sha256']
+    patched_text = original_text
+    for replacement in patch['replacements']:
+        assert patched_text.count(replacement['before']) == 1
+        patched_text = patched_text.replace(replacement['before'],replacement['after'])
+    assert hashlib.sha256(patched_text.encode()).hexdigest() == patch['after_sha256']
+    patch_record = {k:patch[k] for k in ['id','package','target','before_sha256','after_sha256']}
+    patch_record['descriptor_sha256'] = hashlib.file_digest(a.runtime_patch.open('rb'),'sha256').hexdigest()
 if a.validate_only:
     print(json.dumps({'source_configuration_compatible': True, 'source_launch_fingerprint': source_launch_fingerprint,
                       'engine_fingerprint': engine_fingerprint, 'no_files_changed': True}))
@@ -78,6 +102,24 @@ rtree = a.out / 'runtime'
 ctree = a.out / 'cache'
 for src, dst in [(a.runtime_tree, rtree), (a.cache_tree, ctree)]:
     subprocess.run(['cp', '--reflink=auto', '-a', str(src), str(dst)], check=True)
+patched_paths = set()
+if patch_record:
+    target = patch_record['target']
+    (rtree / target).write_text(patched_text)
+    module_path = '/opt/switchyard/runtime/' + target
+    # Regenerate only the changed module with the shipped Python and fixed
+    # prefix. Never use the host's Python version or import patched GPU code.
+    bytecode = ('import py_compile;py_compile.compile(' + repr(module_path) +
+                ',doraise=True,invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)')
+    subprocess.run(['docker','run','--rm','--network','none','--read-only','--cpus','2','--memory','1g',
+                    '--tmpfs','/tmp:rw,exec,size=256m','--mount',
+                    'type=bind,source='+str(rtree.resolve())+',target=/opt/switchyard/runtime',
+                    'switchyard-hydration-smoke:local','/bin/bash','-c',
+                    'source /opt/switchyard/runtime/runtime-env.sh && exec python -c '+__import__('shlex').quote(bytecode)],check=True)
+    compiled = str(Path(target).parent / '__pycache__' / (Path(target).stem+'.cpython-312.pyc'))
+    assert (rtree / compiled).read_bytes()[4:8] == (1).to_bytes(4,'little')
+    patched_paths = {target,compiled}
+    (rtree / 'source-patches.json').write_text(json.dumps([patch_record],indent=2)+'\n')
 removed = []
 for entry in source['entries']:
     path = entry['path']
@@ -102,8 +144,12 @@ metadata = copy.deepcopy(source['metadata'])
 metadata['compatibility']['asset_profile'] = profile_name
 metadata['attributes'].update({'source_runtime_id': source['id'], 'asset_profile': profile_name,
                                'removed_cubin_bytes': str(selection['removed_bytes'])})
+if patch_record:
+    metadata['compatibility']['source_patch'] = patch_record['descriptor_sha256']
+    metadata['attributes']['source_patch'] = patch_record['descriptor_sha256']
 (rtree / 'artifact-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
 info = json.loads((rtree / 'build-info.json').read_text()); info['asset_profile'] = selection
+if patch_record:info['source_patches'] = [patch_record]
 (rtree / 'build-info.json').write_text(json.dumps(info, indent=2) + '\n')
 (a.out / 'runtime-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
 subprocess.run([cli, 'artifacts', 'pack', '--source', str(rtree), '--out', str(a.out / 'runtime-artifact'),
@@ -113,7 +159,7 @@ actual = {e['path']: e for e in derived['entries']}
 removed_paths = {e['path'] for e in removed}
 for entry in source['entries']:
     path = entry['path']
-    if path not in removed_paths and path not in {'artifact-metadata.json', 'build-info.json'}:
+    if path not in removed_paths and path not in {'artifact-metadata.json', 'build-info.json'} and path not in patched_paths:
         assert actual[path] == entry, 'profile changed an unselected runtime entry: ' + path
 runtime = cfg['bootstrap']['runtime']
 runtime['artifact'] = {'id': derived['id'], 'prefix': 'switchyard/serving-comparison/runtime/' + derived['id']}
@@ -126,6 +172,7 @@ for key, value in list(runtime['environment'].items()):
 runtime['environment']['SERVING_PROFILE_CACHE_ROOT'] = '{cache_root}'
 runtime['environment']['FLASHINFER_NO_DOWNLOAD'] = '1'
 runtime['environment'].pop('FLASHINFER_CUBIN_CHECKSUM_DISABLED', None)
+if a.worker_method:runtime['environment']['VLLM_WORKER_MULTIPROC_METHOD'] = a.worker_method
 program = runtime['args'][1]
 query = "subprocess.run(['nvidia-smi', '--query-gpu=name,driver_version,memory.total,compute_cap', '--format=csv,noheader,nounits'], check=True)"
 assert query in program
@@ -144,6 +191,22 @@ alias = (
     'else:\n'
     '    original_cache.symlink_to(actual_cache,target_is_directory=True)\n'
 )
+if a.profile:
+    alias += (
+        'import importlib.util,json,sys\n'
+        'provider_before=importlib.util.find_spec("flashinfer_jit_cache") is not None\n'
+        'provider_path=os.environ.get("PYTHONPATH","")\n'
+        'provider_negative_before=any(path in sys.path_importer_cache and sys.path_importer_cache[path] is None '
+        'for path in provider_path.split(os.pathsep))\n'
+    )
+alias += 'import importlib\nimportlib.invalidate_caches()\n'
+if a.profile:
+    alias += (
+        'print("SWITCHYARD_NATIVE_PROVIDER_DISCOVERY "+json.dumps({'
+        '"pid":os.getpid(),"pythonpath":provider_path,"sys_path":sys.path,'
+        '"negative_importer_before":provider_negative_before,"shim_visible_before":provider_before,'
+        '"shim_visible_after":importlib.util.find_spec("flashinfer_jit_cache") is not None}),flush=True)\n'
+    )
 if a.profile:
     code = Path('scripts/serving-comparison/startup-profile.py').read_text()
     alias += (
@@ -164,6 +227,9 @@ cmeta['compatibility']['runtime_launch_configuration'] = launch_fingerprint
 cmeta['attributes'].update({'source_cache_id': cache_source['id'], 'source_runtime_id': source['id'],
                            'asset_profile': profile_name, 'original_cache_prefix_alias': original_prefix,
                            'derivation': 'unchanged compiler entries and original cache prefix; only unused cubin payloads removed from runtime'})
+if patch_record:
+    cmeta['attributes']['source_patch'] = patch_record['descriptor_sha256']
+    cmeta['attributes']['derivation'] = 'unchanged compiler entries; source-pinned native platform-query patch; native AOT acceptance required'
 (a.out / 'cache-metadata.json').write_text(json.dumps(cmeta, indent=2) + '\n')
 subprocess.run([cli, 'artifacts', 'pack', '--source', str(ctree), '--out', str(a.out / 'cache-artifact'),
                 '--metadata', str(a.out / 'cache-metadata.json')], check=True)
