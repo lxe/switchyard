@@ -1,6 +1,6 @@
 # Selected local cold-start rollout
 
-The selected Qwen3.5 0.8B rollout produced its first streamed content, `Paris`, **38.988 seconds after local container launch**. The streaming request itself took **81.4 ms** to produce that content. This was one successful local RTX 5090 rollout through the actual Switchyard agent, with timestamped native startup instrumentation. The [sanitized timing receipt](receipts/selected-local-cold-start.json) retains the identities, decisions, and measured operations.
+This historical Qwen3.5 0.8B rollout produced its first streamed content, `Paris`, **38.988 seconds after local container launch**. The streaming request itself took **81.4 ms** after an internal inference call had already warmed the engine. The 81.4 ms figure is therefore a warm request measurement. This was one successful local RTX 5090 rollout through the actual Switchyard agent, with timestamped native startup instrumentation. The [sanitized timing receipt](receipts/selected-local-cold-start.json) retains the identities, decisions, and measured operations.
 
 ## Measurement conditions
 
@@ -63,9 +63,9 @@ Other native kernel files originated in the earlier diagnostic cache. Their prov
 
 ## Agent readiness verification
 
-Agent inference verification followed the native API startup observation by 5.077 seconds. The agent polls health at one-second intervals, then requires successful tokenization and a non-streaming one-token decode before reporting ready. This mandatory check preceded the measured streaming request; the benchmark did not add another tokenization request.
+In this historical run, agent inference verification followed the native API startup observation by 5.077 seconds. That agent build polled health at one-second intervals, then required successful tokenization and a non-streaming one-token decode before reporting ready. This check preceded the measured streaming request; the benchmark did not add another tokenization request. Current agent builds remove both inference checks and poll HTTP availability every 100 ms. The first client request now pays any remaining first-decode initialization cost.
 
-Two CUDA driver-cache files were written during that interval, at 15:45:27.947 and 15:45:31.556 UTC. Those writes are consistent with first-decode initialization contributing to the interval. The recorded spans do not separate the exact costs of health polling, tokenization, and the first decode, so the whole interval cannot be attributed to one operation. Subsequent agent builds emit separate `engine_health_polling_started`, `engine_health_ready`, `tokenization_started`, `tokenization_response_received`, `first_decode_started`, and `first_decode_response_received` milestones. Those events do not retroactively partition this measurement.
+Two CUDA driver-cache files were written during that interval, at 15:45:27.947 and 15:45:31.556 UTC. Those writes are consistent with first-decode initialization contributing to the interval. The recorded spans do not separate the exact costs of health polling, tokenization, and the first decode, so the whole interval cannot be attributed to one operation. Current builds emit `engine_health_polling_started` and `engine_health_ready`; they do not emit tokenization or verification-decode milestones.
 
 ## Reproduction and evidence
 
@@ -80,4 +80,4 @@ COLD_START_PARTITION=/path/to/runtime-set \
 
 The completed run is under `results/engine-startup/05-selected-cold-rollout/extents`. Its `timeline.jsonl` contains 2,431 events, `startup-profile.jsonl` contains 1,888 native events, and `engine-startup.jsonl` contains 18 structured decisions. `receipt.json` preserves the final agent state and object-transfer receipts. The console is `scratch/engine-startup/selected-cold-console-final.log`.
 
-Two failed preparation attempts are retained separately: missing extent-cache labels were rejected before hydration, and an unnecessary invalid cache alias was rejected before worker loading. Neither attempt contributes to the successful run's duration. All owned rollout containers were removed.
+All owned rollout containers were removed.
