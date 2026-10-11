@@ -38,7 +38,29 @@ Every comparison passes the unchanged `0.0001` maximum expected-token log-probab
 
 The first native GPU attempt rejected strided KV input to CUDA `index_select`. Compaction now makes K/V contiguous before selecting surviving rows, matching the explicit layout handling for GDN state. The original gate then passed. An oracle cache write failure was resolved by directing writable caches into a private output directory while preserving the shared cache read-only; its mathematical script was unchanged. Owned reference containers had a 32 GiB memory cap and no swap beyond that cap. Sampled cgroup high-water memory was 1.84 GB for 0.8B and 3.27 GB for 4B; the 2B container high-water value was not collected.
 
-These tests establish the recorded F32 numerical behavior. Full generated-sequence equality and warm throughput are separate acceptance steps; neither is claimed by the teacher-forcing receipt.
+These tests establish the recorded F32 numerical behavior. The separate warm timing receipt below records full generated-sequence equality and performance.
+
+## Measured warm generation
+
+The [warm timing receipt](receipts/native-merged-decode-timing-rtx5090.json) compares independent sessions, the original equal-length cohorts and merged decode using one loaded F32 model and the same six requests. Each run emits 52 tokens with EOS ignored and output budgets 16/12/4/10/8/2. Complete generated token arrays match across all three warmups and every measured sample. Five samples per mode alternate forward and reverse measurement order. Compilation, model loading, HTTP, queue admission and network hydration are excluded; prefill remains part of each timed workload.
+
+| Model | Independent output tokens/s | Cohort output tokens/s | Merged output tokens/s | Merged gain over cohorts |
+| --- | ---: | ---: | ---: | ---: |
+| 0.8B | 102.24 | 160.12 | 221.76 | 38.5% |
+| 2B | 87.02 | 123.60 | 179.56 | 45.3% |
+| 4B | 50.32 | 68.11 | 98.59 | 44.8% |
+
+Rates divide 52 output tokens by each mode's median workload duration. The latest per-row median first-token time falls from 0.303 to 0.123 seconds for 0.8B, 0.391 to 0.139 seconds for 2B and 0.710 to 0.251 seconds for 4B when comparing cohorts with merged decode. These timestamps use one outer workload clock and include waiting for earlier work. They describe warm offline request processing, rather than process launch or endpoint arrival.
+
+All models follow the same active decode row counts: `6, 5, 5, 4, 4, 4, 4, 3, 3, 2, 2, 1, 1, 1, 1`. The two 96-token prompt rows finish before shorter histories, and compaction crops the unused leading KV storage. Raw sample timings, per-row token timestamps, complete outputs, active-row evidence and binary/config/gate/trace hashes are retained in the receipt and hashed local logs.
+
+| Model | Private host RSS peak during measured modes | Sampled compute VRAM peak during measured modes |
+| --- | ---: | ---: |
+| 0.8B | 0.53 GiB | 3.93 GiB |
+| 2B | 0.53 GiB | 8.14 GiB |
+| 4B | 0.53 GiB | 17.30 GiB |
+
+Private RSS sums `Private_Clean`, `Private_Dirty` and `Private_Hugetlb` from `/proc/PID/smaps_rollup`. Host samples occur about every 50 ms plus query overhead; per-process compute VRAM comes from `nvidia-smi` no faster than every 150 ms. Short peaks can be missed. Whole-process private RSS peaks, including the existing checkpoint loader, are separately recorded as 2.22, 5.03 and 9.80 GB. This diagnostic loader is separate from the bounded artifact streaming adapter. Engine telemetry and memory polling run during all modes, while host affinity and GPU clocks remain unpinned. The small fixed corpus does not establish HTTP throughput, long-context behavior or quantized-model performance.
 
 ## CUDA reference handoff
 
