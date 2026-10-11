@@ -20,7 +20,7 @@ cargo run --locked --features live -- live cache-bindings \
   --gpu 'NVIDIA GeForce RTX 4090' --out results/native-cache-bindings.json
 ```
 
-The fleet file must already pin its model and runtime artifacts. The output maps each selected model ID to required compatibility labels. This command reads no credentials, performs no network access, and creates no GPU allocation. The final native fleet file is produced after its accepted runtime and cache artifacts are published; the command above shows its intended path.
+The [native fleet file](../configs/runpod/native-fleet.json) pins the published shared runtime, three model archives, and per-model driver cache families. The output maps each selected model ID to required compatibility labels. This command reads no credentials, performs no network access, and creates no GPU allocation.
 
 ## Request protocol
 
@@ -49,5 +49,7 @@ SWITCHYARD_NATIVE_MODEL_ROOT=data/qwen3.5-0.8b-text \
 The test sends useful inference and requires real streamed token accounting. It does not provision or stop the supplied endpoint. Full cloud acceptance additionally requires the final shared runtime, platform bakes, fresh allocation/hydration measurements, scheduler gauntlet receipts, and provider-confirmed cleanup.
 
 ## Current execution limits
+
+The [scheduler startup diagnostics](receipts/native-gauntlet-startup-diagnostics.json) record a successful 0.8B cold and hot call followed by cache rejection on two additional elastic hosts. All runtime, model, and cache transfers completed, but the launch wrapper found no validated driver variant for those hosts. The family covered only driver `580.159.04`; a cloud pool does not imply one common host driver. All four pods across the recorded attempts subsequently returned HTTP 404, with estimated rental of $0.0362. The full three-model gauntlet is not established by these partial measurements. One earlier startup failure remains unexplained because engine stderr was not retained before pod deletion.
 
 Native serving reads capped host checkpoint buffers and copies tensors to CUDA after hydration. Incoming model bytes are not loaded directly into GPU tensors. The integrated engine independently prefills equal-length groups and joins varied-length requests into shared decoding, with fixed per-row positions and state compaction. Its [three-model F32 reference gates](native-merged-decode.md) pass; endpoint and cloud throughput require separate measurements. Continuous admission, prefix reuse and paged KV allocation remain subsequent work. F32 mathematical gates pass on the recorded model workloads, while strict BF16 sequence parity with vLLM is incomplete. Quantized projection fixtures do not admit GGUF models to serving.

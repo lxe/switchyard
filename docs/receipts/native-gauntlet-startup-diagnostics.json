@@ -1,0 +1,116 @@
+{
+  "format": "switchyard-native-gauntlet-startup-diagnostics-v1",
+  "checked_utc": "2026-10-11T23:28:57.882830+00:00",
+  "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+  "agent_sha256": "8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f",
+  "attempts": [
+    {
+      "run": "01",
+      "source": {
+        "fleet_sha256": "51d139543a6655790fd8dbbcc39f215401cb2edf23ee0ff4e1baa1c341425262",
+        "source_commit": "89162406fb627614cd129bb3992fba9a3526311c",
+        "version": "0.5.0",
+        "workloads_sha256": "90278a460080d422047ed25824127d8fb191679a9a01b8797f0b3d3369d099f3"
+      },
+      "outcome": {
+        "cleanup_error": null,
+        "error": "live request failed: hydration transfer failed: inference engine exited before readiness"
+      },
+      "estimated_rental_usd": 0.006551300434525685,
+      "cleanup_failures": [],
+      "pods": [
+        {
+          "id": "7r50ct1rmfaucs",
+          "data_center": "EU-RO-1",
+          "get_status": 404,
+          "confirmed_absent": true,
+          "engine_log_facts": [],
+          "engine_log_collected": false
+        }
+      ],
+      "completed_case_reports": [],
+      "full_gauntlet_completed": false
+    },
+    {
+      "run": "02",
+      "source": {
+        "fleet_sha256": "51d139543a6655790fd8dbbcc39f215401cb2edf23ee0ff4e1baa1c341425262",
+        "source_commit": "89162406fb627614cd129bb3992fba9a3526311c",
+        "version": "0.5.0",
+        "workloads_sha256": "90278a460080d422047ed25824127d8fb191679a9a01b8797f0b3d3369d099f3"
+      },
+      "outcome": {
+        "cleanup_error": null,
+        "error": "live request failed: hydration transfer failed: inference engine exited before readiness"
+      },
+      "estimated_rental_usd": 0.029603791391152018,
+      "cleanup_failures": [],
+      "pods": [
+        {
+          "id": "xstoalzjxyopde",
+          "data_center": "EU-RO-1",
+          "get_status": 404,
+          "confirmed_absent": true,
+          "engine_log_facts": [
+            "native_cache_family_selected_driver=580.159.04"
+          ],
+          "engine_log_collected": true
+        },
+        {
+          "id": "180oal94ti3mee",
+          "data_center": "EU-RO-1",
+          "get_status": 404,
+          "confirmed_absent": true,
+          "engine_log_facts": [
+            "Native cache family has no validated driver variant."
+          ],
+          "engine_log_collected": true
+        },
+        {
+          "id": "28clkrw32zwrza",
+          "data_center": "EU-RO-1",
+          "get_status": 404,
+          "confirmed_absent": true,
+          "engine_log_facts": [
+            "Native cache family has no validated driver variant."
+          ],
+          "engine_log_collected": true
+        }
+      ],
+      "completed_case_reports": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "elapsed_s": 34.726984841,
+          "output_tokens": 25,
+          "output_tokens_per_s": 0.7199012558811052,
+          "ttft_p95_s": 34.153620593,
+          "budget_exceeded": false
+        },
+        {
+          "name": "hot-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "elapsed_s": 0.9171740310000018,
+          "output_tokens": 25,
+          "output_tokens_per_s": 27.25764048589809,
+          "ttft_p95_s": 0.5723105650000022,
+          "budget_exceeded": false
+        }
+      ],
+      "full_gauntlet_completed": false
+    }
+  ],
+  "limitations": [
+    "The first failed pod had no persisted engine stderr; its underlying cause is unexplained. Its logs were unavailable after deletion.",
+    "The second attempt establishes missing validated driver variants on two elastic hosts. Their exact driver versions were not emitted by the wrapper.",
+    "Partial burst completions were not retained as a workload report after the startup error; no completed burst count is claimed.",
+    "Full three-model gauntlet acceptance remains pending.",
+    "Throughput targets are objectives; a completed case can still miss its target."
+  ]
+}
