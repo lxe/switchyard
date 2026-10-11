@@ -1,0 +1,403 @@
+{
+  "acceptance": {
+    "boot": {
+      "components_absent": true,
+      "cuda_initialized": false,
+      "import_seconds": 4.333496129002015,
+      "imports": [
+        "torch",
+        "vllm.entrypoints.cli.main",
+        "vllm.entrypoints.openai.api_server",
+        "flashinfer.jit.env"
+      ],
+      "loaded_runtime_libraries": [
+        "lib/libfribidi.so.0",
+        "lib/libgcc_s.so.1",
+        "lib/libstdc++.so.6",
+        "lib/libz.so.1",
+        "python/bin/python3.12",
+        "venv/lib/python3.12/site-packages/PIL/_imaging.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/PIL/_imagingft.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libavcodec.so.62",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libavdevice.so.62",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libavfilter.so.11",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libavformat.so.62",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libavutil.so.60",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libswresample.so.6",
+        "venv/lib/python3.12/site-packages/PyNvVideoCodec/libswscale.so.9",
+        "venv/lib/python3.12/site-packages/aiohttp/_http_parser.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/aiohttp/_http_writer.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/aiohttp/_websocket/mask.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/aiohttp/_websocket/reader_c.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cbor2/_cbor2.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/charset_normalizer/cd.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/charset_normalizer/md.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/_bindings/cyruntime.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/_bindings/cyruntime_ptds.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/_internal/driver.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/_internal/nvrtc.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/_internal/utils.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/cydriver.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/cynvrtc.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/cyruntime.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/driver.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/nvrtc.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/bindings/runtime.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cuda/tile/_cext.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cudnn/_compiled_module.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/cv2/cv2.abi3.so",
+        "venv/lib/python3.12/site-packages/frozenlist/_frozenlist.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/google/_upb/_message.abi3.so",
+        "venv/lib/python3.12/site-packages/grpc/_cython/cygrpc.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/llguidance/_lib.abi3.so",
+        "venv/lib/python3.12/site-packages/markupsafe/_speedups.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/ml_dtypes/_ml_dtypes_ext.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/msgspec/_core.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/multidict/_multidict.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+        "venv/lib/python3.12/site-packages/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+        "venv/lib/python3.12/site-packages/numpy.libs/libscipy_openblas64_-fdde5778.so",
+        "venv/lib/python3.12/site-packages/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/fft/_pocketfft_umath.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_bounded_integers.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_common.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_generator.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_mt19937.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_pcg64.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_philox.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/_sfc64.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/bit_generator.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/numpy/random/mtrand.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+        "venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+        "venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+        "venv/lib/python3.12/site-packages/nvidia/cufile/lib/libcufile.so.0",
+        "venv/lib/python3.12/site-packages/nvidia/curand/lib/libcurand.so.10",
+        "venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+        "venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/cusparselt/lib/libcusparseLt.so.0",
+        "venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+        "venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+        "venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+        "venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/_mlir/_mlir_libs/_cutlass_ir.cu13.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/openai_harmony/openai_harmony.abi3.so",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libaom-a0d22147.so.3.14.1",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libavcodec-c4204469.so.62.28.101",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libavformat-4762a711.so.62.12.101",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libavif-43e630fc.so.16.4.2",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libavutil-befbbc48.so.60.26.101",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libcrypto-5409cd36.so.1.1.1k",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libgfortran-83c28eba.so.5.0.0",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libopenblasp-r0-59ffcd50.3.15.so",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libpng16-529cb57a.so.16.58.0",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libquadmath-2284e583.so.0.0.0",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libssl-81259c47.so.1.1.1k",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libswresample-2dfded3b.so.6.3.101",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libswscale-fe215b0b.so.9.5.101",
+        "venv/lib/python3.12/site-packages/opencv_python_headless.libs/libvpx-4fb239ff.so.11.0.1",
+        "venv/lib/python3.12/site-packages/pillow.libs/libXau-154567c4.so.6.0.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libbrotlicommon-53534446.so.1.2.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libbrotlidec-7e5462ba.so.1.2.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libfreetype-9fc94c80.so.6.20.6",
+        "venv/lib/python3.12/site-packages/pillow.libs/libharfbuzz-172d1f63.so.0.61421.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libjpeg-31e2ca52.so.62.4.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/liblzma-2be87c3e.so.5.8.3",
+        "venv/lib/python3.12/site-packages/pillow.libs/libopenjp2-b07f72ad.so.2.5.4",
+        "venv/lib/python3.12/site-packages/pillow.libs/libpng16-abb096d5.so.16.58.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libtiff-fc87e79d.so.6.2.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libxcb-ad31f5a3.so.1.1.0",
+        "venv/lib/python3.12/site-packages/pillow.libs/libzstd-44be1190.so.1.5.7",
+        "venv/lib/python3.12/site-packages/propcache/_helpers_c.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/psutil/_psutil_linux.abi3.so",
+        "venv/lib/python3.12/site-packages/pybase64/_pybase64.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/pynvvideocodec./libdrm-b0291a67.so.2.4.0",
+        "venv/lib/python3.12/site-packages/pynvvideocodec./libxcb-5ddf6756.so.1.1.0",
+        "venv/lib/python3.12/site-packages/pynvvideocodec./libxcb-shape-7716c890.so.0.0.0",
+        "venv/lib/python3.12/site-packages/pynvvideocodec./libxcb-shm-0be6dfbf.so.0.0.0",
+        "venv/lib/python3.12/site-packages/pynvvideocodec./libxcb-xfixes-6de855b8.so.0.0.0",
+        "venv/lib/python3.12/site-packages/pyzmq.libs/libsodium-1c6bac97.so.26.4.0",
+        "venv/lib/python3.12/site-packages/pyzmq.libs/libzmq-82f916e6.so.5.2.5",
+        "venv/lib/python3.12/site-packages/regex/_regex.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/safetensors/_safetensors_rust.abi3.so",
+        "venv/lib/python3.12/site-packages/sentencepiece/_sentencepiece.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/tiktoken/_tiktoken.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/tokenizers/tokenizers.abi3.so",
+        "venv/lib/python3.12/site-packages/torch/_C.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libc10.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libc10_cuda.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libgomp.so.1",
+        "venv/lib/python3.12/site-packages/torch/lib/libshm.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libtorch.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libtorch_global_deps.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libtorch_nvshmem.so",
+        "venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so",
+        "venv/lib/python3.12/site-packages/torchaudio/lib/_torchaudio.abi3.so",
+        "venv/lib/python3.12/site-packages/torchaudio/lib/libtorchaudio.abi3.so",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libavif-e4168294.so.16.4.2",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libjpeg-944920e9.so.8.3.2",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libnvjpeg-27e1eb18.so.12.4.0.76",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libpng16-e5a2fba9.so.16.58.0",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libsharpyuv-ec3ccc1d.so.0.1.2",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libwebp-71252730.so.7.2.0",
+        "venv/lib/python3.12/site-packages/torchcodec.libs/libwebpdemux-f71da224.so.2.0.17",
+        "venv/lib/python3.12/site-packages/torchcodec/libtorchcodec_core8.so",
+        "venv/lib/python3.12/site-packages/torchcodec/libtorchcodec_custom_ops8.so",
+        "venv/lib/python3.12/site-packages/torchcodec/libtorchcodec_image.so",
+        "venv/lib/python3.12/site-packages/torchcodec/libtorchcodec_pybind_ops.so",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libcudart.6ead8f7a.so.12",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libjpeg.5980e1e3.so.8",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libnvjpeg.af8ad92e.so.12",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libpng16.1c0b398e.so.16",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libsharpyuv.5a6b5d87.so.0",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libwebp.4fcc8f97.so.7",
+        "venv/lib/python3.12/site-packages/torchvision.libs/libz.b9a71669.so.1",
+        "venv/lib/python3.12/site-packages/torchvision/_C.so",
+        "venv/lib/python3.12/site-packages/torchvision/image.so",
+        "venv/lib/python3.12/site-packages/triton/_C/libtriton.so",
+        "venv/lib/python3.12/site-packages/tvm_ffi/core.abi3.so",
+        "venv/lib/python3.12/site-packages/tvm_ffi/lib/libtvm_ffi.so",
+        "venv/lib/python3.12/site-packages/tvm_ffi/lib/libtvm_ffi_testing.so",
+        "venv/lib/python3.12/site-packages/uvloop/loop.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/watchfiles/_rust_notify.abi3.so",
+        "venv/lib/python3.12/site-packages/xgrammar/libxgrammar_bindings.so",
+        "venv/lib/python3.12/site-packages/yaml/_yaml.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/yarl/_quoting_c.cpython-312-x86_64-linux-gnu.so",
+        "venv/lib/python3.12/site-packages/zmq/backend/cython/_zmq.abi3.so"
+      ],
+      "resource_paths": [
+        "/opt/switchyard/components/build/flashinfer-cubins"
+      ]
+    },
+    "complete": {
+      "compiler_checks": [
+        {
+          "command": [
+            "/opt/switchyard/components/build/toolchain/bin/g++",
+            "-std=c++17",
+            "/tmp/partition.cpp",
+            "-o",
+            "/tmp/partition-cxx"
+          ],
+          "name": "cxx-build",
+          "output": ""
+        },
+        {
+          "command": [
+            "/tmp/partition-cxx"
+          ],
+          "name": "cxx-run",
+          "output": "3\n"
+        },
+        {
+          "command": [
+            "/opt/switchyard/components/build/cuda/bin/nvcc",
+            "-arch=sm_89",
+            "--cubin",
+            "/tmp/partition.cu",
+            "-o",
+            "/tmp/partition.cubin"
+          ],
+          "name": "nvcc-build-sm89",
+          "output": ""
+        }
+      ],
+      "cuda_initialized": false,
+      "resources": [
+        {
+          "bytes": 29680,
+          "file": "7b1fc253cd6237950e76310873f4acf4d97a3904/gemm-b738138-25754e6/Gemm_Bfloat16_E4m3E4m3_Fp32_t128x8x128_s7_et128x8_m128x8x32_c1x1x1_rM_BN_transOut_schedS_sm107a.cubin",
+          "module": "flashinfer.jit.env",
+          "official_loader": "flashinfer.jit.cubin_loader.get_artifact",
+          "path_stable": true,
+          "same_module": true,
+          "sha256": "2b96ddf0ec8955d3ed34c54f3e8e20af914341aee716a7a5f3960c97179110bb"
+        }
+      ],
+      "same_process": true,
+      "seconds": 4.764441721999901
+    },
+    "gpu_devices": false,
+    "image": "ghcr.io/lxe/switchyard-runtime:ubuntu24.04",
+    "image_id": "sha256:c48b71702920821e98f56e01ae2ac4ec15581e96d434ba77c864982cc5951b1a",
+    "network": "none"
+  },
+  "artifacts": {
+    "boot": {
+      "compressed_bytes": 4562590833,
+      "entries": 95427,
+      "file_bytes": 12076369101,
+      "id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6"
+    },
+    "build": {
+      "compressed_bytes": 682116732,
+      "entries": 90166,
+      "file_bytes": 7284857593,
+      "id": "8cff0f03cc2b7c5bc1f95f0cc298ec3f9dd27944074d16e2c13f56b7b98a78a8"
+    },
+    "patched_source": {
+      "compressed_bytes": 5244628415,
+      "entries": 185583,
+      "file_bytes": 19361215040,
+      "id": "9db37668b717dae2eb2a6af4f13e741d9e36989c1952fd2457f84d30f28028dc"
+    }
+  },
+  "composition": {
+    "boot": {
+      "artifact": {
+        "id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
+        "prefix": "switchyard/runtime-components/0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda": "12.9",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "runtime_partition": "6eac928b61a9991063dee46aa18958a86d95c533b5fab95d50371c1609b0bed2",
+        "runtime_source_patches": "dd6a7add998de7fed6532f88146f303e2aad59123ea5ce290beee2d0b9a01306",
+        "torch": "2.13.0+cu129",
+        "vllm": "0.31.0+cu129"
+      },
+      "manifest": "boot/artifact/manifest.json",
+      "tree": "boot/tree"
+    },
+    "components": [
+      {
+        "artifact": {
+          "id": "8cff0f03cc2b7c5bc1f95f0cc298ec3f9dd27944074d16e2c13f56b7b98a78a8",
+          "prefix": "switchyard/runtime-components/8cff0f03cc2b7c5bc1f95f0cc298ec3f9dd27944074d16e2c13f56b7b98a78a8"
+        },
+        "compatibility": {
+          "architecture": "x86_64",
+          "cuda": "12.9",
+          "os": "ubuntu24.04",
+          "python": "3.12.14",
+          "runtime_partition": "6eac928b61a9991063dee46aa18958a86d95c533b5fab95d50371c1609b0bed2",
+          "runtime_source_patches": "dd6a7add998de7fed6532f88146f303e2aad59123ea5ce290beee2d0b9a01306",
+          "torch": "2.13.0+cu129",
+          "vllm": "0.31.0+cu129"
+        },
+        "destination": "/opt/switchyard/components/build",
+        "manifest": "components/build/artifact/manifest.json",
+        "name": "build",
+        "tree": "components/build/tree"
+      }
+    ],
+    "components_root": "/opt/switchyard/components",
+    "environment": {
+      "CC": "{components_root}/build/toolchain/bin/gcc",
+      "CUDACXX": "{components_root}/build/cuda/bin/nvcc",
+      "CUDA_HOME": "{components_root}/build/cuda",
+      "CUDA_PATH": "{components_root}/build/cuda",
+      "CXX": "{components_root}/build/toolchain/bin/g++",
+      "FLASHINFER_CUBIN_DIR": "{components_root}/build/flashinfer-cubins",
+      "FLASHINFER_NO_DOWNLOAD": "1",
+      "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/python/lib:{runtime_root}/venv/lib/python3.12/site-packages/torch/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cublas/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_cccl/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cudnn/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cufft/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cufile/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/curand/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cusolver/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cusparse/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/cusparselt/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nccl/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nvshmem/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia/nvtx/lib:{runtime_root}/venv/lib/python3.12/site-packages/tvm_ffi/lib:{runtime_root}/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/cu12/lib:{runtime_root}/venv/lib/python3.12/site-packages/pynvvideocodec.:{runtime_root}/venv/lib/python3.12/site-packages/PyNvVideoCodec:{runtime_root}/venv/lib/python3.12/site-packages/torchcodec:{runtime_root}/venv/lib/python3.12/site-packages/triton/_C",
+      "PATH": "{runtime_root}/venv/bin:{components_root}/build/toolchain/bin:{components_root}/build/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    },
+    "format": "switchyard-runtime-components-v1",
+    "fresh_cache_bake_required": true,
+    "provenance": {
+      "parent_runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+      "partition_recipe_sha256": "6eac928b61a9991063dee46aa18958a86d95c533b5fab95d50371c1609b0bed2",
+      "partition_tool_sha256": "d03c4554cc00120c66da78a93a9d1212e8b9a8852afe25141bd62e391d850429",
+      "partition_tool_version": "0.5.0",
+      "source_inventory_sha256": "732045e7ca57f446fdeb9b2c67266a05181e369d845b041b96099e531bf51ca3",
+      "source_runtime_id": "9db37668b717dae2eb2a6af4f13e741d9e36989c1952fd2457f84d30f28028dc"
+    },
+    "runtime_root": "/opt/switchyard/runtime",
+    "runtime_set_id": "29a30b6bde4080fb6d8b9ca0527db05c872fe167fcf4dfb5dc634e99849cd095",
+    "schema_version": 1,
+    "statistics": {
+      "boot": {
+        "entries": 95423,
+        "file_bytes": 12076359504,
+        "files": 84730
+      },
+      "build": {
+        "entries": 90160,
+        "file_bytes": 7284855536,
+        "files": 89872
+      }
+    }
+  },
+  "local_composition": "results/parallel-weights/runtime-partition-01",
+  "native_closure": {
+    "baseline_optional_backends": [
+      "Numba TBB",
+      "CUDA RDMA",
+      "NVSHMEM MPI/PMIx/SHMEM/libfabric/UCX",
+      "TorchCodec alternate FFmpeg versions and HEIC"
+    ],
+    "boot_elf_files": 721,
+    "boot_unresolved": 67,
+    "loaded_boot_libraries": 161,
+    "newly_unresolved": 0,
+    "source_unresolved": 67
+  },
+  "schema_version": 1,
+  "scope": "Local packaging and CPU acceptance; no object-store publication, cache bake, GPU serving acceptance, or cold-start performance claim.",
+  "source_derivation": {
+    "added_entries": [
+      "derivation-source",
+      "derivation-source/artifact-metadata.json",
+      "derivation-source/build-info.json",
+      "derivation-source/sources.lock.json",
+      "source-patches-input.json",
+      "source-patches.json"
+    ],
+    "changed_parent_entries": [
+      "artifact-metadata.json",
+      "build-info.json",
+      "sources.lock.json",
+      "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/__pycache__/utils.cpython-312.pyc",
+      "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/utils.py"
+    ],
+    "compiler_cuda_entries_unchanged": true,
+    "original_metadata_retained": true,
+    "parent_runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+    "patch_receipts": [
+      {
+        "after_sha256": "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828",
+        "before_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+        "descriptor_sha256": "5b935fc5f4eacaff29876d2c9304df0b54ebe69828c6c3da8916ba36e54135f5",
+        "id": "vllm-0.31.0-fla-nvml",
+        "package": {
+          "name": "vllm",
+          "version": "0.31.0+cu129"
+        },
+        "target": "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/utils.py"
+      }
+    ],
+    "patched_runtime_id": "9db37668b717dae2eb2a6af4f13e741d9e36989c1952fd2457f84d30f28028dc",
+    "removed_entries": []
+  },
+  "source_union": {
+    "entries": 185583,
+    "exact_packed_manifest_entry_match": true,
+    "generated_entries": 10,
+    "preserved_entries": 185583
+  },
+  "tool_binary_local": "results/parallel-weights/partition-tool-01",
+  "validation": {
+    "cargo_fmt": true,
+    "fresh_cache_bake_required": true,
+    "gpu_kernel_execution": false,
+    "no_cloud_allocation": true,
+    "no_gpu_allocation": true,
+    "strict_workspace_clippy": true,
+    "workspace_all_features": {
+      "failed": 0,
+      "ignored": 1,
+      "passed": 288
+    }
+  }
+}

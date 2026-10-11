@@ -18,6 +18,15 @@ serializable `PublicationReceipt` with the immutable reference and per-object
 creation flags. Existing matching objects are verified and reused; different
 objects are refused. The CLI invokes this same function and writes its receipt.
 
+## Runtime component preparation
+
+`partition-runtime` composes a verified complete source into a boot artifact and
+atomic sibling component artifacts. Runtime-build validates its declarative recipe
+and native dependency closure; the existing artifact packer preserves the complete
+source payload. CPU-only imports and relocated compiler/resource checks must pass
+before local composition publication. See [runtime component packaging](../../docs/runtime-components.md)
+for the recipe, pinned source derivation, command, receipts, and fresh-cache requirement.
+
 ## Raw extent preparation and publication
 
 `pack-extents` preserves filesystem bytes in independently downloadable raw objects

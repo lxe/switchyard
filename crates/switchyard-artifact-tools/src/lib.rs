@@ -5,6 +5,8 @@ mod extent_publication;
 mod probe;
 mod publication;
 mod runtime_build;
+mod runtime_partition;
+mod runtime_smoke;
 
 pub use diagnostics::HydrationReceipt;
 pub use extent_publication::{ExtentPublicationReceipt, publish_extent_directory};

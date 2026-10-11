@@ -1,0 +1,123 @@
+{
+  "format": "switchyard-runtime-partition-v1",
+  "schema_version": 1,
+  "runtime_root": "/opt/switchyard/runtime",
+  "components_root": "/opt/switchyard/components",
+  "requires": {
+    "python": "3.12.14",
+    "vllm": "0.31.0+cu129",
+    "torch": "2.13.0+cu129",
+    "cuda": "12.9"
+  },
+  "components": [
+    {
+      "name": "build",
+      "moves": [
+        {
+          "source": "cuda",
+          "destination": "cuda"
+        },
+        {
+          "source": "toolchain",
+          "destination": "toolchain"
+        },
+        {
+          "source": "venv/lib/python3.12/site-packages/flashinfer_cubin/cubins",
+          "destination": "flashinfer-cubins"
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "PATH": "{runtime_root}/venv/bin:{components_root}/build/toolchain/bin:{components_root}/build/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "CC": "{components_root}/build/toolchain/bin/gcc",
+    "CXX": "{components_root}/build/toolchain/bin/g++",
+    "CUDA_HOME": "{components_root}/build/cuda",
+    "CUDA_PATH": "{components_root}/build/cuda",
+    "CUDACXX": "{components_root}/build/cuda/bin/nvcc",
+    "FLASHINFER_CUBIN_DIR": "{components_root}/build/flashinfer-cubins",
+    "FLASHINFER_NO_DOWNLOAD": "1"
+  },
+  "library_paths": [
+    "lib",
+    "python/lib",
+    "venv/lib/python3.12/site-packages/torch/lib",
+    "venv/lib/python3.12/site-packages/nvidia/*/lib",
+    "venv/lib/python3.12/site-packages/tvm_ffi/lib",
+    "venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/cu12/lib",
+    "venv/lib/python3.12/site-packages/pynvvideocodec.",
+    "venv/lib/python3.12/site-packages/PyNvVideoCodec",
+    "venv/lib/python3.12/site-packages/torchcodec",
+    "venv/lib/python3.12/site-packages/triton/_C"
+  ],
+  "external_libraries": [
+    "libc.so.6",
+    "libm.so.6",
+    "libpthread.so.0",
+    "libdl.so.2",
+    "librt.so.1",
+    "libresolv.so.2",
+    "libutil.so.1",
+    "ld-linux-x86-64.so.2",
+    "libcuda.so.1",
+    "libnvidia-ml.so.1",
+    "libnvcuvid.so.1",
+    "libnvidia-encode.so.1"
+  ],
+  "boot_imports": [
+    "torch",
+    "vllm.entrypoints.cli.main",
+    "vllm.entrypoints.openai.api_server",
+    "flashinfer.jit.env"
+  ],
+  "resource_checks": [
+    {
+      "module": "flashinfer.jit.env",
+      "attribute": "FLASHINFER_CUBIN_DIR",
+      "component": "build",
+      "path": "flashinfer-cubins",
+      "loader": "flashinfer.jit.cubin_loader.get_artifact"
+    }
+  ],
+  "toolchain_wrappers": [
+    {
+      "component": "build",
+      "path": "toolchain",
+      "gcc_major": 13
+    }
+  ],
+  "compiler_checks": [
+    {
+      "name": "cxx-build",
+      "command": [
+        "{components_root}/build/toolchain/bin/g++",
+        "-std=c++17",
+        "/tmp/partition.cpp",
+        "-o",
+        "/tmp/partition-cxx"
+      ],
+      "input_path": "/tmp/partition.cpp",
+      "input": "#include <vector>\n#include <iostream>\nint main(){std::vector<int> v{1,2,3}; std::cout << v.size() << std::endl;}\n"
+    },
+    {
+      "name": "cxx-run",
+      "command": [
+        "/tmp/partition-cxx"
+      ],
+      "expected": "3"
+    },
+    {
+      "name": "nvcc-build-sm89",
+      "command": [
+        "{components_root}/build/cuda/bin/nvcc",
+        "-arch=sm_89",
+        "--cubin",
+        "/tmp/partition.cu",
+        "-o",
+        "/tmp/partition.cubin"
+      ],
+      "input_path": "/tmp/partition.cu",
+      "input": "__global__ void partition_smoke() {}\n"
+    }
+  ]
+}

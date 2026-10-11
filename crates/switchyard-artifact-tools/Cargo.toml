@@ -10,6 +10,8 @@ readme = "README.md"
 [dependencies]
 switchyard-artifacts.workspace = true
 switchyard-provider.workspace = true
+switchyard-runtime-build = { path = "../switchyard-runtime-build" }
+rustix = { version = "1", features = ["fs"] }
 clap.workspace = true
 serde.workspace = true
 serde_json.workspace = true

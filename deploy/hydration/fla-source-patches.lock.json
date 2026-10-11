@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "runtime_root": "/opt/switchyard/runtime",
+  "source_patches": [
+    {
+      "path": "patches/vllm-0.31.0-fla-nvml.json",
+      "sha256": "5b935fc5f4eacaff29876d2c9304df0b54ebe69828c6c3da8916ba36e54135f5"
+    }
+  ]
+}

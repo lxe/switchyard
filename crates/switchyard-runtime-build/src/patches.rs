@@ -1,6 +1,6 @@
 //! Source patches applied once during an artifact bake, never at worker startup.
 
-use crate::{Result, download::sha256, package_version};
+use crate::{Result, package_version, sha256};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -42,13 +42,13 @@ struct Replacement {
 }
 
 #[derive(Serialize)]
-pub(super) struct Receipt {
-    id: String,
-    descriptor_sha256: String,
+pub struct Receipt {
+    pub id: String,
+    pub descriptor_sha256: String,
     package: Package,
-    target: String,
-    before_sha256: String,
-    after_sha256: String,
+    pub target: String,
+    pub before_sha256: String,
+    pub after_sha256: String,
 }
 
 fn digest(bytes: &[u8]) -> String {
@@ -88,12 +88,7 @@ fn relative_file(root: &Path, path: &str) -> Result<std::path::PathBuf> {
 /// An absent `source_patches` field means no patches. Each entry pins a JSON
 /// descriptor relative to the build directory. Targets are distinct files
 /// relative to the runtime root; patches cannot silently stack on one file.
-pub(super) fn apply(
-    build: &Path,
-    root: &Path,
-    lock: &Value,
-    packages: &Value,
-) -> Result<Vec<Receipt>> {
+pub fn apply(build: &Path, root: &Path, lock: &Value, packages: &Value) -> Result<Vec<Receipt>> {
     let pins: Vec<Pin> = match lock.get("source_patches") {
         None => return Ok(Vec::new()),
         Some(value) => serde_json::from_value(value.clone())?,

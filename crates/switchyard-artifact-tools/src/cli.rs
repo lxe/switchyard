@@ -35,6 +35,30 @@ pub enum Command {
         #[arg(long)]
         out: PathBuf,
     },
+    /// Compose verified boot and sibling compiler/resource artifacts from a complete runtime.
+    PartitionRuntime {
+        #[arg(long)]
+        source: PathBuf,
+        #[arg(long)]
+        manifest: PathBuf,
+        #[arg(long)]
+        recipe: PathBuf,
+        /// Fresh local composition directory, published atomically after acceptance.
+        #[arg(long)]
+        out: PathBuf,
+        /// Optional pinned source-patch lock, applied through the runtime builder before partitioning.
+        #[arg(long)]
+        patch_lock: Option<PathBuf>,
+        #[arg(long, default_value = "switchyard/runtime-components")]
+        prefix: String,
+        #[arg(long, default_value_t = 6)]
+        zstd_level: i32,
+        #[arg(long, default_value = "ghcr.io/lxe/switchyard-runtime:ubuntu24.04")]
+        acceptance_image: String,
+        /// Produce source inventory and native closure without component packing or import acceptance.
+        #[arg(long)]
+        plan_only: bool,
+    },
     /// Pack a filesystem tree into deterministic, verified zstd tar shards.
     Pack {
         #[arg(long)]
@@ -202,6 +226,33 @@ pub async fn run(command: Command) -> Result<()> {
         } => {
             crate::runtime_build::build(&context, &dockerfile, &out).await?;
             println!("Runtime tree exported to {}", out.join("runtime").display());
+        }
+        Command::PartitionRuntime {
+            source,
+            manifest,
+            recipe,
+            out,
+            patch_lock,
+            prefix,
+            zstd_level,
+            acceptance_image,
+            plan_only,
+        } => {
+            let result = tokio::task::spawn_blocking(move || {
+                crate::runtime_partition::build(crate::runtime_partition::Options {
+                    source,
+                    manifest,
+                    recipe,
+                    out,
+                    patch_lock,
+                    prefix,
+                    zstd_level,
+                    acceptance_image,
+                    plan_only,
+                })
+            })
+            .await??;
+            println!("{}", serde_json::to_string_pretty(&result)?);
         }
         Command::Pack {
             source,

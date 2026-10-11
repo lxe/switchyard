@@ -9,7 +9,6 @@ mod cuda;
 mod download;
 mod filesystem;
 mod native;
-mod patches;
 
 use command::{capture, run};
 use download::{download, sha256};
@@ -146,7 +145,8 @@ async fn main() -> Result<()> {
         return Err("cannot record installed Python packages".into());
     }
     let packages: Value = serde_json::from_slice(&output.stdout)?;
-    let source_patches = patches::apply(build, root, &lock, &packages)?;
+    let source_patches =
+        switchyard_runtime_build::apply_source_patches(build, root, &lock, &packages)?;
     bytecode::compile(root)?;
     internalize_symlinks(root)?;
     let python_version = lock["python"]["version"]
