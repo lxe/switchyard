@@ -163,9 +163,16 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     let state = Arc::new(RwLock::new(State::new(&ticket)));
     let observed = state.clone();
     let model_root = roots.models.clone();
-    let pending =
+    let mut pending =
         tokio::spawn(async move { prepare(&ticket, &roots, state, Instant::now()).await });
-    until(|| metadata_ready.exists()).await;
+    tokio::select! {
+        _ = until(|| metadata_ready.exists()) => {},
+        result = &mut pending => match result {
+            Ok(Err(error)) => panic!("startup failed before metadata gate: {error}"),
+            Ok(Ok(_)) => panic!("startup completed while tensor payload is held"),
+            Err(error) => panic!("startup task failed before metadata gate: {error}"),
+        },
+    }
     assert!(imported.exists());
     assert!(!model_root.join("model").exists());
     assert!(!pending.is_finished());

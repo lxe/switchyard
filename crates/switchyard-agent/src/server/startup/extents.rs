@@ -217,6 +217,13 @@ pub(super) async fn prepare(
         let mut process = engine::Process::spawn(&mut command)?;
         process.retain(owner.clone());
         milestone(&state, epoch, StartupEvent::EngineSpawned).await;
+        // Child::wait closes any stdin it owns. Retain the gate pipe separately
+        // while watching child exit so polling wait cannot close it prematurely.
+        let mut stdin = process
+            .child
+            .stdin
+            .take()
+            .ok_or_else(|| Error::Transfer("metadata gate stdin unavailable".into()))?;
         tokio::select! {
             ready = ready_rx => ready.map_err(|_| Error::Transfer("metadata readiness gate cancelled".into()))?,
             status = process.child.wait() => {
@@ -224,11 +231,6 @@ pub(super) async fn prepare(
                 return Err(Error::Transfer("engine exited before metadata readiness".into()));
             }
         }
-        let mut stdin = process
-            .child
-            .stdin
-            .take()
-            .ok_or_else(|| Error::Transfer("metadata gate stdin unavailable".into()))?;
         stdin.write_all(b"switchyard-metadata-ready-v1\n").await?;
         stdin.shutdown().await?;
         Ok::<_, Error>(process)
