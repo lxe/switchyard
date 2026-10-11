@@ -84,7 +84,18 @@ fn native_guard_requirements_are_checked_before_provisioning() {
     ))
     .unwrap();
     for (policy, disabled) in [
-        (r#"{"cache_policy":"required"}"#, "VLLM_FORCE_AOT_LOAD"),
+        (
+            r#"{"cache_policy":"required","compute_capability":"8.9"}"#,
+            "VLLM_FORCE_AOT_LOAD",
+        ),
+        (
+            r#"{"cache_policy":"required","compute_capability":"8.9"}"#,
+            "FLASHINFER_DISABLE_JIT",
+        ),
+        (
+            r#"{"cache_policy":"required","compute_capability":"8.9"}"#,
+            "FLASHINFER_NO_DOWNLOAD",
+        ),
         (r#"{"memory_plan":"required"}"#, "VLLM_ENABLE_STARTUP_PLAN"),
     ] {
         let mut config = original.clone();
@@ -95,6 +106,14 @@ fn native_guard_requirements_are_checked_before_provisioning() {
         runtime
             .environment
             .insert("VLLM_ENGINE_STARTUP_POLICY".into(), policy.into());
+        // Required cache reuse also needs an explicit target and offline JIT /
+        // download guards. Start from a valid fixture before disabling one guard.
+        runtime
+            .environment
+            .insert("FLASHINFER_DISABLE_JIT".into(), "1".into());
+        runtime
+            .environment
+            .insert("FLASHINFER_NO_DOWNLOAD".into(), "1".into());
         config.validate().unwrap();
         config
             .bootstrap
