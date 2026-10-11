@@ -99,22 +99,24 @@ pub struct Qwen3_5RmsNorm {
 
 impl Qwen3_5RmsNorm {
     pub fn new(dim: usize, eps: f64, vb: VarBuilder) -> Result<Self> {
-        let weight = vb.get(dim, "weight")?;
+        let weight = (vb.get(dim, "weight")?.to_dtype(DType::F32)? + 1.0)?;
         Ok(Self { weight, eps })
     }
 
     pub fn forward(&self, x: &Tensor) -> Result<Tensor> {
-        let x_dtype = x.dtype();
-        let internal_dtype = match x_dtype {
-            DType::F16 | DType::BF16 => DType::F32,
-            d => d,
-        };
-        let hidden_states = x.to_dtype(internal_dtype)?;
-        let variance = hidden_states.sqr()?.mean_keepdim(D::Minus1)?;
-        let hidden_states =
-            hidden_states.broadcast_mul(&(&variance + self.eps)?.sqrt()?.recip()?)?;
-        let weight = (&self.weight.to_dtype(internal_dtype)? + 1.0)?;
-        hidden_states.broadcast_mul(&weight)?.to_dtype(x_dtype)
+        self.normalize(&x.to_dtype(DType::F32)?, x.dtype())
+    }
+
+    fn add(&self, x: &Tensor, residual: &Tensor) -> Result<(Tensor, Tensor)> {
+        // Fused residual normalization uses the unrounded F32 sum. The
+        // separately retained residual is rounded to the model's dtype.
+        let sum = (x.to_dtype(DType::F32)? + residual.to_dtype(DType::F32)?)?;
+        Ok((self.normalize(&sum, x.dtype())?, sum.to_dtype(x.dtype())?))
+    }
+
+    fn normalize(&self, hidden_states: &Tensor, x_dtype: DType) -> Result<Tensor> {
+        candle_nn::ops::rms_norm(&hidden_states.contiguous()?, &self.weight, self.eps as f32)?
+            .to_dtype(x_dtype)
     }
 }
 
@@ -527,21 +529,48 @@ impl Qwen3_5Attention {
         attention_mask: Option<&Tensor>,
         seqlen_offset: usize,
     ) -> Result<Tensor> {
+        self.forward_internal(hidden_states, attention_mask, seqlen_offset, None)
+    }
+
+    fn forward_internal(
+        &mut self,
+        hidden_states: &Tensor,
+        attention_mask: Option<&Tensor>,
+        seqlen_offset: usize,
+        mut captured: Option<&mut super::LayerTrace>,
+    ) -> Result<Tensor> {
         let (b_sz, q_len, _) = hidden_states.dims3()?;
 
         let q_proj_out = self.q_proj.forward(hidden_states)?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("q_proj".into(), q_proj_out.clone()));
+        }
         let q_proj_out = q_proj_out.reshape((b_sz, q_len, self.num_heads, self.head_dim * 2))?;
 
         let query_states = q_proj_out.narrow(D::Minus1, 0, self.head_dim)?;
         let gate = q_proj_out.narrow(D::Minus1, self.head_dim, self.head_dim)?;
 
-        let query_states = self.q_norm.forward(&query_states)?.transpose(1, 2)?;
+        let query_states = self.q_norm.forward(&query_states)?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("q_norm".into(), query_states.clone()));
+        }
+        let query_states = query_states.transpose(1, 2)?;
 
         let key_states = self.k_proj.forward(hidden_states)?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("k_proj".into(), key_states.clone()));
+        }
         let key_states = key_states.reshape((b_sz, q_len, self.num_kv_heads, self.head_dim))?;
-        let key_states = self.k_norm.forward(&key_states)?.transpose(1, 2)?;
+        let key_states = self.k_norm.forward(&key_states)?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("k_norm".into(), key_states.clone()));
+        }
+        let key_states = key_states.transpose(1, 2)?;
 
         let value_states = self.v_proj.forward(hidden_states)?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("v_proj".into(), value_states.clone()));
+        }
         let value_states = value_states
             .reshape((b_sz, q_len, self.num_kv_heads, self.head_dim))?
             .transpose(1, 2)?;
@@ -549,6 +578,10 @@ impl Qwen3_5Attention {
         let (query_states, key_states) =
             self.rotary_emb
                 .apply(&query_states, &key_states, seqlen_offset)?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("q_rope".into(), query_states.clone()));
+            c.push(("k_rope".into(), key_states.clone()));
+        }
 
         let (key_states, value_states) = match &self.kv_cache {
             None => (key_states, value_states),
@@ -565,17 +598,28 @@ impl Qwen3_5Attention {
 
         let scale = 1f64 / f64::sqrt(self.head_dim as f64);
         let attn_weights = (query_states
+            .to_dtype(DType::F32)?
             .contiguous()?
-            .matmul(&key_states.transpose(2, 3)?)?
+            .matmul(&key_states.to_dtype(DType::F32)?.transpose(2, 3)?)?
             * scale)?;
 
         let attn_weights = match attention_mask {
             None => attn_weights,
-            Some(mask) => attn_weights.broadcast_add(mask)?,
+            Some(mask) => attn_weights.broadcast_add(&mask.to_dtype(DType::F32)?)?,
         };
-        let attn_weights = candle_nn::ops::softmax_last_dim(&attn_weights.to_dtype(DType::F32)?)?
-            .to_dtype(value_states.dtype())?;
-        let attn_output = attn_weights.matmul(&value_states)?;
+        // Keep scores and softmax accumulation in F32. The reference attention
+        // kernel rounds unnormalized exponentials for the value product and
+        // divides the F32 accumulator by its F32 denominator afterward.
+        let exponentials = attn_weights
+            .broadcast_sub(&attn_weights.max_keepdim(D::Minus1)?)?
+            .exp()?;
+        let denominator = exponentials.sum_keepdim(D::Minus1)?;
+        let attn_output = exponentials
+            .to_dtype(value_states.dtype())?
+            .to_dtype(DType::F32)?
+            .matmul(&value_states.to_dtype(DType::F32)?)?
+            .broadcast_div(&denominator)?
+            .to_dtype(hidden_states.dtype())?;
 
         let attn_output =
             attn_output
@@ -588,6 +632,9 @@ impl Qwen3_5Attention {
             .to_dtype(hidden_states.dtype())?;
 
         let attn_output = attn_output.reshape((b_sz, q_len, self.num_heads * self.head_dim))?;
+        if let Some(c) = captured.as_mut() {
+            c.push(("o_input".into(), attn_output.clone()));
+        }
         self.o_proj.forward(&attn_output)
     }
 }
@@ -616,9 +663,13 @@ impl Qwen3_5MLP {
     }
 
     pub fn forward(&self, xs: &Tensor) -> Result<Tensor> {
-        let lhs = xs.apply(&self.gate_proj)?.apply(&self.act_fn)?;
-        let rhs = xs.apply(&self.up_proj)?;
-        (lhs * rhs)?.apply(&self.down_proj)
+        // Match the fused activation's single rounding after SiLU * up.
+        let lhs = xs
+            .apply(&self.gate_proj)?
+            .to_dtype(DType::F32)?
+            .apply(&self.act_fn)?;
+        let rhs = xs.apply(&self.up_proj)?.to_dtype(DType::F32)?;
+        (lhs * rhs)?.to_dtype(xs.dtype())?.apply(&self.down_proj)
     }
 }
 
@@ -679,24 +730,31 @@ impl Qwen3_5DecoderLayer {
     fn forward(
         &mut self,
         hidden_states: &Tensor,
+        residual: Option<&Tensor>,
         attention_mask: Option<&Tensor>,
         seqlen_offset: usize,
-    ) -> Result<Tensor> {
-        let residual = hidden_states;
-        let norm_hidden_states = self.input_layernorm.forward(hidden_states)?;
+        captured: Option<&mut super::LayerTrace>,
+    ) -> Result<(Tensor, Tensor)> {
+        let (norm_hidden_states, residual) = match residual {
+            Some(residual) => self.input_layernorm.add(hidden_states, residual)?,
+            None => (
+                self.input_layernorm.forward(hidden_states)?,
+                hidden_states.clone(),
+            ),
+        };
 
         let mixed_states = match &mut self.token_mixer {
             TokenMixer::FullAttention(attn) => {
-                attn.forward(&norm_hidden_states, attention_mask, seqlen_offset)?
+                attn.forward_internal(&norm_hidden_states, attention_mask, seqlen_offset, captured)?
             }
             TokenMixer::LinearAttention(attn) => attn.forward(&norm_hidden_states)?,
         };
 
-        let hidden_states = (residual + mixed_states)?;
-        let residual = &hidden_states;
-        let norm_hidden_states = self.post_attention_layernorm.forward(&hidden_states)?;
+        let (norm_hidden_states, residual) = self
+            .post_attention_layernorm
+            .add(&mixed_states, &residual)?;
         let mlp_states = self.mlp.forward(&norm_hidden_states)?;
-        residual + mlp_states
+        Ok((mlp_states, residual))
     }
 
     fn clear_kv_cache(&mut self) {
@@ -777,6 +835,15 @@ impl Model {
     }
 
     pub fn forward(&mut self, input_ids: &Tensor, seqlen_offset: usize) -> Result<Tensor> {
+        self.forward_internal(input_ids, seqlen_offset, None)
+    }
+
+    pub(crate) fn forward_internal(
+        &mut self,
+        input_ids: &Tensor,
+        seqlen_offset: usize,
+        mut captured: Option<&mut super::LayerTrace>,
+    ) -> Result<Tensor> {
         let (b_size, seq_len) = input_ids.dims2()?;
         let attention_mask = if seq_len <= 1 {
             None
@@ -785,10 +852,40 @@ impl Model {
         };
 
         let mut xs = self.embed_tokens.forward(input_ids)?;
-        for layer in self.layers.iter_mut() {
-            xs = layer.forward(&xs, attention_mask.as_ref(), seqlen_offset)?;
+        if let Some(captured) = captured.as_mut() {
+            captured.push(("embedding".into(), xs.clone()));
         }
-        self.norm.forward(&xs)
+        let mut residual = None;
+        let mut attention_captured = false;
+        for (index, layer) in self.layers.iter_mut().enumerate() {
+            let tap = if !attention_captured
+                && matches!(layer.token_mixer, TokenMixer::FullAttention(_))
+            {
+                attention_captured = true;
+                captured.as_deref_mut()
+            } else {
+                None
+            };
+            let (hidden, next_residual) = layer.forward(
+                &xs,
+                residual.as_ref(),
+                attention_mask.as_ref(),
+                seqlen_offset,
+                tap,
+            )?;
+            xs = hidden;
+            residual = Some(next_residual);
+            if let Some(captured) = captured.as_mut() {
+                captured.push((
+                    format!("layer_{index}"),
+                    (&xs + residual.as_ref().unwrap())?,
+                ));
+            }
+        }
+        match residual {
+            Some(residual) => Ok(self.norm.add(&xs, &residual)?.0),
+            None => self.norm.forward(&xs),
+        }
     }
 
     pub fn clear_kv_cache(&mut self) {
@@ -855,4 +952,33 @@ fn depthwise_conv(input: &Tensor, weight: &Tensor) -> Result<Tensor> {
                 .broadcast_mul(&w.narrow(1, tap, 1)?.reshape((1, channels, 1))?)?)?;
     }
     Ok(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn residual_norm_uses_sum_before_bf16_rounding() -> Result<()> {
+        let dev = Device::Cpu;
+        let norm = Qwen3_5RmsNorm::new(2, 1e-6, VarBuilder::zeros(DType::BF16, &dev))?;
+        let input = Tensor::new(&[[0.25f32, 1.]], &dev)?.to_dtype(DType::BF16)?;
+        let residual = Tensor::new(&[[-0.00390625f32, 0.00390625]], &dev)?.to_dtype(DType::BF16)?;
+        let (normalized, retained) = norm.add(&input, &residual)?;
+        assert_eq!(
+            retained.to_dtype(DType::F32)?.to_vec2::<f32>()?,
+            [[0.24609375, 1.]]
+        );
+        assert_eq!(
+            normalized.to_dtype(DType::F32)?.to_vec2::<f32>()?,
+            [[0.3359375, 1.375]]
+        );
+        assert_eq!(
+            norm.forward(&retained)?
+                .to_dtype(DType::F32)?
+                .to_vec2::<f32>()?,
+            [[173. / 512., 1.375]]
+        );
+        Ok(())
+    }
 }

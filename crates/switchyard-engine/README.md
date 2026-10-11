@@ -2,7 +2,7 @@
 
 `switchyard-engine` is a Rust text-generation server that loads local native tensors and executes a model directly through Candle and CUDA. The first adapter implements dense Qwen3.5 attention, gated delta recurrence, normalization and feed-forward layers. It does not launch Python, Torch, vLLM or a restored process.
 
-This is an initial engine, not the default production serving backend. A short reference corpus matched every generated token, but the broader numerical comparison still contains differences. The [measurement report](../../docs/rust-inference-engine.md) records those differences alongside startup and throughput measurements.
+This is an initial engine, not the default production serving backend. The [F32 numerical gate](../../docs/native-engine-accuracy.md) passes against the released Transformers implementation, including complete single and batched sequences. Strict BF16 parity with vLLM remains incomplete. The [measurement report](../../docs/rust-inference-engine.md) and [development goals](../../docs/native-engine-roadmap.md) describe measured behavior and remaining work.
 
 ## Build and launch
 

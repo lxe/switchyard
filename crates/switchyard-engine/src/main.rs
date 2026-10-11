@@ -21,6 +21,14 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    Probe {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long)]
+        layers_output: Option<PathBuf>,
+    },
     Prepare {
         #[arg(long)]
         output: PathBuf,
@@ -98,8 +106,44 @@ async fn main() -> Result<()> {
         None
     };
     let model = models::load(&config, &telemetry)?;
-    let engine = Engine::new(config.clone(), model, telemetry.clone());
+    if let Command::Probe {
+        input,
+        output,
+        layers_output,
+    } = &args.command
+    {
+        let traces: Vec<switchyard_engine::probe::Trace> =
+            serde_json::from_slice(&std::fs::read(input)?)?;
+        let result = switchyard_engine::probe::probe(model.as_ref(), &config, &traces)?;
+        std::fs::write(output, serde_json::to_vec_pretty(&result)?)?;
+        if let Some(path) = layers_output {
+            let first = traces
+                .first()
+                .ok_or_else(|| switchyard_engine::Error::Config("No diagnostic trace".into()))?;
+            let tokens = candle_core::Tensor::from_vec(
+                first.prompt.clone(),
+                (1, first.prompt.len()),
+                model.device(),
+            )?;
+            let layers = model
+                .inspect_layers(&tokens)?
+                .iter()
+                .map(|(name, x)| {
+                    Ok((
+                        name.clone(),
+                        x.to_dtype(candle_core::DType::F32)?
+                            .flatten_all()?
+                            .to_vec1::<f32>()?,
+                    ))
+                })
+                .collect::<candle_core::Result<std::collections::BTreeMap<_, _>>>()?;
+            std::fs::write(path, serde_json::to_vec(&layers)?)?;
+        }
+        return Ok(());
+    }
+    let engine = Engine::new(config.clone(), model, telemetry.clone())?;
     match args.command {
+        Command::Probe { .. } => unreachable!("Diagnostic probe returned before serving"),
         Command::Prepare { .. } | Command::Tokenize { .. } => {
             unreachable!("Tokenization returned before GPU initialization")
         }

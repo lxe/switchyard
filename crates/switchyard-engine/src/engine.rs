@@ -23,14 +23,17 @@ pub struct Engine {
     config: Config,
     model: Box<dyn ModelFactory>,
     telemetry: Telemetry,
+    sampler: crate::sampling::Greedy,
 }
 impl Engine {
-    pub fn new(config: Config, model: Box<dyn ModelFactory>, telemetry: Telemetry) -> Self {
-        Self {
+    pub fn new(config: Config, model: Box<dyn ModelFactory>, telemetry: Telemetry) -> Result<Self> {
+        let sampler = crate::sampling::Greedy::new(model.vocab_size(), model.device())?;
+        Ok(Self {
             config,
             model,
             telemetry,
-        }
+            sampler,
+        })
     }
     pub fn eos_token(&self) -> u32 {
         self.model.eos_token()
@@ -105,7 +108,11 @@ impl Engine {
                     let input_len = input.dim(1)?;
                     let logits = session.forward(&input, position)?;
                     // Greedy argmax on device; transferring token IDs also synchronizes work.
-                    let next = logits.argmax(1)?.to_dtype(DType::U32)?.to_vec1::<u32>()?;
+                    let next = self
+                        .sampler
+                        .select(&logits)?
+                        .to_dtype(DType::U32)?
+                        .to_vec1::<u32>()?;
                     let elapsed = began.elapsed().as_secs_f64();
                     for (row, &i) in cohort.iter().enumerate() {
                         if finished[row] {

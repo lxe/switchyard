@@ -48,6 +48,7 @@ fn engine() -> Engine {
         Box::new(Counter),
         Telemetry::default(),
     )
+    .unwrap()
 }
 #[test]
 fn generated_workloads_preserve_order_output_bounds_and_eos() {

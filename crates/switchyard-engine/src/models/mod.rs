@@ -7,6 +7,7 @@ use crate::{
     telemetry::Telemetry,
 };
 use candle_core::{DType, Device, Tensor};
+pub type LayerTrace = Vec<(String, Tensor)>;
 
 /// Execution contract for one cohort of equal-length token sequences.
 /// A new session must have empty state and may share immutable weight storage.
@@ -18,6 +19,12 @@ pub trait ModelFactory: Send {
     fn device(&self) -> &Device;
     fn vocab_size(&self) -> usize;
     fn eos_token(&self) -> u32;
+    /// Offline layer inspection; unsupported adapters need not implement it.
+    fn inspect_layers(&self, _: &Tensor) -> Result<LayerTrace> {
+        Err(Error::Config(
+            "Layer inspection unsupported by this adapter".into(),
+        ))
+    }
 }
 
 struct QwenSession {
@@ -66,6 +73,14 @@ impl ModelFactory for QwenFactory {
     }
     fn eos_token(&self) -> u32 {
         self.eos
+    }
+    fn inspect_layers(&self, tokens: &Tensor) -> Result<LayerTrace> {
+        let mut model = self.weights.clone();
+        let mut layers = Vec::new();
+        model
+            .base_model
+            .forward_internal(tokens, 0, Some(&mut layers))?;
+        Ok(layers)
     }
 }
 

@@ -2,6 +2,8 @@
 pub mod config;
 pub mod engine;
 pub mod models;
+pub mod probe;
+pub mod sampling;
 pub mod server;
 pub mod telemetry;
 pub mod tokenizer;

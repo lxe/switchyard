@@ -2,7 +2,7 @@
 
 The native engine loads Qwen3.5 0.8B text tensors and generates tokens directly through Rust and Candle/CUDA operations. It provides greedy OpenAI-style completions and chat completions, actual SSE token delivery, and bounded batching across HTTP requests. Python, Torch and CRIU are absent from the candidate serving process. The fleet simulator and cloud adapters remain independent.
 
-The implementation and commands are documented in the [engine README](../crates/switchyard-engine/README.md). The first real endpoint works, but numerical parity remains an open gate; this engine has not replaced the prepared vLLM production path.
+The implementation and commands are documented in the [engine README](../crates/switchyard-engine/README.md). The endpoint passes the [F32 mathematical accuracy gate](native-engine-accuracy.md); strict BF16 sequence parity with vLLM remains incomplete. This engine has not replaced the prepared vLLM production path. The measurements below describe the initial implementation; the accuracy document contains the corrected engine's receipt and startup measurements.
 
 ## Local startup and GPU cache control
 
@@ -79,4 +79,4 @@ The [checked receipt](receipts/rust-engine-rtx5090.json) includes the workload I
 
 Five CPU tests pass, including cached causal decoding, independent batch rows, state reset, generated workload ordering/EOS/output limits, invalid admission and per-row cancellation. CPU clippy, rustdoc, the CUDA release build and the wider workspace test suite pass. The GPU endpoint and SSE delivery were exercised by the Rust client.
 
-Remaining gates are teacher-forced numerical attribution, strict reference parity or an explicitly justified tolerance contract, mixed-length batching and GPU-memory admission, native runtime packaging, and a full hydrated cold start. Allocation, network transport, cold filesystem pages and per-kernel compilation timings remain unmeasured in this native-engine experiment.
+The F32 numerical contract and BF16 comparison are recorded in the [accuracy document](native-engine-accuracy.md). Remaining production gates include mixed-length batching and GPU-memory admission, native runtime packaging, and a full hydrated cold start. Allocation, network transport, cold filesystem pages and per-kernel compilation timings remain unmeasured in this local native-engine experiment.
