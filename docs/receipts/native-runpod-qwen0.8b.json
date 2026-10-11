@@ -272,6 +272,11 @@
       "download_concurrency": 20,
       "download_piece_bytes": 65536,
       "receive_channel_pieces": 4
+    },
+    "requested_host": {
+      "minimum_ram_gb": 32,
+      "minimum_vcpus": 8,
+      "container_disk_gb": 30
     }
   },
   "timing_s": {
@@ -992,6 +997,7 @@
       "token_elapsed_s": 0.360638167
     }
   ],
+  "workloads": null,
   "offline_bake": {
     "engine_sha256": "06a83dc1153adb4161b4a2b0b168925d5f493e7e7498ab4db155df7544f83c2a",
     "hardware": "NVIDIA GeForce RTX 4090, GPU-60918434-2469-84d6-0371-fca7fedd4d38, 580.159.04, 8.9, 24564 MiB",

@@ -122,7 +122,15 @@ def main():
         "runtime_build": read(args.build),
         "artifacts": artifacts,
         "cache_compatibility": prepared["cache_compatibility"],
-        "resource_bounds": {"engine": config["engine"], "platform": config["limits"]},
+        "resource_bounds": {
+            "engine": config["engine"],
+            "platform": config["limits"],
+            "requested_host": {
+                "minimum_ram_gb": config["provider"]["min_ram_gb"],
+                "minimum_vcpus": config["provider"]["min_vcpus"],
+                "container_disk_gb": config["provider"]["disk_gb"],
+            },
+        },
         "timing_s": {
             key: launch[key]
             for key in [

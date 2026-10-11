@@ -239,13 +239,13 @@ class Control:
                 ) from None
             pod = found[0]
         self.owned = pod["id"]
-        if pod["cost"] > self.config["limits"]["max_hourly_usd"]:
-            raise RuntimeError("allocated hourly rate exceeds fixed limit")
         summary = {
             key: pod.get(key)
             for key in ["id", "name", "status", "cost", "dataCenterId", "cudaVersion"]
         }
         write(self.output / "owned-pod.json", summary)
+        if pod["cost"] > self.config["limits"]["max_hourly_usd"]:
+            raise RuntimeError("allocated hourly rate exceeds fixed limit")
         self.event("allocation_accepted", **summary)
         return pod
 

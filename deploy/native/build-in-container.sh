@@ -10,6 +10,15 @@ fi
 export PATH="/build/cargo/bin:$PATH"
 export LIBRARY_PATH="/usr/local/cuda/lib64/stubs:/usr/local/cuda/lib64"
 export CUDA_ROOT=/usr/local/cuda
+nvcc --version > /output/nvcc.txt
+nvcc --list-gpu-arch > /output/nvcc-gpu-arch.txt
+printf '%s\n' "${CUDA_VERSION:?CUDA builder must declare its toolkit release}" > /output/cuda-environment-version.txt
+dpkg-query -W -f='${binary:Package}\t${Version}\n' 'cuda-*' > /output/cuda-packages.txt
+cp /etc/os-release /output/os-release.txt
+uname -m > /output/architecture.txt
+grep -Fxq "compute_${CUDA_COMPUTE_CAP}" /output/nvcc-gpu-arch.txt || {
+  printf 'CUDA compiler does not support the requested numeric target.\n' >&2; exit 64;
+}
 cargo build --locked --release -p switchyard-engine --features cuda --bins
 mkdir -p /output/tree/bin /output/tree/lib
 for native_bin in switchyard-engine switchyard-engine-bake; do
@@ -29,6 +38,5 @@ while read -r native_lib; do
   esac
 done < <(ldd /output/tree/bin/switchyard-engine | awk '$2 == "=>" && $3 ~ /^\// {print $3}')
 readelf --version-info /output/tree/bin/switchyard-engine > /output/elf-versions.txt
-nvcc --version > /output/nvcc.txt
 rustc -Vv > /output/rustc.txt
 chown -R "$(stat -c %u /output):$(stat -c %g /output)" /output
