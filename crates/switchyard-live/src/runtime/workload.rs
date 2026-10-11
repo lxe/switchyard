@@ -120,147 +120,165 @@ impl<P: Provider> LiveRuntime<P> {
         let mut last_scale = f64::NEG_INFINITY;
         let mut next_observation = begin;
         let mut budget_exceeded = false;
-        loop {
-            if let Err(error) = self.limits() {
-                self.save(&format!("workloads/{name}-partial.json"),&serde_json::json!({"error":error.to_string(),"completions":completions,"failures":failures,"states":states.iter().map(|(id,s)|(*id,format!("{:?}",s.state))).collect::<BTreeMap<_,_>>()}))?;
-                return Err(error);
-            }
-            let now = self.now();
-            for (id, request) in &requests {
-                if states[id].state == RequestStatus::Future && request.arrival_s <= now {
-                    states.get_mut(id).expect("known request").state = RequestStatus::Queued;
+        let outcome: Result<()> = async {
+            loop {
+                self.limits()?;
+                let now = self.now();
+                for (id, request) in &requests {
+                    if states[id].state == RequestStatus::Future && request.arrival_s <= now {
+                        states.get_mut(id).expect("known request").state = RequestStatus::Queued;
+                    }
                 }
-            }
-            while let Ok(event) = rx.try_recv() {
-                match event {
-                    Event::Progress { request, generated } => {
-                        for node in &mut self.nodes {
-                            if let Some(a) =
-                                node.observed.active.iter_mut().find(|a| a.id == request)
+                while let Ok(event) = rx.try_recv() {
+                    match event {
+                        Event::Progress { request, generated } => {
+                            for node in &mut self.nodes {
+                                if let Some(a) =
+                                    node.observed.active.iter_mut().find(|a| a.id == request)
+                                {
+                                    a.generated = generated as f64;
+                                    a.prefill = 0.0;
+                                }
+                            }
+                        }
+                        Event::Completed { request, result } => {
+                            for node in &mut self.nodes {
+                                if node.observed.active.iter().any(|a| a.id == request) {
+                                    node.observed.active.retain(|a| a.id != request);
+                                    node.observed.last_used_s = now;
+                                }
+                            }
+                            let observed = states.get_mut(&request).expect("known request");
+                            match result {
+                                Ok(receipt) => {
+                                    observed.state = RequestStatus::Done;
+                                    observed.completed_s = Some(receipt.completed_s);
+                                    completions.push(receipt);
+                                }
+                                Err(error) if attempts[request] < 2 => {
+                                    observed.state = RequestStatus::Queued;
+                                    failures.insert(request, error.to_string());
+                                }
+                                Err(error) => {
+                                    observed.state = RequestStatus::Rejected;
+                                    failures.insert(request, error.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+                if states
+                    .values()
+                    .all(|s| matches!(s.state, RequestStatus::Done | RequestStatus::Rejected))
+                {
+                    break;
+                }
+                if now >= next_observation {
+                    self.observe().await?;
+                    next_observation = self.now() + 1.0;
+                }
+                let now = self.now();
+                let allow_scale = now - last_scale >= self.scheduling.plan_interval_s;
+                if allow_scale {
+                    last_scale = now;
+                }
+                let nodes = self.nodes.iter().map(|n| n.observed.clone()).collect();
+                let fleet = FleetView {
+                    now,
+                    allow_scale,
+                    profiles: &self.profiles,
+                    provisioning_cooldowns: self.provisioning_cooldowns.clone(),
+                    requests: requests.clone(),
+                    states: states.clone(),
+                    nodes,
+                    jobs: jobs.clone(),
+                    scheduling: &self.scheduling,
+                    max_nodes_per_model: self.config.limits.max_instances,
+                    idle_timeout_s: 30.0,
+                    reactive_delay_s: 0.0,
+                    build_probability: 0.0,
+                };
+                while self.tasks.try_join_next().is_some() {}
+                let actions = self.controller.decide(&fleet);
+                if !actions.is_empty() {
+                    let nodes = fleet.nodes.iter().enumerate().map(|(id, node)| serde_json::json!({
+                        "id": id, "profile": node.profile, "allocated_s": node.allocated_s,
+                        "ready_s": node.ready_s, "ended_s": node.ended_s, "is_ready": node.is_ready,
+                        "active_requests": node.active.iter().map(|request| request.id).collect::<Vec<_>>(),
+                        "host": node.host,
+                    })).collect::<Vec<_>>();
+                    super::telemetry::append(
+                        &self.out,
+                        "scheduler-decisions.ndjson",
+                        &serde_json::json!({"at_s": fleet.now, "workload": name,
+                            "scheduler": self.controller.name(), "actions": actions,
+                            "nodes": nodes, "scheduling": self.scheduling, "diagnostics": self.controller.diagnostics()}),
+                    )?;
+                }
+                for action in actions {
+                    match action {
+                        Action::Provision { profile } => {
+                            if !self.provision(profile).await? {
+                                // Later actions can refer to the planned new node. Replan
+                                // from observed hosts if that allocation did not happen.
+                                break;
+                            }
+                        }
+                        Action::Release { node } => {
+                            if self
+                                .nodes
+                                .get(node)
+                                .is_some_and(|n| n.observed.active.is_empty())
                             {
-                                a.generated = generated as f64;
-                                a.prefill = 0.0;
+                                self.release(node).await?;
+                            } else {
+                                self.invalid += 1;
                             }
                         }
-                    }
-                    Event::Completed { request, result } => {
-                        for node in &mut self.nodes {
-                            if node.observed.active.iter().any(|a| a.id == request) {
-                                node.observed.active.retain(|a| a.id != request);
-                                node.observed.last_used_s = now;
-                            }
-                        }
-                        let observed = states.get_mut(&request).expect("known request");
-                        match result {
-                            Ok(receipt) => {
-                                observed.state = RequestStatus::Done;
-                                observed.completed_s = Some(receipt.completed_s);
-                                completions.push(receipt);
-                            }
-                            Err(error) if attempts[request] < 2 => {
-                                observed.state = RequestStatus::Queued;
-                                failures.insert(request, error.to_string());
-                            }
-                            Err(error) => {
-                                observed.state = RequestStatus::Rejected;
-                                failures.insert(request, error.to_string());
-                            }
+                        Action::ProbeHost { node } => self.probe(node).await?,
+                        Action::Route { request, node, .. } => {
+                            self.route_request(
+                                request,
+                                node,
+                                super::routing::RouteContext {
+                                    now,
+                                    calls,
+                                    requests: &requests,
+                                    states: &mut states,
+                                    attempts: &mut attempts,
+                                    events: &tx,
+                                },
+                            )
+                            .await?;
                         }
                     }
                 }
-            }
-            if states
-                .values()
-                .all(|s| matches!(s.state, RequestStatus::Done | RequestStatus::Rejected))
-            {
-                break;
-            }
-            if now >= next_observation {
-                self.observe().await?;
-                next_observation = self.now() + 1.0;
-            }
-            let now = self.now();
-            let allow_scale = now - last_scale >= self.scheduling.plan_interval_s;
-            if allow_scale {
-                last_scale = now;
-            }
-            let nodes = self.nodes.iter().map(|n| n.observed.clone()).collect();
-            let fleet = FleetView {
-                now,
-                allow_scale,
-                profiles: &self.profiles,
-                provisioning_cooldowns: self.provisioning_cooldowns.clone(),
-                requests: requests.clone(),
-                states: states.clone(),
-                nodes,
-                jobs: jobs.clone(),
-                scheduling: &self.scheduling,
-                max_nodes_per_model: self.config.limits.max_instances,
-                idle_timeout_s: 30.0,
-                reactive_delay_s: 0.0,
-                build_probability: 0.0,
-            };
-            while self.tasks.try_join_next().is_some() {}
-            let actions = self.controller.decide(&fleet);
-            if !actions.is_empty() {
-                let nodes = fleet.nodes.iter().enumerate().map(|(id, node)| serde_json::json!({
-                    "id": id, "profile": node.profile, "allocated_s": node.allocated_s,
-                    "ready_s": node.ready_s, "ended_s": node.ended_s, "is_ready": node.is_ready,
-                    "active_requests": node.active.iter().map(|request| request.id).collect::<Vec<_>>(),
-                    "host": node.host,
-                })).collect::<Vec<_>>();
-                super::telemetry::append(
-                    &self.out,
-                    "scheduler-decisions.ndjson",
-                    &serde_json::json!({"at_s": fleet.now, "workload": name,
-                        "scheduler": self.controller.name(), "actions": actions,
-                        "nodes": nodes, "scheduling": self.scheduling, "diagnostics": self.controller.diagnostics()}),
-                )?;
-            }
-            for action in actions {
-                match action {
-                    Action::Provision { profile } => {
-                        if !self.provision(profile).await? {
-                            // Later actions can refer to the planned new node. Replan
-                            // from observed hosts if that allocation did not happen.
-                            break;
-                        }
-                    }
-                    Action::Release { node } => {
-                        if self
-                            .nodes
-                            .get(node)
-                            .is_some_and(|n| n.observed.active.is_empty())
-                        {
-                            self.release(node).await?;
-                        } else {
-                            self.invalid += 1;
-                        }
-                    }
-                    Action::ProbeHost { node } => self.probe(node).await?,
-                    Action::Route { request, node, .. } => {
-                        self.route_request(
-                            request,
-                            node,
-                            super::routing::RouteContext {
-                                now,
-                                calls,
-                                requests: &requests,
-                                states: &mut states,
-                                attempts: &mut attempts,
-                                events: &tx,
-                            },
-                        )
-                        .await?;
-                    }
+                if self.now() - begin > completion_budget_s {
+                    budget_exceeded = true;
+                    self.abort_requests().await;
+                    break;
                 }
+                tokio::time::sleep(Duration::from_millis(self.config.limits.poll_ms)).await;
             }
-            if self.now() - begin > completion_budget_s {
-                budget_exceeded = true;
-                self.abort_requests().await;
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(self.config.limits.poll_ms)).await;
+            Ok(())
+        }
+        .await;
+        if let Err(error) = outcome {
+            // Retain completions already observed before any provider, host or
+            // routing error. Cancellation and owned-pod cleanup still happen in
+            // the caller; an interrupted workload must not look fully completed.
+            self.save(
+                &format!("workloads/{name}-partial.json"),
+                &serde_json::json!({
+                    "error":error.to_string(), "requests":requests.len(),
+                    "completed":completions.len(), "completions":completions,
+                    "failures":failures, "attempts":attempts,
+                    "states":states.iter().map(|(id,s)|(*id,format!("{:?}",s.state))).collect::<BTreeMap<_,_>>(),
+                    "observed_at_s":self.now(), "elapsed_s":self.now()-begin,
+                    "estimated_rental_usd":self.rental_usd()-initial_cost,
+                }),
+            )?;
+            return Err(error);
         }
         failures.retain(|id, _| states[id].state == RequestStatus::Rejected);
         let report = super::report::summarize(

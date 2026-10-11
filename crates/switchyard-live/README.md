@@ -4,6 +4,12 @@ A live execution backend for the simulator scheduling contract. It plans inputs 
 
 See [RunPod live execution](../../docs/RUNPOD.md) for configuration, workloads, receipts, and recovery.
 
+## Workload failure receipts
+
+Successful workloads write `workloads/<name>.json` with streamed completions and aggregate timing. If a provider, host observation, routing operation, or run limit returns an error, `workloads/<name>-partial.json` preserves the completions already observed by the controller, request states, attempt counts, elapsed time, and estimated rental cost. The original error still stops the workload, and owned-resource cleanup follows through the existing runtime.
+
+A partial receipt does not claim that requests still in flight completed. External cancellation can interrupt the workload before this error handler runs; ownership journals and incremental observations remain the evidence for such interruptions. Read the outcome and cleanup receipts alongside request measurements.
+
 ## Compiler-cache preparation
 
 `switchyard live bake` provisions one configured model on a selected GPU and runs

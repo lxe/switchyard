@@ -25,6 +25,7 @@ struct MockProvider {
     bake: Option<MockBake>,
     rejected_allocations: Arc<Mutex<VecDeque<u16>>>,
     allocation_attempts: Arc<Mutex<Vec<String>>>,
+    agent_failure: Arc<Mutex<Option<String>>>,
 }
 impl Provider for MockProvider {
     fn endpoint_url(&self, _: &Pod, _: u16) -> String {
@@ -119,6 +120,7 @@ struct HttpFixture {
     bad_usage: bool,
     model_manifest: serde_json::Value,
     bake: Option<MockBake>,
+    agent_failure: Arc<Mutex<Option<String>>>,
 }
 
 async fn object_get(State(state): State<HttpFixture>, Path(key): Path<String>) -> Response<Body> {
@@ -302,6 +304,7 @@ async fn fixture_with_cache_export(
     );
     let manifest = json!({"format":"shards-v1","compress":"none","total_size":1,"raw_size":1,"sha256":archive_hash,
         "chunks":[{"name":"chunk","size":1,"raw":1,"shard":0,"seq":0,"sha256":chunk_hash}],"files":{"config.json":{"size":1}}});
+    let agent_failure = Arc::new(Mutex::new(None));
     let app = Router::new()
         .route(
             "/bucket/{*key}",
@@ -309,7 +312,8 @@ async fn fixture_with_cache_export(
         )
         .route(
             "/state",
-            get(|| async {
+            get(|State(state): State<HttpFixture>| async move {
+                let error = state.agent_failure.lock().unwrap().clone();
                 Json(switchyard_agent::State {
                     model_allocation: Default::default(),
                     model_diagnostics: None,
@@ -329,14 +333,18 @@ async fn fixture_with_cache_export(
                     inference_verified: true,
                     model: "tiny".into(),
                     revision: "a".repeat(40),
-                    phase: switchyard_agent::Phase::Ready,
+                    phase: if error.is_some() {
+                        switchyard_agent::Phase::Failed
+                    } else {
+                        switchyard_agent::Phase::Ready
+                    },
                     bytes_downloaded: 1,
                     bytes_total: 1,
                     hydration_seconds: 1.0,
                     volume_bytes_per_s: Some(100_000_000.0),
                     model_cached: false,
                     image_cached: None,
-                    error: None,
+                    error,
                 })
             }),
         )
@@ -351,6 +359,7 @@ async fn fixture_with_cache_export(
             bad_usage,
             model_manifest: manifest,
             bake: bake.clone(),
+            agent_failure: agent_failure.clone(),
         });
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
@@ -460,6 +469,7 @@ async fn fixture_with_cache_export(
         bake,
         rejected_allocations: Arc::new(Mutex::new(VecDeque::new())),
         allocation_attempts: Arc::new(Mutex::new(vec![])),
+        agent_failure,
     };
     let storage = Storage::with_keys(&config.storage, "fake".into(), "fake".into()).unwrap();
     let runtime = LiveRuntime::new(
@@ -732,6 +742,65 @@ async fn single_call_does_not_duplicate_cold_capacity_and_hot_burst_conserves_us
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
 }
+#[tokio::test]
+async fn host_failure_preserves_observed_completions_and_pending_calls() {
+    struct FailAfterCompletion {
+        inner: switchyard_scheduler::BuiltinScheduler,
+        agent_failure: Arc<Mutex<Option<String>>>,
+    }
+    impl Scheduler for FailAfterCompletion {
+        fn name(&self) -> &str {
+            "host-failure-fixture"
+        }
+        fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<switchyard_core::Action> {
+            if fleet
+                .states
+                .values()
+                .any(|state| state.state == switchyard_core::scheduler::RequestStatus::Done)
+            {
+                *self.agent_failure.lock().unwrap() = Some("fixture cache rejected".into());
+            }
+            self.inner.decide(fleet)
+        }
+    }
+    let (runtime, provider, out, server) = fixture(false, false).await;
+    let mut runtime = runtime.with_scheduler(FailAfterCompletion {
+        inner: switchyard_scheduler::BuiltinScheduler::new(Policy::Adaptive),
+        agent_failure: provider.agent_failure.clone(),
+    });
+    let mut workload = calls(2);
+    workload[1].arrival_delay_s = 5.0;
+    let result = runtime
+        .run_workload("host-failure", &workload, 200.0, 10.0)
+        .await;
+    assert!(
+        matches!(result, Err(switchyard_live::Error::Request(error)) if error == "fixture cache rejected")
+    );
+    let partial: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(out.join("workloads/host-failure-partial.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(partial["requests"], 2);
+    assert_eq!(partial["completed"], 1);
+    assert_eq!(partial["completions"][0]["request"], 0);
+    assert_eq!(partial["completions"][0]["output_tokens"], 1);
+    assert_eq!(partial["states"]["0"], "Done");
+    assert_eq!(partial["states"]["1"], "Future");
+    assert!(partial["estimated_rental_usd"].as_f64().unwrap() > 0.0);
+    assert!(!out.join("workloads/host-failure.json").exists());
+    runtime.cleanup().await.unwrap();
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
+    );
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+}
+
 #[tokio::test]
 async fn incorrect_usage_is_rejected_and_owned_resources_are_released() {
     let (mut runtime, provider, out, server) = fixture(true, false).await;
