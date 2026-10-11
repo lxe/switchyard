@@ -155,3 +155,5 @@ GPU service uses aggregate capacity curves with weighted sharing. It does not em
 The serving fixture supports synthetic chat completions and streaming. It does not evaluate model quality or implement every OpenAI API. Text token counts use a documented byte-based approximation when explicit simulator metadata is absent. The default catalog includes historical calibration with incomplete evidence; the quickstart recipe uses clearly marked analytical assumptions.
 
 MIT licensed.
+
+- [Selected local cold-start timeline](docs/selected-local-cold-start.md): instrumented hydration and native serving startup through the first streamed token.

@@ -2,7 +2,7 @@
 # Reproduce the selected local fixture using its prepared immutable inputs.
 set -euo pipefail
 selected_project="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-selected_partition="${COLD_START_PARTITION:-/home/lxe/switchyard-worktrees/parallel-weight-loading/results/parallel-weights/runtime-partition-01}"
+selected_partition="${COLD_START_PARTITION:?Set COLD_START_PARTITION to the prepared runtime-set directory}"
 selected_output="${1:-$selected_project/results/engine-startup/cold-rollout-$(date -u +%Y%m%dT%H%M%S-%N)}"
 selected_runtime="${COLD_START_RUNTIME_CONFIG:-$selected_project/scratch/engine-startup/selected-runtime.json}"
 mkdir -p "$(dirname "$selected_output")"

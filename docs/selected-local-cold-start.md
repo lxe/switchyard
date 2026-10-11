@@ -65,16 +65,17 @@ Other native kernel files originated in the earlier diagnostic cache. Their prov
 
 Agent inference verification followed the native API startup observation by 5.077 seconds. The agent polls health at one-second intervals, then requires successful tokenization and a non-streaming one-token decode before reporting ready. This mandatory check preceded the measured streaming request; the benchmark did not add another tokenization request.
 
-Two CUDA driver-cache files were written during that interval, at 15:45:27.947 and 15:45:31.556 UTC. Those writes are consistent with first-decode initialization contributing to the interval. The recorded spans do not separate the exact costs of health polling, tokenization, and the first decode, so the whole interval cannot be attributed to one operation.
+Two CUDA driver-cache files were written during that interval, at 15:45:27.947 and 15:45:31.556 UTC. Those writes are consistent with first-decode initialization contributing to the interval. The recorded spans do not separate the exact costs of health polling, tokenization, and the first decode, so the whole interval cannot be attributed to one operation. Subsequent agent builds emit separate `engine_health_polling_started`, `engine_health_ready`, `tokenization_started`, `tokenization_response_received`, `first_decode_started`, and `first_decode_response_received` milestones. Those events do not retroactively partition this measurement.
 
 ## Reproduction and evidence
 
 The prepared local inputs are selected by [the runnable fixture script](../crates/switchyard-weights/benchmarks/run_selected_cold.sh). It accepts an optional output directory and otherwise creates a timestamped directory. It preserves console output with `tee`, propagates failures with `pipefail`, and removes its owned container. The script uses existing local artifacts; it does not allocate a cloud GPU.
 
-Run it in the existing observation pane with:
+Set `COLD_START_PARTITION` to the prepared runtime-set directory, then run the script from the checkout containing the local fixture inputs:
 
 ```sh
-bash /home/lxe/switchyard-worktrees/serving-engine-comparison/crates/switchyard-weights/benchmarks/run_selected_cold.sh
+COLD_START_PARTITION=/path/to/runtime-set \
+  bash crates/switchyard-weights/benchmarks/run_selected_cold.sh
 ```
 
 The completed run is under `results/engine-startup/05-selected-cold-rollout/extents`. Its `timeline.jsonl` contains 2,431 events, `startup-profile.jsonl` contains 1,888 native events, and `engine-startup.jsonl` contains 18 structured decisions. `receipt.json` preserves the final agent state and object-transfer receipts. The console is `scratch/engine-startup/selected-cold-console-final.log`.
