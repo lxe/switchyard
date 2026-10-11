@@ -1,0 +1,108 @@
+{
+  "artifact_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "prefix": "switchyard/artifacts/runtime/8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "entries": 185577,
+  "shards": 123,
+  "compressed_bytes": 5244615495,
+  "python_bytecode_invalidation": "unchecked-hash",
+  "published_through_rust_s3_adapter": true,
+  "fresh_r2_hydration_verified": true,
+  "cached_shards": 0,
+  "offline_downloaded_runtime_smoke": {
+    "bytecode_caches_checked": {
+      "site_packages": 24720,
+      "stdlib": 1090
+    },
+    "bytecode_invalidation": "unchecked-hash",
+    "cuda_build": "12.9",
+    "cuda_compilation_tested": true,
+    "gpu_execution_tested": false,
+    "packages": {
+      "tokenizers": "0.23.3",
+      "torch": "2.13.0+cu129",
+      "torchaudio": "2.11.0+cu129",
+      "torchcodec": "0.16.0+cu129",
+      "torchvision": "0.28.0+cu129",
+      "transformers": "5.17.0",
+      "triton": "3.7.1",
+      "vllm": "0.31.0+cu129"
+    },
+    "python": "3.12.14",
+    "status": "passed",
+    "timestamp_independent_bytecode_tested": true
+  },
+  "compatibility": {
+    "architecture": "x86_64",
+    "cuda": "12.9",
+    "os": "ubuntu24.04",
+    "python": "3.12.14",
+    "torch": "2.13.0+cu129",
+    "vllm": "0.31.0+cu129"
+  },
+  "gpu_cache_bake_performed": false,
+  "trusted_streaming_local_r2_hydration": {
+    "exit_code": 0,
+    "elapsed_s": 26.785995861999254,
+    "peak_rss_kib": 2154560,
+    "cpu_user_s": 20.034662,
+    "cpu_system_s": 18.637957,
+    "mode": "trusted_streaming",
+    "concurrency": 20,
+    "compressed_bytes": 5244615495,
+    "cached_shards": 0,
+    "compressed_cache_created": false,
+    "offline_downloaded_runtime_smoke": {
+      "bytecode_caches_checked": {
+        "site_packages": 24720,
+        "stdlib": 1090
+      },
+      "bytecode_invalidation": "unchecked-hash",
+      "cuda_build": "12.9",
+      "cuda_compilation_tested": true,
+      "gpu_execution_tested": false,
+      "packages": {
+        "tokenizers": "0.23.3",
+        "torch": "2.13.0+cu129",
+        "torchaudio": "2.11.0+cu129",
+        "torchcodec": "0.16.0+cu129",
+        "torchvision": "0.28.0+cu129",
+        "transformers": "5.17.0",
+        "triton": "3.7.1",
+        "vllm": "0.31.0+cu129"
+      },
+      "python": "3.12.14",
+      "status": "passed",
+      "timestamp_independent_bytecode_tested": true
+    },
+    "host_scope": "local workstation; GPU-cloud performance not measured by this receipt"
+  },
+  "local_r2_download_only_probe": {
+    "concurrency": 20,
+    "downloaded_bytes": 5244615495,
+    "controller_elapsed_s": 1.8662569869999999,
+    "elapsed_s": 19.355675922,
+    "first_body_elapsed_s": 0.155891326,
+    "last_body_elapsed_s": 19.35567084,
+    "bytes_per_s": 270960079.9339112,
+    "host_scope": "local workstation; separate run without decoding, hashing, or body filesystem writes; GPU-cloud performance not measured"
+  },
+  "trusted_streaming_local_r2_hydration_timed": {
+    "id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+    "prefix": "switchyard/artifacts/runtime/8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+    "mode": "trusted_streaming",
+    "configured_retries": 0,
+    "declared_bytes": 5244615495,
+    "downloaded_bytes": 5244615495,
+    "verified_bytes": 0,
+    "network_verified_bytes": 0,
+    "cache_hits": 0,
+    "already_present": false,
+    "controller_elapsed_s": 1.079524492,
+    "hydration_elapsed_s": 22.699636675,
+    "first_network_progress_elapsed_s": 0.424265854,
+    "all_network_bytes_observed_elapsed_s": 22.371883956,
+    "post_transfer_observation_s": 0.32775271899999936,
+    "timing_qualification": "throttled_callback_last_byte_upper_bound_tail_lower_bound",
+    "host_scope": "local workstation; fresh destination; observations from throttled callbacks"
+  }
+}

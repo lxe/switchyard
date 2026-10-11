@@ -10,6 +10,8 @@ export CUDACXX="$CUDA_HOME/bin/nvcc"
 export SSL_CERT_FILE="$SWITCHYARD_RUNTIME_ROOT/certs/ca-certificates.crt"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
+# The verified runtime includes immutable hash-based bytecode for both library trees.
+export PYTHONDONTWRITEBYTECODE=1
 export VLLM_NO_USAGE_STATS=1
 export DO_NOT_TRACK=1
 # A writable cache volume may override this value before sourcing the file.

@@ -277,6 +277,12 @@ impl Provider for RunPod {
             "cloud":config.cloud,"disk":launch.container.disk_gb,"dataCenterIds":[launch.offering.data_center],
             "ports":ports,"startSsh":false,"env":launch.container.environment,
         });
+        if let Some(memory) = config.min_ram_per_gpu_gb {
+            body["gpu"]["minRamPerGpu"] = json!(memory);
+        }
+        if let Some(vcpus) = config.min_vcpu_count_per_gpu {
+            body["gpu"]["minVcpuCountPerGpu"] = json!(vcpus);
+        }
         if !launch.container.entrypoint.is_empty() {
             body["entrypoint"] = json!(launch.container.entrypoint);
         }

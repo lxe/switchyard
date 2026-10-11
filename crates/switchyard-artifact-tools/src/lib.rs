@@ -1,7 +1,13 @@
 //! Local artifact tooling combines a cloud-independent archive library with object storage.
 pub mod cli;
+mod diagnostics;
+mod probe;
 mod publication;
 mod runtime_build;
+
+pub use diagnostics::HydrationReceipt;
+pub use probe::{ProbeOptions, ProbeReceipt, ProbeShard, probe_directory};
+pub use publication::{PublicationReceipt, publish_directory};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -15,6 +21,8 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("artifact tooling: {0}")]
     Config(String),
+    #[error("artifact download probe: {0}")]
+    Probe(String),
     #[error("artifact worker failed")]
     Task(#[from] tokio::task::JoinError),
 }

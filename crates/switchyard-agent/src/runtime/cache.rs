@@ -61,25 +61,27 @@ pub(super) fn prepare_root(path: &Path) -> Result<()> {
 
 /// Only the awaiting caller publishes a completed tree. A cancelled caller drops its staging
 /// ownership, including when the blocking worker finishes after its final cancellation check.
-pub(super) async fn writable_copy(
+pub(super) async fn writable_copy_mode(
     seed: PathBuf,
     destination: PathBuf,
     manifest: Manifest,
+    mode: switchyard_artifacts::HydrationMode,
 ) -> Result<()> {
-    writable_copy_with(seed, destination, manifest, || {}).await
+    writable_copy_with(seed, destination, manifest, mode, || {}).await
 }
 
 async fn writable_copy_with(
     seed: PathBuf,
     destination: PathBuf,
     manifest: Manifest,
+    mode: switchyard_artifacts::HydrationMode,
     prepared: impl FnOnce() + Send + 'static,
 ) -> Result<()> {
     let cancellation = Cancellation(Arc::new(AtomicBool::new(false)));
     let cancelled = cancellation.0.clone();
     let target = destination.clone();
     let staging = tokio::task::spawn_blocking(move || {
-        let staging = copy(&seed, &target, &manifest, &cancelled)?;
+        let staging = copy(&seed, &target, &manifest, &cancelled, mode)?;
         prepared();
         Ok::<_, Error>(staging)
     })
@@ -114,10 +116,16 @@ pub(super) async fn writable_copy_paused(
     prepared: tokio::sync::oneshot::Sender<()>,
     release: std::sync::mpsc::Receiver<()>,
 ) -> Result<()> {
-    writable_copy_with(seed, destination, manifest, move || {
-        let _ = prepared.send(());
-        let _ = release.recv();
-    })
+    writable_copy_with(
+        seed,
+        destination,
+        manifest,
+        switchyard_artifacts::HydrationMode::Verified,
+        move || {
+            let _ = prepared.send(());
+            let _ = release.recv();
+        },
+    )
     .await
 }
 
@@ -126,9 +134,15 @@ fn copy(
     destination: &Path,
     manifest: &Manifest,
     cancelled: &AtomicBool,
+    mode: switchyard_artifacts::HydrationMode,
 ) -> Result<Option<Staging>> {
     check_cancelled(cancelled)?;
-    switchyard_artifacts::verify(seed, manifest)?;
+    if mode == switchyard_artifacts::HydrationMode::Verified {
+        switchyard_artifacts::verify(seed, manifest)?;
+    } else {
+        // Hydration produced this exclusively owned seed; only containment is rechecked.
+        ancestors(seed)?;
+    }
     check_cancelled(cancelled)?;
     if manifest.entries.iter().any(|entry| entry.path() == RECEIPT) {
         return Err(Error::Manifest(
@@ -169,20 +183,34 @@ fn copy(
     for entry in &manifest.entries {
         check_cancelled(cancelled)?;
         if let Entry::Directory { path, .. } = entry {
+            ancestors(&seed.join(path))?;
             fs::create_dir(staging.0.join(path))?;
         }
     }
     for entry in &manifest.entries {
         check_cancelled(cancelled)?;
         if let Entry::File { path, mode, .. } = entry {
+            let source = seed.join(path);
+            ancestors(source.parent().unwrap())?;
+            if !fs::symlink_metadata(&source)?.is_file() {
+                return Err(Error::Manifest(
+                    "cache seed file is not a regular file".into(),
+                ));
+            }
             let copy = staging.0.join(path);
-            fs::copy(seed.join(path), &copy)?;
+            fs::copy(source, &copy)?;
             writable_mode(&copy, *mode)?;
         }
     }
     for entry in &manifest.entries {
         check_cancelled(cancelled)?;
         if let Entry::Symlink { path, target, .. } = entry {
+            ancestors(seed.join(path).parent().unwrap())?;
+            if fs::read_link(seed.join(path))? != Path::new(target) {
+                return Err(Error::Manifest(
+                    "cache seed link target differs from its manifest".into(),
+                ));
+            }
             #[cfg(unix)]
             std::os::unix::fs::symlink(target, staging.0.join(path))?;
             #[cfg(not(unix))]
@@ -203,7 +231,9 @@ fn copy(
         .write(true)
         .open(&receipt)?;
     file.write_all(manifest.id.as_bytes())?;
-    file.sync_all()?;
+    if mode == switchyard_artifacts::HydrationMode::Verified {
+        file.sync_all()?;
+    }
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;

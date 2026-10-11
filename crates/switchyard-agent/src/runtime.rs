@@ -30,6 +30,9 @@ pub struct RuntimeTicket {
     pub environment: BTreeMap<String, String>,
     #[serde(default)]
     pub caches: Vec<CacheTicket>,
+    /// Optional one-shot export of a writable cache subtree after stopping the engine.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_export: Option<crate::export::CacheExportConfig>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -90,8 +93,26 @@ impl RootPaths {
             models: "/work/switchyard".into(),
         }
     }
+    pub(crate) fn for_ticket(ticket: &Ticket) -> Result<Self> {
+        ticket.startup.validate()?;
+        let mut roots = Self::production();
+        roots.models = ticket
+            .startup
+            .model_directory()
+            .parent()
+            .unwrap()
+            .to_owned();
+        for reserved in [&roots.runtime, &roots.caches, &roots.chunks] {
+            if roots.models.starts_with(reserved) || reserved.starts_with(&roots.models) {
+                return Err(Error::Manifest(
+                    "model root overlaps runtime storage".into(),
+                ));
+            }
+        }
+        Ok(roots)
+    }
     #[cfg(test)]
-    fn under(root: &Path) -> Self {
+    pub(crate) fn under(root: &Path) -> Self {
         Self {
             runtime: root.join("runtime"),
             caches: root.join("cache"),
@@ -179,7 +200,10 @@ impl RuntimeTicket {
             })
             .collect()
     }
-    fn validate_launch(&self) -> Result<()> {
+    fn validate_launch(&self, mode: switchyard_artifacts::HydrationMode) -> Result<()> {
+        if let Some(export) = &self.cache_export {
+            export.validate(&self.artifact.manifest.id)?;
+        }
         if !relative_program(&self.program)
             || self.args.iter().any(|a| a.contains('\0'))
             || self
@@ -205,15 +229,27 @@ impl RuntimeTicket {
                 ));
             }
         }
-        if !self
-            .artifact
-            .manifest
-            .resolve_entry(&self.program)?
-            .is_some_and(|entry| {
-                matches!(entry, switchyard_artifacts::Entry::File { .. })
-                    && entry.mode() & 0o100 != 0
-            })
-        {
+        let declared_executable = if mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
+            self.artifact
+                .manifest
+                .entries
+                .iter()
+                .find(|entry| entry.path() == self.program)
+                .is_some_and(|entry| {
+                    matches!(entry, switchyard_artifacts::Entry::Symlink { .. })
+                        || matches!(entry, switchyard_artifacts::Entry::File { .. })
+                            && entry.mode() & 0o100 != 0
+                })
+        } else {
+            self.artifact
+                .manifest
+                .resolve_entry(&self.program)?
+                .is_some_and(|entry| {
+                    matches!(entry, switchyard_artifacts::Entry::File { .. })
+                        && entry.mode() & 0o100 != 0
+                })
+        };
+        if !declared_executable {
             return Err(Error::Manifest(
                 "runtime executable is absent or not executable".into(),
             ));
@@ -223,23 +259,55 @@ impl RuntimeTicket {
 }
 
 /// Check every compatibility label before transfer, then hydrate immutable runtime/cache trees.
+#[cfg(test)]
 pub(crate) async fn command(
     ticket: &Ticket,
     roots: &RootPaths,
     state: Arc<RwLock<State>>,
 ) -> Result<Option<Command>> {
+    command_with_limit(
+        ticket,
+        roots,
+        state,
+        Arc::new(tokio::sync::Semaphore::new(ticket.concurrency)),
+    )
+    .await
+}
+
+pub(crate) async fn command_with_limit(
+    ticket: &Ticket,
+    roots: &RootPaths,
+    state: Arc<RwLock<State>>,
+    download_limit: Arc<tokio::sync::Semaphore>,
+) -> Result<Option<Command>> {
     let Some(runtime) = &ticket.runtime else {
         return Ok(None);
     };
-    runtime.validate_launch()?;
+    runtime.validate_launch(ticket.startup.mode)?;
     if !(1..=64).contains(&ticket.concurrency) || ticket.stall_s == 0 || ticket.stall_s > 86400 {
         return Err(Error::Manifest("invalid artifact transfer limits".into()));
     }
-    if let Err((index, error)) = validate_artifacts(runtime, &ticket.revision) {
+    if let Err((index, error)) = validate_artifacts(runtime, &ticket.revision, ticket.startup.mode)
+    {
         mark_failure(&state, index, &error.to_string()).await;
         return Err(error);
     }
     compatibility::observe_and_check(runtime).await?;
+    let required = runtime
+        .artifact
+        .manifest
+        .entries
+        .iter()
+        .try_fold(0_u64, |sum, entry| {
+            sum.checked_add(match entry {
+                switchyard_artifacts::Entry::File { size, .. } => *size,
+                _ => 0,
+            })
+        })
+        .ok_or_else(|| Error::Manifest("runtime capacity overflow".into()))?;
+    let observation = crate::startup::observe(roots.runtime.parent().unwrap(), required)?;
+    state.write().await.runtime_storage = Some(observation.clone());
+    crate::startup::check_capacity(&observation, false, 0)?;
     state.write().await.phase = Phase::Hydrating;
     let started = Instant::now();
     let context = HydrationContext {
@@ -247,6 +315,7 @@ pub(crate) async fn command(
         ticket,
         state: state.clone(),
         started,
+        download_limit,
     };
     hydrate_one(runtime.artifact.clone(), &roots.runtime, 0, &context).await?;
     let cache_root = roots.caches.join(&runtime.artifact.manifest.id);
@@ -256,7 +325,8 @@ pub(crate) async fn command(
         hydrate_one(cache.artifact.clone(), &seed, i + 1, &context).await?;
         let destination = cache_root.join(&cache.name);
         let manifest = cache.artifact.manifest.clone();
-        let copied = cache::writable_copy(seed, destination, manifest).await;
+        let copied =
+            cache::writable_copy_mode(seed, destination, manifest, ticket.startup.mode).await;
         if let Err(error) = copied {
             mark_failure(&state, i + 1, &error.to_string()).await;
             return Err(error);
@@ -297,18 +367,13 @@ pub(crate) async fn command(
 fn validate_artifacts(
     runtime: &RuntimeTicket,
     revision: &str,
+    mode: switchyard_artifacts::HydrationMode,
 ) -> std::result::Result<(), (usize, Error)> {
-    runtime
-        .artifact
-        .manifest
-        .check_compatibility(&runtime.compatibility)
-        .map_err(|error| (0, error.into()))?;
+    check_labels(&runtime.artifact.manifest, &runtime.compatibility, mode)
+        .map_err(|error| (0, error))?;
     for (i, cache) in runtime.caches.iter().enumerate() {
-        cache
-            .artifact
-            .manifest
-            .check_compatibility(&cache.compatibility)
-            .map_err(|error| (i + 1, error.into()))?;
+        check_labels(&cache.artifact.manifest, &cache.compatibility, mode)
+            .map_err(|error| (i + 1, error))?;
         let metadata = &cache.artifact.manifest.metadata.compatibility;
         if metadata.get("runtime_id") != Some(&runtime.artifact.manifest.id) {
             return Err((
@@ -324,6 +389,25 @@ fn validate_artifacts(
                 i + 1,
                 Error::Manifest("cache model revision differs from the selected model".into()),
             ));
+        }
+    }
+    Ok(())
+}
+
+fn check_labels(
+    manifest: &switchyard_artifacts::Manifest,
+    required: &BTreeMap<String, String>,
+    mode: switchyard_artifacts::HydrationMode,
+) -> Result<()> {
+    if mode == switchyard_artifacts::HydrationMode::Verified {
+        return manifest.check_compatibility(required).map_err(Error::from);
+    }
+    // The trusted hydrator checks archive structure once. Compatibility needs only labels.
+    for (key, value) in required {
+        if manifest.metadata.compatibility.get(key) != Some(value) {
+            return Err(Error::Manifest(format!(
+                "artifact compatibility mismatch: {key}"
+            )));
         }
     }
     Ok(())
@@ -382,6 +466,7 @@ struct HydrationContext<'a> {
     ticket: &'a Ticket,
     state: Arc<RwLock<State>>,
     started: Instant,
+    download_limit: Arc<tokio::sync::Semaphore>,
 }
 
 async fn hydrate_one(
@@ -391,9 +476,18 @@ async fn hydrate_one(
     context: &HydrationContext<'_>,
 ) -> Result<()> {
     let options = HydrationOptions {
+        mode: context.ticket.startup.mode,
+        download_limit: Some(context.download_limit.clone()),
         cache_dir: context.roots.chunks.clone(),
         download_concurrency: context.ticket.concurrency,
-        extraction_concurrency: context.ticket.concurrency.min(8),
+        extraction_concurrency: context.ticket.concurrency.min(
+            if context.ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming
+            {
+                20
+            } else {
+                8
+            },
+        ),
         retries: 2,
         stall_timeout_s: context.ticket.stall_s,
         request_timeout_s: context.ticket.lifetime_s.clamp(1, 600),
@@ -430,7 +524,12 @@ async fn hydrate_one(
             item.network_bytes_downloaded = report.downloaded_bytes;
             item.network_verified_bytes = report.network_verified_bytes;
             item.unpacked_bytes = report.unpacked_bytes;
-            item.verified_chunks = item.total_chunks;
+            item.verified_chunks =
+                if context.ticket.startup.mode == switchyard_artifacts::HydrationMode::Verified {
+                    item.total_chunks
+                } else {
+                    0
+                };
             item.cached = report.already_present;
             item.chunk_cache_hits = report.cache_hits;
             totals(&mut st, context.started);
@@ -478,6 +577,12 @@ fn totals(state: &mut State, started: Instant) {
         .artifacts
         .iter()
         .fold(0, |n, a| n.saturating_add(a.network_bytes_downloaded));
+    if state.artifact_network_bytes_downloaded > 0 {
+        state.artifact_network_bytes_per_s = Some(
+            state.artifact_network_bytes_downloaded as f64
+                / started.elapsed().as_secs_f64().max(0.001),
+        );
+    }
     let network_verified = state
         .artifacts
         .iter()

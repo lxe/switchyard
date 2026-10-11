@@ -1,7 +1,9 @@
 //! Pod-side hydration tickets and observable lifecycle state. Tickets contain expiring URLs.
+pub mod export;
 pub mod hydrate;
 pub mod runtime;
 pub mod server;
+pub mod startup;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -18,6 +20,8 @@ pub struct Ticket {
     /// Optional separately packed serving runtime. Legacy tickets use the image's vLLM.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runtime: Option<runtime::RuntimeTicket>,
+    #[serde(default)]
+    pub startup: startup::StartupPolicy,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Manifest {
@@ -53,6 +57,8 @@ pub enum Phase {
     Hydrating,
     Initializing,
     Ready,
+    /// Inference admission is closed while a stopped engine's caches are exported.
+    Exporting,
     Failed,
 }
 
@@ -79,11 +85,23 @@ pub struct State {
     pub artifact_bytes_total: u64,
     #[serde(default)]
     pub artifact_volume_bytes_per_s: Option<f64>,
+    /// Received runtime/cache wire bytes per elapsed hydration second, including retries.
+    #[serde(default)]
+    pub artifact_network_bytes_per_s: Option<f64>,
     #[serde(default)]
     pub artifacts: Vec<runtime::ArtifactState>,
     /// True after health, tokenization, and a minimal nonstream inference succeed.
     #[serde(default)]
     pub inference_verified: bool,
+    /// Trusted mode reports transferred data without claiming content verification.
+    #[serde(default)]
+    pub hydration_mode: switchyard_artifacts::HydrationMode,
+    #[serde(default)]
+    pub model_storage: Option<startup::ModelStorageObservation>,
+    #[serde(default)]
+    pub runtime_storage: Option<startup::ModelStorageObservation>,
+    #[serde(default)]
+    pub startup_milestones: Vec<startup::StartupMilestone>,
 }
 impl State {
     pub fn new(ticket: &Ticket) -> Self {
@@ -105,11 +123,16 @@ impl State {
                 .as_ref()
                 .map_or(0, runtime::RuntimeTicket::total_bytes),
             artifact_volume_bytes_per_s: None,
+            artifact_network_bytes_per_s: None,
             artifacts: ticket
                 .runtime
                 .as_ref()
                 .map_or_else(Vec::new, runtime::RuntimeTicket::initial_states),
             inference_verified: false,
+            hydration_mode: ticket.startup.mode,
+            model_storage: None,
+            runtime_storage: None,
+            startup_milestones: vec![],
         }
     }
 }

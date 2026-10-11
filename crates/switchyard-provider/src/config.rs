@@ -13,6 +13,12 @@ pub struct ComputeConfig {
     pub gpu_types: Vec<String>,
     pub data_centers: Vec<String>,
     pub min_cuda: String,
+    /// Placement floor for system RAM, expressed in the RunPod API's GB units.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_ram_per_gpu_gb: Option<u64>,
+    /// Placement floor for host vCPUs per requested GPU.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_vcpu_count_per_gpu: Option<u64>,
     pub disk_gb: u64,
     pub disk_usd_per_gb_month: f64,
     pub billing_hours_per_month: f64,
@@ -26,6 +32,8 @@ impl ComputeConfig {
             || self.gpu_types.iter().any(|value| !valid_text(value))
             || self.data_centers.iter().any(|value| !valid_text(value))
             || !valid_text(&self.min_cuda)
+            || self.min_ram_per_gpu_gb == Some(0)
+            || self.min_vcpu_count_per_gpu == Some(0)
             || self.disk_gb == 0
             || self.billing_hours_per_month <= 0.0
             || !self.billing_hours_per_month.is_finite()

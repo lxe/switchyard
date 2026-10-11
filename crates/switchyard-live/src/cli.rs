@@ -1,8 +1,8 @@
 //! Reproducible live experiments and exact-ownership recovery.
 use crate::config::DeploymentConfig;
-use crate::{Error, LiveRuntime, Result, WorkCall, planner::Message};
+use crate::{Error, LiveRuntime, Result, planner::Message};
 use clap::{Args, Subcommand};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -43,6 +43,15 @@ pub enum Command {
         #[arg(long)]
         model: Option<String>,
     },
+    /// Prepare compiler caches on one GPU, release it, then publish the artifact.
+    Bake {
+        #[command(flatten)]
+        settings: Settings,
+        #[arg(long)]
+        plan: PathBuf,
+        #[arg(long, default_value = "switchyard/artifacts/cache")]
+        namespace: String,
+    },
     /// Terminate only pods recorded in this run's ownership journals.
     Recover {
         #[command(flatten)]
@@ -50,26 +59,7 @@ pub enum Command {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Experiment {
-    pub cases: Vec<Case>,
-}
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Case {
-    pub name: String,
-    pub policy: Policy,
-    pub calls: usize,
-    pub prompt: String,
-    pub planned_output: u64,
-    pub max_output: u64,
-    pub arrival_interval_s: f64,
-    pub desired_output_tps: f64,
-    pub completion_budget_s: f64,
-    #[serde(default)]
-    pub serial_dependencies: bool,
-}
+pub use crate::workloads::{Case, Experiment};
 
 fn read<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
     Ok(serde_json::from_slice(&std::fs::read(path)?)?)
@@ -166,29 +156,7 @@ pub async fn run(command: Command) -> Result<()> {
             model,
         } => {
             let experiment: Experiment = read(&workloads)?;
-            if experiment.cases.is_empty()
-                || experiment.cases.iter().any(|c| {
-                    c.calls == 0
-                        || c.calls > 100_000
-                        || !c.arrival_interval_s.is_finite()
-                        || c.arrival_interval_s < 0.0
-                })
-            {
-                return Err(Error::Config(
-                    "invalid workload case count or arrival interval".into(),
-                ));
-            }
-            let mut names = std::collections::BTreeSet::new();
-            if experiment.cases.iter().any(|c| {
-                !names.insert(&c.name)
-                    || c.name.is_empty()
-                    || !c
-                        .name
-                        .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_'))
-            }) {
-                return Err(Error::Config("workload names must be unique and use letters, digits, hyphens, or underscores".into()));
-            }
+            experiment.validate()?;
             let (config, _, _) = clients(&settings)?;
             let experiment_cap = config
                 .limits
@@ -270,6 +238,71 @@ pub async fn run(command: Command) -> Result<()> {
             let (_, provider, storage) = clients(&settings)?;
             recover(&provider, &storage, &settings.out).await?;
         }
+        Command::Bake {
+            settings,
+            plan,
+            namespace,
+        } => {
+            let plan: crate::bake::CacheBakePlan = read(&plan)?;
+            let (mut config, provider, storage) = clients(&settings)?;
+            plan.validate(&config.execution())?;
+            if !config.compute.gpu_types.contains(&plan.gpu) {
+                return Err(Error::Config(
+                    "cache preparation GPU is absent from fleet configuration".into(),
+                ));
+            }
+            config.models.retain(|model| model.id == plan.model);
+            config.limits.max_instances = 1;
+            config.limits.max_run_usd = config.limits.max_run_usd.min(
+                config
+                    .limits
+                    .max_experiment_usd
+                    .unwrap_or(config.limits.max_run_usd),
+            );
+            let timeout = config.limits.run_timeout_s;
+            let mut runtime = LiveRuntime::new(
+                provider,
+                storage.clone(),
+                config.execution(),
+                Policy::WarmOnly,
+                &settings.out,
+            )
+            .await?;
+            let outcome = tokio::select! {
+                result = tokio::time::timeout(std::time::Duration::from_secs(timeout), runtime.bake_cache(&plan, &namespace)) =>
+                    result.unwrap_or_else(|_| Err(Error::Limit("cache preparation run timeout".into()))),
+                _ = tokio::signal::ctrl_c() => Err(Error::Limit("interrupted by user".into())),
+            };
+            // No publication work may extend the lifetime of the paid host.
+            let cleanup = runtime.cleanup().await;
+            save(
+                &settings.out.join("outcome.json"),
+                &serde_json::json!({
+                    "error":outcome.as_ref().err().map(ToString::to_string),
+                    "cleanup_error":cleanup.as_ref().err().map(ToString::to_string),
+                    "estimated_rental_usd":runtime.rental_usd(),
+                }),
+            )?;
+            cleanup?;
+            let prepared = outcome?;
+            let publication = switchyard_artifact_tools::publish_directory(
+                &storage,
+                &prepared.directory,
+                &namespace,
+                plan.download_concurrency,
+            )
+            .await?;
+            save(&settings.out.join("cache-publication.json"), &publication)?;
+            save(
+                &settings.out.join("cache-configuration.json"),
+                &prepared.configuration,
+            )?;
+            println!(
+                "Published cache {} after confirmed GPU release; estimated rent ${:.4}",
+                publication.id,
+                runtime.rental_usd()
+            );
+        }
     }
     Ok(())
 }
@@ -281,24 +314,7 @@ async fn execute<P: Provider>(
 ) -> Result<()> {
     for case in &experiment.cases {
         runtime.set_policy(case.policy);
-        let calls = (0..case.calls)
-            .map(|id| WorkCall {
-                model: model.into(),
-                messages: vec![Message {
-                    role: "user".into(),
-                    content: format!("{}\nRequest identifier: {id}.", case.prompt),
-                }],
-                planned_output: case.planned_output,
-                max_output: case.max_output,
-                arrival_delay_s: id as f64 * case.arrival_interval_s,
-                class: "standard".into(),
-                depends_on: if case.serial_dependencies && id > 0 {
-                    vec![id - 1]
-                } else {
-                    vec![]
-                },
-            })
-            .collect::<Vec<_>>();
+        let calls = case.requests(model);
         println!(
             "{model} / {}: {} calls using {}",
             case.name, case.calls, case.policy

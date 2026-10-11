@@ -12,6 +12,13 @@ use std::{
 };
 use tokio::sync::mpsc;
 
+mod cache_export;
+
+pub(crate) fn completion_payload(model: &str, messages: &[Message], max_output: u64) -> Value {
+    json!({"model":model,"messages":messages,"max_tokens":max_output,"temperature":0,"stream":true,
+        "stream_options":{"include_usage":true},"chat_template_kwargs":{"enable_thinking":false}})
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Completion {
     pub request: usize,
@@ -100,10 +107,17 @@ impl Endpoint {
     }
     pub async fn complete(&self, call: Call, events: mpsc::Sender<Event>) -> Result<Completion> {
         let started = call.epoch.elapsed().as_secs_f64();
-        let response=self.client.post(format!("{}/v1/chat/completions",self.url))
-            .json(&json!({"model":call.model,"messages":call.messages,"max_tokens":call.max_output,"temperature":0,"stream":true,
-                "stream_options":{"include_usage":true},"chat_template_kwargs":{"enable_thinking":false}}))
-            .send().await.map_err(|_|Error::Request("inference transport".into()))?;
+        let response = self
+            .client
+            .post(format!("{}/v1/chat/completions", self.url))
+            .json(&completion_payload(
+                &call.model,
+                &call.messages,
+                call.max_output,
+            ))
+            .send()
+            .await
+            .map_err(|_| Error::Request("inference transport".into()))?;
         if !response.status().is_success() {
             return Err(Error::Request(format!(
                 "inference HTTP {}",

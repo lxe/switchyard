@@ -952,3 +952,117 @@ fn manifest_resolution_exposes_final_file_permissions_and_directory_type() {
         Err(Error::Invalid(_))
     ));
 }
+
+#[test]
+fn bounded_parallel_verification_checks_every_file_and_the_final_buffer() {
+    let tree = Tree::new();
+    let source = tree.source();
+    for index in 0..160 {
+        fs::write(
+            source.join(format!("file-{index:03}")),
+            format!("payload-{index:03}"),
+        )
+        .unwrap();
+    }
+    let large = source.join("large");
+    fs::write(&large, vec![0x42_u8; 3 * 1024 * 1024 + 7]).unwrap();
+    let manifest = pack(
+        &source,
+        &tree.0.join("packed"),
+        metadata(),
+        PackOptions::default(),
+    )
+    .unwrap();
+    for concurrency in [1, 2, 8, 64] {
+        verify_with_options(&source, &manifest, VerificationOptions { concurrency }).unwrap();
+    }
+    fs::write(source.join("file-159"), "corrupt-159").unwrap();
+    assert!(
+        verify_with_options(&source, &manifest, VerificationOptions { concurrency: 8 }).is_err()
+    );
+    fs::write(source.join("file-159"), "payload-159").unwrap();
+    let mut contents = fs::read(&large).unwrap();
+    *contents.last_mut().unwrap() ^= 1;
+    fs::write(large, contents).unwrap();
+    assert!(matches!(
+        verify_with_options(&source, &manifest, VerificationOptions { concurrency: 8 }),
+        Err(Error::Integrity(_))
+    ));
+    for concurrency in [0, 65] {
+        assert!(matches!(
+            verify_with_options(&source, &manifest, VerificationOptions { concurrency }),
+            Err(Error::Invalid(_))
+        ));
+    }
+}
+
+#[test]
+fn topology_verification_refuses_a_directory_symlink_even_when_target_files_match() {
+    let tree = Tree::new();
+    let source = tree.source();
+    fs::create_dir(source.join("bin")).unwrap();
+    mode(&source.join("bin"), 0o777);
+    fs::write(source.join("bin/tool"), "same contents").unwrap();
+    let manifest = pack(
+        &source,
+        &tree.0.join("packed"),
+        metadata(),
+        PackOptions::default(),
+    )
+    .unwrap();
+    let outside = tree.0.join("outside");
+    fs::rename(source.join("bin"), &outside).unwrap();
+    symlink(&outside, source.join("bin")).unwrap();
+    assert!(
+        matches!(verify(&source, &manifest), Err(Error::Integrity(message)) if message == "directory type")
+    );
+    fs::remove_file(source.join("bin")).unwrap();
+    fs::rename(outside, source.join("bin")).unwrap();
+    fs::create_dir(source.join("undeclared-empty-directory")).unwrap();
+    assert!(matches!(
+        verify(&source, &manifest),
+        Err(Error::Integrity(_))
+    ));
+    fs::remove_dir(source.join("undeclared-empty-directory")).unwrap();
+    fs::remove_file(source.join("bin/tool")).unwrap();
+    assert!(matches!(
+        verify(&source, &manifest),
+        Err(Error::Integrity(_))
+    ));
+}
+
+#[tokio::test]
+async fn trusted_streaming_preserves_declared_permissions_and_internal_symlinks() {
+    let tree = Tree::new();
+    let manifest = fixture(&tree);
+    let (ticket, _, server) = server(&manifest, &tree.0.join("packed"), None, false).await;
+    let mut options = tree.options();
+    options.mode = HydrationMode::TrustedStreaming;
+    options.download_concurrency = 20;
+    options.extraction_concurrency = 20;
+    let destination = tree.0.join("hydrated");
+    let report = hydrate(ticket, &destination, options, |_| {})
+        .await
+        .unwrap();
+    assert_eq!(report.verified_bytes, 0);
+    assert_eq!(
+        fs::read_link(destination.join("tool")).unwrap(),
+        PathBuf::from("bin/tool")
+    );
+    assert_eq!(
+        fs::metadata(destination.join("bin/tool"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o755
+    );
+    assert_eq!(
+        fs::read(destination.join("tool")).unwrap(),
+        b"#!/bin/sh\necho artifact\n"
+    );
+    // Verification here belongs to the test, never to trusted startup itself.
+    verify(&destination, &manifest).unwrap();
+    assert!(!tree.options().cache_dir.exists());
+    server.abort();
+}

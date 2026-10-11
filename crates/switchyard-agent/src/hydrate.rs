@@ -13,7 +13,10 @@ use std::{
     },
     time::{Duration, Instant},
 };
+use switchyard_artifacts::HydrationMode;
 use tokio::{io::AsyncWriteExt, sync::RwLock};
+
+mod streaming;
 
 fn relative(path: &str) -> bool {
     !path.is_empty()
@@ -33,11 +36,24 @@ fn digest_valid(hash: &str) -> bool {
 impl Manifest {
     /// Validate chunk conservation, contiguous sequences, and safe expected file paths.
     pub fn validate(&self) -> Result<()> {
+        self.validate_structure()?;
+        let mut hash = Sha256::new();
+        for chunk in &self.chunks {
+            hash.update(chunk.sha256.as_bytes());
+        }
+        if format!("{:x}", hash.finalize()) != self.sha256 {
+            return Err(Error::Manifest("archive digest mismatch".into()));
+        }
+        Ok(())
+    }
+    /// Check paths, types, byte conservation and sequences without recalculating identity.
+    pub fn validate_structure(&self) -> Result<()> {
         if self.format != "shards-v1"
             || !matches!(self.compress.as_str(), "none" | "zstd")
             || self.chunks.is_empty()
             || self.raw_size == 0
             || self.files.is_empty()
+            || !digest_valid(&self.sha256)
         {
             return Err(Error::Manifest(
                 "requires a nonempty shards-v1 model archive".into(),
@@ -46,7 +62,6 @@ impl Manifest {
         let mut names = BTreeSet::new();
         let mut by_shard: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
         let (mut total, mut raw) = (0u64, 0u64);
-        let mut hash = Sha256::new();
         for chunk in &self.chunks {
             if !relative(&chunk.name)
                 || Path::new(&chunk.name).components().count() != 1
@@ -64,13 +79,9 @@ impl Manifest {
             raw = raw
                 .checked_add(chunk.raw)
                 .ok_or_else(|| Error::Manifest("size overflow".into()))?;
-            hash.update(chunk.sha256.as_bytes());
             by_shard.entry(chunk.shard).or_default().push(chunk.seq);
         }
-        if total != self.total_size
-            || raw != self.raw_size
-            || format!("{:x}", hash.finalize()) != self.sha256
-        {
+        if total != self.total_size || raw != self.raw_size {
             return Err(Error::Manifest("archive size or digest mismatch".into()));
         }
         for mut sequence in by_shard.into_values() {
@@ -111,7 +122,28 @@ impl Manifest {
 /// `bytes_downloaded` measures bytes retained by current attempts, so a retry can reduce
 /// progress. The observed transfer rate includes time spent on failed attempts.
 pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) -> Result<()> {
-    ticket.manifest.validate()?;
+    preflight(ticket, root, &state).await?;
+    hydrate_with_limit(
+        ticket,
+        root,
+        state,
+        Arc::new(tokio::sync::Semaphore::new(ticket.concurrency)),
+    )
+    .await
+}
+
+pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State>) -> Result<()> {
+    ticket.startup.validate()?;
+    if ticket.startup.early_launch && ticket.runtime.is_none() {
+        return Err(Error::Manifest(
+            "early launch requires a hydrated cooperative runtime".into(),
+        ));
+    }
+    if ticket.startup.mode == HydrationMode::Verified {
+        ticket.manifest.validate()?;
+    } else {
+        ticket.manifest.validate_structure()?;
+    }
     if !(1..=64).contains(&ticket.concurrency) || ticket.stall_s == 0 {
         return Err(Error::Manifest("invalid transfer bounds".into()));
     }
@@ -122,6 +154,35 @@ pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) ->
         .any(|c| !ticket.urls.contains_key(&c.name))
     {
         return Err(Error::Manifest("missing chunk URL".into()));
+    }
+    let required = ticket
+        .manifest
+        .files
+        .values()
+        .try_fold(0_u64, |sum, file| sum.checked_add(file.size))
+        .ok_or_else(|| Error::Manifest("model capacity overflow".into()))?;
+    let mut observation = crate::startup::observe(root, required)?;
+    // A trusted receipt is reusable without another copy or a content scan.
+    if ticket.startup.mode == HydrationMode::TrustedStreaming && streaming::cached(ticket, root)? {
+        observation.required_bytes = 0;
+    }
+    state.write().await.model_storage = Some(observation.clone());
+    crate::startup::check_capacity(
+        &observation,
+        ticket.startup.require_model_ram,
+        streaming::buffer_reserve(ticket.concurrency),
+    )?;
+    Ok(())
+}
+
+pub(crate) async fn hydrate_with_limit(
+    ticket: &Ticket,
+    root: &Path,
+    state: Arc<RwLock<State>>,
+    limit: Arc<tokio::sync::Semaphore>,
+) -> Result<()> {
+    if ticket.startup.mode == HydrationMode::TrustedStreaming {
+        return streaming::hydrate(ticket, root, state, limit).await;
     }
     let dest = root.join("model");
     let marker = dest.join(".switchyard-archive");
@@ -136,15 +197,13 @@ pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) ->
         if valid.is_ok() {
             let mut st = state.write().await;
             st.model_cached = true;
-            st.phase = Phase::Initializing;
             return Ok(());
         }
         // A marker is only a hint. Corrupted cache files are replaced from verified chunks.
     }
-    let chunks = root.join("chunks");
-    let stage = root.join("staging");
-    remove_existing(&stage)?;
-    remove_existing(&chunks)?;
+    let workspace = Arc::new(streaming::Workspace::new(root)?);
+    let chunks = workspace.path.join("chunks");
+    let stage = workspace.path.join("model");
     std::fs::create_dir_all(&chunks)?;
     std::fs::create_dir_all(&stage)?;
     {
@@ -158,6 +217,7 @@ pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) ->
         .user_agent("Switchyard/0.1")
         .connect_timeout(Duration::from_secs(15))
         .read_timeout(Duration::from_secs(ticket.stall_s))
+        .timeout(Duration::from_secs(ticket.lifetime_s.clamp(1, 600)))
         .build()
         .map_err(|_| Error::Transfer("client initialization".into()))?;
     let started = Instant::now();
@@ -167,8 +227,14 @@ pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) ->
             let client = client.clone();
             let dir = chunks.clone();
             let url = &ticket.urls[&chunk.name];
+            let limit = limit.clone();
             async move {
                 for attempt in 0..3 {
+                    let permit = limit
+                        .clone()
+                        .acquire_owned()
+                        .await
+                        .map_err(|_| Error::Task)?;
                     let mut retained = 0;
                     let result = download(
                         &client,
@@ -180,6 +246,7 @@ pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) ->
                         &mut retained,
                     )
                     .await;
+                    drop(permit);
                     if result.is_ok() {
                         return result;
                     }
@@ -205,15 +272,17 @@ pub async fn hydrate(ticket: &Ticket, root: &Path, state: Arc<RwLock<State>>) ->
     let archive_dir = chunks.clone();
     let target = stage.clone();
     let concurrency = ticket.concurrency;
-    tokio::task::spawn_blocking(move || extract(&manifest, &archive_dir, &target, concurrency))
-        .await
-        .map_err(|_| Error::Task)??;
+    let _workspace = tokio::task::spawn_blocking(move || {
+        let _ownership = workspace;
+        extract(&manifest, &archive_dir, &target, concurrency).map(|()| _ownership)
+    })
+    .await
+    .map_err(|_| Error::Task)??;
     std::fs::write(stage.join(".switchyard-archive"), &ticket.manifest.sha256)?;
     remove_existing(&dest)?;
     std::fs::rename(stage, dest)?;
     std::fs::remove_dir_all(&chunks)?;
     let mut st = state.write().await;
-    st.phase = Phase::Initializing;
     st.hydration_seconds = started.elapsed().as_secs_f64();
     // Keep the pre-extraction download rate; hydration duration includes both stages.
     Ok(())
@@ -387,6 +456,17 @@ fn extract_shard(
         }));
     }
     let mut archive = tar::Archive::new(reader);
+    extract_reader(manifest, &mut archive, dest, seen)?;
+    io::copy(&mut archive.into_inner(), &mut io::sink())?;
+    Ok(())
+}
+
+fn extract_reader<R: Read>(
+    manifest: &Manifest,
+    archive: &mut tar::Archive<R>,
+    dest: &Path,
+    seen: &Mutex<BTreeSet<String>>,
+) -> Result<()> {
     for entry in archive.entries()? {
         let mut entry = entry?;
         let path = entry.path()?.into_owned();
@@ -434,7 +514,7 @@ fn extract_shard(
         }
     }
     // Tar stops at its end marker. Drain padding to validate every chunk's raw length.
-    io::copy(&mut archive.into_inner(), &mut io::sink())?;
+    // Drain the underlying reader separately after returning ownership to the caller.
     Ok(())
 }
 

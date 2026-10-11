@@ -238,6 +238,12 @@ fn write_chunk(
 }
 
 pub(crate) fn digest_file(path: &Path) -> Result<(String, u64)> {
+    let mut buffer = [0_u8; 8 * 1024];
+    digest_file_with_buffer(path, &mut buffer)
+}
+
+/// Reuse caller-owned buffers when hashing large trees with bounded parallel workers.
+pub(crate) fn digest_file_with_buffer(path: &Path, buffer: &mut [u8]) -> Result<(String, u64)> {
     if !fs::symlink_metadata(path)?.is_file() {
         return Err(Error::Invalid("expected regular file".into()));
     }
@@ -246,7 +252,11 @@ pub(crate) fn digest_file(path: &Path) -> Result<(String, u64)> {
         hash: Sha256::new(),
         bytes: 0,
     };
-    std::io::copy(&mut reader, &mut std::io::sink())?;
+    loop {
+        if reader.read(buffer)? == 0 {
+            break;
+        }
+    }
     Ok((format!("{:x}", reader.hash.finalize()), reader.bytes))
 }
 

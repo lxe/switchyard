@@ -151,6 +151,7 @@ fn ticket(runtime: RuntimeTicket) -> Ticket {
         concurrency: 2,
         stall_s: 20,
         lifetime_s: 300,
+        startup: Default::default(),
         runtime: Some(runtime),
     }
 }
@@ -203,6 +204,7 @@ async fn fixture() -> (Ticket, Server) {
                 artifact: cache,
                 compatibility: BTreeMap::from([("gpu".into(), "test-gpu".into())]),
             }],
+            cache_export: None,
         }),
         server,
     )
@@ -501,12 +503,26 @@ async fn launch_rejects_unsafe_programs_cache_names_and_secret_environment() {
     for program in ["/bin/python3", "../python3", "bin/missing"] {
         let mut invalid = ticket.clone();
         invalid.runtime.as_mut().unwrap().program = program.into();
-        assert!(invalid.runtime.as_ref().unwrap().validate_launch().is_err());
+        assert!(
+            invalid
+                .runtime
+                .as_ref()
+                .unwrap()
+                .validate_launch(switchyard_artifacts::HydrationMode::Verified)
+                .is_err()
+        );
     }
     for name in ["../engine", "", "runtime", ".seeds"] {
         let mut invalid = ticket.clone();
         invalid.runtime.as_mut().unwrap().caches[0].name = name.into();
-        assert!(invalid.runtime.as_ref().unwrap().validate_launch().is_err());
+        assert!(
+            invalid
+                .runtime
+                .as_ref()
+                .unwrap()
+                .validate_launch(switchyard_artifacts::HydrationMode::Verified)
+                .is_err()
+        );
     }
     for key in [
         "RUNPOD_API_KEY",
@@ -634,4 +650,45 @@ async fn actual_host_compatibility_checks_architecture_and_every_gpu() {
         .insert("gpu_compute_capability".into(), "8.9".into());
     assert!(compatibility::check(runtime, std::env::consts::ARCH, &["8.0".into()]).is_err());
     assert!(compatibility::check(runtime, std::env::consts::ARCH, &["8.9".into()]).is_ok());
+    runtime
+        .artifact
+        .manifest
+        .metadata
+        .compatibility
+        .remove("gpu_compute_capability");
+    runtime.cache_export = Some(crate::export::CacheExportConfig {
+        name: "compiled".into(),
+        compatibility: BTreeMap::from([("gpu_compute_capability".into(), "8.9".into())]),
+        drain_timeout_s: 60,
+        shutdown_timeout_s: 30,
+    });
+    assert!(compatibility::check(runtime, std::env::consts::ARCH, &["8.0".into()]).is_err());
+    assert!(compatibility::check(runtime, std::env::consts::ARCH, &["8.9".into()]).is_ok());
+}
+
+#[tokio::test]
+async fn trusted_cache_copy_rejects_a_symlink_in_a_reused_seed() {
+    let (mut ticket, _server) = fixture().await;
+    ticket.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+    let destination = TempDir::new();
+    let roots = RootPaths::under(&destination.0);
+    command(&ticket, &roots, Arc::new(RwLock::new(State::new(&ticket))))
+        .await
+        .unwrap();
+    let cache_root = roots
+        .caches
+        .join(&ticket.runtime.as_ref().unwrap().artifact.manifest.id);
+    let seed_file = cache_root.join(".seeds/engine/vllm/kernels.bin");
+    let outside = destination.0.join("outside");
+    fs::write(&outside, b"do not copy").unwrap();
+    fs::remove_file(&seed_file).unwrap();
+    std::os::unix::fs::symlink(&outside, &seed_file).unwrap();
+    fs::remove_dir_all(cache_root.join("engine")).unwrap();
+    let error = command(&ticket, &roots, Arc::new(RwLock::new(State::new(&ticket))))
+        .await
+        .err()
+        .unwrap();
+    assert!(error.to_string().contains("regular file"));
+    assert!(!cache_root.join("engine").exists());
+    assert_eq!(fs::read(outside).unwrap(), b"do not copy");
 }

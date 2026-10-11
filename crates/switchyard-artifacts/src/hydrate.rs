@@ -1,7 +1,7 @@
 use crate::{
     ArtifactTicket, Chunk, Error, Result, extract,
     pack::{digest_file, set_mode},
-    paths,
+    paths, verify,
 };
 use futures_util::{StreamExt, stream};
 use serde::{Deserialize, Serialize};
@@ -16,10 +16,29 @@ use std::{
 };
 use tokio::io::AsyncWriteExt;
 
+#[path = "streaming.rs"]
+mod streaming;
+
+/// Choose complete verification or streaming installation of caller-trusted artifacts.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HydrationMode {
+    #[default]
+    Verified,
+    /// No content hashes, compressed cache, file fsyncs, or final tree scan.
+    /// The caller must trust the pinned manifest and its transport/storage.
+    TrustedStreaming,
+}
+
 #[derive(Debug, Clone)]
 pub struct HydrationOptions {
+    /// Verified by default; trusted streaming relies on caller-pinned artifacts.
+    pub mode: HydrationMode,
     pub cache_dir: PathBuf,
     pub download_concurrency: usize,
+    /// Optional shared transfer budget across concurrent hydration calls.
+    /// A permit covers one HTTP attempt and its streaming decoder, not backoff.
+    pub download_limit: Option<Arc<tokio::sync::Semaphore>>,
     pub extraction_concurrency: usize,
     /// Additional attempts after a failed request; partial transfers resume when supported.
     pub retries: usize,
@@ -33,8 +52,10 @@ pub struct HydrationOptions {
 impl Default for HydrationOptions {
     fn default() -> Self {
         Self {
+            mode: HydrationMode::Verified,
             cache_dir: std::env::temp_dir().join("switchyard-artifacts-cache"),
             download_concurrency: 8,
+            download_limit: None,
             extraction_concurrency: 4,
             retries: 2,
             request_timeout_s: 120,
@@ -107,8 +128,9 @@ impl<F: Fn(Progress)> Tracker<F> {
     }
 }
 
-/// Hydrate into a new directory, using verified content-addressed downloads across calls.
-/// A matching receipt and tree are reused; any other existing destination is refused.
+/// Hydrate into a new directory with the configured verification policy.
+/// Verified mode reuses checked chunks and completely revalidates matching trees;
+/// trusted streaming installs HTTP bytes directly and trusts matching receipts.
 /// Callbacks may run concurrently on extraction workers. Dropping the returned future
 /// prevents publication, while verified immutable chunks remain reusable.
 pub async fn hydrate<F>(
@@ -120,7 +142,10 @@ pub async fn hydrate<F>(
 where
     F: Fn(Progress) + Send + Sync + 'static,
 {
-    ticket.manifest.validate()?;
+    match options.mode {
+        HydrationMode::Verified => ticket.manifest.validate()?,
+        HydrationMode::TrustedStreaming => ticket.manifest.validate_structure()?,
+    }
     let total_bytes = ticket.manifest.chunks.iter().map(|c| c.size).sum::<u64>();
     let total_unpacked = ticket
         .manifest
@@ -162,23 +187,42 @@ where
     if fs::symlink_metadata(&destination).is_ok() {
         let target = destination.clone();
         let manifest = ticket.manifest.clone();
+        let mode = options.mode;
         let matching = tokio::task::spawn_blocking(move || {
-            extract::verify(&target, &manifest)?;
-            extract::check_receipt(&target, &manifest)
+            if mode == HydrationMode::Verified {
+                verify::verify(&target, &manifest)?;
+            } else {
+                paths::ancestors(&target)?;
+                if !fs::symlink_metadata(&target)?.is_dir() {
+                    return Err(Error::DestinationExists);
+                }
+            }
+            verify::check_receipt(&target, &manifest)
         })
         .await
         .map_err(|_| Error::Worker)?;
         matching.map_err(|_| Error::DestinationExists)?;
-        tracker
-            .verified
-            .store(tracker.total_chunks, Ordering::Relaxed);
-        tracker.verified_bytes.store(total_bytes, Ordering::Relaxed);
+        let verified_bytes = if mode == HydrationMode::Verified {
+            total_bytes
+        } else {
+            0
+        };
+        if mode == HydrationMode::Verified {
+            tracker
+                .verified
+                .store(tracker.total_chunks, Ordering::Relaxed);
+            tracker.verified_bytes.store(total_bytes, Ordering::Relaxed);
+        }
         tracker.emit(Phase::Ready, total_unpacked);
         return Ok(HydrationReport {
             downloaded_bytes: 0,
-            verified_bytes: total_bytes,
+            verified_bytes,
             network_verified_bytes: 0,
-            cache_hits: tracker.total_chunks,
+            cache_hits: if mode == HydrationMode::Verified {
+                tracker.total_chunks
+            } else {
+                0
+            },
             unpacked_bytes: total_unpacked,
             already_present: true,
         });
@@ -198,13 +242,16 @@ where
             return Err(Error::Invalid("unsupported chunk URL".into()));
         }
     }
-    paths::directory(&options.cache_dir)?;
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .timeout(Duration::from_secs(options.request_timeout_s))
         .connect_timeout(Duration::from_secs(options.stall_timeout_s))
         .build()
         .map_err(|_| Error::Transfer)?;
+    if options.mode == HydrationMode::TrustedStreaming {
+        return streaming::hydrate(ticket, &destination, &options, tracker, client).await;
+    }
+    paths::directory(&options.cache_dir)?;
     tracker.emit(Phase::Downloading, 0);
     let chunks = ticket
         .manifest
@@ -252,9 +299,9 @@ where
             &cancelled,
             |bytes| worker_tracker.emit(Phase::Extracting, bytes),
         )?;
-        extract::write_receipt(&working, &manifest)?;
+        verify::write_receipt(&working, &manifest)?;
         worker_tracker.emit(Phase::Verifying, worker_tracker.total_unpacked);
-        extract::verify(&working, &manifest)
+        verify::verify(&working, &manifest)
     })
     .await
     .map_err(|_| Error::Worker)??;
@@ -316,6 +363,16 @@ async fn download<F: Fn(Progress) + Send + Sync + 'static>(
         }
         let offset = file.metadata().await?.len();
         if offset < chunk.size {
+            let _permit = match &options.download_limit {
+                Some(limit) => Some(
+                    limit
+                        .clone()
+                        .acquire_owned()
+                        .await
+                        .map_err(|_| Error::Invalid("download limiter closed".into()))?,
+                ),
+                None => None,
+            };
             let mut request = client.get(url);
             if offset > 0 {
                 request = request.header(reqwest::header::RANGE, format!("bytes={offset}-"));

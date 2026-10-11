@@ -9,6 +9,8 @@ fn compute() -> ComputeConfig {
         gpu_types: vec!["NVIDIA RTX A6000".into(), "NVIDIA GeForce RTX 4090".into()],
         data_centers: vec!["US-KS-2".into()],
         min_cuda: "12.9".into(),
+        min_ram_per_gpu_gb: None,
+        min_vcpu_count_per_gpu: None,
         disk_gb: 80,
         disk_usd_per_gb_month: 0.1,
         billing_hours_per_month: 730.0,
@@ -32,6 +34,7 @@ fn config() -> DeploymentConfig {
             agent_url: "https://example.com/agent".into(),
             agent_sha256: "a".repeat(64),
             ticket_prefix: "switchyard/tickets".into(),
+            startup: Default::default(),
             runtime: None,
         },
         storage: storage("https://objects.example.test"),
@@ -134,6 +137,41 @@ fn engine_arguments_keep_model_and_limits_as_single_managed_values() {
             .any(|a| a == ["--served-model-name", "qwen-small"])
     );
     assert!(args.windows(2).any(|a| a == ["--max-model-len", "4096"]));
+}
+
+#[test]
+fn startup_policy_preserves_defaults_and_validates_engine_dependency_gates() {
+    let cfg = config();
+    let mut value = serde_json::to_value(&cfg).unwrap();
+    value["bootstrap"]
+        .as_object_mut()
+        .unwrap()
+        .remove("startup");
+    let legacy: DeploymentConfig = serde_json::from_value(value).unwrap();
+    assert_eq!(
+        legacy.bootstrap.startup.mode,
+        switchyard_artifacts::HydrationMode::Verified
+    );
+    assert_eq!(
+        legacy.bootstrap.startup.model_directory(),
+        std::path::Path::new("/work/switchyard/model")
+    );
+    legacy.validate().unwrap();
+
+    let mut configured = cfg;
+    configured.bootstrap.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+    configured.bootstrap.startup.model_root = Some("/dev/shm/switchyard".into());
+    configured.bootstrap.startup.require_model_ram = true;
+    configured.validate().unwrap();
+    assert_eq!(
+        configured.execution().bootstrap.startup.model_directory(),
+        std::path::Path::new("/dev/shm/switchyard/model")
+    );
+    configured.bootstrap.startup.model_root = Some("/dev/shm/../model".into());
+    assert!(configured.validate().is_err());
+    configured.bootstrap.startup.model_root = None;
+    configured.bootstrap.startup.early_launch = true;
+    assert!(configured.validate().is_err());
 }
 
 #[test]

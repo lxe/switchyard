@@ -3,6 +3,7 @@
 //! Cloud lifecycle actions, profile preparation, and workload execution are separate
 //! modules so a provider does not need to understand model serving or routing policy.
 
+mod bake;
 mod lifecycle;
 mod profiles;
 mod report;
@@ -105,6 +106,7 @@ pub struct LiveRuntime<P: Provider> {
     manifests: BTreeMap<String, Manifest>,
     runtime_manifest: Option<switchyard_artifacts::Manifest>,
     cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
+    cache_export: Option<switchyard_agent::export::CacheExportConfig>,
     planners: BTreeMap<String, Arc<Planner>>,
     epoch: Instant,
     run_id: String,
@@ -160,6 +162,7 @@ impl<P: Provider> LiveRuntime<P> {
             manifests,
             runtime_manifest,
             cache_manifests,
+            cache_export: None,
             planners,
             epoch: Instant::now(),
             run_id: nonce()?[..16].into(),

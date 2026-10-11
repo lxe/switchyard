@@ -19,6 +19,8 @@ tar.workspace = true
 zstd.workspace = true
 futures-util.workspace = true
 thiserror.workspace = true
+getrandom.workspace = true
+nix = { version = "0.30", features = ["signal", "process", "fs"] }
 
 [dev-dependencies]
 tower.workspace = true

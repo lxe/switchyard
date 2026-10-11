@@ -3,6 +3,7 @@
 //! This program runs only inside the pinned Docker builder. It is independent of
 //! cloud providers, worker hydration, the simulator, and the scheduler.
 
+mod bytecode;
 mod command;
 mod cuda;
 mod download;
@@ -130,15 +131,7 @@ async fn main() -> Result<()> {
     ] {
         copy_file(&build.join(filename), &root.join(filename))?;
     }
-    run(
-        root.join("venv/bin/python"),
-        &[
-            "-m",
-            "compileall",
-            "-q",
-            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages",
-        ],
-    )?;
+    bytecode::compile(root)?;
     internalize_symlinks(root)?;
     let output = Command::new(&uv)
         .args([
@@ -176,7 +169,8 @@ async fn main() -> Result<()> {
         &json!({"schema_version": 1, "sources": lock,
         "sources_sha256": sources_hash, "builder_sha256": builder_hash,
         "requirements_sha256": requirements_hash, "packages": packages, "apt_packages": apt,
-        "native_libraries": native, "gpu_bake_performed": false}),
+        "native_libraries": native, "gpu_bake_performed": false,
+        "python_bytecode_invalidation": bytecode::INVALIDATION_MODE}),
     )?;
     write_json(
         &root.join("artifact-metadata.json"),
@@ -184,7 +178,8 @@ async fn main() -> Result<()> {
         "os": "ubuntu24.04", "architecture": "x86_64", "python": python_version, "vllm": vllm_version,
         "cuda": "12.9", "torch": torch_version}, "attributes": {"runtime_root": ROOT,
         "requirements_sha256": requirements_hash, "sources_sha256": sources_hash,
-        "builder_sha256": builder_hash, "gpu_bake_performed": "false"}}),
+        "builder_sha256": builder_hash, "gpu_bake_performed": "false",
+        "python_bytecode_invalidation": bytecode::INVALIDATION_MODE}}),
     )?;
     println!(
         "{}",

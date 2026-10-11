@@ -1,103 +1,15 @@
 use crate::{
     Chunk, Entry, Error, Manifest, Result,
-    manifest::RECEIPT,
-    pack::{digest_file, file_mode, set_mode},
+    pack::{digest_file, set_mode},
     paths,
 };
 use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeSet,
     fs::{self, File},
     io::{Read, Write},
     path::Path,
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 };
-
-/// Verify all declared entries, permissions and content, and reject undeclared entries.
-/// Existing symlink ancestors are refused, including symlinks in the destination path.
-pub fn verify(destination: &Path, manifest: &Manifest) -> Result<()> {
-    manifest.validate()?;
-    paths::ancestors(destination)?;
-    if !fs::symlink_metadata(destination)?.is_dir() {
-        return Err(Error::Integrity("destination is not a directory".into()));
-    }
-    let mut expected = BTreeSet::new();
-    for entry in &manifest.entries {
-        let path = destination.join(entry.path());
-        paths::ancestors(path.parent().unwrap())?;
-        let meta = fs::symlink_metadata(&path)?;
-        if file_mode(&meta) != entry.mode() {
-            return Err(Error::Integrity("entry permissions".into()));
-        }
-        match entry {
-            Entry::File { size, sha256, .. } => {
-                if !meta.is_file()
-                    || meta.len() != *size
-                    || digest_file(&path)? != (sha256.clone(), *size)
-                {
-                    return Err(Error::Integrity("file content".into()));
-                }
-            }
-            Entry::Directory { .. } if !meta.is_dir() => {
-                return Err(Error::Integrity("directory type".into()));
-            }
-            Entry::Symlink { target, .. }
-                if !meta.file_type().is_symlink() || fs::read_link(&path)? != Path::new(target) =>
-            {
-                return Err(Error::Integrity("symlink target".into()));
-            }
-            _ => {}
-        }
-        expected.insert(entry.path().to_owned());
-    }
-    let mut actual = BTreeSet::new();
-    walk(destination, destination, &mut actual)?;
-    if actual.remove(RECEIPT) {
-        check_receipt(destination, manifest)?;
-    }
-    if actual != expected {
-        return Err(Error::Integrity("unexpected filesystem entries".into()));
-    }
-    Ok(())
-}
-
-pub(crate) fn write_receipt(destination: &Path, manifest: &Manifest) -> Result<()> {
-    let path = destination.join(RECEIPT);
-    let mut file = File::options().create_new(true).write(true).open(&path)?;
-    file.write_all(manifest.id.as_bytes())?;
-    file.sync_all()?;
-    set_mode(&path, 0o600)
-}
-
-pub(crate) fn check_receipt(destination: &Path, manifest: &Manifest) -> Result<()> {
-    let path = destination.join(RECEIPT);
-    let meta = fs::symlink_metadata(&path)?;
-    if !meta.is_file()
-        || meta.len() != 64
-        || file_mode(&meta) != 0o600
-        || fs::read_to_string(path)? != manifest.id
-    {
-        return Err(Error::Integrity("artifact identity receipt".into()));
-    }
-    Ok(())
-}
-
-fn walk(root: &Path, directory: &Path, paths: &mut BTreeSet<String>) -> Result<()> {
-    for item in fs::read_dir(directory)? {
-        let path = item?.path();
-        let name = path
-            .strip_prefix(root)
-            .map_err(|_| Error::Integrity("tree path".into()))?
-            .to_str()
-            .ok_or_else(|| Error::Integrity("non-UTF8 tree entry".into()))?
-            .to_owned();
-        paths.insert(name);
-        if fs::symlink_metadata(&path)?.is_dir() {
-            walk(root, &path, paths)?;
-        }
-    }
-    Ok(())
-}
 
 pub(crate) fn extract(
     cache: &Path,
@@ -107,18 +19,7 @@ pub(crate) fn extract(
     cancelled: &AtomicBool,
     progress: impl Fn(u64) + Sync,
 ) -> Result<()> {
-    // Real directories are created before files. Symlinks are created only after all writes.
-    for entry in &manifest.entries {
-        if cancelled.load(Ordering::Relaxed) {
-            return Err(Error::Cancelled);
-        }
-        if let Entry::Directory { path, .. } = entry {
-            let path = staging.join(path);
-            paths::ancestors(path.parent().unwrap())?;
-            fs::create_dir(&path)?;
-            set_mode(&path, 0o700)?;
-        }
-    }
+    prepare_entries(staging, manifest, cancelled, true)?;
     let next = AtomicUsize::new(0);
     let completed = AtomicU64::new(0);
     std::thread::scope(|scope| {
@@ -168,6 +69,29 @@ pub(crate) fn extract(
     finish_entries(staging, manifest, cancelled)
 }
 
+pub(crate) fn prepare_entries(
+    staging: &Path,
+    manifest: &Manifest,
+    cancelled: &AtomicBool,
+    check_ancestors: bool,
+) -> Result<()> {
+    // Real directories are created before files. Symlinks are created only after all writes.
+    for entry in &manifest.entries {
+        if cancelled.load(Ordering::Relaxed) {
+            return Err(Error::Cancelled);
+        }
+        if let Entry::Directory { path, .. } = entry {
+            let path = staging.join(path);
+            if check_ancestors {
+                paths::ancestors(path.parent().unwrap())?;
+            }
+            fs::create_dir(&path)?;
+            set_mode(&path, 0o700)?;
+        }
+    }
+    Ok(())
+}
+
 fn extract_chunk(
     cache: &Path,
     staging: &Path,
@@ -183,13 +107,34 @@ fn extract_chunk(
     if digest_file(&chunk_path)? != (chunk.sha256.clone(), chunk.size) {
         return Err(Error::Integrity("cached chunk changed".into()));
     }
-    let mut decoder = zstd::stream::read::Decoder::new(File::open(&chunk_path)?)?;
+    extract_stream(
+        File::open(&chunk_path)?,
+        staging,
+        manifest,
+        chunk,
+        cancelled,
+        true,
+        |_| {},
+    )
+}
+
+pub(crate) fn extract_stream(
+    source: impl Read,
+    staging: &Path,
+    manifest: &Manifest,
+    chunk: &Chunk,
+    cancelled: &AtomicBool,
+    verify_content: bool,
+    progress: impl Fn(u64),
+) -> Result<()> {
+    let mut decoder = zstd::stream::read::Decoder::new(source)?;
     decoder.window_log_max(27)?; // At most128MiB decoder history, even for untrusted frames.
     let mut archive = tar::Archive::new(LimitedReader {
         inner: decoder,
         limit: chunk.unpacked_size,
         bytes: 0,
         cancelled,
+        progress: &progress,
     });
     let mut observed = 0;
     for item in archive.entries()? {
@@ -210,14 +155,16 @@ fn extract_chunk(
             return Err(Error::Integrity("tar entry metadata".into()));
         }
         let path = staging.join(expected.path());
-        paths::ancestors(path.parent().unwrap())?;
+        if verify_content {
+            paths::ancestors(path.parent().unwrap())?;
+        }
         match expected {
             Entry::File { size, sha256, .. } => {
                 if !item.header().entry_type().is_file() {
                     return Err(Error::Integrity("tar file type".into()));
                 }
                 let mut file = File::options().create_new(true).write(true).open(&path)?;
-                let mut hash = Sha256::new();
+                let mut hash = verify_content.then(Sha256::new);
                 let mut written = 0_u64;
                 let mut buffer = [0_u8; 64 * 1024];
                 loop {
@@ -229,11 +176,17 @@ fn extract_chunk(
                     if written > *size {
                         return Err(Error::Integrity("file exceeds declared size".into()));
                     }
-                    hash.update(&buffer[..count]);
+                    if let Some(hash) = &mut hash {
+                        hash.update(&buffer[..count]);
+                    }
                     file.write_all(&buffer[..count])?;
                 }
-                file.sync_all()?;
-                if written != *size || format!("{:x}", hash.finalize()) != *sha256 {
+                if verify_content {
+                    file.sync_all()?;
+                }
+                if written != *size
+                    || hash.is_some_and(|hash| format!("{:x}", hash.finalize()) != *sha256)
+                {
                     return Err(Error::Integrity("extracted file digest".into()));
                 }
             }
@@ -275,7 +228,11 @@ fn extract_chunk(
     Ok(())
 }
 
-fn finish_entries(staging: &Path, manifest: &Manifest, cancelled: &AtomicBool) -> Result<()> {
+pub(crate) fn finish_entries(
+    staging: &Path,
+    manifest: &Manifest,
+    cancelled: &AtomicBool,
+) -> Result<()> {
     for entry in &manifest.entries {
         if cancelled.load(Ordering::Relaxed) {
             return Err(Error::Cancelled);
@@ -296,6 +253,9 @@ fn finish_entries(staging: &Path, manifest: &Manifest, cancelled: &AtomicBool) -
     }
     // Set files first, then deepest directories so restrictive directory modes don't block writes.
     for entry in manifest.entries.iter().rev() {
+        if cancelled.load(Ordering::Relaxed) {
+            return Err(Error::Cancelled);
+        }
         if !matches!(entry, Entry::Symlink { .. }) {
             set_mode(&staging.join(entry.path()), entry.mode())?;
         }
@@ -308,6 +268,7 @@ struct LimitedReader<'a, R> {
     limit: u64,
     bytes: u64,
     cancelled: &'a AtomicBool,
+    progress: &'a dyn Fn(u64),
 }
 impl<R: Read> Read for LimitedReader<'_, R> {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
@@ -330,6 +291,7 @@ impl<R: Read> Read for LimitedReader<'_, R> {
                 "decompressed chunk exceeds manifest size",
             ));
         }
+        (self.progress)(count as u64);
         Ok(count)
     }
 }

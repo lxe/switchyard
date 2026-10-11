@@ -177,6 +177,7 @@ fn ticket(manifest: Manifest, base: &str) -> Ticket {
         concurrency: 4,
         stall_s: 2,
         lifetime_s: 60,
+        startup: Default::default(),
         runtime: None,
     }
 }
@@ -388,4 +389,237 @@ fn cache_verification_rejects_symlinks_even_with_correct_size_and_hash() {
     std::fs::write(&outside, b"{\"model\":\"test\"}").unwrap();
     std::os::unix::fs::symlink(outside, dest.join("config.json")).unwrap();
     assert!(verify_files(&manifest, &dest).is_err());
+}
+
+#[tokio::test]
+async fn trusted_streaming_extracts_split_zstd_without_hashing_and_reuses_receipt() {
+    let (mut manifest, bodies) = fixture("zstd");
+    // Syntactically valid but deliberately incorrect identities: this path trusts the pin.
+    manifest.sha256 = "a".repeat(64);
+    for chunk in &mut manifest.chunks {
+        chunk.sha256 = "b".repeat(64);
+    }
+    for file in manifest.files.values_mut() {
+        file.sha256 = Some("c".repeat(64));
+    }
+    let source = Source::new(bodies);
+    let server = source_server(source.clone()).await;
+    let mut ticket = ticket(manifest, &server.base);
+    ticket.startup.mode = HydrationMode::TrustedStreaming;
+    let root = TempDir::new();
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    hydrate(&ticket, &root.0, state.clone()).await.unwrap();
+    assert_eq!(
+        std::fs::read(root.0.join("model/weights/part.bin")).unwrap(),
+        b"0123456789abcdef"
+    );
+    assert_eq!(
+        state.read().await.bytes_downloaded,
+        ticket.manifest.total_size
+    );
+    assert!(
+        std::fs::read_dir(&root.0)
+            .unwrap()
+            .all(|entry| entry.unwrap().file_name() == "model")
+    );
+    let before = source.requests.load(Ordering::Relaxed);
+    std::fs::write(root.0.join("model/weights/part.bin"), b"caller-owned-cache").unwrap();
+    hydrate(&ticket, &root.0, state.clone()).await.unwrap();
+    assert!(state.read().await.model_cached);
+    assert_eq!(source.requests.load(Ordering::Relaxed), before);
+    assert_eq!(
+        std::fs::read(root.0.join("model/weights/part.bin")).unwrap(),
+        b"caller-owned-cache"
+    );
+}
+
+fn large_fixture() -> (Manifest, BTreeMap<String, Vec<u8>>) {
+    let weights = vec![42; 4 << 20];
+    let raw = tar_files(&[("config.json", b"{}"), ("weights.bin", &weights)]);
+    let mut bodies = BTreeMap::new();
+    let chunks = raw
+        .chunks(128 << 10)
+        .enumerate()
+        .map(|(seq, raw)| {
+            let name = format!("piece-{seq:04}");
+            bodies.insert(name.clone(), raw.to_vec());
+            Chunk {
+                name,
+                size: raw.len() as u64,
+                raw: raw.len() as u64,
+                shard: 0,
+                seq,
+                sha256: sha(raw),
+            }
+        })
+        .collect::<Vec<_>>();
+    let identity = chunks
+        .iter()
+        .map(|chunk| chunk.sha256.as_str())
+        .collect::<String>();
+    (
+        Manifest {
+            format: "shards-v1".into(),
+            compress: "none".into(),
+            sha256: sha(identity.as_bytes()),
+            total_size: chunks.iter().map(|chunk| chunk.size).sum(),
+            raw_size: raw.len() as u64,
+            files: BTreeMap::from([
+                (
+                    "config.json".into(),
+                    FileInfo {
+                        size: 2,
+                        sha256: Some(sha(b"{}")),
+                    },
+                ),
+                (
+                    "weights.bin".into(),
+                    FileInfo {
+                        size: weights.len() as u64,
+                        sha256: Some(sha(&weights)),
+                    },
+                ),
+            ]),
+            chunks,
+        },
+        bodies,
+    )
+}
+
+#[tokio::test]
+async fn trusted_single_shard_starts_twenty_streams_with_shared_budget() {
+    #[derive(Clone)]
+    struct ParallelSource {
+        bodies: Arc<BTreeMap<String, Vec<u8>>>,
+        entered: Arc<AtomicUsize>,
+        peak: Arc<AtomicUsize>,
+        barrier: Arc<tokio::sync::Barrier>,
+    }
+    async fn piece(
+        AxumState(source): AxumState<ParallelSource>,
+        RoutePath(name): RoutePath<String>,
+    ) -> Response {
+        let count = source.entered.fetch_add(1, Ordering::Relaxed) + 1;
+        source.peak.fetch_max(count, Ordering::Relaxed);
+        if name.as_str() < "piece-0020" {
+            source.barrier.wait().await;
+        }
+        // Delay the first wave together. A sequential downloader cannot pass the barrier.
+        source.entered.fetch_sub(1, Ordering::Relaxed);
+        Response::new(Body::from(source.bodies[&name].clone()))
+    }
+    let (manifest, bodies) = large_fixture();
+    let source = ParallelSource {
+        bodies: Arc::new(bodies),
+        entered: Arc::new(AtomicUsize::new(0)),
+        peak: Arc::new(AtomicUsize::new(0)),
+        barrier: Arc::new(tokio::sync::Barrier::new(20)),
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let observed = source.peak.clone();
+    let server = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            Router::new()
+                .route("/chunks/{name}", get(piece))
+                .with_state(source),
+        )
+        .await
+        .unwrap();
+    });
+    let mut ticket = ticket(manifest, &base);
+    ticket.concurrency = 20;
+    ticket.startup.mode = HydrationMode::TrustedStreaming;
+    let root = TempDir::new();
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    let limit = Arc::new(tokio::sync::Semaphore::new(20));
+    preflight(&ticket, &root.0, &state).await.unwrap();
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        hydrate_with_limit(&ticket, &root.0, state, limit.clone()),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert_eq!(observed.load(Ordering::Relaxed), 20);
+    assert_eq!(limit.available_permits(), 20);
+    server.abort();
+}
+
+#[tokio::test]
+async fn trusted_extracts_before_final_transfer_and_cancellation_never_publishes() {
+    #[derive(Clone)]
+    struct DelayedSource {
+        bodies: Arc<BTreeMap<String, Vec<u8>>>,
+        final_name: String,
+        waiting: Arc<tokio::sync::Notify>,
+    }
+    async fn piece(
+        AxumState(source): AxumState<DelayedSource>,
+        RoutePath(name): RoutePath<String>,
+    ) -> Response {
+        if name == source.final_name {
+            source.waiting.notified().await;
+        }
+        Response::new(Body::from(source.bodies[&name].clone()))
+    }
+    let (manifest, bodies) = large_fixture();
+    let source = DelayedSource {
+        final_name: manifest.chunks.last().unwrap().name.clone(),
+        bodies: Arc::new(bodies),
+        waiting: Arc::new(tokio::sync::Notify::new()),
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            Router::new()
+                .route("/chunks/{name}", get(piece))
+                .with_state(source),
+        )
+        .await
+        .unwrap();
+    });
+    let mut ticket = ticket(manifest, &base);
+    ticket.startup.mode = HydrationMode::TrustedStreaming;
+    let root = TempDir::new();
+    let path = root.0.clone();
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    let limit = Arc::new(tokio::sync::Semaphore::new(4));
+    let task_limit = limit.clone();
+    preflight(&ticket, &root.0, &state).await.unwrap();
+    let hydration =
+        tokio::spawn(async move { hydrate_with_limit(&ticket, &path, state, task_limit).await });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if std::fs::read_dir(&root.0).unwrap().any(|entry| {
+                std::fs::read(entry.unwrap().path().join("model/config.json"))
+                    .is_ok_and(|bytes| bytes == b"{}")
+            }) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!root.0.join("model").exists());
+    hydration.abort();
+    let _ = hydration.await;
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if std::fs::read_dir(&root.0).unwrap().next().is_none()
+                && limit.available_permits() == 4
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!root.0.join("model").exists());
+    server.abort();
 }

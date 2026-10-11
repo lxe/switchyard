@@ -157,28 +157,41 @@ impl ServingCacheConfig {
         runtime: &ServingRuntimeConfig,
         model: &ModelConfig,
     ) -> Result<BTreeMap<String, String>> {
-        let mut requirements = self.compatibility.clone();
-        for (key, value) in [
-            ("runtime_id", runtime.artifact.id.clone()),
-            ("model_revision", model.revision.clone()),
-            ("engine_configuration", engine_fingerprint(&model.engine)?),
-            (
-                "runtime_launch_configuration",
-                runtime_launch_fingerprint(runtime)?,
-            ),
-            ("gpu", self.gpu.clone()),
-        ] {
-            if requirements
-                .insert(key.into(), value.clone())
-                .is_some_and(|v| v != value)
-            {
-                return Err(Error::Config(format!(
-                    "serving cache overrides required {key}"
-                )));
-            }
-        }
-        Ok(requirements)
+        cache_requirements(&self.compatibility, &self.gpu, runtime, model)
     }
+}
+
+/// Required labels are derived identically for cache preparation and reuse.
+/// Explicit labels may add constraints, but cannot change engine or model identity.
+pub fn cache_requirements(
+    compatibility: &BTreeMap<String, String>,
+    gpu: &str,
+    runtime: &ServingRuntimeConfig,
+    model: &ModelConfig,
+) -> Result<BTreeMap<String, String>> {
+    let mut requirements = compatibility.clone();
+    for (key, value) in [
+        ("runtime_id", runtime.artifact.id.clone()),
+        ("model_revision", model.revision.clone()),
+        ("model_repository", model.repository.clone()),
+        ("model_archive_sha256", model.archive_sha256.clone()),
+        ("engine_configuration", engine_fingerprint(&model.engine)?),
+        (
+            "runtime_launch_configuration",
+            runtime_launch_fingerprint(runtime)?,
+        ),
+        ("gpu", gpu.into()),
+    ] {
+        if requirements
+            .insert(key.into(), value.clone())
+            .is_some_and(|v| v != value)
+        {
+            return Err(Error::Config(format!(
+                "serving cache overrides required {key}"
+            )));
+        }
+    }
+    Ok(requirements)
 }
 
 /// Hash the full serving configuration so caches cannot silently cross engine settings.

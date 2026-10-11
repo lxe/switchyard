@@ -1,14 +1,18 @@
 //! Pack, verify, publish, and hydrate independently of fleet scheduling.
-use crate::{Error, Result, publication::Snapshot};
+use crate::{
+    Error, ProbeOptions, Result, diagnostics::HydrationTiming, probe, probe_directory,
+    publish_directory,
+};
 use clap::{Args, Subcommand};
-use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
+    time::Instant,
 };
-use switchyard_artifacts::{ArtifactTicket, HydrationOptions, Manifest, Metadata, PackOptions};
-use switchyard_provider::{StorageConfig, config::valid_key_prefix, storage::Storage};
+use switchyard_artifacts::{HydrationOptions, Manifest, Metadata, PackOptions};
+use switchyard_provider::{StorageConfig, storage::Storage};
 
 #[derive(Debug, Args)]
 pub struct StorageSettings {
@@ -66,6 +70,23 @@ pub enum Command {
         #[arg(long)]
         receipt: PathBuf,
     },
+    /// Measure object download throughput without decoding, hashing, or body disk writes.
+    Probe {
+        #[command(flatten)]
+        storage: StorageSettings,
+        #[arg(long)]
+        prefix: String,
+        #[arg(long)]
+        id: String,
+        #[arg(long, default_value_t = 20)]
+        concurrency: usize,
+        #[arg(long, default_value_t = 600)]
+        attempt_timeout_s: u64,
+        #[arg(long, default_value_t = 30)]
+        stall_timeout_s: u64,
+        #[arg(long)]
+        receipt: PathBuf,
+    },
     /// Resolve scoped download URLs and hydrate a published artifact locally.
     Hydrate {
         #[command(flatten)]
@@ -82,12 +103,21 @@ pub enum Command {
         concurrency: usize,
         #[arg(long, default_value_t = 4)]
         extraction_concurrency: usize,
+        /// Stream trusted, pinned shards directly into their final staging files without hashing.
+        #[arg(long)]
+        trusted_streaming: bool,
         /// Total deadline for one download attempt, including response streaming.
         #[arg(long, default_value_t = 600)]
         attempt_timeout_s: u64,
         /// Maximum time without receiving another response-body chunk.
         #[arg(long, default_value_t = 30)]
         stall_timeout_s: u64,
+        /// Additional attempts after a failed download. Use zero for unambiguous timing.
+        #[arg(long, default_value_t = 2)]
+        retries: usize,
+        /// Write safe transfer/publication timing observations to a JSON receipt.
+        #[arg(long)]
+        receipt: Option<PathBuf>,
     },
 }
 
@@ -190,49 +220,10 @@ pub async fn run(command: Command) -> Result<()> {
             concurrency,
             receipt,
         } => {
-            if !valid_key_prefix(&prefix) || !(1..=32).contains(&concurrency) {
-                return Err(Error::Config(
-                    "invalid publication prefix or concurrency".into(),
-                ));
-            }
-            let snapshot = Snapshot::capture(&directory.join("manifest.json"))?;
-            let manifest = &snapshot.manifest;
             let store = storage(&settings)?;
-            let object_prefix = format!("{prefix}/{}", manifest.id);
-            let operations = futures_util::stream::iter(manifest.chunks.iter().cloned())
-                .map(|chunk| {
-                    let store = store.clone();
-                    let key = format!("{object_prefix}/{}", chunk.name);
-                    let path = directory.join(&chunk.name);
-                    async move {
-                        Ok::<_, Error>((
-                            chunk.name,
-                            store
-                                .put_file_immutable(&key, &path, &chunk.sha256, chunk.size)
-                                .await?,
-                        ))
-                    }
-                })
-                .buffer_unordered(concurrency);
-            tokio::pin!(operations);
-            let mut chunks = BTreeMap::new();
-            while let Some(result) = operations.next().await {
-                let (name, created) = result?;
-                chunks.insert(name, created);
-            }
-            let created = store
-                .put_file_immutable(
-                    &format!("{object_prefix}/manifest.json"),
-                    &snapshot.path,
-                    &snapshot.sha256,
-                    snapshot.size,
-                )
-                .await?;
-            write(
-                &receipt,
-                &serde_json::json!({"id":manifest.id,"prefix":object_prefix,"manifest_created":created,"chunks_created":chunks}),
-            )?;
-            println!("{} published at {object_prefix}", manifest.id);
+            let published = publish_directory(&store, &directory, &prefix, concurrency).await?;
+            write(&receipt, &published)?;
+            println!("{} published at {}", published.id, published.prefix);
         }
         Command::Hydrate {
             storage: settings,
@@ -242,57 +233,93 @@ pub async fn run(command: Command) -> Result<()> {
             cache,
             concurrency,
             extraction_concurrency,
+            trusted_streaming,
             attempt_timeout_s,
             stall_timeout_s,
+            retries,
+            receipt,
         } => {
-            if !valid_key_prefix(&prefix)
-                || id.len() != 64
-                || !id.bytes().all(|c| c.is_ascii_hexdigit())
-                || !(1..=64).contains(&concurrency)
-                || !(1..=64).contains(&extraction_concurrency)
-                || !(1..=86400).contains(&attempt_timeout_s)
-                || !(1..=86400).contains(&stall_timeout_s)
-            {
+            probe::validate_reference(&prefix, &id)?;
+            ProbeOptions {
+                concurrency,
+                request_timeout_s: attempt_timeout_s,
+                stall_timeout_s,
+            }
+            .validate()?;
+            if !(1..=64).contains(&extraction_concurrency) || retries > 10 {
                 return Err(Error::Config(
                     "invalid hydration reference or concurrency".into(),
                 ));
             }
+            let controller = Instant::now();
             let store = storage(&settings)?;
-            let manifest: Manifest = store.get_json(&format!("{prefix}/manifest.json")).await?;
-            manifest.validate()?;
-            if manifest.id != id {
-                return Err(Error::Config(
-                    "published artifact differs from pinned identity".into(),
-                ));
-            }
-            let urls = manifest
-                .chunks
-                .iter()
-                .map(|c| {
-                    Ok((
-                        c.name.clone(),
-                        store.presign(&format!("{prefix}/{}", c.name))?,
-                    ))
-                })
-                .collect::<switchyard_provider::Result<_>>()?;
+            let ticket = probe::resolve(&store, &prefix, &id).await?;
+            let declared_bytes = ticket.manifest.chunks.iter().map(|chunk| chunk.size).sum();
             let options = HydrationOptions {
+                mode: if trusted_streaming {
+                    switchyard_artifacts::HydrationMode::TrustedStreaming
+                } else {
+                    switchyard_artifacts::HydrationMode::Verified
+                },
                 cache_dir: cache,
                 download_concurrency: concurrency,
                 extraction_concurrency,
                 request_timeout_s: attempt_timeout_s,
                 stall_timeout_s,
+                retries,
                 ..Default::default()
             };
-            let report = switchyard_artifacts::hydrate(
-                ArtifactTicket { manifest, urls },
-                &destination,
-                options,
-                |_| {},
-            )
-            .await?;
+            let timing = receipt.as_ref().map(|_| {
+                Arc::new(HydrationTiming::new(
+                    id.clone(),
+                    prefix,
+                    declared_bytes,
+                    controller.elapsed().as_secs_f64(),
+                    &options,
+                ))
+            });
+            let observed = timing.clone();
+            let report =
+                switchyard_artifacts::hydrate(ticket, &destination, options, move |progress| {
+                    if let Some(observed) = &observed {
+                        observed.observe(progress);
+                    }
+                })
+                .await?;
+            if let (Some(receipt), Some(timing)) = (receipt, timing) {
+                write(&receipt, &timing.receipt(report.clone()))?;
+            }
             println!(
                 "{id}: {} bytes transferred, {} cached shards, already present {}",
                 report.downloaded_bytes, report.cache_hits, report.already_present
+            );
+        }
+        Command::Probe {
+            storage: settings,
+            prefix,
+            id,
+            concurrency,
+            attempt_timeout_s,
+            stall_timeout_s,
+            receipt,
+        } => {
+            probe::validate_reference(&prefix, &id)?;
+            let options = ProbeOptions {
+                concurrency,
+                request_timeout_s: attempt_timeout_s,
+                stall_timeout_s,
+            };
+            options.validate()?;
+            let store = storage(&settings)?;
+            let report = probe_directory(&store, &prefix, &id, options).await?;
+            write(&receipt, &report)?;
+            println!(
+                "{id}: {} bytes in {:.3}s, {:.2} MB/s ({:.3} Gbit/s), last body byte {:.3}s",
+                report.downloaded_bytes,
+                report.elapsed_s,
+                report.bytes_per_s / 1_000_000.0,
+                report.bytes_per_s * 8.0 / 1_000_000_000.0,
+                report.last_body_elapsed_s.unwrap_or(0.0)
             );
         }
     }

@@ -63,10 +63,19 @@ impl<P: Provider> LiveRuntime<P> {
             revision: model.revision.clone(),
             manifest,
             urls,
-            engine_args: model.engine.args(model, "/work/switchyard/model"),
+            engine_args: model.engine.args(
+                model,
+                &self
+                    .config
+                    .bootstrap
+                    .startup
+                    .model_directory()
+                    .to_string_lossy(),
+            ),
             concurrency: self.config.limits.hydration_concurrency,
             stall_s: self.config.limits.hydration_stall_s,
             lifetime_s: self.config.limits.run_timeout_s,
+            startup: self.config.bootstrap.startup.clone(),
             runtime: if let Some(runtime) = &self.config.bootstrap.runtime {
                 let mut caches = vec![];
                 for cache in model.caches.iter().filter(|c| c.gpu == offering.gpu) {
@@ -89,6 +98,7 @@ impl<P: Provider> LiveRuntime<P> {
                     args: runtime.args.clone(),
                     environment: runtime.environment.clone(),
                     caches,
+                    cache_export: self.cache_export.clone(),
                 })
             } else {
                 None
@@ -192,15 +202,24 @@ impl<P: Provider> LiveRuntime<P> {
                     self.observations.push(
                         serde_json::json!({"at_s":now,"pod":node.owned.pod.id,"state":state}),
                     );
-                    node.observed.host.bytes_downloaded = state
-                        .bytes_downloaded
-                        .saturating_add(state.artifact_bytes_downloaded);
+                    node.observed.host.bytes_downloaded = state.bytes_downloaded.saturating_add(
+                        if state.hydration_mode
+                            == switchyard_artifacts::HydrationMode::TrustedStreaming
+                        {
+                            state
+                                .artifact_network_bytes_downloaded
+                                .min(state.artifact_bytes_total)
+                        } else {
+                            state.artifact_bytes_downloaded
+                        },
+                    );
                     node.observed.host.bytes_total =
                         state.bytes_total.saturating_add(state.artifact_bytes_total);
                     node.observed.host.phase = match state.phase {
                         Phase::Booting => StartupPhase::Booting,
                         Phase::Hydrating => StartupPhase::Hydrating,
                         Phase::Initializing => StartupPhase::Initializing,
+                        Phase::Exporting => StartupPhase::Initializing,
                         Phase::Ready => StartupPhase::Ready,
                         Phase::Failed => {
                             return Err(Error::Request(
@@ -208,6 +227,9 @@ impl<P: Provider> LiveRuntime<P> {
                             ));
                         }
                     };
+                    if matches!(state.phase, Phase::Exporting) {
+                        node.observed.is_ready = false;
+                    }
                     if matches!(state.phase, Phase::Ready) && !node.observed.is_ready {
                         node.observed.is_ready = true;
                         node.observed.ready_s = now;
@@ -235,12 +257,20 @@ impl<P: Provider> LiveRuntime<P> {
             self.invalid += 1;
             return Ok(());
         };
-        if let Ok(state) = node.endpoint.state().await
-            && let Some(rate) = state
-                .volume_bytes_per_s
-                .or(state.artifact_volume_bytes_per_s)
-                .filter(|r| r.is_finite() && *r > 0.0)
-        {
+        if let Ok(state) = node.endpoint.state().await {
+            let rate =
+                if state.hydration_mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
+                    state
+                        .artifact_network_bytes_per_s
+                        .or(state.volume_bytes_per_s)
+                } else {
+                    state
+                        .volume_bytes_per_s
+                        .or(state.artifact_volume_bytes_per_s)
+                };
+            let Some(rate) = rate.filter(|r| r.is_finite() && *r > 0.0) else {
+                return Ok(());
+            };
             node.observed.host.probe = Some(HostProbe {
                 at_s: self.epoch.elapsed().as_secs_f64(),
                 volume_bytes_per_s: rate,

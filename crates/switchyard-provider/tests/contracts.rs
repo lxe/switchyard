@@ -100,6 +100,8 @@ fn compute() -> ComputeConfig {
         gpu_types: vec!["NVIDIA RTX A6000".into(), "NVIDIA GeForce RTX 4090".into()],
         data_centers: vec!["US-KS-2".into()],
         min_cuda: "12.9".into(),
+        min_ram_per_gpu_gb: None,
+        min_vcpu_count_per_gpu: None,
         disk_gb: 80,
         disk_usd_per_gb_month: 0.1,
         billing_hours_per_month: 730.0,
@@ -219,6 +221,8 @@ async fn launch_contract_keeps_credentials_out_of_retained_metadata() {
     let body: Value = serde_json::from_slice(&captured[1].body).unwrap();
     assert_eq!(body["gpu"]["count"], 1);
     assert_eq!(body["gpu"]["minCudaVersion"], "12.9");
+    assert!(body["gpu"].get("minRamPerGpu").is_none());
+    assert!(body["gpu"].get("minVcpuCountPerGpu").is_none());
     assert_eq!(body["dataCenterIds"], json!(["US-KS-2"]));
     assert_eq!(body["ports"], json!(["8080/http", "9000/tcp"]));
     assert_eq!(body["startSsh"], false);
@@ -231,6 +235,32 @@ async fn launch_contract_keeps_credentials_out_of_retained_metadata() {
     assert_eq!(body["entrypoint"], json!(["/bin/bash", "-c"]));
     assert_eq!(body["cmd"], json!(["exec /app/server --port 8080"]));
     mock.assert_finished();
+}
+
+#[tokio::test]
+async fn launch_maps_host_placement_floors_without_inventing_container_options() {
+    let mock = Mock::start(vec![
+        inventory(vec![]),
+        Reply::ok(pod("owned123", "switchyard-test-unique")),
+    ])
+    .await;
+    let mut config = compute();
+    config.api_url = mock.url.clone();
+    config.min_ram_per_gpu_gb = Some(64);
+    config.min_vcpu_count_per_gpu = Some(8);
+    let api = RunPod::with_config(&config, "FAKE_PRIVATE_KEY").unwrap();
+    api.create(launch()).await.unwrap();
+    let captured = mock.state.captured.lock().unwrap();
+    let body: Value = serde_json::from_slice(&captured[1].body).unwrap();
+    assert_eq!(body["gpu"]["minRamPerGpu"], 64);
+    assert_eq!(body["gpu"]["minVcpuCountPerGpu"], 8);
+    assert!(body.get("shmSize").is_none());
+    mock.assert_finished();
+    config.min_ram_per_gpu_gb = Some(0);
+    assert!(config.validate().is_err());
+    config.min_ram_per_gpu_gb = None;
+    config.min_vcpu_count_per_gpu = Some(0);
+    assert!(config.validate().is_err());
 }
 
 #[tokio::test]

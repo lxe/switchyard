@@ -14,7 +14,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 use switchyard_artifact_tools::cli::{Command, StorageSettings, run};
+use switchyard_artifact_tools::{PublicationReceipt, publish_directory};
 use switchyard_artifacts::{Manifest, Metadata, PackOptions, pack};
+use switchyard_provider::{StorageConfig, storage::Storage};
 
 struct Scratch(PathBuf);
 impl Scratch {
@@ -70,8 +72,7 @@ async fn upload(
     StatusCode::OK
 }
 
-#[tokio::test]
-async fn publication_uses_captured_manifest_bytes_despite_source_change_during_upload() {
+async fn exercise_publication(cli: bool) {
     let scratch = Scratch::new();
     let source = scratch.0.join("source");
     fs::create_dir(&source).unwrap();
@@ -140,18 +141,36 @@ async fn publication_uses_captured_manifest_bytes_despite_source_change_during_u
     let credentials = scratch.0.join("credentials.env");
     fs::write(&credentials, "SWITCHYARD_PUBLICATION_TEST_ACCESS=test-access\nSWITCHYARD_PUBLICATION_TEST_SECRET=test-secret\n").unwrap();
     let receipt = scratch.0.join("receipt.json");
-    run(Command::Publish {
-        storage: StorageSettings {
-            config,
-            env_file: vec![credentials],
-        },
-        directory,
-        prefix: "artifacts".into(),
-        concurrency: 2,
-        receipt: receipt.clone(),
-    })
-    .await
-    .unwrap();
+    let receipt = if cli {
+        run(Command::Publish {
+            storage: StorageSettings {
+                config,
+                env_file: vec![credentials],
+            },
+            directory,
+            prefix: "artifacts".into(),
+            concurrency: 2,
+            receipt: receipt.clone(),
+        })
+        .await
+        .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&fs::read(receipt).unwrap()).unwrap()
+    } else {
+        let input: serde_json::Value = serde_json::from_slice(&fs::read(config).unwrap()).unwrap();
+        let settings: StorageConfig = serde_json::from_value(input["storage"].clone()).unwrap();
+        let storage =
+            Storage::with_keys(&settings, "test-access".into(), "test-secret".into()).unwrap();
+        let receipt = publish_directory(&storage, &directory, "artifacts", 2)
+            .await
+            .unwrap();
+        assert!(receipt.manifest_created);
+        assert_eq!(receipt.chunks_created.len(), manifest.chunks.len());
+        assert!(receipt.chunks_created.values().all(|created| *created));
+        let round_trip: PublicationReceipt =
+            serde_json::from_slice(&serde_json::to_vec(&receipt).unwrap()).unwrap();
+        assert_eq!(round_trip, receipt);
+        serde_json::to_value(receipt).unwrap()
+    };
     assert_eq!(fs::read(manifest_path).unwrap(), replacement);
     let objects = state.objects.lock().unwrap();
     let uploaded = &objects[&format!("bucket/artifacts/{}/manifest.json", manifest.id)];
@@ -163,7 +182,96 @@ async fn publication_uses_captured_manifest_bytes_despite_source_change_during_u
     published.validate().unwrap();
     assert_eq!(published.id, manifest.id);
     assert!(!objects.contains_key(&format!("bucket/artifacts/{}/manifest.json", changed.id)));
-    let receipt: serde_json::Value = serde_json::from_slice(&fs::read(receipt).unwrap()).unwrap();
     assert_eq!(receipt["id"], manifest.id);
+    assert_eq!(receipt["prefix"], format!("artifacts/{}", manifest.id));
+    server.abort();
+}
+
+#[tokio::test]
+async fn cli_uses_captured_manifest_bytes_despite_source_change_during_upload() {
+    exercise_publication(true).await;
+}
+
+#[tokio::test]
+async fn library_uses_captured_manifest_bytes_despite_source_change_during_upload() {
+    exercise_publication(false).await;
+}
+
+#[tokio::test]
+async fn failed_chunk_publication_never_publishes_manifest_and_rejects_invalid_limits() {
+    let scratch = Scratch::new();
+    let source = scratch.0.join("source");
+    fs::create_dir(&source).unwrap();
+    fs::write(source.join("a"), "first chunk").unwrap();
+    fs::write(source.join("b"), "second chunk").unwrap();
+    let directory = scratch.0.join("packed");
+    let manifest = pack(
+        &source,
+        &directory,
+        Metadata {
+            kind: "publication-test".into(),
+            compatibility: BTreeMap::new(),
+            attributes: BTreeMap::new(),
+        },
+        PackOptions {
+            target_shard_bytes: 1024,
+            ..PackOptions::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(manifest.chunks.len(), 2);
+    let bytes = serde_json::to_vec(&manifest).unwrap();
+    let manifest_path = directory.join("manifest.json");
+    fs::write(&manifest_path, &bytes).unwrap();
+    fs::write(
+        directory.join(&manifest.chunks[1].name),
+        "corrupt local shard",
+    )
+    .unwrap();
+    let state = Uploads {
+        source_manifest: manifest_path,
+        replacement: Arc::new(bytes),
+        objects: Arc::new(Mutex::new(BTreeMap::new())),
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!("http://{}", listener.local_addr().unwrap());
+    let app = Router::new()
+        .route("/{*key}", put(upload))
+        .with_state(state.clone());
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let storage = Storage::with_keys(
+        &StorageConfig {
+            endpoint,
+            region: "auto".into(),
+            bucket: "bucket".into(),
+            access_key_env: "TEST_ACCESS".into(),
+            secret_key_env: "TEST_SECRET".into(),
+            url_lifetime_s: 900,
+        },
+        "test-access".into(),
+        "test-secret".into(),
+    )
+    .unwrap();
+    assert!(
+        publish_directory(&storage, &directory, "artifacts", 1)
+            .await
+            .is_err()
+    );
+    {
+        let objects = state.objects.lock().unwrap();
+        assert_eq!(objects.len(), 1);
+        assert!(objects.contains_key(&format!(
+            "bucket/artifacts/{}/{}",
+            manifest.id, manifest.chunks[0].name
+        )));
+        assert!(objects.keys().all(|key| !key.ends_with("/manifest.json")));
+    }
+    for (namespace, concurrency) in [("../artifacts", 1), ("artifacts", 0), ("artifacts", 33)] {
+        assert!(matches!(
+            publish_directory(&storage, &directory, namespace, concurrency).await,
+            Err(switchyard_artifact_tools::Error::Config(_))
+        ));
+    }
+    assert_eq!(state.objects.lock().unwrap().len(), 1);
     server.abort();
 }

@@ -104,6 +104,15 @@ impl Manifest {
         if self.format != FORMAT || !valid_digest(&self.id) || self.id != self.identity()? {
             return Err(Error::Invalid("format or manifest identity".into()));
         }
+        self.validate_structure()
+    }
+
+    // Trusted startup still enforces filesystem safety, coverage and declared
+    // bounds, but relies on its caller's pinned manifest instead of rehashing it.
+    pub(crate) fn validate_structure(&self) -> Result<()> {
+        if self.format != FORMAT || !valid_digest(&self.id) {
+            return Err(Error::Invalid("format or manifest identity".into()));
+        }
         self.validate_entries()?;
         self.validate_chunks()
     }

@@ -14,17 +14,36 @@ An optional `runtime` field supplies an [`ArtifactTicket`](../switchyard-artifac
 
 Each cache artifact must identify the selected `runtime_id`; a declared `model_revision` must also match the model ticket. All required labels are checked before transfer. An artifact's declared `architecture` is compared to the running host. If any runtime or cache declares `gpu_compute_capability`, a bounded `nvidia-smi` probe checks every exposed GPU against that value. Other engine and GPU labels are checked against the ticket's requirements; the deployment integration supplies those requirements.
 
-Verified cache seeds live at `/opt/switchyard/cache/<runtime-id>/.seeds/<name>`. The agent copies each seed into a separately published writable directory at `/opt/switchyard/cache/<runtime-id>/<name>`, retaining a seed identity receipt. Subsequent starts preserve compiler-generated files only when that receipt identifies the same seed. A different seed or an unowned destination is rejected. Cache names `runtime` and `.seeds` are reserved. Runtime and immutable seed directories are verified again before reuse; modifications to writable compiler caches do not invalidate their immutable seeds.
+Immutable cache seeds live at `/opt/switchyard/cache/<runtime-id>/.seeds/<name>`. The agent copies each seed into a separately published writable directory at `/opt/switchyard/cache/<runtime-id>/<name>`, retaining a seed identity receipt. Subsequent starts preserve compiler-generated files only when that receipt identifies the same seed. A different seed or an unowned destination is rejected. Cache names `runtime` and `.seeds` are reserved. In the default verified mode, runtime and immutable seed directories are verified again before reuse. Trusted streaming uses their pinned identity receipts; modifications to writable compiler caches do not invalidate their immutable seeds.
 
 Environment values can use `{runtime_root}` and `{cache_root}` placeholders; the latter expands to the directory for the selected runtime identity. The child receives a small allowlist of inherited host execution variables and offline Hugging Face settings. Cloud and storage credentials are removed, credential-like names in the ticket's environment are rejected, and Python bytecode writes are disabled to preserve the verified runtime tree. The deployment config supplies engine-specific writable cache paths.
 
-Runtime and cache downloads use the ticket's transfer concurrency and stall timeout. Extraction concurrency is capped at eight; each HTTP attempt has a total timeout capped at 600 seconds and at the agent lifetime. The overall agent deadline bounds runtime hydration, model hydration, and engine startup together. Required artifacts are verified before the engine starts; this version does not expose partially extracted files to it.
+Runtime and model hydration run concurrently. A shared semaphore limits all runtime, cache, and model HTTP streams to the ticket's concurrency; configuring twenty means twenty in total. Trusted workers retain their permit until decoding finishes, including after cancellation. Runtime extraction is capped at eight workers in verified mode and twenty in trusted mode. Each HTTP attempt has a stall timeout and a total timeout capped at 600 seconds and at the agent lifetime. The overall agent deadline bounds hydration and engine startup together.
+
+### Startup policy
+
+The optional `startup` field selects storage and hydration behavior. Omitted fields preserve verified hydration, `/work/switchyard/model`, and launch after both dependencies are ready.
+
+```json
+{
+  "mode": "trusted_streaming",
+  "model_root": "/dev/shm/switchyard",
+  "require_model_ram": true,
+  "early_launch": true
+}
+```
+
+`model_root` is the absolute parent directory of the published `model` directory. It must contain real directories and cannot overlap runtime, cache, or chunk storage. Before any transfer, the agent measures the model filesystem's available bytes, its RAM backing, host `MemAvailable`, and any discoverable cgroup memory headroom. A RAM requirement fails when the filesystem is not RAM-backed or has insufficient capacity; there is no disk fallback. Memory checks reserve the model file bytes plus 136 MiB per configured concurrent stream and 64 MiB of fixed headroom. This covers the 128 MiB maximum zstd history per active decoder and bounded channel/network buffers. Engine memory requirements remain a deployment sizing responsibility. The model is extracted directly into a private directory on its selected filesystem and atomically published there.
+
+`trusted_streaming` is for pinned artifacts whose manifest and contents the controller already trusts. It skips content hashes, identity rehashing, complete-tree rereads, compressed chunk cache writes, and per-file fsync. It still checks archive structure, containment, entry types, declared compressed/raw/file lengths, and decompressor validity. Receipt reuse checks the real destination directory and a regular mode-0600 identity receipt without rescanning its contents; the agent must exclusively own these directories. `verified` retains content and cache verification.
+
+`early_launch` requires an explicitly supplied cooperative runtime program. After runtime and cache hydration finish, the agent launches that program with piped stdin while model hydration continues. The program may perform imports or other preparation, then must wait for exactly `switchyard-model-ready-v1\n` followed by EOF before opening model files. The agent sends that line only after the current model directory is published. A failed or cancelled model transfer kills the owned engine process group without sending the gate. The agent starts health and decoded-token readiness checks after successful gate delivery. Engine-specific preparation belongs in the configured program; the agent contains no vLLM import logic.
 
 ### Model archive
 
 The agent validates the manifest before performing I/O. Every chunk has a SHA-256 digest, compressed and raw byte counts, a shard number, and a contiguous sequence number. The manifest's archive identity is the SHA-256 digest of the concatenated chunk digest strings in manifest order. A shard is a tar stream split into consecutive chunks. With `compress: "zstd"`, each chunk is a separate compressed frame.
 
-Downloads run concurrently with at most 64 transfers. A failed attempt is retried twice, with bounded delays, and its retained byte count is removed from reported progress. Extraction uses at most eight workers and never exceeds the configured transfer concurrency. Each extracted regular file must appear exactly once in the manifest and have the declared size; optional file SHA-256 digests are checked before the directory is published. Absolute paths, parent traversal, symlinks, hard links, duplicate files, and unlisted files are rejected. A cached directory is reused only after the archive marker and all declared file checks pass.
+In verified mode, downloads run concurrently with at most 64 transfers. A failed attempt is retried twice, with bounded delays, and its retained byte count is removed from reported progress. Extraction begins after all chunks arrive, uses at most eight workers, and never exceeds the configured transfer concurrency. Each extracted regular file must appear exactly once in the manifest and have the declared size; optional file SHA-256 digests are checked before the directory is published. Absolute paths, parent traversal, symlinks, hard links, duplicate files, and unlisted files are rejected. In verified mode, a cached directory is reused only after the archive marker and all declared file checks pass. In trusted streaming mode, bounded 64 KiB channels feed each shard's ordered TAR pieces directly to extraction, with up to twenty active shard workers. Download slots remain occupied until each piece is decoded and its declared raw length is checked, so completed small pieces cannot accumulate the whole model in memory. A partial legacy TAR transfer fails the hydration rather than replaying bytes that extraction has already consumed; runtime artifacts have independent shard retries. Private staging remains owned by workers until they stop, and only the awaiting caller can publish it.
 
 ## Observation and inference API
 
@@ -36,13 +55,50 @@ The agent binds port 8080 before hydration begins. Every request requires `Autho
 | `GET /probe` | Returns the current hydration observation, including transfer measurements already collected by the agent. It does not initiate a separate bandwidth test. |
 | `/v1/*`, `/tokenize`, `/health`, `/metrics` | Proxies the same method, query, and body to vLLM on `127.0.0.1:8000` after readiness. Streaming responses remain streaming. |
 
-Lifecycle phases are `booting`, `hydrating`, `initializing`, `ready`, and `failed`. `ready` requires engine `/health`, successful tokenization, and a nonstream completion confirming one decoded token. Each readiness request has a 60-second deadline and a 1 MiB response bound; failure diagnostics omit the engine response body.
+Lifecycle phases are `booting`, `hydrating`, `initializing`, `ready`, `exporting`, and `failed`. `ready` requires engine `/health`, successful tokenization, and a nonstream completion confirming one decoded token. Each readiness request has a 60-second deadline and a 1 MiB response bound; failure diagnostics omit the engine response body.
 
-Model `volume_bytes_per_s` is effective retained download progress divided by elapsed transfer time, so its duration includes failed attempts, storage service delays, and local writing overhead. `hydration_seconds` includes model extraction after downloads complete. An image cache observation remains `null` because a process inside a newly started container cannot determine whether the cloud host downloaded the container image.
+Model `volume_bytes_per_s` is effective retained download progress divided by elapsed transfer time, so its duration includes failed attempts, storage service delays, and local writing overhead. `hydration_seconds` includes model extraction; trusted-mode extraction overlaps downloads. An image cache observation remains `null` because a process inside a newly started container cannot determine whether the cloud host downloaded the container image.
 
-Runtime and cache counters are separate from the model counters. `artifact_bytes_downloaded` counts verified compressed chunks, including verified cache hits, and never exceeds `artifact_bytes_total`. `artifact_network_bytes_downloaded` counts received network bytes, including retries. `artifact_volume_bytes_per_s` divides newly downloaded, verified chunk bytes by elapsed runtime/cache hydration time; it excludes cached bytes and duplicated retry bytes from the numerator. Fully cached artifacts produce no network rate observation. The `artifacts` list records each runtime or cache identity, phase, verification progress, cache hits, and sanitized failures without signed URLs. These rates describe observed transfers and do not guarantee future network capacity.
+Runtime and cache counters are separate from the model counters. `artifact_bytes_downloaded` counts verified compressed chunks, including verified cache hits, and never exceeds `artifact_bytes_total`. `artifact_network_bytes_downloaded` counts received network bytes, including retries. `artifact_volume_bytes_per_s` divides newly downloaded, verified chunk bytes by elapsed runtime/cache hydration time; it excludes cached bytes and duplicated retry bytes from the numerator. Fully cached artifacts produce no network rate observation. The `artifacts` list records each runtime or cache identity, phase, verification progress, cache hits, and sanitized failures without signed URLs. `artifact_network_bytes_per_s` reports actual received wire bytes divided by elapsed runtime/cache hydration time, including retries, and is available in trusted mode. Trusted verification counters remain zero. These rates describe observed transfers and do not guarantee future network capacity.
 
-The proxy accepts bodies up to 2 MiB, returns 503 while the engine starts, and never forwards the agent token to vLLM. The lifetime deadline aborts the engine task and permits at most five seconds for HTTP shutdown. **The provisioning client must terminate the cloud pod:** stopping the agent process does not stop cloud rental billing.
+`model_storage` and `runtime_storage` report the measured filesystem, mount source, available bytes, and memory headroom. An overlay filesystem is reported as overlay; its backing device is not assumed to be NVMe. `startup_milestones` records monotonic seconds from process start for model/runtime hydration, engine spawn, model gate release, and decoded-token readiness. These timestamps do not measure cloud allocation or container startup before the agent ran.
+
+The proxy accepts bodies up to 2 MiB, returns 503 while the engine is unavailable, and never forwards the agent token to vLLM. The Linux agent owns a separate process group for the engine and kills that group when its owner is cancelled. The lifetime deadline aborts engine and export work and permits at most five seconds for HTTP shutdown. **The provisioning client must terminate the cloud pod:** stopping the agent process does not stop cloud rental billing.
+
+## Compiler cache export
+
+A bake ticket can opt into a one-shot export with `runtime.cache_export`. Ordinary serving tickets omit it and all export routes return 404. The capability selects a single writable cache child, such as `compiled`, and fixes the output artifact's compatibility labels in the ticket. It accepts no client-selected filesystem paths, shell commands, or HTTP metadata. The selected name follows cache naming rules, including the reserved names `runtime` and `.seeds`.
+
+```json
+{
+  "name": "compiled",
+  "compatibility": {
+    "runtime_id": "<runtime artifact identity>",
+    "model_revision": "<model revision>",
+    "architecture": "x86_64",
+    "gpu_compute_capability": "8.9",
+    "gpu": "L40S",
+    "engine_configuration": "<engine configuration identity>",
+    "runtime_launch_configuration": "<runtime launch identity>"
+  },
+  "drain_timeout_s": 60,
+  "shutdown_timeout_s": 30
+}
+```
+
+`runtime_id` and `model_revision` must match the ticket. `architecture` must identify the actual host; a declared `gpu_compute_capability` participates in the same bounded GPU probe as hydrated artifacts. The controller supplies other compatibility labels and must include every runtime, model, engine, launch, and GPU characteristic needed for safe cache reuse. The two timeouts default to the values shown; valid ranges are 1–3600 seconds for drainage and 1–300 seconds for shutdown. The ticket's overall lifetime still bounds the operation.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `POST /cache/export` | Requires an empty body and a ready engine. Closes inference admission and starts one export, returning 202 while running, 200 after completion, or 409 before readiness or after failure. Repeated requests return the existing result. |
+| `GET /cache/export` | Returns `{ "phase", "manifest", "error" }`. Phases are `idle`, `draining`, `stopping`, `packing`, `ready`, and `failed`; only `ready` includes a manifest. |
+| `GET /cache/export/chunks/{name}` | Streams an exact manifest-listed chunk with `Content-Length` and `x-artifact-sha256`. Unknown names return 404; unfinished exports return 409. |
+
+Every export request uses the same bearer authentication as inference. Once POST is accepted, `/state` changes to `exporting` and new inference receives 503. Admission ownership remains attached to each upstream request and its complete response body. The exporter waits for EOF, an upstream error, or client disconnection before requesting shutdown from the engine owner. That owner sends SIGTERM to the whole process group and checks Linux `/proc` until both the child and every non-zombie group member have exited. A shutdown timeout forces group cleanup and fails the export instead of publishing caches that may not have flushed. Drainage, shutdown, or packing failure leaves admission closed and reports `failed`.
+
+After confirmed shutdown, the agent snapshots `/opt/switchyard/cache/<runtime-id>/<name>` into private export scratch and calls the generic artifact packer. The snapshot preserves file content, modes, directories, and safe internal symlinks. It omits the agent-owned `.switchyard-cache-seed` receipt and never traverses or changes immutable seed trees. Special files, escaping links, empty file content across the entire cache, and sources exceeding 16 GiB are rejected. Packing uses the generic defaults of 128 MiB shard targets and zstd level 6. The agent verifies the snapshot and every output chunk before exposing a manifest whose kind is `cache`, whose compatibility labels match the ticket, and whose attributes are empty.
+
+A completed export leaves `/state` in `exporting`, with `inference_verified: false`, because the engine is stopped. Export chunks remain available until agent shutdown. A cancelled packing waiter cannot expose late worker output, and private scratch is removed when its ownership ends. Compression already running in a blocking worker may finish before its private files are removed; it cannot publish a result after cancellation. The controller should download and verify all chunks with its authenticated client, terminate the GPU pod, then publish the generic artifact with its own storage credentials. File caches do not preserve in-memory CUDA graphs or engine process state.
 
 ## Verification
 
@@ -51,4 +107,4 @@ cargo test -p switchyard-agent
 cargo clippy -p switchyard-agent --all-targets -- -D warnings
 ```
 
-Tests serve synthetic archives over local HTTP and check chunk boundaries, zstd framing, retries, verified and wire-byte accounting, stall deadlines, compatibility rejection, writable-cache reuse, executable symlinks, corrupt data, unsafe archive entries, authentication, readiness inference, request bounds, and streaming proxy behavior. They do not require a GPU or cloud credentials.
+Tests serve synthetic archives over local HTTP and check twenty simultaneous streams, extraction before the final transfer, runtime imports during model hydration, gate ordering, cancellation ownership and permit retention, RAM capacity, trusted receipts, and chunk boundaries, zstd framing, retries, verified and wire-byte accounting, stall deadlines, compatibility rejection, writable-cache reuse, executable symlinks, corrupt data, unsafe archive entries, authentication, readiness inference, request bounds, and streaming proxy behavior. Export tests cover disabled capabilities, idempotent initiation, active response drainage through EOF and disconnect, invalid download names, output checksums, seed preservation, cancellation, descendant shutdown, and packing failures. They do not require a GPU or cloud credentials.

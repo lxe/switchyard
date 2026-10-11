@@ -18,7 +18,9 @@
     "min_cuda": "12.9",
     "disk_gb": 80,
     "disk_usd_per_gb_month": 0.1,
-    "billing_hours_per_month": 730
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
   },
   "storage": {
     "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
@@ -44,7 +46,9 @@
           "--enforce-eager",
           "--no-enable-prefix-caching",
           "--default-chat-template-kwargs",
-          "{\"enable_thinking\":false}"
+          "{\"enable_thinking\":false}",
+          "--max-num-batched-tokens",
+          "2048"
         ]
       },
       "prior": {
@@ -71,7 +75,9 @@
           "--enforce-eager",
           "--no-enable-prefix-caching",
           "--default-chat-template-kwargs",
-          "{\"enable_thinking\":false}"
+          "{\"enable_thinking\":false}",
+          "--max-num-batched-tokens",
+          "2048"
         ]
       },
       "prior": {
@@ -98,7 +104,9 @@
           "--enforce-eager",
           "--no-enable-prefix-caching",
           "--default-chat-template-kwargs",
-          "{\"enable_thinking\":false}"
+          "{\"enable_thinking\":false}",
+          "--max-num-batched-tokens",
+          "2048"
         ]
       },
       "prior": {
@@ -118,10 +126,10 @@
     "run_timeout_s": 1800,
     "startup_timeout_s": 900,
     "request_timeout_s": 180,
-    "hydration_concurrency": 32,
+    "hydration_concurrency": 20,
     "hydration_stall_s": 20,
     "poll_ms": 100,
-    "max_experiment_usd": 4.75,
+    "max_experiment_usd": 4.62,
     "experiment_timeout_s": 5400
   },
   "scheduling": {
@@ -131,13 +139,13 @@
   },
   "bootstrap": {
     "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
-    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.3.0/switchyard-agent-x86_64-linux-musl",
-    "agent_sha256": "f8a4326524fb3293badcbc6d5186aa8c55a55296d21c076d3b55936fd32127fc",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.4.0/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "a39ff3d1e8226ce7b8995c1e1ee8bf0a775465fb01467d777c7e4e8cf156f07c",
     "ticket_prefix": "switchyard/bootstrap",
     "runtime": {
       "artifact": {
-        "prefix": "switchyard/artifacts/runtime/3ebec35c9c6905ac2b4aa9d5a2f3dd98b3066880dc7e36b6ce33d341414e5c9a",
-        "id": "3ebec35c9c6905ac2b4aa9d5a2f3dd98b3066880dc7e36b6ce33d341414e5c9a"
+        "id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+        "prefix": "switchyard/artifacts/runtime/8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc"
       },
       "compatibility": {
         "architecture": "x86_64",
@@ -149,8 +157,8 @@
       },
       "program": "venv/bin/python",
       "args": [
-        "-m",
-        "vllm.entrypoints.cli.main"
+        "-c",
+        "import sys, time\nstarted = time.monotonic()\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n':\n    raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nsys.argv[0] = 'vllm'\nmain()\n"
       ],
       "environment": {
         "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
@@ -166,13 +174,24 @@
         "VLLM_NO_USAGE_STATS": "1",
         "DO_NOT_TRACK": "1",
         "TOKENIZERS_PARALLELISM": "false",
+        "PYTHONDONTWRITEBYTECODE": "1",
         "HF_HOME": "{cache_root}/compiled/huggingface",
         "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
         "TORCHINDUCTOR_CACHE_DIR": "{cache_root}/compiled/torchinductor",
         "VLLM_CACHE_ROOT": "{cache_root}/compiled/vllm",
         "CUDA_CACHE_PATH": "{cache_root}/compiled/cuda",
-        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer"
+        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer",
+        "CUDA_CACHE_MAXSIZE": "4294967296",
+        "XDG_CACHE_HOME": "{cache_root}/compiled/xdg",
+        "TORCH_EXTENSIONS_DIR": "{cache_root}/compiled/torch-extensions",
+        "VLLM_ENABLE_STARTUP_PLAN": "1"
       }
+    },
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/dev/shm/switchyard",
+      "require_model_ram": true,
+      "early_launch": true
     }
   }
 }

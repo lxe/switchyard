@@ -1,0 +1,52 @@
+{
+  "model": "qwen3.5-0.8b",
+  "gpu": "NVIDIA L40S",
+  "name": "compiled",
+  "compatibility": {
+    "architecture": "x86_64",
+    "gpu_compute_capability": "8.9"
+  },
+  "warmup": {
+    "cases": [
+      {
+        "name": "warm-single",
+        "policy": "warm_only",
+        "calls": 1,
+        "prompt": "Explain continuous batching in two sentences.",
+        "planned_output": 32,
+        "max_output": 64,
+        "arrival_interval_s": 0,
+        "desired_output_tps": 500,
+        "completion_budget_s": 180,
+        "serial_dependencies": false
+      },
+      {
+        "name": "warm-batch-8",
+        "policy": "warm_only",
+        "calls": 8,
+        "prompt": "Give a concise example of inference request batching.",
+        "planned_output": 32,
+        "max_output": 64,
+        "arrival_interval_s": 0,
+        "desired_output_tps": 500,
+        "completion_budget_s": 180,
+        "serial_dependencies": false
+      },
+      {
+        "name": "warm-batch-32",
+        "policy": "warm_only",
+        "calls": 32,
+        "prompt": "Summarize this repeated workload description. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. A service routes tokenized requests to available GPU hosts. ",
+        "planned_output": 64,
+        "max_output": 128,
+        "arrival_interval_s": 0,
+        "desired_output_tps": 500,
+        "completion_budget_s": 180,
+        "serial_dependencies": false
+      }
+    ]
+  },
+  "export_timeout_s": 180,
+  "max_artifact_bytes": 8589934592,
+  "download_concurrency": 8
+}

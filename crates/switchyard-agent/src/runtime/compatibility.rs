@@ -5,12 +5,8 @@ use std::time::Duration;
 use tokio::process::Command;
 
 pub(super) async fn observe_and_check(runtime: &RuntimeTicket) -> Result<()> {
-    let needs_gpu = manifests(runtime).any(|manifest| {
-        manifest
-            .metadata
-            .compatibility
-            .contains_key("gpu_compute_capability")
-    });
+    let needs_gpu =
+        requirements(runtime).any(|labels| labels.contains_key("gpu_compute_capability"));
     let capabilities = if needs_gpu {
         let mut command = Command::new("nvidia-smi");
         command
@@ -41,8 +37,7 @@ pub(super) fn check(
     architecture: &str,
     capabilities: &[String],
 ) -> Result<()> {
-    for manifest in manifests(runtime) {
-        let requirements = &manifest.metadata.compatibility;
+    for requirements in requirements(runtime) {
         if requirements
             .get("architecture")
             .is_some_and(|value| value != architecture)
@@ -63,9 +58,18 @@ pub(super) fn check(
     Ok(())
 }
 
-fn manifests(runtime: &RuntimeTicket) -> impl Iterator<Item = &switchyard_artifacts::Manifest> {
+fn requirements(
+    runtime: &RuntimeTicket,
+) -> impl Iterator<Item = &std::collections::BTreeMap<String, String>> {
     std::iter::once(&runtime.artifact.manifest)
         .chain(runtime.caches.iter().map(|cache| &cache.artifact.manifest))
+        .map(|manifest| &manifest.metadata.compatibility)
+        .chain(
+            runtime
+                .cache_export
+                .iter()
+                .map(|export| &export.compatibility),
+        )
 }
 
 fn normalize(value: &str) -> Result<String> {

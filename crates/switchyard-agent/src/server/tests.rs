@@ -96,7 +96,7 @@ async fn readiness_rejects_empty_tokenization_and_oversized_responses() {
         task.abort();
     }
 }
-fn app(phase: Phase, engine_url: String) -> App {
+pub(super) fn app(phase: Phase, engine_url: String) -> App {
     let ticket = Ticket {
         model: "test".into(),
         revision: "revision".into(),
@@ -114,6 +114,7 @@ fn app(phase: Phase, engine_url: String) -> App {
         concurrency: 1,
         stall_s: 1,
         lifetime_s: 10,
+        startup: Default::default(),
         runtime: None,
     };
     let mut state = State::new(&ticket);
@@ -123,6 +124,8 @@ fn app(phase: Phase, engine_url: String) -> App {
         client: reqwest::Client::new(),
         authorization_hash: Sha256::digest(format!("Bearer {TOKEN}").as_bytes()).into(),
         engine_url,
+        admission: admission::Admission::default(),
+        export: None,
     }
 }
 fn request(path: &str, authorized: bool) -> HttpRequest<Body> {

@@ -120,6 +120,9 @@ pub struct BootstrapConfig {
     pub agent_url: String,
     pub agent_sha256: String,
     pub ticket_prefix: String,
+    /// Artifact transfer and model placement policy shared with the endpoint agent.
+    #[serde(default)]
+    pub startup: switchyard_agent::startup::StartupPolicy,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runtime: Option<crate::artifacts::ServingRuntimeConfig>,
 }
@@ -182,6 +185,15 @@ pub struct Limits {
 impl ExecutionConfig {
     pub fn validate(&self) -> Result<()> {
         validate_scheduling(&self.scheduling).map_err(Error::Config)?;
+        self.bootstrap
+            .startup
+            .validate()
+            .map_err(|error| Error::Config(error.to_string()))?;
+        if self.bootstrap.startup.early_launch && self.bootstrap.runtime.is_none() {
+            return Err(Error::Config(
+                "early engine launch requires a configured runtime prelude".into(),
+            ));
+        }
         if let Some(runtime) = &self.bootstrap.runtime {
             runtime.validate()?;
         }

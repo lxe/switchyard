@@ -31,6 +31,8 @@ Long-lived storage credentials stay on the client. The client writes a short-liv
 
 Agent observations include hydration progress, elapsed time, observed download rate, model-cache status, and engine readiness. Image-cache status remains unknown because a process inside the container cannot measure the provider's earlier image preparation. The live adapter models that preparation through startup priors and records the whole allocation-to-ready interval.
 
+The checked fleet uses `bootstrap.startup.mode: "trusted_streaming"`, twenty shared runtime/model HTTP streams, RAM-backed model storage, and an early-import stdin gate. See [serving hydration](HYDRATION.md) for these policies and the compiler-cache preparation workflow. RunPod-specific `compute.min_ram_per_gpu_gb` and `compute.min_vcpu_count_per_gpu` set host placement floors. They do not configure `/dev/shm`; the agent measures its actual capacity before hydration.
+
 The initial serving configuration disables thinking and prefix caching, uses eager execution, and bounds context and engine concurrency. These choices make the first experiment easier to compare; they are configurable performance tradeoffs. Input planning renders the pinned Hugging Face chat template with MiniJinja and counts tokens using the Rust `tokenizers` library. Before admitting the first request to a pod, the runtime compares its count with vLLM's `/tokenize` result. Every completed stream must report matching input usage and obey its output bound.
 
 ## Measurements and recovery

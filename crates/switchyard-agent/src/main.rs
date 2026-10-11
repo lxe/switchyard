@@ -2,6 +2,7 @@ use std::{error::Error, time::Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let epoch = std::time::Instant::now();
     let url = std::env::var("SWITCHYARD_TICKET_URL")?;
     let token = std::env::var("SWITCHYARD_AGENT_TOKEN")?;
     if token.len() < 32 {
@@ -20,6 +21,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         return Err("ticket download was rejected".into());
     }
     let ticket: switchyard_agent::Ticket = response.json().await.map_err(|_| "invalid ticket")?;
-    switchyard_agent::server::serve(ticket, token, "0.0.0.0:8080".parse()?).await?;
+    switchyard_agent::server::serve_started(ticket, token, "0.0.0.0:8080".parse()?, epoch).await?;
     Ok(())
 }

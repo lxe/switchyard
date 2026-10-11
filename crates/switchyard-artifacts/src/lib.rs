@@ -9,11 +9,12 @@ mod hydrate;
 mod manifest;
 mod pack;
 mod paths;
+mod verify;
 
-pub use extract::verify;
-pub use hydrate::{HydrationOptions, HydrationReport, Phase, Progress, hydrate};
+pub use hydrate::{HydrationMode, HydrationOptions, HydrationReport, Phase, Progress, hydrate};
 pub use manifest::{ArtifactTicket, Chunk, Entry, Manifest, Metadata};
 pub use pack::{PackOptions, pack};
+pub use verify::{VerificationOptions, verify, verify_with_options};
 
 /// Errors intentionally exclude signed URLs, request bodies, and metadata values.
 #[derive(Debug, thiserror::Error)]

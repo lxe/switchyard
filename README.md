@@ -9,7 +9,7 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Test gauntlet](crates/switchyard-gauntlet) | Analytical fixtures, workload comparisons, seeded generated tests, and software performance measurements |
 | [Live execution](crates/switchyard-live) | The same scheduler contract driving real RunPod pods and OpenAI-compatible vLLM streams |
 | [Provider adapters](crates/switchyard-provider) | Timestamped rental offers, owned pod lifecycle, and S3-compatible storage signing |
-| [Pod agent](crates/switchyard-agent) | Verified Rust hydration, observed startup progress, and authenticated model transport |
+| [Pod agent](crates/switchyard-agent) | Rust hydration, observed startup progress, and authenticated model transport |
 | [Artifacts](crates/switchyard-artifacts) | Deterministic archives, integrity checks, bounded transfer, and atomic hydration without cloud or engine dependencies |
 | [Artifact tools](crates/switchyard-artifact-tools) | Independent build, pack, publish, verify, and hydrate commands |
 | [Runtime builder](crates/switchyard-runtime-build) | Locked serving environment assembly inside an isolated Docker build |
@@ -119,7 +119,7 @@ crates/
   switchyard-gauntlet/   # Workloads, integration tests, and benchmarks
   switchyard-provider/   # GPU cloud and storage adapters
   switchyard-agent/      # Hydration and vLLM pod transport
-  switchyard-artifacts/  # Generic archive format and verified filesystem hydration
+  switchyard-artifacts/  # Generic archive format and configurable filesystem hydration
   switchyard-artifact-tools/ # Local preparation and object-storage integration
   switchyard-runtime-build/ # Out-of-band serving environment assembly
   switchyard-live/       # Real workload execution and recovery
@@ -140,7 +140,6 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [Validation and results](docs/RESULTS.md) | Test coverage, reproducible comparisons, and known limitations |
 | [RunPod execution](docs/RUNPOD.md) | Checked-in fleet definitions, R2 hydration, live gauntlet, costs, and recovery |
 | [Serving hydration](docs/HYDRATION.md) | Runtime build inputs, separate model/cache artifacts, compatibility, and offline verification |
-| [Repository design](docs/REPOSITORY.md) | Organization patterns studied in other open-source projects |
 | [Contributing](CONTRIBUTING.md) | Development checks and requirements for behavioral evidence |
 
 ## Model boundaries
