@@ -836,6 +836,96 @@
         }
       ],
       "all_absent": true
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-reverse-control-mo",
+      "started_at": "2026-10-11T05:57:39.118353+00:00",
+      "controller_exit": 0,
+      "elapsed_s": 109.89769296399754,
+      "reason": null,
+      "estimated_rental_usd": 0.027542940494932538,
+      "receipts": [
+        {
+          "cleanup_failures": [],
+          "estimated_rental_usd": 0.027542940494932538,
+          "pods": [
+            {
+              "allocated_s": 4.329861681,
+              "ended_s": 94.391884352,
+              "pod": {
+                "cost": 1.09,
+                "data_center": "US-MO-1",
+                "id": "hq9e9mecmfbmva",
+                "name": "switchyard-448bffb9dd3584e1-0",
+                "status": "running"
+              },
+              "profile": 0,
+              "quoted": {
+                "availability": "LOW",
+                "data_center": "US-MO-1",
+                "disk_usd_per_hour": 0.010958904109589041,
+                "gpu": "NVIDIA L40S",
+                "gpu_memory_gb": 48,
+                "gpu_usd_per_hour": 1.09,
+                "quoted_at_unix_s": 1791698260
+              }
+            }
+          ]
+        }
+      ],
+      "cleanup": [
+        {
+          "pod_id": "hq9e9mecmfbmva",
+          "name": "switchyard-448bffb9dd3584e1-0",
+          "get_status": 404
+        }
+      ],
+      "all_absent": true
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-reverse-patched-mo",
+      "started_at": "2026-10-11T06:00:32.362533+00:00",
+      "controller_exit": 0,
+      "elapsed_s": 95.76585504399918,
+      "reason": null,
+      "estimated_rental_usd": 0.02407604989077534,
+      "receipts": [
+        {
+          "cleanup_failures": [],
+          "estimated_rental_usd": 0.02407604989077534,
+          "pods": [
+            {
+              "allocated_s": 2.898567146,
+              "ended_s": 81.624284594,
+              "pod": {
+                "cost": 1.09,
+                "data_center": "US-MO-1",
+                "id": "26zmaoi80evxk0",
+                "name": "switchyard-59d9e487b284a84a-0",
+                "status": "running"
+              },
+              "profile": 0,
+              "quoted": {
+                "availability": "LOW",
+                "data_center": "US-MO-1",
+                "disk_usd_per_hour": 0.010958904109589041,
+                "gpu": "NVIDIA L40S",
+                "gpu_memory_gb": 48,
+                "gpu_usd_per_hour": 1.09,
+                "quoted_at_unix_s": 1791698433
+              }
+            }
+          ]
+        }
+      ],
+      "cleanup": [
+        {
+          "pod_id": "26zmaoi80evxk0",
+          "name": "switchyard-59d9e487b284a84a-0",
+          "get_status": 404
+        }
+      ],
+      "all_absent": true
     }
   ]
 }

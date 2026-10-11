@@ -145,9 +145,42 @@ The matched follow-up uses RC2 agent SHA `e3659b061e75e31f412d7e546394ac6297b86d
 
 Both variants completed all 222 requests, all nine literal checks, and zero failed, unfinished, invalid-action, or budget-exceeded cases. Native logs directly record the selected multiprocessing method. The patched API has no CUDA lazy initialization; its worker initializes CUDA during device setup. Both variants explicitly load Torch AOT and one native sampling artifact, with FlashInfer JIT disabled and no `build` call. The GPU launcher also confirms the stale importer entry and shim visibility before and after invalidation.
 
-The patch reduces the measured process-start interval by 5.497 seconds and the API-to-worker interval by 6.054 seconds. These one-host-per-variant measurements do not establish an end-to-end first-token gain: runtime hydration, model hydration overlap, and bootstrap timing differ. Serial throughput differs by 0.6%; aggregate throughput is 4–7% lower in the patched sample, which remains an uncertainty for broader deployment. Memory planning still rejects the old free-memory baseline; its guard is preserved. The accepted source patch is scoped to the 0.8B archive-model workload on SM89. The parent's raw-extents loader and larger models require separate native acceptance.
+The patch reduces the measured process-start interval by 5.497 seconds and the API-to-worker interval by 6.054 seconds. These one-host-per-variant measurements do not establish an end-to-end first-token gain: runtime hydration, model hydration overlap, and bootstrap timing differ. Serial throughput differs by 0.6%; aggregate throughput is 4–7% lower in the patched sample. Memory planning still rejects the old free-memory baseline; its guard is preserved. Functional acceptance covers the 0.8B archive-model workload on SM89. Raw-extents loading and larger models require separate patch acceptance, and the patch remains unselected pending the throughput diagnosis below.
 
 The exact patch descriptor, native reproduction, derivation guards, phase measurements, case counts, prefix counters, and cleanup receipts are in [fla-gpu-acceptance.json](serving-comparison-data/fla-gpu-acceptance.json). The checked `vllm-sm89-fla-nvml.json` configuration retains the verified launch identity and uses measured scheduler priors of 138 serial tokens/s, 488 aggregate tokens/s, and 72 seconds of startup. These priors use the existing conservative calibration rule; they do not change the engine fingerprint. [Runtime and per-model cache preparation](serving-runtime-preparation.md) records the reproducible packaging steps and all three model identities.
+
+### Reverse-order FLA repeat and dispatch timing
+
+The reverse-order repeat launched the unpatched scoped control before the patched runtime. Both used the same physical L40S, driver 580.178.04, AMD EPYC 9554 CPU, 27.2-core quota, 256-CPU affinity, and 350 W GPU power limit. The launch program, arguments, environment, agent, engine settings, model archive, and workload matched. A separate stdlib process sampled GPU clocks and owned process state every two seconds, preserving every compiler-cache entry and adding no observer threads to the serving parent. Both runs completed 222 requests and nine literal checks with strict native Torch AOT and FlashInfer sampling reuse, zero errors, and GET 404 cleanup. [Reverse-order acceptance](serving-comparison-data/fla-reverse-order-acceptance.json)
+
+| Observation | Unpatched control | FLA patch |
+| --- | ---: | ---: |
+| Native worker method | spawn | fork |
+| Engine spawn to verified inference | 30.406 s | 23.349 s |
+| API start marker to worker device setup | 18.020 s | 11.526 s |
+| Arrival to first content | 70.512 s | 56.832 s |
+| Serial longer-answer rate | 212.6 tokens/s | 170.9 tokens/s |
+| Shared / unique burst rates | 1,406 / 1,060 tokens/s | 1,310 / 1,015 tokens/s |
+| Shared / unique queue rates | 854 / 577 tokens/s | 782 / 549 tokens/s |
+
+The measured process-start gain repeats: engine spawn to verified inference improves by 7.057 seconds and API start to worker setup by 6.494 seconds. First content arrives 13.680 seconds earlier in this pair, whereas it arrived later in the first pair. Runtime/model hydration and bootstrap still vary, so the two observations do not establish a reliable end-to-end first-token gain. Aggregate rates again decline, by 4–9%, and the serial case's wall-clock rate declines by 19.6%.
+
+The serial wall-clock decline occurs outside the native inference interval. Both runs produce 384 tokens in four dependency-ordered requests. vLLM measures inference from the first scheduled event to the last token and decode from the first token to the last; these intervals include scheduling and preemption, so they are not exclusive CUDA-kernel durations. Their native means remain almost identical. The client record instead shows extra time while requests are active and between a completion and the next HTTP send. The before/after metric requests occur outside the reported case interval. [Native timing and client gaps](serving-comparison-data/fla-native-decode-comparison.json)
+
+| Serial measurement | Unpatched control | FLA patch |
+| --- | ---: | ---: |
+| Mean native decode interval | 271.770 ms | 272.431 ms |
+| Mean native inference interval | 314.026 ms | 314.102 ms |
+| Client request-active time, sum | 1.567 s | 1.684 s |
+| Completion to next send, sum of three gaps | 0.151 s | 0.411 s |
+| Case time outside first send to last completion | 0.089 s | 0.151 s |
+| Complete case elapsed time | 1.806 s | 2.247 s |
+
+The live runtime's single scheduling loop drains completions, then awaits `observe()` before deciding and dispatching. Each observation sequentially awaits `/state`; a `ProbeHost` action also awaits `/state` before later actions. Completion events that arrive during these waits cannot admit dependent requests until a later loop pass. Both configurations also poll every 100 ms. The patched sample's largest dispatch gap is 359.853 ms; a state observation starts 188.493 ms before its predecessor completes. The state client has a four-second timeout and no retry/backoff in this path. Observation start times are retained, but HTTP finish times are absent, so the records cannot establish whether that HTTP call covered the gap. Blocking observation and polling remain a candidate mechanism. No probe is recorded for the serial case.
+
+The hardware observations do not show a clock or quota difference explaining the aggregate decline. Both serving samples have SM clocks of 2,505–2,520 MHz with the same 2,518.846 MHz mean and a constant 9,001 MHz memory clock. Worker OS threads differ: 122 under spawn and 96 under fork; API threads are 223–225 versus 33–35. The observer does not record actual Torch intra/inter-op or tokenizer thread-pool state, so this inventory difference is not a confirmed cause. Power draw and utilization are lower in the patched snapshots, but two-second sampling cannot resolve the short bursts.
+
+Native aggregate latency remains unresolved. The unique-prefix queue emits the same 2,432 tokens and has mean native decode intervals of 594.802 ms versus 690.564 ms, a 16.1% increase. Its native iteration counter records 203 versus 188 iterations for the same token sum, but lacks batch membership and timestamps. The next diagnostic should measure state/probe HTTP duration, completion-drain and request-admission timing, API validation/tokenization/enqueue, actual execution thread state, and timestamped batch sizes. Local HTTP load on one host can separate remote proxy/controller dispatch from a matched safe spawn/fork engine comparison. The final raw-extent fleet retains the complete unpatched runtime.
 
 ### Runtime provenance and reproduction
 
@@ -155,7 +188,7 @@ The vLLM runtime contains 185,601 entries and 5,432,616,775 compressed bytes. Th
 
 The SGLang native dependency layer reused a read-only existing builder layer after BuildKit evicted the new APT cache. A pinned `xz` package completed that layer. The recorded inventory proves that all 327 native package versions match the checked source recipe; it does not claim that a second fresh APT transaction occurred. The complete source lock and recipe remain available for fresh builds.
 
-Use `deploy/hydration/build.py` and the checked source locks to build the complete runtime; run its offline smoke check before `switchyard artifacts pack` and `publish`. `local-smoke.sh` provides the actual GPU acceptance gate. `matrix.py` performs model-specific bake and gauntlet operations sequentially through `run.py`, which requires fresh output directories and preserves failed receipts. Supply the provider environment file before the R2 environment file, since the latter can contain a different provider credential.
+Use `switchyard artifacts build-runtime` and the checked source locks to build the complete runtime; [Runtime hydration](HYDRATION.md) documents its offline smoke check before `switchyard artifacts pack` and `publish`. `local-smoke.sh` provides the actual GPU acceptance gate. `matrix.py` performs model-specific bake and gauntlet operations sequentially through `run.py`, which requires fresh output directories and preserves failed receipts. Supply the provider environment file before the R2 environment file, since the latter can contain a different provider credential.
 
 ```sh
 python scripts/serving-comparison/matrix.py \
@@ -172,9 +205,14 @@ python scripts/serving-comparison/strict-cache.py \
 
 python scripts/serving-comparison/summarize.py \
   --ledger results/comparison-budget.json --out results/comparison-summary.json
+
+python scripts/serving-comparison/fla-report.py \
+  --summary results/comparison-summary.json --out docs/serving-comparison-data
 ```
 
-The derivative must be published with the artifact CLI before its generated configuration is used by the guarded gauntlet. The wrapper's reservation is cumulative, including failures, and an allocated pod is not considered gone until an independent GET returns 404. Tracked evidence is under `docs/serving-comparison-data`. `comparison-budget.json` includes failures and zero-cost preallocation stops; `comparison-summary.json` contains case counts, literal checks, arrival/service timing, prefix counters, native stage observations and raw reception fields. Artifact identity files contain full SHA-256 IDs, publication receipts and source provenance. All finalized owned pods were independently confirmed absent with GET 404. Finalized comparison rental spend is $0.7625194009140106, leaving $0.2374805990859894 of the authorized $1 reservation.
+The derivative must be published with the artifact CLI before its generated configuration is used by the guarded gauntlet. The wrapper's reservation is cumulative, including failures, and an allocated pod is not considered gone until an independent GET returns 404. Tracked evidence is under `docs/serving-comparison-data`. `comparison-budget.json` includes failures and zero-cost preallocation stops; `comparison-summary.json` contains case counts, literal checks, arrival/service timing, prefix counters, native stage observations, optional hardware samples, and raw reception fields. Artifact identity files contain full SHA-256 IDs, publication receipts and source provenance. All finalized owned pods were independently confirmed absent with GET 404. Finalized comparison rental spend is $0.8141383912997185, leaving $0.1858616087002815 of the authorized $1 reservation.
+
+To reproduce the hardware-observed cache derivatives, run `observe-cache.py --config <accepted-config> --cache-artifact <accepted-cache-directory> --out <fresh-derivative> --cli <matched-controller>`, then publish the generated cache and use its configuration for the guarded gauntlet. The script checks the launch fingerprint and strict flags, verifies the source entries, and confirms every compiler entry remains unchanged. `fla-report.py` derives the repeat receipt and native timing partitions from the retained local reports without contacting a GPU.
 
 `runtime-profile.py --validate-only` checks source launch fingerprint, runtime labels, exact engine identity, model revision/archive and GPU binding before cloning. Negative checks reject changed launch environment, attention overrides (including equals/underscore forms), speculative settings, model revision and GPU binding. `runtime-profile.py` then verifies both complete source trees, derives the scoped runtime and cache artifacts, and emits a fresh configuration. Use `--agent-url` and `--agent-sha256` to reproduce the accepted new-agent pin. Publish both emitted artifacts before a guarded gauntlet.
 

@@ -1,0 +1,4903 @@
+{
+  "schema_version": 1,
+  "scope": "Reverse-order repeat: unpatched scoped control, then FLA patched runtime; Qwen3.5-0.8B BF16 archive model, SM89, identical bounded 222-request corpus.",
+  "selected_for_final_fleet": false,
+  "provenance": {
+    "same_physical_gpu": true,
+    "same_launch_program_args_environment": true,
+    "same_agent_engine_model": true,
+    "original_compiler_entries_unchanged": [
+      true,
+      true
+    ],
+    "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+    "controller_sha256": "f250162bdc2577164f690a7431517119b07c7889a176e5cd10588e92a2c19d6d",
+    "hardware_observer_sha256": "17437eee60ed07de61e0291ddd42d9ecce7f54bb5d465a4924792e0f8294de28",
+    "hardware_observer": "Separate stdlib Python process with -S; no observer thread is added to the serving parent; no CUDA initialization or clock/power changes."
+  },
+  "runs": [
+    {
+      "run": "results/cloud-vllm-0.8b-fla-reverse-control-mo",
+      "controller_exit": 0,
+      "estimated_rental_usd": 0.027542940494932538,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "hq9e9mecmfbmva",
+          "name": "switchyard-448bffb9dd3584e1-0",
+          "get_status": 404
+        }
+      ],
+      "reason": null,
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.975555887
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 1.572005241
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 29.550156139
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 29.550989813
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 34.860228716
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 34.860284687000004
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 59.956899319
+        }
+      ],
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "df7b2f985cb03bda92fbb33572969a85e963b9d2c3c2b7f8543b3fd75d39bc4e",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.42261921,
+            "network_received_bytes": 4975192841,
+            "storage_written_bytes": 4975192841,
+            "compressed_consumed_bytes": 4975192841,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 566965008,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654331904,
+            "file_written_bytes": 13485031132,
+            "receiver_body_wait_seconds": 157.154644455,
+            "receiver_storage_write_seconds": 7.812283372,
+            "consumer_wait_seconds": 45.831615726,
+            "reception_complete_seconds": 25.164872858,
+            "extraction_complete_seconds": 25.227371907
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "90b2f893c7bff8372f7bfc7c54c5e0c7e547e8ed75068f88b27b8b7889d7bdab",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.024050687,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 2736080,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.345907291,
+            "receiver_storage_write_seconds": 0.009385893,
+            "consumer_wait_seconds": 0.276287001,
+            "reception_complete_seconds": 0.393382474,
+            "extraction_complete_seconds": 0.557182099
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485031132,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.004385774
+      },
+      "cases": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 5,
+          "elapsed_s": 70.560865518,
+          "output_tokens_per_s": 0.07086080879669064,
+          "ttft_p50_s": 70.51245601,
+          "ttft_p95_s": 70.51245601,
+          "response_p95_s": 70.512636741,
+          "service_ttft_p50_s": 0.1541622579999995,
+          "service_ttft_p95_s": 0.1541622579999995,
+          "cached_input_tokens": 0,
+          "input_tokens": 26,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 43.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 1
+        },
+        {
+          "name": "hot-single-long",
+          "requests": 4,
+          "completed": 4,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 384,
+          "elapsed_s": 1.806474154,
+          "output_tokens_per_s": 212.56877611546497,
+          "ttft_p50_s": 0.7241264479999927,
+          "ttft_p95_s": 1.5369314569999943,
+          "response_p95_s": 1.8003234729999917,
+          "service_ttft_p50_s": 0.13566406099999995,
+          "service_ttft_p95_s": 0.15187347100000181,
+          "cached_input_tokens": 0,
+          "input_tokens": 136,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 136.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "hot-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 40,
+          "elapsed_s": 1.8362420320000012,
+          "output_tokens_per_s": 21.783620733500328,
+          "ttft_p50_s": 0.8416280269999987,
+          "ttft_p95_s": 1.7819016650000066,
+          "response_p95_s": 1.7820189330000034,
+          "service_ttft_p50_s": 0.14261118399998907,
+          "service_ttft_p95_s": 0.16105355300000213,
+          "cached_input_tokens": 0,
+          "input_tokens": 208,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 208.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 8
+        },
+        {
+          "name": "shared-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2277,
+          "elapsed_s": 1.6193065100000013,
+          "output_tokens_per_s": 1406.1575038069836,
+          "ttft_p50_s": 1.1362899829999975,
+          "ttft_p95_s": 1.2209603499999986,
+          "response_p95_s": 1.5709550699999966,
+          "service_ttft_p50_s": 0.42629336400000284,
+          "service_ttft_p95_s": 0.5117310999999916,
+          "cached_input_tokens": 52224,
+          "input_tokens": 66966,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 66966.0,
+            "vllm:prefix_cache_hits_total": 52224.0
+          }
+        },
+        {
+          "name": "shared-prefix-prime",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 23,
+          "elapsed_s": 0.604914174000001,
+          "output_tokens_per_s": 38.02192275957475,
+          "ttft_p50_s": 0.5242032089999924,
+          "ttft_p95_s": 0.5242032089999924,
+          "response_p95_s": 0.5636606639999968,
+          "service_ttft_p50_s": 0.4261435939999956,
+          "service_ttft_p95_s": 0.4261435939999956,
+          "cached_input_tokens": 0,
+          "input_tokens": 2092,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 2092.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "shared-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 2.8462545519999907,
+          "output_tokens_per_s": 854.4562531454172,
+          "ttft_p50_s": 1.774468973999987,
+          "ttft_p95_s": 2.4404770489999947,
+          "response_p95_s": 2.710402904999995,
+          "service_ttft_p50_s": 0.2689676729999917,
+          "service_ttft_p95_s": 0.4273507930000022,
+          "cached_input_tokens": 104448,
+          "input_tokens": 133878,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 133878.0,
+            "vllm:prefix_cache_hits_total": 104448.0
+          }
+        },
+        {
+          "name": "shared-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 176,
+          "elapsed_s": 2.6040751029999996,
+          "output_tokens_per_s": 67.58637636727178,
+          "ttft_p50_s": 1.1678994269999947,
+          "ttft_p95_s": 2.5577647890000037,
+          "response_p95_s": 2.5959159140000025,
+          "service_ttft_p50_s": 0.15607623200000376,
+          "service_ttft_p95_s": 0.26945992299999943,
+          "cached_input_tokens": 13056,
+          "input_tokens": 16744,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16744.0,
+            "vllm:prefix_cache_hits_total": 13056.0
+          }
+        },
+        {
+          "name": "unique-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2642,
+          "elapsed_s": 2.4919838389999995,
+          "output_tokens_per_s": 1060.1994919277647,
+          "ttft_p50_s": 1.4997538580000054,
+          "ttft_p95_s": 2.007159440999999,
+          "response_p95_s": 2.4475841400000036,
+          "service_ttft_p50_s": 0.727574973000003,
+          "service_ttft_p95_s": 1.2345248599999934,
+          "cached_input_tokens": 0,
+          "input_tokens": 67404,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 67404.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 4.2159503730000125,
+          "output_tokens_per_s": 576.8568851225405,
+          "ttft_p50_s": 2.6743474210000073,
+          "ttft_p95_s": 3.6077273630000093,
+          "response_p95_s": 4.057067910000001,
+          "service_ttft_p50_s": 0.5235408749999948,
+          "service_ttft_p95_s": 1.191836613999996,
+          "cached_input_tokens": 0,
+          "input_tokens": 134764,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 134764.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 160,
+          "elapsed_s": 1.929904264000001,
+          "output_tokens_per_s": 82.90566686887216,
+          "ttft_p50_s": 0.9927267000000057,
+          "ttft_p95_s": 1.8807232879999987,
+          "response_p95_s": 1.9187710460000034,
+          "service_ttft_p50_s": 0.15369828800000107,
+          "service_ttft_p95_s": 0.15929440600000078,
+          "cached_input_tokens": 0,
+          "input_tokens": 16816,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16816.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        }
+      ],
+      "worker_contexts": [
+        {
+          "cuda_initialized": true,
+          "event": "worker_context",
+          "method": "spawn",
+          "monotonic_s": 3936083.10436113,
+          "pid": 626
+        },
+        {
+          "cuda_initialized": false,
+          "event": "worker_context",
+          "method": "spawn",
+          "monotonic_s": 3936089.001494993,
+          "pid": 1006
+        }
+      ],
+      "process_start_markers": [
+        {
+          "event": "process_started",
+          "monotonic_s": 3936071.725041984,
+          "pid": 626
+        },
+        {
+          "event": "process_started",
+          "monotonic_s": 3936083.140973151,
+          "pid": 1005
+        },
+        {
+          "event": "process_started",
+          "monotonic_s": 3936083.1426882,
+          "pid": 1006
+        }
+      ],
+      "cuda_initialization": [
+        {
+          "callers": [
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "index.py",
+              "function": "<module>",
+              "line": 16
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_find_and_load",
+              "line": 1360
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_find_and_load_unlocked",
+              "line": 1331
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_load_unlocked",
+              "line": 935
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "utils.py",
+              "function": "<module>",
+              "line": 145
+            },
+            {
+              "file": "utils.py",
+              "function": "_check_platform",
+              "line": 130
+            },
+            {
+              "file": "utils.py",
+              "function": "get_available_device",
+              "line": 123
+            },
+            {
+              "file": "driver.py",
+              "function": "get_current_target",
+              "line": 341
+            },
+            {
+              "file": "__init__.py",
+              "function": "current_device",
+              "line": 1205
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936079.233465674,
+          "name": "torch.cuda._lazy_init",
+          "pid": 626
+        },
+        {
+          "callers": [
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_load_unlocked",
+              "line": 935
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "utils.py",
+              "function": "<module>",
+              "line": 145
+            },
+            {
+              "file": "utils.py",
+              "function": "_check_platform",
+              "line": 130
+            },
+            {
+              "file": "utils.py",
+              "function": "get_available_device",
+              "line": 123
+            },
+            {
+              "file": "driver.py",
+              "function": "get_current_target",
+              "line": 341
+            },
+            {
+              "file": "__init__.py",
+              "function": "current_device",
+              "line": 1205
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936079.397234688,
+          "name": "torch.cuda._lazy_init",
+          "pid": 626
+        },
+        {
+          "duration_s": 0.0002486836165189743,
+          "event": "end",
+          "monotonic_s": 3936079.397289729,
+          "name": "torch.cuda._lazy_init",
+          "pid": 626
+        },
+        {
+          "callers": [
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_load_unlocked",
+              "line": 935
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "function": "exec_module",
+              "line": 999
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "function": "_call_with_frames_removed",
+              "line": 488
+            },
+            {
+              "file": "utils.py",
+              "function": "<module>",
+              "line": 145
+            },
+            {
+              "file": "utils.py",
+              "function": "_check_platform",
+              "line": 130
+            },
+            {
+              "file": "utils.py",
+              "function": "get_available_device",
+              "line": 123
+            },
+            {
+              "file": "driver.py",
+              "function": "get_current_target",
+              "line": 341
+            },
+            {
+              "file": "__init__.py",
+              "function": "current_device",
+              "line": 1205
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936079.399413515,
+          "name": "torch.cuda._lazy_init",
+          "pid": 626
+        },
+        {
+          "duration_s": 0.00010322080925107002,
+          "event": "end",
+          "monotonic_s": 3936079.399438405,
+          "name": "torch.cuda._lazy_init",
+          "pid": 626
+        },
+        {
+          "duration_s": 0.16675563482567668,
+          "event": "end",
+          "monotonic_s": 3936079.399676059,
+          "name": "torch.cuda._lazy_init",
+          "pid": 626
+        },
+        {
+          "callers": [
+            {
+              "file": "process.py",
+              "function": "run",
+              "line": 108
+            },
+            {
+              "file": "core.py",
+              "function": "run_engine_core",
+              "line": 1395
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 1151
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 140
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936089.745513698,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1006
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936089.769718008,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.0002723550423979759,
+          "event": "end",
+          "monotonic_s": 3936089.769761629,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1006
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936089.771781013,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.0001210416667163372,
+          "event": "end",
+          "monotonic_s": 3936089.771804843,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.026947785634547472,
+          "event": "end",
+          "monotonic_s": 3936089.772151219,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1006
+        }
+      ],
+      "native_stage_durations": [
+        {
+          "duration_s": 0.5028683790005744,
+          "event": "end",
+          "monotonic_s": 3936090.247659135,
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "pid": 1006
+        },
+        {
+          "duration_s": 3.110240759793669,
+          "event": "end",
+          "monotonic_s": 3936093.357959556,
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "pid": 1006
+        },
+        {
+          "duration_s": 4.28617696184665,
+          "event": "end",
+          "monotonic_s": 3936097.645120795,
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.05558342207223177,
+          "event": "end",
+          "monotonic_s": 3936097.702199172,
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.14019454503431916,
+          "event": "end",
+          "monotonic_s": 3936098.226140188,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.001934593077749014,
+          "event": "end",
+          "monotonic_s": 3936098.251232643,
+          "name": "flashinfer.jit.core.JitSpecNvcc.load",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.0021911868825554848,
+          "event": "end",
+          "monotonic_s": 3936098.251281804,
+          "name": "flashinfer.jit.core.JitSpecNvcc.try_load",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.002231717575341463,
+          "event": "end",
+          "monotonic_s": 3936098.251294604,
+          "name": "flashinfer.jit.core.JitSpec.build_and_load",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.11311749694868922,
+          "event": "end",
+          "monotonic_s": 3936098.339818534,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.011516444850713015,
+          "event": "end",
+          "monotonic_s": 3936098.351660654,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.0011510392650961876,
+          "event": "end",
+          "monotonic_s": 3936098.352839984,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.010293824132531881,
+          "event": "end",
+          "monotonic_s": 3936098.36320558,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.0010384372435510159,
+          "event": "end",
+          "monotonic_s": 3936098.364277698,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.009951308835297823,
+          "event": "end",
+          "monotonic_s": 3936098.374294618,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.0011576400138437748,
+          "event": "end",
+          "monotonic_s": 3936098.375479048,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1006
+        },
+        {
+          "duration_s": 0.00012884195894002914,
+          "event": "end",
+          "monotonic_s": 3936098.375664571,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1006
+        },
+        {
+          "duration_s": 2.6024411781691015,
+          "event": "end",
+          "monotonic_s": 3936100.304711031,
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "pid": 1006
+        }
+      ],
+      "native_sampling_provider_checks": [
+        {
+          "event": "begin",
+          "monotonic_s": 3936098.249228799,
+          "name": "flashinfer.jit.core.JitSpecNvcc.try_load",
+          "native_aot_artifact_count": 1,
+          "native_provider_count": 1,
+          "pid": 1006
+        }
+      ],
+      "native_flashinfer_build_calls": 0,
+      "native_aot_load_messages": [
+        {
+          "pod_id": "hq9e9mecmfbmva",
+          "at_s": 75.78719610699773,
+          "ts": "2026-10-11T05:58:54.541177376Z",
+          "line": "(EngineCore pid=1006) INFO 10-11 05:58:54 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        }
+      ],
+      "preimport_messages": [
+        {
+          "pod_id": "hq9e9mecmfbmva",
+          "at_s": 59.79039951300001,
+          "ts": "2026-10-11T05:58:38.095626413Z",
+          "line": "switchyard preimport completed in 6.757s"
+        }
+      ],
+      "provider_discovery": [
+        {
+          "pid": 626,
+          "pythonpath": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+          "sys_path": [
+            "",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+            "/opt/switchyard/runtime/python/lib/python312.zip",
+            "/opt/switchyard/runtime/python/lib/python3.12",
+            "/opt/switchyard/runtime/python/lib/python3.12/lib-dynload",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages"
+          ],
+          "negative_importer_before": true,
+          "shim_visible_before": false,
+          "shim_visible_after": true
+        }
+      ],
+      "engine_spawn_to_inference_verified_s": 30.405909506,
+      "model_gate_to_inference_verified_s": 25.096614631999998,
+      "api_marker_to_worker_init_s": 18.01975099183619,
+      "api_context_to_worker_context_s": 5.897133863065392,
+      "arrival_to_first_content_s": 70.51245601,
+      "total_completed": 222,
+      "literal_correct": 9,
+      "runtime_id": "df7b2f985cb03bda92fbb33572969a85e963b9d2c3c2b7f8543b3fd75d39bc4e",
+      "cache_id": "90b2f893c7bff8372f7bfc7c54c5e0c7e547e8ed75068f88b27b8b7889d7bdab",
+      "launch_fingerprint": "b47e15609fa1c0245682c7e7cb1468a1a082cdf940044adcdcaaf5f1df21ef85",
+      "native_hardware_observations": [
+        {
+          "affinity_cpus": 256,
+          "clock_ticks_per_second": 100,
+          "cpu_model": "AMD EPYC 9554 64-Core Processor",
+          "cpu_quota": "2720000 100000",
+          "effective_cpuset": "0-255",
+          "event": "inventory",
+          "interval_s": 2.0,
+          "logical_cpu_count": 256,
+          "maximum_s": 180.0,
+          "monotonic_s": 3936071.727975833,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "thread_environment": {},
+          "unix_s": 1791698311.3409176
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.06",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.07200322020798922,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936071.80038627,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 3
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "name": "nvidia-smi",
+              "pid": 628,
+              "state": "R",
+              "system_ticks": 0,
+              "user_ticks": 0
+            }
+          ],
+          "unix_s": 1791698311.4133234
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.42",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028454971965402365,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936073.757663808,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 2.5439598939294696,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 52,
+              "user_ticks": 461
+            }
+          ],
+          "unix_s": 1791698313.370601
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.06",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.05843434017151594,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936075.788413491,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9846219027688367,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 135,
+              "user_ticks": 575
+            }
+          ],
+          "unix_s": 1791698315.4013507
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.92",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027676739264279604,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936077.758451695,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "192",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 2.424031993407475,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 386,
+              "user_ticks": 809
+            }
+          ],
+          "unix_s": 1791698317.3713892
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "37.41",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02663730224594474,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936079.758292935,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "194",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9345873296591383,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 435,
+              "user_ticks": 947
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "64",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 833,
+              "state": "R",
+              "system_ticks": 19,
+              "user_ticks": 477
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "64",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 835,
+              "state": "R",
+              "system_ticks": 16,
+              "user_ticks": 126
+            }
+          ],
+          "unix_s": 1791698319.3712301
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "37.09",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.06672036973759532,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936081.799962422,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "194",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9992104744040805,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 454,
+              "user_ticks": 1128
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9842223172880193,
+              "name": "python",
+              "pid": 833,
+              "state": "R",
+              "system_ticks": 77,
+              "user_ticks": 616
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.979226264915999,
+              "name": "python",
+              "pid": 835,
+              "state": "R",
+              "system_ticks": 67,
+              "user_ticks": 271
+            }
+          ],
+          "unix_s": 1791698321.4128995
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "37.06",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02638205699622631,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936083.760510316,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.6896922015957484,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "27",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 20,
+              "user_ticks": 265
+            }
+          ],
+          "unix_s": 1791698323.3734477
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "37.31",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.0270996387116611,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936085.762805967,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "28",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9792310745461413,
+              "name": "python",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 63,
+              "user_ticks": 418
+            }
+          ],
+          "unix_s": 1791698325.3757432
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "37.92",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028015214949846268,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936087.765161439,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "28",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9992810389230741,
+              "name": "python",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 112,
+              "user_ticks": 569
+            }
+          ],
+          "unix_s": 1791698327.378099
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "36.96",
+              "pstate": "P8",
+              "temperature.gpu": "38",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.03116282820701599,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936089.769474214,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "58",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 2.1237547127259804,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 311,
+              "user_ticks": 795
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "27",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 1072,
+              "state": "R",
+              "system_ticks": 14,
+              "user_ticks": 28
+            },
+            {
+              "Cpus_allowed_list": "250",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 1,
+              "name": "python",
+              "pid": 1074,
+              "state": "S",
+              "system_ticks": 14,
+              "user_ticks": 25
+            }
+          ],
+          "unix_s": 1791698329.3824115
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "1813",
+              "power.draw": "112.22",
+              "pstate": "P0",
+              "temperature.gpu": "41",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02686772495508194,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936091.767401731,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "117",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 1.078806786401376,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 362,
+              "user_ticks": 960
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "28",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 2.052729579680396,
+              "name": "python",
+              "pid": 1072,
+              "state": "R",
+              "system_ticks": 67,
+              "user_ticks": 386
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "28",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 2.042740627954457,
+              "name": "python",
+              "pid": 1074,
+              "state": "R",
+              "system_ticks": 75,
+              "user_ticks": 373
+            }
+          ],
+          "unix_s": 1791698331.3803391
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "2187",
+              "power.draw": "113.11",
+              "pstate": "P0",
+              "temperature.gpu": "42",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.04555863095447421,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936093.787703677,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "116",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 1.0941166816710275,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 392,
+              "user_ticks": 1149
+            }
+          ],
+          "unix_s": 1791698333.400641
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "2353",
+              "power.draw": "117.74",
+              "pstate": "P0",
+              "temperature.gpu": "42",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02684108493849635,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936095.770532658,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "116",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9992281119260918,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 450,
+              "user_ticks": 1291
+            }
+          ],
+          "unix_s": 1791698335.38347
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36663",
+              "power.draw": "119.36",
+              "pstate": "P0",
+              "temperature.gpu": "43",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.05135418986901641,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936097.796695803,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "117",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 1.0141629453256045,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 463,
+              "user_ticks": 1481
+            }
+          ],
+          "unix_s": 1791698337.409633
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36715",
+              "power.draw": "116.68",
+              "pstate": "P0",
+              "temperature.gpu": "43",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.026482178829610348,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936099.773326839,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 460,
+              "user_ticks": 1260
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "117",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9942526119585097,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 497,
+              "user_ticks": 1646
+            }
+          ],
+          "unix_s": 1791698339.386264
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36715",
+              "power.draw": "112.96",
+              "pstate": "P0",
+              "temperature.gpu": "43",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.04353708773851395,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936101.791992367,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "223",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.5145856558296202,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 471,
+              "user_ticks": 1352
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3047546117049207,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 505,
+              "user_ticks": 1699
+            }
+          ],
+          "unix_s": 1791698341.4049299
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36717",
+              "power.draw": "115.15",
+              "pstate": "P0",
+              "temperature.gpu": "44",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027447094675153494,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936103.777475663,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.02498047029410163,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 472,
+              "user_ticks": 1356
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.039968752470562606,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 507,
+              "user_ticks": 1705
+            }
+          ],
+          "unix_s": 1791698343.390413
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36717",
+              "power.draw": "118.35",
+              "pstate": "P0",
+              "temperature.gpu": "44",
+              "utilization.gpu": "18",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027126448694616556,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936105.778041964,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.03498417983792784,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 473,
+              "user_ticks": 1362
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.22989603893495436,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 515,
+              "user_ticks": 1743
+            }
+          ],
+          "unix_s": 1791698345.3909793
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36719",
+              "power.draw": "235.65",
+              "pstate": "P0",
+              "temperature.gpu": "47",
+              "utilization.gpu": "100",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.060313221998512745,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936107.812907237,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.12989149320352295,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 478,
+              "user_ticks": 1383
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.5095743194907439,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 526,
+              "user_ticks": 1834
+            }
+          ],
+          "unix_s": 1791698347.4258447
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "125.08",
+              "pstate": "P0",
+              "temperature.gpu": "46",
+              "utilization.gpu": "3",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.026640791911631823,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936109.780019502,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.054978243592892426,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 480,
+              "user_ticks": 1392
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.13494659790982688,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 530,
+              "user_ticks": 1857
+            }
+          ],
+          "unix_s": 1791698349.3929567
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "150.65",
+              "pstate": "P0",
+              "temperature.gpu": "46",
+              "utilization.gpu": "17",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02598598087206483,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936111.780263938,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0599732295477794,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 481,
+              "user_ticks": 1403
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.2598839947070441,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 536,
+              "user_ticks": 1903
+            }
+          ],
+          "unix_s": 1791698351.3932014
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "192.02",
+              "pstate": "P0",
+              "temperature.gpu": "47",
+              "utilization.gpu": "15",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.038052475079894066,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936113.793197239,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.07496721881105663,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 482,
+              "user_ticks": 1417
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.28487543148201516,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 542,
+              "user_ticks": 1954
+            }
+          ],
+          "unix_s": 1791698353.4061346
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "212.91",
+              "pstate": "P0",
+              "temperature.gpu": "51",
+              "utilization.gpu": "100",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.029233815148472786,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936115.785983908,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.26478856647675847,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 489,
+              "user_ticks": 1463
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3747008016180544,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 551,
+              "user_ticks": 2020
+            }
+          ],
+          "unix_s": 1791698355.3989213
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2505",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "258.84",
+              "pstate": "P0",
+              "temperature.gpu": "53",
+              "utilization.gpu": "64",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.05551052140071988,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936117.813868603,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.16986337810176327,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 490,
+              "user_ticks": 1496
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.4546343355076605,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 561,
+              "user_ticks": 2101
+            }
+          ],
+          "unix_s": 1791698357.426806
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "135.60",
+              "pstate": "P0",
+              "temperature.gpu": "48",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.0275302161462605,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936119.787391406,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.14489100082431725,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 495,
+              "user_ticks": 1520
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.30477072587183973,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 567,
+              "user_ticks": 2156
+            }
+          ],
+          "unix_s": 1791698359.4003284
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "210.26",
+              "pstate": "P0",
+              "temperature.gpu": "49",
+              "utilization.gpu": "25",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.026396787725389004,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936121.787116004,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.43981011732003034,
+              "name": "python",
+              "pid": 626,
+              "state": "S",
+              "system_ticks": 503,
+              "user_ticks": 1600
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.5697540156191302,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 577,
+              "user_ticks": 2260
+            }
+          ],
+          "unix_s": 1791698361.4000533
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "181.52",
+              "pstate": "P0",
+              "temperature.gpu": "54",
+              "utilization.gpu": "62",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02987672621384263,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936123.79210836,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.1348983825203767,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 505,
+              "user_ticks": 1625
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.24981181948217906,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "R",
+              "system_ticks": 584,
+              "user_ticks": 2303
+            }
+          ],
+          "unix_s": 1791698363.4050457
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "287.91",
+              "pstate": "P0",
+              "temperature.gpu": "54",
+              "utilization.gpu": "71",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.03433963190764189,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936125.798081503,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "225",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.344739842565017,
+              "name": "python",
+              "pid": 626,
+              "state": "R",
+              "system_ticks": 514,
+              "user_ticks": 1685
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 1005,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 2
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "122",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9742647724663525,
+              "name": "VLLM::EngineCor",
+              "pid": 1006,
+              "state": "S",
+              "system_ticks": 605,
+              "user_ticks": 2477
+            }
+          ],
+          "unix_s": 1791698365.411019
+        }
+      ],
+      "hardware_serving_summary": {
+        "scope": "Two-second samples after native worker warmup through final owned-process observation; short bursts can fall between samples.",
+        "inventory": {
+          "affinity_cpus": 256,
+          "clock_ticks_per_second": 100,
+          "cpu_model": "AMD EPYC 9554 64-Core Processor",
+          "cpu_quota": "2720000 100000",
+          "effective_cpuset": "0-255",
+          "event": "inventory",
+          "interval_s": 2.0,
+          "logical_cpu_count": 256,
+          "maximum_s": 180.0,
+          "monotonic_s": 3936071.727975833,
+          "observer_pid": 627,
+          "owner_pid": 626,
+          "thread_environment": {},
+          "unix_s": 1791698311.3409176
+        },
+        "warmup_end_monotonic_s": 3936100.304711031,
+        "serving_samples": 13,
+        "gpu_uuids": [
+          "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+        ],
+        "driver_versions": [
+          "580.178.04"
+        ],
+        "gpu": {
+          "clocks.current.sm": {
+            "samples": 13,
+            "minimum": 2505.0,
+            "maximum": 2520.0,
+            "mean": 2518.846153846154
+          },
+          "clocks.current.memory": {
+            "samples": 13,
+            "minimum": 9001.0,
+            "maximum": 9001.0,
+            "mean": 9001.0
+          },
+          "enforced.power.limit": {
+            "samples": 13,
+            "minimum": 350.0,
+            "maximum": 350.0,
+            "mean": 350.0
+          },
+          "power.draw": {
+            "samples": 13,
+            "minimum": 112.96,
+            "maximum": 287.91,
+            "mean": 179.76153846153846
+          },
+          "temperature.gpu": {
+            "samples": 13,
+            "minimum": 43.0,
+            "maximum": 54.0,
+            "mean": 48.15384615384615
+          },
+          "utilization.gpu": {
+            "samples": 13,
+            "minimum": 0.0,
+            "maximum": 100.0,
+            "mean": 36.53846153846154
+          }
+        },
+        "processes": {
+          "api": {
+            "pid": 626,
+            "threads": [
+              223,
+              225
+            ],
+            "cpu_core_equivalents": {
+              "samples": 13,
+              "minimum": 0.02498047029410163,
+              "maximum": 0.5145856558296202,
+              "mean": 0.18410398299424338
+            },
+            "cpus_allowed": [
+              "0-255"
+            ],
+            "mems_allowed": [
+              "0-1"
+            ]
+          },
+          "worker": {
+            "pid": 1006,
+            "threads": [
+              122
+            ],
+            "cpu_core_equivalents": {
+              "samples": 13,
+              "minimum": 0.039968752470562606,
+              "maximum": 0.9742647724663525,
+              "mean": 0.3609104782511757
+            },
+            "cpus_allowed": [
+              "0-255"
+            ],
+            "mems_allowed": [
+              "0-1"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "results/cloud-vllm-0.8b-fla-reverse-patched-mo",
+      "controller_exit": 0,
+      "estimated_rental_usd": 0.02407604989077534,
+      "all_absent": true,
+      "cleanup": [
+        {
+          "pod_id": "26zmaoi80evxk0",
+          "name": "switchyard-59d9e487b284a84a-0",
+          "get_status": 404
+        }
+      ],
+      "reason": null,
+      "startup_milestones": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 1.121023731
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 1.706339187
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 26.265680705
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 26.266636092
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 30.511915301
+        },
+        {
+          "event": "model_gate_released",
+          "elapsed_s": 30.511953911
+        },
+        {
+          "event": "inference_verified",
+          "elapsed_s": 49.615766769
+        }
+      ],
+      "artifact_reception": [
+        {
+          "name": "runtime",
+          "id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+          "reception": {
+            "reserved_bytes": 4975345664,
+            "reservation_seconds": 0.414603464,
+            "network_received_bytes": 4975190485,
+            "storage_written_bytes": 4975190485,
+            "compressed_consumed_bytes": 4975190485,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 863051006,
+            "reclaimed_bytes": 4975345664,
+            "decoded_bytes": 13654338048,
+            "file_written_bytes": 13485036736,
+            "receiver_body_wait_seconds": 150.651845694,
+            "receiver_storage_write_seconds": 6.88442961,
+            "consumer_wait_seconds": 40.680517693,
+            "reception_complete_seconds": 21.765675031,
+            "extraction_complete_seconds": 21.790118655
+          }
+        },
+        {
+          "name": "compiled",
+          "id": "dc5a08f614fae7856f4b0f2461c689cda2b0f21acfd8990f13e57576cb4ef883",
+          "reception": {
+            "reserved_bytes": 5996544,
+            "reservation_seconds": 0.010828703,
+            "network_received_bytes": 5993911,
+            "storage_written_bytes": 5993911,
+            "compressed_consumed_bytes": 5993911,
+            "buffered_bytes": 0,
+            "buffer_high_water_bytes": 4093364,
+            "reclaimed_bytes": 5996544,
+            "decoded_bytes": 114379264,
+            "file_written_bytes": 112637982,
+            "receiver_body_wait_seconds": 0.382863553,
+            "receiver_storage_write_seconds": 0.005672554,
+            "consumer_wait_seconds": 0.349578741,
+            "reception_complete_seconds": 0.403456185,
+            "extraction_complete_seconds": 0.609714579
+          }
+        }
+      ],
+      "dependency_budget": {
+        "model_bytes": 1769980465,
+        "model_output_required_bytes": 1769980465,
+        "runtime_output_bytes": 13485036736,
+        "compressed_backing_bytes": 4981342208,
+        "decoder_history_bound_bytes": 536870912,
+        "loader_staging_bytes": 0,
+        "required_ram_bytes": 2845033009,
+        "preflight_seconds": 0.004365373
+      },
+      "cases": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 5,
+          "elapsed_s": 56.891739226,
+          "output_tokens_per_s": 0.08788622158548738,
+          "ttft_p50_s": 56.832382351999996,
+          "ttft_p95_s": 56.832382351999996,
+          "response_p95_s": 56.832497156,
+          "service_ttft_p50_s": 0.14297560499999662,
+          "service_ttft_p95_s": 0.14297560499999662,
+          "cached_input_tokens": 0,
+          "input_tokens": 26,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 43.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 1
+        },
+        {
+          "name": "hot-single-long",
+          "requests": 4,
+          "completed": 4,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 384,
+          "elapsed_s": 2.2465709669999967,
+          "output_tokens_per_s": 170.9271621687438,
+          "ttft_p50_s": 0.6223214799999965,
+          "ttft_p95_s": 1.9112296459999953,
+          "response_p95_s": 2.174291311999994,
+          "service_ttft_p50_s": 0.1380231349999974,
+          "service_ttft_p95_s": 0.27374371799999864,
+          "cached_input_tokens": 0,
+          "input_tokens": 136,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 136.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "hot-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 40,
+          "elapsed_s": 1.7725066080000005,
+          "output_tokens_per_s": 22.5669116377139,
+          "ttft_p50_s": 0.7774317220000029,
+          "ttft_p95_s": 1.6666716419999972,
+          "response_p95_s": 1.7042691649999995,
+          "service_ttft_p50_s": 0.09397695300000208,
+          "service_ttft_p95_s": 0.13120096000000103,
+          "cached_input_tokens": 0,
+          "input_tokens": 208,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 208.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          },
+          "literal_correct": 8
+        },
+        {
+          "name": "shared-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2246,
+          "elapsed_s": 1.714996886999998,
+          "output_tokens_per_s": 1309.6233684300573,
+          "ttft_p50_s": 1.158349009999995,
+          "ttft_p95_s": 1.251632954999991,
+          "response_p95_s": 1.6173922929999947,
+          "service_ttft_p50_s": 0.4540791559999917,
+          "service_ttft_p95_s": 0.5479072069999944,
+          "cached_input_tokens": 52224,
+          "input_tokens": 66966,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 66966.0,
+            "vllm:prefix_cache_hits_total": 52224.0
+          }
+        },
+        {
+          "name": "shared-prefix-prime",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 23,
+          "elapsed_s": 0.4111334609999986,
+          "output_tokens_per_s": 55.94290463261534,
+          "ttft_p50_s": 0.29636564300000146,
+          "ttft_p95_s": 0.29636564300000146,
+          "response_p95_s": 0.33487609099999815,
+          "service_ttft_p50_s": 0.18809117800000053,
+          "service_ttft_p95_s": 0.18809117800000053,
+          "cached_input_tokens": 0,
+          "input_tokens": 2092,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 2092.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "shared-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 3.111756821,
+          "output_tokens_per_s": 781.552074888181,
+          "ttft_p50_s": 1.989206093000007,
+          "ttft_p95_s": 2.6363407160000065,
+          "response_p95_s": 2.8697824110000028,
+          "service_ttft_p50_s": 0.2927992030000013,
+          "service_ttft_p95_s": 0.47946871999999985,
+          "cached_input_tokens": 104448,
+          "input_tokens": 133878,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 133878.0,
+            "vllm:prefix_cache_hits_total": 104448.0
+          }
+        },
+        {
+          "name": "shared-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 176,
+          "elapsed_s": 1.9445423760000011,
+          "output_tokens_per_s": 90.50972720997667,
+          "ttft_p50_s": 1.0057019790000012,
+          "ttft_p95_s": 1.901728847000001,
+          "response_p95_s": 1.9394083460000076,
+          "service_ttft_p50_s": 0.15738722100000047,
+          "service_ttft_p95_s": 0.16178171900000393,
+          "cached_input_tokens": 13056,
+          "input_tokens": 16744,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16744.0,
+            "vllm:prefix_cache_hits_total": 13056.0
+          }
+        },
+        {
+          "name": "unique-prefix-burst-32",
+          "requests": 32,
+          "completed": 32,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2628,
+          "elapsed_s": 2.5890026390000003,
+          "output_tokens_per_s": 1015.0626965042657,
+          "ttft_p50_s": 1.5350918680000092,
+          "ttft_p95_s": 2.0984751920000093,
+          "response_p95_s": 2.526324467000009,
+          "service_ttft_p50_s": 0.8032639840000115,
+          "service_ttft_p95_s": 1.3668786990000115,
+          "cached_input_tokens": 0,
+          "input_tokens": 67404,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 67404.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-queue-64",
+          "requests": 64,
+          "completed": 64,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 2432,
+          "elapsed_s": 4.428983743000003,
+          "output_tokens_per_s": 549.1101663770542,
+          "ttft_p50_s": 2.778667489,
+          "ttft_p95_s": 3.9526579669999933,
+          "response_p95_s": 4.310942734999998,
+          "service_ttft_p50_s": 0.5286829769999883,
+          "service_ttft_p95_s": 1.320411501999999,
+          "cached_input_tokens": 0,
+          "input_tokens": 134764,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 134764.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        },
+        {
+          "name": "unique-prefix-single",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "budget_exceeded": false,
+          "invalid_actions": 0,
+          "output_tokens": 160,
+          "elapsed_s": 2.936630440000002,
+          "output_tokens_per_s": 54.48421354646174,
+          "ttft_p50_s": 1.319566041999991,
+          "ttft_p95_s": 2.897788460000001,
+          "response_p95_s": 2.935474161000002,
+          "service_ttft_p50_s": 0.16772081599999922,
+          "service_ttft_p95_s": 0.2359917339999953,
+          "cached_input_tokens": 0,
+          "input_tokens": 16816,
+          "prefix_metric_delta": {
+            "vllm:prefix_cache_queries_total": 16816.0,
+            "vllm:prefix_cache_hits_total": 0.0
+          }
+        }
+      ],
+      "worker_contexts": [
+        {
+          "cuda_initialized": false,
+          "event": "worker_context",
+          "method": "fork",
+          "monotonic_s": 3936250.181117483,
+          "pid": 630
+        },
+        {
+          "cuda_initialized": false,
+          "event": "worker_context",
+          "method": "fork",
+          "monotonic_s": 3936250.273727092,
+          "pid": 1009
+        }
+      ],
+      "process_start_markers": [
+        {
+          "event": "process_started",
+          "monotonic_s": 3936238.893726174,
+          "pid": 630
+        }
+      ],
+      "cuda_initialization": [
+        {
+          "callers": [
+            {
+              "file": "process.py",
+              "function": "run",
+              "line": 108
+            },
+            {
+              "file": "core.py",
+              "function": "run_engine_core",
+              "line": 1395
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 1151
+            },
+            {
+              "file": "core.py",
+              "function": "__init__",
+              "line": 140
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936250.433129202,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1009
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_capability",
+              "line": 417
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936250.562759978,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.00030687497928738594,
+          "event": "end",
+          "monotonic_s": 3936250.562817879,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1009
+        },
+        {
+          "callers": [
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "abstract.py",
+              "function": "__init__",
+              "line": 113
+            },
+            {
+              "file": "uniproc_executor.py",
+              "function": "_init_executor",
+              "line": 69
+            },
+            {
+              "file": "worker_base.py",
+              "function": "init_device",
+              "line": 343
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "otel.py",
+              "function": "sync_wrapper",
+              "line": 175
+            },
+            {
+              "file": "gpu_worker.py",
+              "function": "init_device",
+              "line": 462
+            },
+            {
+              "file": "__init__.py",
+              "function": "set_device_index",
+              "line": 198
+            },
+            {
+              "file": "sitecustomize.py",
+              "function": "call",
+              "line": 94
+            },
+            {
+              "file": "__init__.py",
+              "function": "_lazy_init",
+              "line": 540
+            },
+            {
+              "file": "__init__.py",
+              "function": "_check_cubins",
+              "line": 438
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_capability",
+              "line": 720
+            },
+            {
+              "file": "__init__.py",
+              "function": "get_device_properties",
+              "line": 737
+            }
+          ],
+          "event": "begin",
+          "monotonic_s": 3936250.564358005,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.00013757310807704926,
+          "event": "end",
+          "monotonic_s": 3936250.564385406,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.1333378590643406,
+          "event": "end",
+          "monotonic_s": 3936250.565272951,
+          "name": "torch.cuda._lazy_init",
+          "pid": 1009
+        }
+      ],
+      "native_stage_durations": [
+        {
+          "duration_s": 0.7550474209710956,
+          "event": "end",
+          "monotonic_s": 3936251.174576833,
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "pid": 1009
+        },
+        {
+          "duration_s": 2.183091674000025,
+          "event": "end",
+          "monotonic_s": 3936253.357734178,
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "pid": 1009
+        },
+        {
+          "duration_s": 4.427741169929504,
+          "event": "end",
+          "monotonic_s": 3936257.786842171,
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.055195323657244444,
+          "event": "end",
+          "monotonic_s": 3936257.843581333,
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.13679053727537394,
+          "event": "end",
+          "monotonic_s": 3936258.319688708,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.0023276489228010178,
+          "event": "end",
+          "monotonic_s": 3936258.346528273,
+          "name": "flashinfer.jit.core.JitSpecNvcc.load",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.00260323379188776,
+          "event": "end",
+          "monotonic_s": 3936258.346581244,
+          "name": "flashinfer.jit.core.JitSpecNvcc.try_load",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.0026447451673448086,
+          "event": "end",
+          "monotonic_s": 3936258.346594294,
+          "name": "flashinfer.jit.core.JitSpec.build_and_load",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.1207273849286139,
+          "event": "end",
+          "monotonic_s": 3936258.440983913,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.009840657003223896,
+          "event": "end",
+          "monotonic_s": 3936258.451172716,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.001212690956890583,
+          "event": "end",
+          "monotonic_s": 3936258.452413987,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.007801171857863665,
+          "event": "end",
+          "monotonic_s": 3936258.4602768,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.0010481877252459526,
+          "event": "end",
+          "monotonic_s": 3936258.461350828,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.007437296211719513,
+          "event": "end",
+          "monotonic_s": 3936258.468842785,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.0011489391326904297,
+          "event": "end",
+          "monotonic_s": 3936258.470016425,
+          "name": "vllm.v1.worker.gpu_worker.Worker.sample_tokens",
+          "pid": 1009
+        },
+        {
+          "duration_s": 0.0001441221684217453,
+          "event": "end",
+          "monotonic_s": 3936258.470207488,
+          "name": "vllm.v1.worker.gpu_worker.Worker.execute_model",
+          "pid": 1009
+        },
+        {
+          "duration_s": 2.6716354903765023,
+          "event": "end",
+          "monotonic_s": 3936260.515312214,
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "pid": 1009
+        }
+      ],
+      "native_sampling_provider_checks": [
+        {
+          "event": "begin",
+          "monotonic_s": 3936258.344129232,
+          "name": "flashinfer.jit.core.JitSpecNvcc.try_load",
+          "native_aot_artifact_count": 1,
+          "native_provider_count": 1,
+          "pid": 1009
+        }
+      ],
+      "native_flashinfer_build_calls": 0,
+      "native_aot_load_messages": [
+        {
+          "pod_id": "26zmaoi80evxk0",
+          "at_s": 62.25721009300105,
+          "ts": "2026-10-11T06:01:34.420041990Z",
+          "line": "(EngineCore pid=1009) INFO 10-11 06:01:34 [decorators.py:312] Directly load AOT compilation from path /opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/vllm/torch_compile_cache/torch_aot_compile/a3a3997dd5e4d0c4674a3d241ce3307f7e75ba4e3b4430c001a2dce6834244f8/rank_0_0/model"
+        }
+      ],
+      "preimport_messages": [
+        {
+          "pod_id": "26zmaoi80evxk0",
+          "at_s": 53.035354513998755,
+          "ts": "2026-10-11T06:01:25.339548107Z",
+          "line": "switchyard preimport completed in 6.833s"
+        }
+      ],
+      "provider_discovery": [
+        {
+          "pid": 630,
+          "pythonpath": "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+          "sys_path": [
+            "",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages",
+            "/opt/switchyard/cache/cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14/compiled/sampling-provider",
+            "/opt/switchyard/runtime/python/lib/python312.zip",
+            "/opt/switchyard/runtime/python/lib/python3.12",
+            "/opt/switchyard/runtime/python/lib/python3.12/lib-dynload",
+            "/opt/switchyard/runtime/venv/lib/python3.12/site-packages"
+          ],
+          "negative_importer_before": true,
+          "shim_visible_before": false,
+          "shim_visible_after": true
+        }
+      ],
+      "engine_spawn_to_inference_verified_s": 23.349130676999998,
+      "model_gate_to_inference_verified_s": 19.103812857999998,
+      "api_marker_to_worker_init_s": 11.525804828386754,
+      "api_context_to_worker_context_s": 0.09260960901156068,
+      "arrival_to_first_content_s": 56.832382351999996,
+      "total_completed": 222,
+      "literal_correct": 9,
+      "runtime_id": "808e0a7b84d878c32de76f5da6a4b05894e1d61a013c9ccb000b1ea7f59bf9bd",
+      "cache_id": "dc5a08f614fae7856f4b0f2461c689cda2b0f21acfd8990f13e57576cb4ef883",
+      "launch_fingerprint": "b47e15609fa1c0245682c7e7cb1468a1a082cdf940044adcdcaaf5f1df21ef85",
+      "native_hardware_observations": [
+        {
+          "affinity_cpus": 256,
+          "clock_ticks_per_second": 100,
+          "cpu_model": "AMD EPYC 9554 64-Core Processor",
+          "cpu_quota": "2720000 100000",
+          "effective_cpuset": "0-255",
+          "event": "inventory",
+          "interval_s": 2.0,
+          "logical_cpu_count": 256,
+          "maximum_s": 180.0,
+          "monotonic_s": 3936238.89644031,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "thread_environment": {},
+          "unix_s": 1791698478.5093815
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.19",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02842487208545208,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936238.925267098,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 1,
+              "user_ticks": 3
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "1",
+              "affinity_cpus": 256,
+              "name": "nvidia-smi",
+              "pid": 632,
+              "state": "R",
+              "system_ticks": 0,
+              "user_ticks": 0
+            }
+          ],
+          "unix_s": 1791698478.5382044
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.19",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028173457365483046,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936240.925981942,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 2.7187005993394395,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 51,
+              "user_ticks": 497
+            }
+          ],
+          "unix_s": 1791698480.5389192
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.19",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02829534886404872,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936242.926880909,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9896140630142507,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 133,
+              "user_ticks": 613
+            }
+          ],
+          "unix_s": 1791698482.5398183
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.19",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.05006753792986274,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936244.949306561,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "192",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 3.6288072581574458,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 529,
+              "user_ticks": 943
+            }
+          ],
+          "unix_s": 1791698484.562244
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.16",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02675316296517849,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936246.946522966,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "194",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9254997912507409,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 568,
+              "user_ticks": 1091
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "64",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 837,
+              "state": "R",
+              "system_ticks": 15,
+              "user_ticks": 352
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "64",
+              "affinity_cpus": 256,
+              "name": "python",
+              "pid": 839,
+              "state": "R",
+              "system_ticks": 17,
+              "user_ticks": 239
+            }
+          ],
+          "unix_s": 1791698486.5594602
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "0",
+              "power.draw": "37.17",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.059170442167669535,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936248.980389191,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "194",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.999279096655502,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 586,
+              "user_ticks": 1273
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9892863056889469,
+              "name": "python",
+              "pid": 837,
+              "state": "R",
+              "system_ticks": 68,
+              "user_ticks": 497
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "65",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9942827011722244,
+              "name": "python",
+              "pid": 839,
+              "state": "R",
+              "system_ticks": 77,
+              "user_ticks": 378
+            }
+          ],
+          "unix_s": 1791698488.5933266
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "405",
+              "clocks.current.sm": "210",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3",
+              "power.draw": "37.71",
+              "pstate": "P8",
+              "temperature.gpu": "39",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028088506311178207,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936250.950530768,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "33",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.6745866359203461,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 599,
+              "user_ticks": 1395
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "36",
+              "affinity_cpus": 256,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 31,
+              "user_ticks": 34
+            }
+          ],
+          "unix_s": 1791698490.563468
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "3151",
+              "power.draw": "112.29",
+              "pstate": "P0",
+              "temperature.gpu": "42",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027900942135602236,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936252.951228121,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "33",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 599,
+              "user_ticks": 1395
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "64",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 1.1195037200916658,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 92,
+              "user_ticks": 197
+            }
+          ],
+          "unix_s": 1791698492.5641654
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "2255",
+              "power.draw": "111.85",
+              "pstate": "P0",
+              "temperature.gpu": "42",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.025786466896533966,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936254.950237157,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "33",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 599,
+              "user_ticks": 1395
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "90",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 1.1393612114106604,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 149,
+              "user_ticks": 368
+            }
+          ],
+          "unix_s": 1791698494.5631745
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "2473",
+              "power.draw": "112.60",
+              "pstate": "P0",
+              "temperature.gpu": "43",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027106438763439655,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936256.952750131,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "33",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 599,
+              "user_ticks": 1395
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "91",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.9994039988510345,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 178,
+              "user_ticks": 539
+            }
+          ],
+          "unix_s": 1791698496.5656872
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36691",
+              "power.draw": "118.53",
+              "pstate": "P0",
+              "temperature.gpu": "43",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02775731962174177,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936258.954514003,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "33",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 599,
+              "user_ticks": 1395
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "91",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 1.0044407425467328,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 208,
+              "user_ticks": 710
+            }
+          ],
+          "unix_s": 1791698498.5674515
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36715",
+              "power.draw": "112.35",
+              "pstate": "P0",
+              "temperature.gpu": "43",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02680072421208024,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936260.954760699,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "33",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.20487683903188356,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 612,
+              "user_ticks": 1423
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.8195073561275342,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 226,
+              "user_ticks": 856
+            }
+          ],
+          "unix_s": 1791698500.5676982
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36717",
+              "power.draw": "114.08",
+              "pstate": "P0",
+              "temperature.gpu": "44",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.026891205925494432,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936262.956054533,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "34",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3897655711485392,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 618,
+              "user_ticks": 1495
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.029981967011426094,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 228,
+              "user_ticks": 860
+            }
+          ],
+          "unix_s": 1791698502.5689917
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36717",
+              "power.draw": "130.86",
+              "pstate": "P0",
+              "temperature.gpu": "44",
+              "utilization.gpu": "12",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02771699894219637,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936264.958083729,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.054966904616254836,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 620,
+              "user_ticks": 1504
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.1898856704925167,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 235,
+              "user_ticks": 891
+            }
+          ],
+          "unix_s": 1791698504.571021
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36719",
+              "power.draw": "194.37",
+              "pstate": "P0",
+              "temperature.gpu": "45",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027565866708755493,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936266.959064748,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0999434065162365,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 623,
+              "user_ticks": 1521
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3897792854133223,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 246,
+              "user_ticks": 958
+            }
+          ],
+          "unix_s": 1791698506.5720024
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "127.29",
+              "pstate": "P0",
+              "temperature.gpu": "45",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028117915615439415,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936268.960695847,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.0599676093835832,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 625,
+              "user_ticks": 1531
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.18490012893271487,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 254,
+              "user_ticks": 987
+            }
+          ],
+          "unix_s": 1791698508.5736332
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "142.72",
+              "pstate": "P0",
+              "temperature.gpu": "46",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028547403868287802,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936270.962326897,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.11493108203528947,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 628,
+              "user_ticks": 1551
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3947632817733856,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 265,
+              "user_ticks": 1055
+            }
+          ],
+          "unix_s": 1791698510.5752645
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "146.46",
+              "pstate": "P0",
+              "temperature.gpu": "46",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028827848378568888,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936272.963742703,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.05996592224479195,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 629,
+              "user_ticks": 1562
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.2548551695403658,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 275,
+              "user_ticks": 1096
+            }
+          ],
+          "unix_s": 1791698512.57668
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36875",
+              "power.draw": "129.08",
+              "pstate": "P0",
+              "temperature.gpu": "46",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.027528586331754923,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936274.963045783,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.05498332017395003,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 630,
+              "user_ticks": 1572
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.16994844417402738,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 282,
+              "user_ticks": 1123
+            }
+          ],
+          "unix_s": 1791698514.575983
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "127.39",
+              "pstate": "P0",
+              "temperature.gpu": "46",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.029025161173194647,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936276.96572735,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3148142026459378,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 637,
+              "user_ticks": 1628
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.3647847110024358,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 294,
+              "user_ticks": 1184
+            }
+          ],
+          "unix_s": 1791698516.5786648
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "235.39",
+              "pstate": "P0",
+              "temperature.gpu": "48",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.03059033816680312,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936278.968482589,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.22486620212499073,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 646,
+              "user_ticks": 1664
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.7595480605110798,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 317,
+              "user_ticks": 1313
+            }
+          ],
+          "unix_s": 1791698518.5814202
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2505",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "167.80",
+              "pstate": "P0",
+              "temperature.gpu": "52",
+              "utilization.gpu": "66",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02958815125748515,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936280.968622703,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.19488869896522573,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 649,
+              "user_ticks": 1700
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.2298687218564201,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 325,
+              "user_ticks": 1351
+            }
+          ],
+          "unix_s": 1791698520.5815601
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "130.05",
+              "pstate": "P0",
+              "temperature.gpu": "48",
+              "utilization.gpu": "0",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.028146116994321346,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936282.968382321,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.24984993113541296,
+              "name": "python",
+              "pid": 630,
+              "state": "S",
+              "system_ticks": 654,
+              "user_ticks": 1745
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.36977789808041117,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "S",
+              "system_ticks": 336,
+              "user_ticks": 1414
+            }
+          ],
+          "unix_s": 1791698522.5813196
+        },
+        {
+          "event": "sample",
+          "gpu": [
+            {
+              "clocks.current.memory": "9001",
+              "clocks.current.sm": "2520",
+              "driver_version": "580.178.04",
+              "enforced.power.limit": "350.00",
+              "memory.used": "36935",
+              "power.draw": "274.50",
+              "pstate": "P0",
+              "temperature.gpu": "54",
+              "utilization.gpu": "57",
+              "uuid": "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+            }
+          ],
+          "gpu_query_duration_s": 0.02932687709107995,
+          "gpu_query_returncode": 0,
+          "monotonic_s": 3936284.970878966,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "processes": [
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "35",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.2348455404471556,
+              "name": "python",
+              "pid": 630,
+              "state": "R",
+              "system_ticks": 657,
+              "user_ticks": 1789
+            },
+            {
+              "Cpus_allowed_list": "0-255",
+              "Mems_allowed_list": "0-1",
+              "Threads": "96",
+              "affinity_cpus": 256,
+              "cpu_core_equivalents": 0.6945431940883964,
+              "name": "VLLM::EngineCor",
+              "pid": 1009,
+              "state": "R",
+              "system_ticks": 362,
+              "user_ticks": 1527
+            }
+          ],
+          "unix_s": 1791698524.5838163
+        }
+      ],
+      "hardware_serving_summary": {
+        "scope": "Two-second samples after native worker warmup through final owned-process observation; short bursts can fall between samples.",
+        "inventory": {
+          "affinity_cpus": 256,
+          "clock_ticks_per_second": 100,
+          "cpu_model": "AMD EPYC 9554 64-Core Processor",
+          "cpu_quota": "2720000 100000",
+          "effective_cpuset": "0-255",
+          "event": "inventory",
+          "interval_s": 2.0,
+          "logical_cpu_count": 256,
+          "maximum_s": 180.0,
+          "monotonic_s": 3936238.89644031,
+          "observer_pid": 631,
+          "owner_pid": 630,
+          "thread_environment": {},
+          "unix_s": 1791698478.5093815
+        },
+        "warmup_end_monotonic_s": 3936260.515312214,
+        "serving_samples": 13,
+        "gpu_uuids": [
+          "GPU-7453f11f-54a3-2990-e274-ffeb46587a14"
+        ],
+        "driver_versions": [
+          "580.178.04"
+        ],
+        "gpu": {
+          "clocks.current.sm": {
+            "samples": 13,
+            "minimum": 2505.0,
+            "maximum": 2520.0,
+            "mean": 2518.846153846154
+          },
+          "clocks.current.memory": {
+            "samples": 13,
+            "minimum": 9001.0,
+            "maximum": 9001.0,
+            "mean": 9001.0
+          },
+          "enforced.power.limit": {
+            "samples": 13,
+            "minimum": 350.0,
+            "maximum": 350.0,
+            "mean": 350.0
+          },
+          "power.draw": {
+            "samples": 13,
+            "minimum": 112.35,
+            "maximum": 274.5,
+            "mean": 156.33384615384617
+          },
+          "temperature.gpu": {
+            "samples": 13,
+            "minimum": 43.0,
+            "maximum": 54.0,
+            "mean": 46.69230769230769
+          },
+          "utilization.gpu": {
+            "samples": 13,
+            "minimum": 0.0,
+            "maximum": 66.0,
+            "mean": 10.384615384615385
+          }
+        },
+        "processes": {
+          "api": {
+            "pid": 630,
+            "threads": [
+              33,
+              34,
+              35
+            ],
+            "cpu_core_equivalents": {
+              "samples": 13,
+              "minimum": 0.054966904616254836,
+              "maximum": 0.3897655711485392,
+              "mean": 0.1737434792668655
+            },
+            "cpus_allowed": [
+              "0-255"
+            ],
+            "mems_allowed": [
+              "0-1"
+            ]
+          },
+          "worker": {
+            "pid": 1009,
+            "threads": [
+              96
+            ],
+            "cpu_core_equivalents": {
+              "samples": 13,
+              "minimum": 0.029981967011426094,
+              "maximum": 0.8195073561275342,
+              "mean": 0.37324183761569507
+            },
+            "cpus_allowed": [
+              "0-255"
+            ],
+            "mems_allowed": [
+              "0-1"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "patched_minus_control_s": {
+    "arrival_to_first_content_s": -13.680073657999998,
+    "engine_spawn_to_inference_verified_s": -7.056778829000002,
+    "model_gate_to_inference_verified_s": -5.992801774,
+    "api_marker_to_worker_init_s": -6.493946163449436,
+    "api_context_to_worker_context_s": -5.804524254053831
+  },
+  "estimated_comparison_total_usd": 0.8141383912997185,
+  "remaining_comparison_reservation_usd": 0.18586160870028146,
+  "all_owned_pods_absent": true,
+  "limitations": [
+    "The two-second hardware sample cannot resolve every short burst or identify the cause of the native aggregate latency differences.",
+    "CPU quotas, power limits and sampled GPU clocks match. OS thread counts differ between spawn and fork; actual Torch/tokenizer thread state and causal performance effects are unmeasured.",
+    "The serial native inference interval is unchanged, while client dispatch gaps and other time outside native inference increase. Native unique-queue decode latency also increases; it is not explained away by the serial transport finding.",
+    "Hydration, overlap and bootstrap vary. The process-start improvement repeats, but these single samples do not establish a reliable end-to-end first-token gain.",
+    "FLA GPU acceptance covers the archive-model 0.8B configuration only. Raw-extents loading and larger models require separate patch acceptance. The strict final raw-extents fleet remains unpatched."
+  ]
+}

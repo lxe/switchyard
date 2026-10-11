@@ -57,6 +57,8 @@ for run in ledger['runs']:
  eventsfile=root/'container-events.ndjson'
  if eventsfile.exists():
   records=[json.loads(line) for line in eventsfile.read_text().splitlines()]
+  row['native_hardware_observations']=[json.loads(r['line'].split('SWITCHYARD_HARDWARE_OBSERVER ',1)[1])
+       for r in records if 'SWITCHYARD_HARDWARE_OBSERVER ' in r['line']]
   row['native_startup_observations']=[r for r in records if any(s in r['line'] for s in
        ['ticket received','preimport completed','NVIDIA L40S,','Loading weights took',
         'Model loading took','Load weight end.','Applying persisted startup plan',
