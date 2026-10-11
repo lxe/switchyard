@@ -79,6 +79,16 @@ class Timeline:
                 "worker_method",
                 "cuda_initialized",
                 "accepted",
+                "requested",
+                "selected",
+                "applied",
+                "explicit_memory_limit",
+                "free_memory_bytes",
+                "strategy",
+                "cache_policy",
+                "applicable",
+                "mode",
+                "available",
             )
             if key in item
         }
