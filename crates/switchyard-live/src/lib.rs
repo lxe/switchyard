@@ -9,6 +9,7 @@ mod ownership;
 pub mod planner;
 pub mod runtime;
 pub mod serving;
+mod sglang;
 mod vllm;
 pub mod workloads;
 pub use runtime::{LiveRuntime, WorkCall};

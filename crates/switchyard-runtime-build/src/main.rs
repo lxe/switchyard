@@ -150,9 +150,13 @@ async fn main() -> Result<()> {
     let python_version = lock["python"]["version"]
         .as_str()
         .ok_or("missing Python version")?;
-    let vllm_version = package_version(&packages, "vllm")?;
-    if lock["vllm"]["version"].as_str() != Some(vllm_version) {
-        return Err("installed vLLM version differs from source lock".into());
+    let engine = lock["serving_engine"].as_str().unwrap_or("vllm");
+    if !matches!(engine, "vllm" | "sglang") {
+        return Err("unsupported serving engine in source lock".into());
+    }
+    let engine_version = package_version(&packages, engine)?;
+    if lock[engine]["version"].as_str() != Some(engine_version) {
+        return Err("installed serving engine differs from source lock".into());
     }
     let torch_version = package_version(&packages, "torch")?;
     let apt_output = capture("dpkg-query", &["-W", "-f=${Package}=${Version}\n"])?;
@@ -175,8 +179,8 @@ async fn main() -> Result<()> {
     write_json(
         &root.join("artifact-metadata.json"),
         &json!({"kind": "runtime", "compatibility": {
-        "os": "ubuntu24.04", "architecture": "x86_64", "python": python_version, "vllm": vllm_version,
-        "cuda": "12.9", "torch": torch_version}, "attributes": {"runtime_root": ROOT,
+        "os": "ubuntu24.04", "architecture": "x86_64", "python": python_version, (engine): engine_version,
+        "cuda": lock["cuda"].as_str().unwrap_or("12.9"), "torch": torch_version}, "attributes": {"runtime_root": ROOT,
         "requirements_sha256": requirements_hash, "sources_sha256": sources_hash,
         "builder_sha256": builder_hash, "gpu_bake_performed": "false",
         "python_bytecode_invalidation": bytecode::INVALIDATION_MODE}}),

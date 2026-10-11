@@ -137,6 +137,27 @@ pub fn nonce() -> Result<String> {
 }
 
 impl<P: Provider> LiveRuntime<P> {
+    pub(crate) async fn capture_metrics(&self, name: &str, stage: &str) -> Result<()> {
+        std::fs::create_dir_all(self.out.join("workloads"))?;
+        let mut observations = vec![];
+        for node in &self.nodes {
+            if node.owned.ended_s.is_none() && node.observed.is_ready {
+                let value = match node.endpoint.metrics().await {
+                    Ok(metrics) => {
+                        serde_json::json!({"pod_id":node.owned.pod.id,"metrics":metrics})
+                    }
+                    Err(error) => {
+                        serde_json::json!({"pod_id":node.owned.pod.id,"error":error.to_string()})
+                    }
+                };
+                observations.push(value);
+            }
+        }
+        self.save(
+            &format!("workloads/{name}-metrics-{stage}.json"),
+            &observations,
+        )
+    }
     pub async fn new(
         provider: P,
         storage: Storage,

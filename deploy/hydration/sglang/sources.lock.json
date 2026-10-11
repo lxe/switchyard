@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "platform": "linux/amd64",
+  "runtime_root": "/opt/switchyard/runtime",
+  "ubuntu_image": "ubuntu:24.04@sha256:f610ab94648195aa356059f5b41d6085c9d4d903c072430cdd1af7bdb646106b",
+  "ubuntu_snapshot": "20261010T000000Z",
+  "rust_builder_image": "rust:1.98.0-slim-bookworm@sha256:1469a27c125cb5a3aebfa4f4e4665d935b02fb72cc093b2c974b3d740e43f157",
+  "bootstrap_ca": {
+    "version": "20260601~24.04.1",
+    "url": "https://snapshot.ubuntu.com/ubuntu/20261010T000000Z/pool/main/c/ca-certificates/ca-certificates_20260601~24.04.1_all.deb",
+    "sha256": "6bac2a01979e210d9eac1d4d56747ec709ea60654744d66705dc3c36e7629e50"
+  },
+  "python": {
+    "version": "3.12.14",
+    "build": "20260901",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.12.14%2B20260901-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "72748da13197c1fb161e3afeef20a6a385ff24f2165e6e2758e47008e7faba4c"
+  },
+  "uv": {
+    "version": "0.12.9",
+    "url": "https://github.com/astral-sh/uv/releases/download/0.12.9/uv-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "ec7a99cd05e0cd7f80243f135ce1361c76835cb0ee60055d14d20eba8eba1460"
+  },
+  "cuda_toolkit": {
+    "release": "13.0.3",
+    "manifest": "https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.3.json",
+    "components": [
+      {
+        "name": "cuda_nvcc",
+        "version": "13.0.88",
+        "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-x86_64/cuda_nvcc-linux-x86_64-13.0.88-archive.tar.xz",
+        "sha256": "48e35be3cfbf4b4fbc16828eaec8a7048ee789403049dc409f7b643d6259cf7a"
+      },
+      {
+        "name": "cuda_cudart",
+        "version": "13.0.96",
+        "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64/cuda_cudart-linux-x86_64-13.0.96-archive.tar.xz",
+        "sha256": "25b8071951baba827be1580b841d363464f6ee6c39f48d33a81646f90cc95ed1"
+      },
+      {
+        "name": "cuda_cccl",
+        "version": "13.0.85",
+        "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cccl/linux-x86_64/cuda_cccl-linux-x86_64-13.0.85-archive.tar.xz",
+        "sha256": "ed845eae8c1767706b6ee91e40c608a03f6f633551a849b63f7346d32d73ee60"
+      },
+      {
+        "name": "libcurand",
+        "version": "10.4.0.35",
+        "url": "https://developer.download.nvidia.com/compute/cuda/redist/libcurand/linux-x86_64/libcurand-linux-x86_64-10.4.0.35-archive.tar.xz",
+        "sha256": "ee0dbf473998050bda876cb945634bec87d44b90b05a5550e9c2499ab7c1a5c3"
+      },
+      {
+        "name": "cuda_crt",
+        "version": "13.0.88",
+        "url": "https://developer.download.nvidia.com/compute/cuda/redist/cuda_crt/linux-x86_64/cuda_crt-linux-x86_64-13.0.88-archive.tar.xz",
+        "sha256": "5a3279a049ffc1cdb951c44cb95206acfdde9e9ae5e87825fc18d7e4a6878bb0"
+      },
+      {
+        "name": "libnvvm",
+        "version": "13.0.88",
+        "url": "https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.0.88-archive.tar.xz",
+        "sha256": "17ef1665b63670887eeba7d908da5669fa8c66bb73b5b4c1367f49929c086353"
+      }
+    ]
+  },
+  "serving_engine": "sglang",
+  "cuda": "13.0",
+  "sglang": {
+    "version": "0.5.21",
+    "url": "https://files.pythonhosted.org/packages/db/24/8ed5619174477187f01c1c040337471980a865eba9bd7663ea762c0ba2b1/sglang-0.5.21-cp312-cp312-manylinux_2_34_x86_64.whl",
+    "sha256": "ac300998eb6b1afcb2971b31317b66ef12891003bdf9d1a5c7e34f9d4e3dcf0d"
+  }
+}

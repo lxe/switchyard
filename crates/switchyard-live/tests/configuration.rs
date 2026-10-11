@@ -1,6 +1,34 @@
 use switchyard_core::{Scheduling, validate_scheduling};
 use switchyard_live::config::*;
 use switchyard_provider::{ComputeConfig, StorageConfig};
+
+#[test]
+fn legacy_engine_fingerprint_remains_compatible_and_sglang_requires_its_runtime() {
+    let cfg: DeploymentConfig =
+        serde_json::from_str(include_str!("../../../configs/runpod/qwen-small.json")).unwrap();
+    let engine = &cfg.models[0].engine;
+    assert_eq!(
+        switchyard_live::artifacts::engine_fingerprint(engine).unwrap(),
+        "55cfe37edf43491aba80ecdc8c7aaf5f68624865146baa39779d2620248e886a"
+    );
+    let mut changed = cfg.clone();
+    changed.models[0].engine.kind = EngineKind::Sglang;
+    assert!(changed.validate().is_err());
+    assert_ne!(
+        switchyard_live::artifacts::engine_fingerprint(&changed.models[0].engine).unwrap(),
+        switchyard_live::artifacts::engine_fingerprint(engine).unwrap()
+    );
+    let args = changed.models[0].engine.args(&changed.models[0], "/model");
+    assert_eq!(&args[..2], ["--model-path", "/model"]);
+    assert!(args.contains(&"--context-length".into()));
+    assert!(args.windows(2).any(|pair| pair
+        == [
+            "--json-model-override-args",
+            "{\"language_model_only\":true}"
+        ]));
+    assert!(!args.contains(&"--language-model-only".into()));
+    assert!(!args.contains(&"serve".into()));
+}
 fn compute() -> ComputeConfig {
     ComputeConfig {
         api_url: "https://api.runpod.io/v2".into(),
@@ -50,6 +78,7 @@ fn config() -> DeploymentConfig {
             ),
             caches: vec![],
             engine: EngineConfig {
+                kind: Default::default(),
                 max_model_len: 4096,
                 max_num_seqs: 32,
                 gpu_memory_utilization: 0.8,
@@ -440,12 +469,21 @@ fn extent_model_configuration_preserves_a_distinct_reference_and_cache_identity(
     model.remove("archive_prefix");
     model.remove("archive_sha256");
     model.insert("model_artifact".into(),serde_json::json!({"kind":"extents","prefix":"switchyard/weights/layout","id":"b".repeat(64),"content_id":"c".repeat(64),"loader":{"cuda_stage":true,"pinned_bytes":1048576}}));
-    let decoded: DeploymentConfig = serde_json::from_value(wire.clone()).unwrap();
+    let mut decoded: DeploymentConfig = serde_json::from_value(wire.clone()).unwrap();
     decoded.models[0].artifact.validate().unwrap();
     let labels = decoded.models[0].artifact.cache_labels().unwrap();
     assert_eq!(labels["model_content_id"], "c".repeat(64));
     assert!(labels.contains_key("weight_loader"));
     assert!(!labels.contains_key("model_archive_sha256"));
+    decoded.validate().unwrap();
+    decoded.models[0].engine.kind = EngineKind::Sglang;
+    assert!(
+        decoded
+            .validate()
+            .unwrap_err()
+            .to_string()
+            .contains("extent weight loader requires vLLM")
+    );
     wire["models"][0]["archive_sha256"] = serde_json::Value::String("a".repeat(64));
     assert!(serde_json::from_value::<DeploymentConfig>(wire).is_err());
 }

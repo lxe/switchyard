@@ -28,6 +28,14 @@ pub struct Completion {
     pub first_content_s: f64,
     pub completed_s: f64,
     pub finish_reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cached_input_tokens: Option<u64>,
+    /// Digest permits output parity checks without retaining request or response text.
+    #[serde(default)]
+    pub content_sha256: String,
+    /// Compare literal answers while allowing surrounding whitespace.
+    #[serde(default)]
+    pub content_trimmed_sha256: String,
 }
 pub enum Event {
     Progress {
@@ -46,6 +54,32 @@ pub struct Endpoint {
     client: reqwest::Client,
 }
 impl Endpoint {
+    /// Metrics failures remain explicit observations, without exposing engine error bodies.
+    pub async fn metrics(&self) -> Result<String> {
+        let response = self
+            .client
+            .get(format!("{}/metrics", self.url))
+            .timeout(Duration::from_secs(4))
+            .send()
+            .await
+            .map_err(|_| Error::Request("engine metrics transport".into()))?;
+        if !response.status().is_success() {
+            return Err(Error::Request(format!(
+                "engine metrics HTTP {}",
+                response.status().as_u16()
+            )));
+        }
+        let mut stream = response.bytes_stream();
+        let mut bytes = vec![];
+        while let Some(piece) = stream.next().await {
+            let piece = piece.map_err(|_| Error::Request("engine metrics interrupted".into()))?;
+            if bytes.len().saturating_add(piece.len()) > 4 << 20 {
+                return Err(Error::Request("engine metrics exceed limit".into()));
+            }
+            bytes.extend_from_slice(&piece);
+        }
+        String::from_utf8(bytes).map_err(|_| Error::Request("engine metrics UTF-8".into()))
+    }
     pub fn new(url: String, token: &str, timeout_s: u64) -> Result<Self> {
         let mut value = reqwest::header::HeaderValue::from_str(&format!("Bearer {token}"))
             .map_err(|_| Error::Config("endpoint credential".into()))?;
@@ -191,6 +225,15 @@ impl Endpoint {
             first_content_s: first,
             completed_s: call.epoch.elapsed().as_secs_f64(),
             finish_reason: finish.unwrap_or_else(|| "unknown".into()),
+            cached_input_tokens: usage["prompt_tokens_details"]["cached_tokens"].as_u64(),
+            content_sha256: {
+                use sha2::Digest;
+                format!("{:x}", sha2::Sha256::digest(content.as_bytes()))
+            },
+            content_trimmed_sha256: {
+                use sha2::Digest;
+                format!("{:x}", sha2::Sha256::digest(content.trim().as_bytes()))
+            },
         })
     }
 }

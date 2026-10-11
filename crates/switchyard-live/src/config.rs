@@ -172,12 +172,28 @@ impl TryFrom<ModelConfigInput> for ModelConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EngineConfig {
+    #[serde(default, skip_serializing_if = "EngineKind::is_vllm")]
+    pub kind: EngineKind,
     pub max_model_len: u64,
     pub max_num_seqs: usize,
     pub gpu_memory_utilization: f64,
     pub dtype: String,
     pub language_model_only: bool,
     pub extra_args: Vec<String>,
+}
+
+/// Process launch semantics belong to serving adapters, outside scheduling contracts.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum EngineKind {
+    #[default]
+    Vllm,
+    Sglang,
+}
+impl EngineKind {
+    fn is_vllm(&self) -> bool {
+        *self == Self::Vllm
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -258,6 +274,23 @@ impl ExecutionConfig {
         let mut ids = std::collections::BTreeSet::new();
         for m in &self.models {
             m.artifact.validate()?;
+            if m.engine.kind == EngineKind::Sglang {
+                if matches!(m.artifact, crate::model::ModelArtifact::Extents(_)) {
+                    return Err(Error::Config(
+                        "the extent weight loader requires vLLM".into(),
+                    ));
+                }
+                if self
+                    .bootstrap
+                    .runtime
+                    .as_ref()
+                    .is_none_or(|runtime| !runtime.compatibility.contains_key("sglang"))
+                {
+                    return Err(Error::Config(
+                        "SGLang requires a pinned SGLang runtime".into(),
+                    ));
+                }
+            }
             let mut cache_keys = std::collections::BTreeSet::new();
             for cache in &m.caches {
                 cache.validate()?;
@@ -323,6 +356,11 @@ fn valid_extra_args(args: &[String]) -> bool {
         "--gpu-memory-utilization",
         "--dtype",
         "--language-model-only",
+        "--model-path",
+        "--context-length",
+        "--max-running-requests",
+        "--mem-fraction-static",
+        "--json-model-override-args",
     ];
     args.iter().all(|arg| {
         !arg.contains('\0') && !MANAGED.contains(&arg.split('=').next().unwrap_or_default())

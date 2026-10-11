@@ -24,6 +24,15 @@ pub struct Case {
     pub completion_budget_s: f64,
     #[serde(default)]
     pub serial_dependencies: bool,
+    /// An identical system message can exercise ordinary engine prefix reuse.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system_prompt: Option<String>,
+    /// Put the case and request identity before the system content as a control.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unique_prefix: bool,
+    /// Cycle output bounds to exercise uncertainty without changing scheduling classes.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub output_bounds: Vec<u64>,
 }
 
 impl Experiment {
@@ -40,6 +49,10 @@ impl Experiment {
                 || case.calls > 100_000
                 || case.planned_output == 0
                 || case.planned_output > case.max_output
+                || case
+                    .output_bounds
+                    .iter()
+                    .any(|n| *n == 0 || *n > case.max_output)
                 || !case.arrival_interval_s.is_finite()
                 || case.arrival_interval_s < 0.0
                 || !case.desired_output_tps.is_finite()
@@ -58,14 +71,31 @@ impl Experiment {
 
 impl Case {
     pub fn request(&self, model: &str, id: usize) -> WorkCall {
+        let mut messages = vec![];
+        if let Some(system) = &self.system_prompt {
+            messages.push(Message {
+                role: "system".into(),
+                content: if self.unique_prefix {
+                    format!("Case {} request {id}.\n{system}", self.name)
+                } else {
+                    system.clone()
+                },
+            });
+        }
+        messages.push(Message {
+            role: "user".into(),
+            content: format!("{}\nRequest identifier: {id}.", self.prompt),
+        });
+        let max_output = if self.output_bounds.is_empty() {
+            self.max_output
+        } else {
+            self.output_bounds[id % self.output_bounds.len()]
+        };
         WorkCall {
             model: model.into(),
-            messages: vec![Message {
-                role: "user".into(),
-                content: format!("{}\nRequest identifier: {id}.", self.prompt),
-            }],
-            planned_output: self.planned_output,
-            max_output: self.max_output,
+            messages,
+            planned_output: self.planned_output.min(max_output),
+            max_output,
             arrival_delay_s: id as f64 * self.arrival_interval_s,
             class: "standard".into(),
             depends_on: if self.serial_dependencies && id > 0 {

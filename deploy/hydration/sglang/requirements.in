@@ -1,0 +1,8 @@
+# Official SGLang 0.5.21 CUDA 13 stack, CPython 3.12 / Linux x86_64.
+sglang @ https://files.pythonhosted.org/packages/db/24/8ed5619174477187f01c1c040337471980a865eba9bd7663ea762c0ba2b1/sglang-0.5.21-cp312-cp312-manylinux_2_34_x86_64.whl
+torch @ https://download.pytorch.org/whl/cu130/torch-2.13.0%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl
+torchvision @ https://download.pytorch.org/whl/cu130/torchvision-0.28.0%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl
+torchaudio @ https://download.pytorch.org/whl/cu130/torchaudio-2.11.0%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl
+torchcodec @ https://download.pytorch.org/whl/cu130/torchcodec-0.15.0%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl
+flashinfer-cubin==0.6.18
+cuda-tile @ https://pypi.nvidia.com/cuda-tile/cuda_tile-1.6.0rc5-cp312-cp312-manylinux2014_x86_64.whl

@@ -123,6 +123,7 @@ impl<P: Provider> LiveRuntime<P> {
         self.nodes[0].observed.warm = true;
         self.set_policy(Policy::WarmOnly);
         for case in &plan.warmup.cases {
+            self.capture_metrics(&case.name, "before").await?;
             let report = self
                 .run_workload(
                     &case.name,
@@ -131,6 +132,7 @@ impl<P: Provider> LiveRuntime<P> {
                     case.completion_budget_s,
                 )
                 .await?;
+            self.capture_metrics(&case.name, "after").await?;
             if report.failed != 0
                 || report.unfinished != 0
                 || report.budget_exceeded

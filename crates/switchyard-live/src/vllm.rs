@@ -1,7 +1,10 @@
 //! vLLM-specific process arguments stay outside the cloud and simulator contracts.
-use crate::config::{EngineConfig, ModelConfig};
+use crate::config::{EngineConfig, EngineKind, ModelConfig};
 impl EngineConfig {
     pub fn args(&self, model: &ModelConfig, path: &str) -> Vec<String> {
+        if self.kind == EngineKind::Sglang {
+            return crate::sglang::args(self, model, path);
+        }
         let mut args = vec![
             "serve".into(),
             path.into(),

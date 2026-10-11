@@ -315,6 +315,7 @@ async fn execute<P: Provider>(
     for case in &experiment.cases {
         runtime.set_policy(case.policy);
         let calls = case.requests(model);
+        runtime.capture_metrics(&case.name, "before").await?;
         println!(
             "{model} / {}: {} calls using {}",
             case.name, case.calls, case.policy
@@ -327,6 +328,7 @@ async fn execute<P: Provider>(
                 case.completion_budget_s,
             )
             .await?;
+        runtime.capture_metrics(&case.name, "after").await?;
         println!(
             "{}: {}/{} complete, {:.1} output tokens/s, TTFT p95 {:?}s, estimated rent ${:.4}",
             case.name,

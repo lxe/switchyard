@@ -1,0 +1,229 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA L40S"
+    ],
+    "data_centers": [
+      "US-MO-1"
+    ],
+    "min_cuda": "13.0",
+    "disk_gb": 80,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "archive_prefix": "models/Qwen__Qwen3.5-0.8B/2fc06364715b967f1860aea9cf38778875588b17/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--mamba-radix-cache-strategy",
+          "extra_buffer",
+          "--page-size",
+          "64",
+          "--chunked-prefill-size",
+          "2048",
+          "--cuda-graph-bs-decode",
+          "1",
+          "2",
+          "4",
+          "8",
+          "16",
+          "32",
+          "--enable-metrics",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}"
+        ],
+        "kind": "sglang"
+      },
+      "prior": {
+        "single_output_tps": 180,
+        "aggregate_output_tps": 2500,
+        "input_work_per_token": 0.05,
+        "startup_s": 180,
+        "kv_tokens": 131072
+      },
+      "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178"
+    },
+    {
+      "id": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "archive_prefix": "models/Qwen__Qwen3.5-2B/15852e8c16360a2fea060d615a32b45270f8a8fc/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--mamba-radix-cache-strategy",
+          "extra_buffer",
+          "--page-size",
+          "64",
+          "--chunked-prefill-size",
+          "2048",
+          "--cuda-graph-bs-decode",
+          "1",
+          "2",
+          "4",
+          "8",
+          "16",
+          "32",
+          "--enable-metrics",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}"
+        ],
+        "kind": "sglang"
+      },
+      "prior": {
+        "single_output_tps": 120,
+        "aggregate_output_tps": 1800,
+        "input_work_per_token": 0.05,
+        "startup_s": 180,
+        "kv_tokens": 131072
+      },
+      "archive_sha256": "5b145c1b5c2abcdc178afecec1ff9e32ecdece67e78010ffcb0fa7a95dfb56b7"
+    },
+    {
+      "id": "qwen3.5-4b",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "archive_prefix": "models/Qwen__Qwen3.5-4B/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/s1",
+      "engine": {
+        "max_model_len": 4096,
+        "max_num_seqs": 32,
+        "gpu_memory_utilization": 0.8,
+        "dtype": "bfloat16",
+        "language_model_only": true,
+        "extra_args": [
+          "--mamba-radix-cache-strategy",
+          "extra_buffer",
+          "--page-size",
+          "64",
+          "--chunked-prefill-size",
+          "2048",
+          "--cuda-graph-bs-decode",
+          "1",
+          "2",
+          "4",
+          "8",
+          "16",
+          "32",
+          "--enable-metrics",
+          "--default-chat-template-kwargs",
+          "{\"enable_thinking\":false}"
+        ],
+        "kind": "sglang"
+      },
+      "prior": {
+        "single_output_tps": 80,
+        "aggregate_output_tps": 1200,
+        "input_work_per_token": 0.05,
+        "startup_s": 180,
+        "kv_tokens": 131072
+      },
+      "archive_sha256": "b2e9df73151107b3b8188eff3dc6393b010eccd8adcee15f76c153a3a5bea3ca"
+    }
+  ],
+  "limits": {
+    "max_instances": 1,
+    "max_usd_per_hour": 1.2,
+    "max_run_usd": 0.14,
+    "run_timeout_s": 410,
+    "startup_timeout_s": 360,
+    "request_timeout_s": 60,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 0.14,
+    "experiment_timeout_s": 410
+  },
+  "scheduling": {
+    "maximum_startup_s": 360,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/hydration-diagnostics-v2/switchyard-agent-ticket-body-x86_64-linux-musl",
+    "agent_sha256": "0edb99b155b27175f66c525c3e95ea460353c405023d38d6594ecacc268cab90",
+    "ticket_prefix": "switchyard/serving-comparison/tickets",
+    "runtime": {
+      "artifact": {
+        "id": "d2dc52df18a482c5a8046f824e91878bea2131edb9474547649261a0e68bb4f0",
+        "prefix": "switchyard/serving-comparison/runtime/d2dc52df18a482c5a8046f824e91878bea2131edb9474547649261a0e68bb4f0"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda": "13.0",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "torch": "2.13.0+cu130",
+        "sglang": "0.5.21"
+      },
+      "program": "venv/bin/python",
+      "args": [
+        "-c",
+        "import sys,time,subprocess\nstarted=time.monotonic()\nsubprocess.run(['nvidia-smi','--query-gpu=name,driver_version,memory.total,compute_cap','--format=csv,noheader,nounits'],check=True)\nimport torch\nfrom sglang.launch_server import run_server\nfrom sglang.srt.server_args import prepare_server_args\nfrom sglang.srt.plugins import load_plugins\nprint('switchyard preimport completed in %.3fs' % (time.monotonic()-started),flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n': raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nload_plugins()\nrun_server(prepare_server_args(sys.argv[1:]))\n"
+      ],
+      "environment": {
+        "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+        "CC": "{runtime_root}/toolchain/bin/gcc",
+        "CXX": "{runtime_root}/toolchain/bin/g++",
+        "CUDA_HOME": "{runtime_root}/cuda",
+        "CUDA_PATH": "{runtime_root}/cuda",
+        "CUDACXX": "{runtime_root}/cuda/bin/nvcc",
+        "SSL_CERT_FILE": "{runtime_root}/certs/ca-certificates.crt",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "DO_NOT_TRACK": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HOME": "{cache_root}/compiled/huggingface",
+        "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+        "TORCHINDUCTOR_CACHE_DIR": "{cache_root}/compiled/torchinductor",
+        "CUDA_CACHE_PATH": "{cache_root}/compiled/cuda",
+        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer",
+        "CUDA_CACHE_MAXSIZE": "4294967296",
+        "XDG_CACHE_HOME": "{cache_root}/compiled/xdg",
+        "TORCH_EXTENSIONS_DIR": "{cache_root}/compiled/torch-extensions",
+        "FLASHINFER_CUBIN_CHECKSUM_DISABLED": "1",
+        "FLASHINFER_NO_DOWNLOAD": "1",
+        "SGLANG_CACHE_DIR": "{cache_root}/compiled/sglang",
+        "SGLANG_DISABLE_USAGE_STATS": "1",
+        "SGLANG_JIT_CACHE_DIR": "{cache_root}/compiled/sglang-jit"
+      },
+      "hydration": {
+        "retries": 0
+      }
+    },
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/dev/shm/switchyard",
+      "require_model_ram": true,
+      "early_launch": true
+    }
+  }
+}
