@@ -58,7 +58,28 @@
         "startup_s": 180,
         "kv_tokens": 32768
       },
-      "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178"
+      "archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+      "caches": [
+        {
+          "name": "compiled",
+          "gpu": "NVIDIA L40S",
+          "artifact": {
+            "prefix": "switchyard/artifacts/cache/2b3188be16a1a4f59cbc94f03b398b17887e620010d05251251dc4ad579cae14",
+            "id": "2b3188be16a1a4f59cbc94f03b398b17887e620010d05251251dc4ad579cae14"
+          },
+          "compatibility": {
+            "architecture": "x86_64",
+            "engine_configuration": "55cfe37edf43491aba80ecdc8c7aaf5f68624865146baa39779d2620248e886a",
+            "gpu": "NVIDIA L40S",
+            "gpu_compute_capability": "8.9",
+            "model_archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+            "model_repository": "Qwen/Qwen3.5-0.8B",
+            "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+            "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+            "runtime_launch_configuration": "8695e779e56a56e9d2b9495aa42f0fae4eb4634b06b1b17bc042167841b1f3b4"
+          }
+        }
+      ]
     },
     {
       "id": "qwen3.5-2b",
@@ -129,7 +150,7 @@
     "hydration_concurrency": 20,
     "hydration_stall_s": 20,
     "poll_ms": 100,
-    "max_experiment_usd": 4.61,
+    "max_experiment_usd": 4.51,
     "experiment_timeout_s": 5400
   },
   "scheduling": {

@@ -1,0 +1,156 @@
+{
+  "gpu": "NVIDIA L40S",
+  "data_center": "US-TX-4",
+  "model": "Qwen/Qwen3.5-0.8B",
+  "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "vllm": "0.31.0+cu129",
+  "torch": "2.13.0+cu129",
+  "model_filesystem": "tmpfs",
+  "runtime_filesystem": "overlay",
+  "nvme_backing_verified": false,
+  "runtime_artifact_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "cache_artifact": {
+    "name": "compiled",
+    "gpu": "NVIDIA L40S",
+    "artifact": {
+      "prefix": "switchyard/artifacts/cache/2b3188be16a1a4f59cbc94f03b398b17887e620010d05251251dc4ad579cae14",
+      "id": "2b3188be16a1a4f59cbc94f03b398b17887e620010d05251251dc4ad579cae14"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "engine_configuration": "55cfe37edf43491aba80ecdc8c7aaf5f68624865146baa39779d2620248e886a",
+      "gpu": "NVIDIA L40S",
+      "gpu_compute_capability": "8.9",
+      "model_archive_sha256": "bc98fc9c5e6c9f00289e7fb63882f7a34e1c003e05da071d38a0adfc16a09178",
+      "model_repository": "Qwen/Qwen3.5-0.8B",
+      "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+      "runtime_launch_configuration": "8695e779e56a56e9d2b9495aa42f0fae4eb4634b06b1b17bc042167841b1f3b4"
+    }
+  },
+  "cache_compressed_bytes": 3907138,
+  "bake": {
+    "ready_after_allocation_s": 171.08075861199998,
+    "startup_milestones": [
+      {
+        "elapsed_s": 1.920211143,
+        "event": "runtime_hydration_started"
+      },
+      {
+        "elapsed_s": 1.928015935,
+        "event": "model_hydration_started"
+      },
+      {
+        "elapsed_s": 26.666233448,
+        "event": "model_hydration_finished"
+      },
+      {
+        "elapsed_s": 27.969103724,
+        "event": "runtime_hydration_finished"
+      },
+      {
+        "elapsed_s": 27.969711845,
+        "event": "engine_spawned"
+      },
+      {
+        "elapsed_s": 27.969733597,
+        "event": "model_gate_released"
+      },
+      {
+        "elapsed_s": 164.216008248,
+        "event": "inference_verified"
+      }
+    ],
+    "engine_profile_cache_warmup_s": 77.32,
+    "warmup_calls_completed": 41,
+    "estimated_rental_usd": 0.056759633664893144,
+    "terminated_confirmed": true,
+    "runtime_hydration": {
+      "downloaded_bytes": 5244615495,
+      "elapsed_s": 26.048892581,
+      "average_received_bytes_per_s": 201337368.899337,
+      "timing_scope": "Concurrent HTTP transfer and extraction; does not isolate network throughput."
+    }
+  },
+  "fresh_cache_reuse": {
+    "ready_after_allocation_s": 61.461594278,
+    "startup_milestones": [
+      {
+        "elapsed_s": 2.087375571,
+        "event": "runtime_hydration_started"
+      },
+      {
+        "elapsed_s": 2.095656998,
+        "event": "model_hydration_started"
+      },
+      {
+        "elapsed_s": 26.68498446,
+        "event": "runtime_hydration_finished"
+      },
+      {
+        "elapsed_s": 26.685394325,
+        "event": "engine_spawned"
+      },
+      {
+        "elapsed_s": 28.875611687,
+        "event": "model_hydration_finished"
+      },
+      {
+        "elapsed_s": 28.875745459,
+        "event": "model_gate_released"
+      },
+      {
+        "elapsed_s": 54.103617643,
+        "event": "inference_verified"
+      }
+    ],
+    "engine_profile_cache_warmup_s": 1.42,
+    "startup_plan_applied_log_confirmed": true,
+    "runtime_full_download_bytes": 5244615495,
+    "model_full_download_bytes": 1770045440,
+    "smoke": {
+      "cold-single": {
+        "requests": 1,
+        "completed": 1,
+        "failed": 0,
+        "unfinished": 0,
+        "output_tokens": 32,
+        "output_tokens_per_s": 0.49051927687157376,
+        "ttft_p95_s": 64.577368668,
+        "response_p95_s": 65.200851984,
+        "elapsed_s": 65.236987635
+      },
+      "hot-single": {
+        "requests": 1,
+        "completed": 1,
+        "failed": 0,
+        "unfinished": 0,
+        "output_tokens": 32,
+        "output_tokens_per_s": 36.85305723409776,
+        "ttft_p95_s": 0.22040500399999985,
+        "response_p95_s": 0.7991615850000073,
+        "elapsed_s": 0.8683133070000082
+      },
+      "hot-burst-32": {
+        "requests": 32,
+        "completed": 32,
+        "failed": 0,
+        "unfinished": 0,
+        "output_tokens": 814,
+        "output_tokens_per_s": 655.8703805719649,
+        "ttft_p95_s": 0.632504713000003,
+        "response_p95_s": 1.183549021999994,
+        "elapsed_s": 1.2410988879999962
+      }
+    },
+    "estimated_rental_usd": 0.020260704570179797,
+    "terminated_confirmed": true,
+    "runtime_hydration": {
+      "downloaded_bytes": 5244615495,
+      "elapsed_s": 24.597608889,
+      "average_received_bytes_per_s": 213216476.39276764,
+      "timing_scope": "Concurrent HTTP transfer and extraction; does not isolate network throughput."
+    }
+  },
+  "measurement_limits": "One fresh bake and one fresh reuse allocation; startup and throughput are observations, not tail guarantees."
+}
