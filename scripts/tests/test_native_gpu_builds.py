@@ -306,7 +306,12 @@ class BuildTests(unittest.TestCase):
             {"id": "switchyard-engine", "name": "switchyard-engine"}
         )
         compiler = CompilerFixture(
-            self.root, include_bins=True, extra_bins=("switchyard-engine-merged-probe",)
+            self.root,
+            include_bins=True,
+            extra_bins=(
+                "switchyard-engine-merged-probe",
+                "switchyard-engine-mixed-bench",
+            ),
         )
         output = build.build_target(
             self.args, "89", self.base, self.metadata, self.env, runner=compiler
@@ -314,10 +319,12 @@ class BuildTests(unittest.TestCase):
         target = self.args.out / output["path"]
         receipt = json.loads((target / "build.json").read_text())
         self.assertEqual(
-            receipt["excluded_binary_targets"], ["switchyard-engine-merged-probe"]
+            receipt["excluded_binary_targets"],
+            ["switchyard-engine-merged-probe", "switchyard-engine-mixed-bench"],
         )
-        self.assertFalse((target / "bin/switchyard-engine-merged-probe").exists())
-        self.assertFalse(any("merged-probe" in path for path in receipt["files"]))
+        for name in ("switchyard-engine-merged-probe", "switchyard-engine-mixed-bench"):
+            self.assertFalse((target / "bin" / name).exists())
+            self.assertFalse(any(name in path for path in receipt["files"]))
         self.assertEqual(set(receipt["runtime_requirements"]), build.EXPORTED_BINARIES)
         self.assertEqual(
             {path.name for path in (target / "bin").iterdir()},

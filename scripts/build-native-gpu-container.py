@@ -139,6 +139,7 @@ def assemble_matrix(
     source_root,
     revision,
     image,
+    evidence,
     cuda_root=Path("/usr/local/cuda"),
     *,
     runner=command,
@@ -223,6 +224,10 @@ def assemble_matrix(
                 image,
                 "--compute-cap",
                 cap,
+                "--compiler-target",
+                selected["architecture"].replace("sm_", "compute_", 1),
+                "--evidence",
+                str(evidence),
             ]
         )
 
@@ -337,8 +342,11 @@ def main():
         parser.add_argument("--source-root", type=Path, required=True)
         parser.add_argument("--source-commit", required=True)
         parser.add_argument("--image", type=image_pin, required=True)
+        parser.add_argument("--evidence", type=Path, required=True)
         args = parser.parse_args(sys.argv[2:])
-        assemble_matrix(args.matrix, args.source_root, args.source_commit, args.image)
+        assemble_matrix(
+            args.matrix, args.source_root, args.source_commit, args.image, args.evidence
+        )
         return 0
     parser.add_argument("--arch", type=JOB.architecture, action="append", required=True)
     parser.add_argument("--workspace", type=Path, default=SCRIPTS.parent)

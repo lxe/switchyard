@@ -21,6 +21,15 @@ export PATH="/build/cargo/bin:$PATH"
 rustup toolchain install 1.98.1 --profile minimal
 export RUSTUP_TOOLCHAIN=1.98.1
 nvcc --version | grep -q 'release 13.0,'
+mkdir /output/container-evidence
+nvcc --list-gpu-arch > /output/container-evidence/nvcc-gpu-arch.txt
+printf '%s\n' "${CUDA_VERSION:?CUDA builder must declare its toolkit release}" \
+  > /output/container-evidence/cuda-environment-version.txt
+dpkg-query -W -f='${binary:Package}\t${Version}\n' 'cuda-*' \
+  > /output/container-evidence/cuda-packages.txt
+nvcc --version > /output/container-evidence/nvcc.txt
+cp /etc/os-release /output/container-evidence/os-release.txt
+uname -m > /output/container-evidence/architecture.txt
 cp /etc/os-release /output/ubuntu-os-release.txt
 dpkg-query -W gcc g++ libc6 libstdc++6 binutils python3 > /output/ubuntu-packages.txt
 ldd --version > /output/ubuntu-libc.txt
@@ -31,5 +40,6 @@ python3 /tools/build-native-gpu.py \
   --cuda-root /usr/local/cuda --builder-id "$native_image" \
   --build-root /build/target --out /output/matrix --jobs "$native_jobs" "$@"
 python3 /tools/build-native-gpu-container.py assemble /output/matrix \
-  --source-root /source --source-commit "$native_commit" --image "$native_image"
+  --source-root /source --source-commit "$native_commit" --image "$native_image" \
+  --evidence /output/container-evidence
 chown -R "$(stat -c %u /output):$(stat -c %g /output)" /output

@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -101,12 +102,72 @@ class ContainerTests(unittest.TestCase):
             f"libcudart.so.13 => {runtime} (0x1)\nlibstdc++.so.6 => {cpp} (0x2)\nlibcuda.so.1 => not found\n",
         )
 
+    def evidence(self):
+        evidence = self.root / "container-evidence"
+        evidence.mkdir(exist_ok=True)
+        for name, contents in {
+            "nvcc-gpu-arch.txt": "compute_89\ncompute_120\n",
+            "cuda-environment-version.txt": "13.0.0\n",
+            "cuda-packages.txt": "cuda-nvcc-13-0\t13.0.88-1\n",
+            "nvcc.txt": "Cuda compilation tools, release 13.0, V13.0.88\n",
+            "os-release.txt": 'ID=ubuntu\nVERSION_ID="24.04"\n',
+            "architecture.txt": "x86_64\n",
+        }.items():
+            (evidence / name).write_text(contents)
+        return evidence
+
     def test_driver_stubs_stay_external_and_missing_runtime_libraries_fail(self):
         cuda, text = self.libraries()
         selected = wrapper.runtime_libraries(text, cuda)
         self.assertEqual(set(selected), {"libcudart.so.13", "libstdc++.so.6"})
         with self.assertRaisesRegex(ValueError, "missing runtime dependency"):
             wrapper.runtime_libraries(text + "libcublas.so.13 => not found\n", cuda)
+
+    def receipt_command(self, evidence, *extra):
+        tree = self.root / "receipt-tree"
+        tree.mkdir(exist_ok=True)
+        (tree / "fixture").write_bytes(b"CPU runtime inventory fixture")
+        return [
+            sys.executable,
+            str(SCRIPTS.parent / "deploy/native/runtime-receipt.py"),
+            "--tree",
+            str(tree),
+            "--build",
+            str(self.root / "runtime-build.json"),
+            "--source-commit",
+            "a" * 40,
+            "--builder",
+            wrapper.DEFAULT_IMAGE,
+            "--compute-cap",
+            "89",
+            "--evidence",
+            str(evidence),
+            *extra,
+        ]
+
+    def test_receipt_numeric_default_remains_compatible(self):
+        wrapper.command(self.receipt_command(self.evidence()))
+        receipt = json.loads((self.root / "runtime-build.json").read_text())
+        self.assertEqual(receipt["cuda_compiler_target"], "compute_89")
+        self.assertEqual(receipt["gpu_compute_capability"], "8.9")
+
+    def test_receipt_rejects_missing_evidence_and_inconsistent_exact_target(self):
+        evidence = self.evidence()
+        for path in sorted(evidence.iterdir()):
+            with self.subTest(missing=path.name):
+                original = path.read_bytes()
+                path.unlink()
+                with self.assertRaises(subprocess.CalledProcessError):
+                    wrapper.command(self.receipt_command(evidence))
+                self.assertFalse((self.root / "runtime-build.json").exists())
+                path.write_bytes(original)
+        for target in ("compute_120a", "compute_89a", "sm_89", "compute_89z"):
+            with self.subTest(compiler_target=target):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    wrapper.command(
+                        self.receipt_command(evidence, "--compiler-target", target)
+                    )
+                self.assertFalse((self.root / "runtime-build.json").exists())
 
     def matrix(self):
         matrix = self.root / "output/matrix"
@@ -164,12 +225,24 @@ class ContainerTests(unittest.TestCase):
             return wrapper.command(command)
 
         wrapper.assemble_matrix(
-            matrix, SCRIPTS.parent, "a" * 40, wrapper.DEFAULT_IMAGE, cuda, runner=runner
+            matrix,
+            SCRIPTS.parent,
+            "a" * 40,
+            wrapper.DEFAULT_IMAGE,
+            self.evidence(),
+            cuda,
+            runner=runner,
         )
         runtime = target / "runtime"
         build = json.loads((runtime / "build.json").read_text())
         self.assertEqual(build["format"], "switchyard-native-runtime-build-v1")
         self.assertEqual(build["gpu_compute_capability"], "12.0")
+        self.assertEqual(build["cuda_compiler_target"], "compute_120a")
+        self.assertEqual(build["cuda_build"], "13.0.0")
+        self.assertEqual(build["cuda_compiler_version"], "13.0.88")
+        self.assertEqual(
+            build["cuda_package_versions"], {"cuda-nvcc-13-0": "13.0.88-1"}
+        )
         self.assertEqual(build["source_commit"], "a" * 40)
         self.assertEqual(
             {p["path"] for p in build["files"]},
@@ -181,6 +254,8 @@ class ContainerTests(unittest.TestCase):
             },
         )
         self.assertFalse((runtime / "tree/bin/switchyard-engine-bench").exists())
+        self.assertFalse((runtime / "tree/bin/switchyard-engine-merged-probe").exists())
+        self.assertFalse((runtime / "tree/bin/switchyard-engine-mixed-bench").exists())
         self.assertFalse((runtime / "tree/lib/libcuda.so.1").exists())
 
     def test_modified_export_fails_before_a_runtime_receipt_is_created(self):
@@ -199,7 +274,11 @@ class ContainerTests(unittest.TestCase):
                 path.write_bytes(b"changed after compiler receipt")
                 with self.assertRaisesRegex(ValueError, "exported file differs"):
                     wrapper.assemble_matrix(
-                        matrix, SCRIPTS.parent, "a" * 40, wrapper.DEFAULT_IMAGE
+                        matrix,
+                        SCRIPTS.parent,
+                        "a" * 40,
+                        wrapper.DEFAULT_IMAGE,
+                        self.evidence(),
                     )
                 self.assertFalse((target / "runtime/build.json").exists())
                 self.assertFalse((matrix.parent / "build.json").exists())
@@ -210,7 +289,7 @@ class ContainerTests(unittest.TestCase):
         (matrix / "producer.py").write_text("different producer")
         with self.assertRaisesRegex(ValueError, "retained producer differs"):
             wrapper.assemble_matrix(
-                matrix, SCRIPTS.parent, "a" * 40, wrapper.DEFAULT_IMAGE
+                matrix, SCRIPTS.parent, "a" * 40, wrapper.DEFAULT_IMAGE, self.evidence()
             )
         self.assertFalse((target / "runtime").exists())
 

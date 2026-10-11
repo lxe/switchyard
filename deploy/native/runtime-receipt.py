@@ -14,15 +14,34 @@ def main():
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--builder", required=True)
     parser.add_argument("--compute-cap", required=True)
+    parser.add_argument(
+        "--compiler-target",
+        help="exact compute_XX[a/f] compiler target; defaults to the numeric physical capability",
+    )
     parser.add_argument("--evidence", type=Path, required=True)
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9]{2,3}", args.compute_cap):
+        raise ValueError("numeric physical GPU compute capability required")
+    base_target = "compute_" + args.compute_cap
+    target = args.compiler_target or base_target
+    selected = re.fullmatch(r"compute_([0-9]{2,3})([af]?)", target)
+    if (
+        selected is None
+        or selected[1] != args.compute_cap
+        or (int(selected[1]) < 90 and selected[2])
+    ):
         raise ValueError(
-            "numeric CUDA compiler target required; suffixes are unsupported"
+            "compiler target must match the physical GPU base architecture"
         )
-    target = "compute_" + args.compute_cap
-    if target not in (args.evidence / "nvcc-gpu-arch.txt").read_text().splitlines():
-        raise ValueError("compiler evidence does not support the selected target")
+    # nvcc --list-gpu-arch reports base architectures. The matrix builder also
+    # checks emitted PTX and device objects against the exact suffixed target.
+    if (
+        base_target
+        not in (args.evidence / "nvcc-gpu-arch.txt").read_text().splitlines()
+    ):
+        raise ValueError(
+            "compiler evidence does not support the selected base architecture"
+        )
     toolkit = (args.evidence / "cuda-environment-version.txt").read_text().strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+", toolkit):
         raise ValueError("builder toolkit release must have major.minor.patch version")
