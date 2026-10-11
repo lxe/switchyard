@@ -1,0 +1,100 @@
+{
+  "method": "90 percent of measured serial longer-answer and unique-prefix queue-64 output rates; startup rounded up with 10 percent headroom",
+  "scope": "Single L40S SM89, BF16, context4096,32active requests, checked model revisions; original full runtime and baseline caches",
+  "uncalibrated_fields": {
+    "input_work_per_token": "0.05 retained; no isolated prefill-cost experiment",
+    "kv_tokens": "131072 retained as min(max_context * max_active_sequences, physical KV capacity), not a claim of measured maximum capacity"
+  },
+  "models": [
+    {
+      "engine": "vllm",
+      "model": "qwen3.5-0.8b",
+      "source_run": "results/cloud-vllm-0.8b-full-mo",
+      "prior": {
+        "single_output_tps": 159,
+        "aggregate_output_tps": 612,
+        "input_work_per_token": 0.05,
+        "startup_s": 147,
+        "kv_tokens": 131072
+      },
+      "measured_single_output_tps": 177.40097883789636,
+      "measured_unique_queue_output_tps": 680.3656385653678,
+      "measured_cold_arrival_ttft_s": 133.534455749
+    },
+    {
+      "engine": "vllm",
+      "model": "qwen3.5-2b",
+      "source_run": "results/cloud-vllm-2b-full-mo",
+      "prior": {
+        "single_output_tps": 101,
+        "aggregate_output_tps": 546,
+        "input_work_per_token": 0.05,
+        "startup_s": 256,
+        "kv_tokens": 131072
+      },
+      "measured_single_output_tps": 112.25984033100418,
+      "measured_unique_queue_output_tps": 606.8083432523365,
+      "measured_cold_arrival_ttft_s": 232.32465521600002
+    },
+    {
+      "engine": "vllm",
+      "model": "qwen3.5-4b",
+      "source_run": "results/cloud-vllm-4b-full-mo",
+      "prior": {
+        "single_output_tps": 60,
+        "aggregate_output_tps": 226,
+        "input_work_per_token": 0.05,
+        "startup_s": 280,
+        "kv_tokens": 131072
+      },
+      "measured_single_output_tps": 67.53277735004701,
+      "measured_unique_queue_output_tps": 251.2603014482961,
+      "measured_cold_arrival_ttft_s": 253.80491328899998
+    },
+    {
+      "engine": "sglang",
+      "model": "qwen3.5-0.8b",
+      "source_run": "results/cloud-sglang-0.8b-full-mo",
+      "prior": {
+        "single_output_tps": 203,
+        "aggregate_output_tps": 849,
+        "input_work_per_token": 0.05,
+        "startup_s": 114,
+        "kv_tokens": 131072
+      },
+      "measured_single_output_tps": 226.12890154856805,
+      "measured_unique_queue_output_tps": 944.2798745342609,
+      "measured_cold_arrival_ttft_s": 103.183119871
+    },
+    {
+      "engine": "sglang",
+      "model": "qwen3.5-2b",
+      "source_run": "results/cloud-sglang-2b-full-mo",
+      "prior": {
+        "single_output_tps": 115,
+        "aggregate_output_tps": 512,
+        "input_work_per_token": 0.05,
+        "startup_s": 147,
+        "kv_tokens": 131072
+      },
+      "measured_single_output_tps": 128.34831036117524,
+      "measured_unique_queue_output_tps": 569.6659574956379,
+      "measured_cold_arrival_ttft_s": 133.55346153899998
+    },
+    {
+      "engine": "sglang",
+      "model": "qwen3.5-4b",
+      "source_run": "results/cloud-sglang-4b-full-mo",
+      "prior": {
+        "single_output_tps": 65,
+        "aggregate_output_tps": 216,
+        "input_work_per_token": 0.05,
+        "startup_s": 186,
+        "kv_tokens": 131072
+      },
+      "measured_single_output_tps": 72.4944709443987,
+      "measured_unique_queue_output_tps": 240.4739500527863,
+      "measured_cold_arrival_ttft_s": 168.255570971
+    }
+  ]
+}

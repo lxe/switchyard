@@ -1,0 +1,17 @@
+[
+  {
+    "configuration": "vllm-calibrated",
+    "controller_exit": 0,
+    "operation": "read-only discovery; no allocation"
+  },
+  {
+    "configuration": "sglang-calibrated",
+    "controller_exit": 0,
+    "operation": "read-only discovery; no allocation"
+  },
+  {
+    "configuration": "vllm-sm89-profile",
+    "controller_exit": 0,
+    "operation": "read-only discovery; no allocation"
+  }
+]
