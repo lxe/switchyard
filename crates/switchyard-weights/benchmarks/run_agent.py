@@ -502,8 +502,14 @@ try:
             ):
                 with (root / "engine-startup.jsonl").open("w") as raw:
                     for line in log_process.stdout:
-                        marker = "SWITCHYARD_ENGINE_STARTUP "
-                        if marker in line:
+                        marker = next(
+                            (prefix for prefix in (
+                                "SWITCHYARD_ENGINE_STARTUP ",
+                                "SWITCHYARD_CPU_SNAPSHOT ",
+                            ) if prefix in line),
+                            None,
+                        )
+                        if marker is not None:
                             item = json.loads(line.split(marker, 1)[1])
                             raw.write(json.dumps(item, separators=(",", ":")) + "\n")
                             raw.flush()

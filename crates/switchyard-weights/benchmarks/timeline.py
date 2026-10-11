@@ -89,6 +89,12 @@ class Timeline:
                 "applicable",
                 "mode",
                 "available",
+                "objects_preserved",
+                "gpu_use",
+                "profile_run_skipped",
+                "kv_cache_memory_bytes",
+                "tensor_count",
+                "tensor_bytes",
             )
             if key in item
         }
