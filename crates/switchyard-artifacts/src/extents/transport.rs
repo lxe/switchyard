@@ -1,8 +1,10 @@
 //! Exact HTTP objects/ranges feed bounded positional writers without retries.
 use super::ExtentHydration;
+use crate::transport::{Trace, TransferBoundary, TransportFailure};
 use crate::{Error, HydrationMode, Result, extents::Extent};
 use futures_util::{StreamExt, stream};
 use sha2::{Digest, Sha256};
+use std::time::Instant;
 use std::{fs::File, io::Read, sync::atomic::Ordering};
 use tokio_util::io::{StreamReader, SyncIoBridge};
 
@@ -13,6 +15,12 @@ impl ExtentHydration {
         index: usize,
         extent: Extent,
     ) -> Result<()> {
+        let trace = Trace::new(
+            extent.object.clone(),
+            extent.object_offset,
+            extent.length,
+            self.options.observer.clone(),
+        );
         let shared = self.shared.clone();
         let permit = match &self.options.download_limit {
             Some(limit) => Some(tokio::select! {
@@ -38,6 +46,7 @@ impl ExtentHydration {
                 ),
             );
         }
+        trace.boundary(TransferBoundary::Headers);
         let sending = request.send();
         tokio::pin!(sending);
         let response = loop {
@@ -48,7 +57,16 @@ impl ExtentHydration {
                 return Err(Error::Cancelled);
             }
             tokio::select! {
-                result = &mut sending => break result.map_err(|_| Error::Transfer)?,
+                result = &mut sending => {
+                    break result.map_err(|error| {
+                        if shared.cancelled.load(Ordering::Acquire) {
+                            Error::Cancelled
+                        } else {
+                            trace.failure(TransportFailure::request("headers", &error));
+                            Error::Transfer
+                        }
+                    })?;
+                },
                 _ = &mut notified => {},
             }
         };
@@ -58,6 +76,9 @@ impl ExtentHydration {
             reqwest::StatusCode::OK
         };
         if response.status() != expected_status {
+            let mut failure = TransportFailure::local("status");
+            failure.status = Some(response.status().as_u16());
+            trace.failure(failure);
             return Err(Error::Http(response.status().as_u16()));
         }
         if response
@@ -68,6 +89,7 @@ impl ExtentHydration {
                 .content_length()
                 .is_some_and(|length| length != extent.length)
         {
+            trace.failure(TransportFailure::local("length_or_encoding"));
             return Err(Error::Integrity("extent HTTP length or encoding".into()));
         }
         if ranged {
@@ -83,12 +105,17 @@ impl ExtentHydration {
                 .and_then(|h| h.to_str().ok())
                 != Some(expected.as_str())
             {
+                trace.failure(TransportFailure::local("content_range"));
                 return Err(Error::Integrity("extent HTTP content-range".into()));
             }
         }
+        trace.boundary(TransferBoundary::Body);
+        let body_trace = trace.clone();
         let body_shared = shared.clone();
         let body = stream::try_unfold(response.bytes_stream(), move |mut body| {
             let shared = body_shared.clone();
+            let trace = body_trace.clone();
+            let began = Instant::now();
             async move {
                 loop {
                     let notified = shared.wake.notified();
@@ -101,10 +128,26 @@ impl ExtentHydration {
                         ));
                     }
                     tokio::select! {
-                        next = body.next() => return match next {
-                            Some(Ok(bytes)) => { shared.received.fetch_add(bytes.len() as u64, Ordering::Relaxed); Ok(Some((bytes, body))) },
-                            Some(Err(_)) => Err(std::io::Error::other("extent transfer failed")),
-                            None => Ok(None),
+                        next = body.next() => {
+                            return match next {
+                                Some(Ok(bytes)) => {
+                                    trace.body(bytes.len() as u64, began.elapsed().as_secs_f64());
+                                    shared.received.fetch_add(bytes.len() as u64, Ordering::Relaxed);
+                                    Ok(Some((bytes, body)))
+                                },
+                                Some(Err(error)) => {
+                                    if shared.cancelled.load(Ordering::Acquire) {
+                                        Err(std::io::Error::new(
+                                            std::io::ErrorKind::ConnectionAborted,
+                                            "cancelled",
+                                        ))
+                                    } else {
+                                        trace.failure(TransportFailure::request("body", &error));
+                                        Err(std::io::Error::other("extent transfer failed"))
+                                    }
+                                },
+                                None => Ok(None),
+                            };
                         },
                         _ = &mut notified => {},
                     }
@@ -129,31 +172,48 @@ impl ExtentHydration {
                 if shared.cancelled.load(Ordering::Acquire) {
                     return Err(Error::Cancelled);
                 }
-                let count = reader.read(&mut buffer).map_err(|_| Error::Transfer)?;
+                let count = reader.read(&mut buffer).map_err(|error| {
+                    if shared.cancelled.load(Ordering::Acquire) {
+                        Error::Cancelled
+                    } else {
+                        trace.failure(TransportFailure::io("body_reader", &error));
+                        Error::Transfer
+                    }
+                })?;
                 if count == 0 {
                     break;
                 }
                 if written + count as u64 > extent.length {
+                    trace.failure(TransportFailure::local("body_boundary"));
                     return Err(Error::Integrity("extent body exceeds boundary".into()));
                 }
-                write_at(&file, &buffer[..count], extent.offset + written)?;
+                let began = Instant::now();
+                write_at(&file, &buffer[..count], extent.offset + written).inspect_err(
+                    |error| {
+                        trace.failure(TransportFailure::io("storage_write", error));
+                    },
+                )?;
+                trace.write(count as u64, began.elapsed().as_secs_f64());
                 if let Some(hash) = &mut hash {
                     hash.update(&buffer[..count]);
                 }
                 written += count as u64;
             }
             if written != extent.length {
+                trace.failure(TransportFailure::local("truncated_body"));
                 return Err(Error::Integrity("truncated extent body".into()));
             }
             if let Some(hash) = hash
                 && format!("{:x}", hash.finalize()) != extent.sha256
             {
+                trace.failure(TransportFailure::local("digest"));
                 return Err(Error::Integrity("extent digest".into()));
             }
             if shared.cancelled.load(Ordering::Acquire) {
                 return Err(Error::Cancelled);
             }
             // Completion is published only after exact EOF, optional digest, and all writes.
+            trace.boundary(TransferBoundary::Complete);
             shared.state.lock().unwrap().done[index] = true;
             shared.wake.notify_waiters();
             Ok(())

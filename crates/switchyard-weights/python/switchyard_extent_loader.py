@@ -83,6 +83,7 @@ class CompletedWeights:
             if message.get("done"):
                 self.done = True
                 return
+            received_monotonic = time.perf_counter()
             spec = message["tensor"]
             key = (spec["entry"], message["path"])
             if key not in self.mappings:
@@ -98,6 +99,7 @@ class CompletedWeights:
                 "name": spec["name"],
                 "ready_seconds": message["ready_seconds"],
                 "bytes": spec["length"],
+                "descriptor_received_monotonic": received_monotonic,
             }
             if self.device is not None:
                 start = time.perf_counter()
@@ -108,18 +110,27 @@ class CompletedWeights:
                 )
                 self.stream.wait_stream(torch.cuda.current_stream(self.device))
                 device_raw.record_stream(self.stream)
-                event = torch.cuda.Event()
+                event = torch.cuda.Event(enable_timing=True)
+                copy_started = torch.cuda.Event(enable_timing=True)
+                host_seconds = 0.0
+                dma_seconds = 0.0
                 for offset in range(0, spec["length"], self.pinned.numel()):
                     count = min(self.pinned.numel(), spec["length"] - offset)
+                    host_began = time.perf_counter()
                     self.pinned[:count].copy_(raw[offset : offset + count])
+                    host_seconds += time.perf_counter() - host_began
                     with torch.cuda.stream(self.stream):
+                        copy_started.record(self.stream)
                         device_raw[offset : offset + count].copy_(
                             self.pinned[:count], non_blocking=True
                         )
                         event.record(self.stream)
                     # The same pinned buffer cannot be reused until DMA completes.
                     event.synchronize()
+                    dma_seconds += copy_started.elapsed_time(event) / 1000
                 tensor = device_raw.view(_DTYPES[spec["dtype"]]).reshape(spec["shape"])
+                receipt["host_stage_seconds"] = host_seconds
+                receipt["gpu_dma_seconds"] = dma_seconds
                 receipt["h2d_seconds"] = time.perf_counter() - start
                 receipt["copy_started_monotonic"] = start
                 receipt["copy_finished_monotonic"] = time.perf_counter()
@@ -131,7 +142,24 @@ class CompletedWeights:
             raise RuntimeError("Cannot acknowledge an incomplete checkpoint")
         if self.stream is not None:
             self.stream.synchronize()
-        self.socket.sendall(b"finish\n")
+        if self.device is None:
+            self.socket.sendall(b"finish\n")
+        else:
+            mapped = [
+                r["ready_seconds"]
+                + r["copy_finished_monotonic"]
+                - r["descriptor_received_monotonic"]
+                for r in self.receipts
+            ]
+            report = {
+                "copies": len(self.receipts),
+                "bytes": sum(r["bytes"] for r in self.receipts),
+                "first_copy_finished_seconds": min(mapped, default=None),
+                "last_copy_finished_seconds": max(mapped, default=None),
+                "staging_seconds": sum(r["host_stage_seconds"] for r in self.receipts),
+                "dma_seconds": sum(r["gpu_dma_seconds"] for r in self.receipts),
+            }
+            self.socket.sendall(b"report\n" + json.dumps(report).encode() + b"\n")
 
     def close(self):
         if self.stream is not None:

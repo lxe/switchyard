@@ -49,6 +49,8 @@ impl StartupPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StartupEvent {
+    ModelMetadataReady,
+    TensorLoadingFinished,
     RuntimeHydrationStarted,
     RuntimeHydrationFinished,
     ModelHydrationStarted,

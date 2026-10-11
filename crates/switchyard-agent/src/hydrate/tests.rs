@@ -174,19 +174,21 @@ async fn source_server(source: Source) -> SourceServer {
 }
 fn ticket(manifest: Manifest, base: &str) -> Ticket {
     Ticket {
+        source: crate::model::ModelSource::Legacy(crate::model::LegacySource {
+            manifest: manifest.clone(),
+            urls: manifest
+                .chunks
+                .iter()
+                .map(|c| {
+                    (
+                        c.name.clone(),
+                        format!("{base}/chunks/{}?signature=private-ticket", c.name),
+                    )
+                })
+                .collect(),
+        }),
         model: "test-model".into(),
         revision: "test-revision".into(),
-        urls: manifest
-            .chunks
-            .iter()
-            .map(|c| {
-                (
-                    c.name.clone(),
-                    format!("{base}/chunks/{}?signature=private-ticket", c.name),
-                )
-            })
-            .collect(),
-        manifest,
         engine_args: vec![],
         concurrency: 4,
         stall_s: 2,
@@ -267,7 +269,7 @@ async fn retry_progress_counts_retained_bytes_once() {
     }
     assert_eq!(
         state.read().await.bytes_downloaded,
-        ticket.manifest.total_size
+        ticket.source.transfer_bytes()
     );
     assert_eq!(source.attempts.lock().unwrap()[&failed_chunk], 2);
 }
@@ -289,7 +291,7 @@ async fn corrupt_chunk_never_publishes_and_errors_redact_the_url() {
     assert!(!error.contains(&server.base));
     assert!(!error.contains("private-ticket"));
     assert!(!root.0.join("model").exists());
-    assert!(state.read().await.bytes_downloaded <= ticket.manifest.total_size);
+    assert!(state.read().await.bytes_downloaded <= ticket.source.transfer_bytes());
 }
 
 #[test]
@@ -429,7 +431,7 @@ async fn trusted_streaming_extracts_split_zstd_without_hashing_and_reuses_receip
     );
     assert_eq!(
         state.read().await.bytes_downloaded,
-        ticket.manifest.total_size
+        ticket.source.transfer_bytes()
     );
     assert!(
         std::fs::read_dir(&root.0)
@@ -848,6 +850,6 @@ async fn trusted_large_pieces_refill_twenty_stream_window_across_multiple_rounds
     );
     assert_eq!(
         state.read().await.bytes_downloaded,
-        ticket.manifest.total_size
+        ticket.source.transfer_bytes()
     );
 }

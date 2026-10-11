@@ -3,19 +3,14 @@ use clap::{Parser, Subcommand};
 use std::{
     collections::BTreeMap,
     fs,
-    os::unix::{fs::PermissionsExt, io::AsRawFd},
     path::PathBuf,
     time::{Duration, Instant},
 };
 use switchyard_artifacts::{
     Error, HydrationMode, Metadata, Result,
-    extents::{ExtentHydration, ExtentOptions, ExtentTicket, pack_extents},
+    extents::{ExtentHydration, ExtentOptions, ExtentTicket},
 };
-use switchyard_weights::WeightStream;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt, BufReader},
-    net::UnixListener,
-};
+use switchyard_weights::{WeightBridge, pack_weights, priority_extents};
 
 #[derive(Parser)]
 struct Cli {
@@ -47,12 +42,6 @@ enum Command {
         timeout_seconds: u64,
     },
 }
-struct SocketCleanup(PathBuf);
-impl Drop for SocketCleanup {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
-    }
-}
 #[tokio::main]
 async fn main() {
     if let Err(error) = execute().await {
@@ -67,7 +56,7 @@ async fn execute() -> Result<()> {
             output,
             extent_bytes,
         } => {
-            let manifest = pack_extents(
+            let manifest = pack_weights(
                 &source,
                 &output,
                 Metadata {
@@ -79,6 +68,10 @@ async fn execute() -> Result<()> {
             )?;
             let file = output.join(format!("{}.manifest.json", manifest.id));
             fs::write(&file, serde_json::to_vec_pretty(&manifest)?)?;
+            fs::write(
+                output.join("manifest.json"),
+                serde_json::to_vec_pretty(&manifest)?,
+            )?;
             println!("{}", file.display());
         }
         Command::Serve {
@@ -91,6 +84,7 @@ async fn execute() -> Result<()> {
             timeout_seconds,
         } => {
             let ticket: ExtentTicket = serde_json::from_slice(&fs::read(ticket)?)?;
+            let priorities = priority_extents(&ticket.manifest);
             let hydration = ExtentHydration::prepare(
                 ticket,
                 &destination,
@@ -101,14 +95,13 @@ async fn execute() -> Result<()> {
                         HydrationMode::Verified
                     },
                     concurrency,
+                    priority_extents: priorities,
                     request_timeout: Duration::from_secs(timeout_seconds),
                     ..ExtentOptions::default()
                 },
             )?;
             // Bind never removes/replaces an existing socket. Caller owns this directory.
-            let listener = UnixListener::bind(&socket)?;
-            let _cleanup = SocketCleanup(socket.clone());
-            fs::set_permissions(&socket, fs::Permissions::from_mode(0o600))?;
+            let bridge = WeightBridge::bind(&socket)?;
             let start = Instant::now();
             let (connected, begin) = tokio::sync::oneshot::channel();
             let network = async {
@@ -124,55 +117,14 @@ async fn execute() -> Result<()> {
                 Ok::<_, Error>(())
             };
             let serving = async {
-                let (connection, _) = listener.accept().await?;
-                let _ = connected.send(());
-                let (input, mut output) = connection.into_split();
-                let mut input = BufReader::new(input);
-                let mut plan = WeightStream::new(&hydration, 100_000_000)?;
-                let mut files = BTreeMap::new();
-                loop {
-                    let mut command = [0_u8; 5];
-                    input.read_exact(&mut command).await?;
-                    if &command != b"next\n" {
-                        return Err(Error::Invalid("weights bridge command".into()));
-                    }
-                    // The protocol permits one outstanding request. Observe EOF
-                    // while waiting for data, so a dead consumer cancels held HTTP.
-                    let mut unexpected = [0_u8; 1];
-                    let ready = tokio::select! {
-                        result = plan.next_ready(&hydration) => result?,
-                        result = input.read(&mut unexpected) => {
-                            if result? == 0 { return Err(Error::Cancelled); }
-                            return Err(Error::Invalid("pipelined weights bridge command".into()));
-                        }
-                    };
-                    let Some(ready) = ready else {
-                        output.write_all(b"{\"done\":true}\n").await?;
-                        // Acknowledgment comes after all CPU/GPU reads and parameter assignment.
-                        let mut command = [0_u8; 7];
-                        input.read_exact(&mut command).await?;
-                        if &command != b"finish\n" {
-                            return Err(Error::Cancelled);
-                        }
-                        eprintln!(
-                            "{}",
-                            serde_json::json!({"event":"consumer_complete", "seconds":start.elapsed().as_secs_f64()})
-                        );
-                        return Ok(());
-                    };
-                    let file = match files.entry(ready.tensor.entry) {
-                        std::collections::btree_map::Entry::Occupied(e) => e.into_mut(),
-                        std::collections::btree_map::Entry::Vacant(e) => {
-                            e.insert(ready.bytes.open_file()?)
-                        }
-                    };
-                    // proc fd names the same inode across publication; the Rust owner
-                    // retains it until the consumer acknowledges its completed loads.
-                    let path = format!("/proc/{}/fd/{}", std::process::id(), file.as_raw_fd());
-                    let message = serde_json::json!({"tensor":ready.tensor,"path":path,"ready_seconds":start.elapsed().as_secs_f64()});
-                    output.write_all(&serde_json::to_vec(&message)?).await?;
-                    output.write_all(b"\n").await?;
-                }
+                bridge.serve(&hydration,start,||{let _=connected.send(());},|p|{
+                    eprintln!("{}",serde_json::json!({"event":"tensor_progress","seconds":start.elapsed().as_secs_f64(),"report":p}));
+                }).await?;
+                eprintln!(
+                    "{}",
+                    serde_json::json!({"event":"consumer_complete","seconds":start.elapsed().as_secs_f64()})
+                );
+                Ok::<_, Error>(())
             };
             tokio::time::timeout(Duration::from_secs(timeout_seconds), async {
                 tokio::try_join!(network, serving).map(|_| ())

@@ -1,17 +1,17 @@
 //! Load immutable model inputs and construct explicitly assumed hardware profiles.
+use crate::model::ModelManifest;
 use crate::{
     Error, Result,
     config::{ExecutionConfig, ModelConfig},
     planner::Planner,
 };
 use std::{collections::BTreeMap, path::Path, sync::Arc};
-use switchyard_agent::Manifest;
 use switchyard_core::{CapacityPoint, HostProfile, Profile, Startup, Workload};
 use switchyard_provider::{Offering, Provider, storage::Storage};
 
 pub(super) struct Prepared {
     pub(super) offerings: Vec<Offering>,
-    pub(super) manifests: BTreeMap<String, Manifest>,
+    pub(super) manifests: BTreeMap<String, ModelManifest>,
     pub(super) planners: BTreeMap<String, Arc<Planner>>,
     pub(super) profiles: Vec<Profile>,
     pub(super) profile_offerings: Vec<Offering>,
@@ -50,17 +50,7 @@ pub(super) async fn prepare<P: Provider>(
     };
     let mut cache_manifests = BTreeMap::new();
     for model in &config.models {
-        let manifest: Manifest = storage
-            .get_json(&format!("{}/manifest.json", model.archive_prefix))
-            .await?;
-        manifest
-            .validate()
-            .map_err(|e| Error::Config(e.to_string()))?;
-        if manifest.sha256 != model.archive_sha256 {
-            return Err(Error::Config(
-                "model archive identity differs from the pinned fleet configuration".into(),
-            ));
-        }
+        let manifest = model.artifact.resolve(storage).await?;
         let planner = Planner::load(model, &out.join("tokenizers")).await?;
         manifests.insert(model.id.clone(), manifest.clone());
         planners.insert(model.id.clone(), Arc::new(planner));
@@ -121,7 +111,7 @@ pub(super) async fn prepare<P: Provider>(
 /// Use the configured priors without presenting them as measured GPU performance.
 fn profile(
     model: &ModelConfig,
-    manifest: &Manifest,
+    manifest: &ModelManifest,
     offering: &Offering,
     artifact_bytes: u64,
 ) -> Profile {
@@ -165,7 +155,7 @@ fn profile(
         evidence: "assumed capacity and startup; timestamped provider catalog quote with configured disk rent".into(),
         source: "deployment configuration; live receipts preserve provider quotes and actual outcomes".into(),
         host: HostProfile {
-            model_bytes: manifest.total_size.saturating_add(artifact_bytes),
+            model_bytes: manifest.total_size().saturating_add(artifact_bytes),
             // Host image residency is unobserved; the container agent cannot measure it.
             container_image_bytes: 0,
             volume_bandwidth_bytes_per_s: vec![50_000_000.0, 200_000_000.0],

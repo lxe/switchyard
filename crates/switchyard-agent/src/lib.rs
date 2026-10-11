@@ -1,9 +1,12 @@
 //! Pod-side hydration tickets and observable lifecycle state. Tickets contain expiring URLs.
 pub mod export;
 pub mod hydrate;
+pub mod model;
+pub use switchyard_weights as weights;
 pub mod runtime;
 pub mod server;
 pub mod startup;
+pub mod transport;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -11,8 +14,8 @@ use std::collections::BTreeMap;
 pub struct Ticket {
     pub model: String,
     pub revision: String,
-    pub manifest: Manifest,
-    pub urls: BTreeMap<String, String>,
+    #[serde(flatten)]
+    pub source: model::ModelSource,
     pub engine_args: Vec<String>,
     pub concurrency: usize,
     pub stall_s: u64,
@@ -100,11 +103,17 @@ pub struct State {
     pub model_storage: Option<startup::ModelStorageObservation>,
     #[serde(default)]
     pub runtime_storage: Option<startup::ModelStorageObservation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dependency_budget: Option<runtime::DependencyBudget>,
     #[serde(default)]
     pub startup_milestones: Vec<startup::StartupMilestone>,
     /// Bounded legacy streaming diagnostics. Old observations omit this field.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model_diagnostics: Option<hydrate::ModelDiagnostics>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight_loading: Option<switchyard_weights::BridgeProgress>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_transport: Option<transport::TransportDiagnostics>,
 }
 impl State {
     pub fn new(ticket: &Ticket) -> Self {
@@ -113,7 +122,7 @@ impl State {
             revision: ticket.revision.clone(),
             phase: Phase::Booting,
             bytes_downloaded: 0,
-            bytes_total: ticket.manifest.total_size,
+            bytes_total: ticket.source.transfer_bytes(),
             hydration_seconds: 0.0,
             volume_bytes_per_s: None,
             model_cached: false,
@@ -135,8 +144,11 @@ impl State {
             hydration_mode: ticket.startup.mode,
             model_storage: None,
             runtime_storage: None,
+            dependency_budget: None,
             startup_milestones: vec![],
             model_diagnostics: None,
+            weight_loading: None,
+            model_transport: None,
         }
     }
 }

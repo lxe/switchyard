@@ -4,6 +4,7 @@ pub mod bake;
 mod bootstrap;
 pub mod cli;
 pub mod config;
+pub mod model;
 mod ownership;
 pub mod planner;
 pub mod runtime;

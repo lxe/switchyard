@@ -25,6 +25,7 @@ pub struct ReceiveBufferOptions {
     pub additional_output_bytes: u64,
     /// Optional decoder budget independent of HTTP permits; useful across artifacts.
     pub extraction_limit: Option<Arc<Semaphore>>,
+    pub observer: Option<crate::transport::TransferObserver>,
 }
 impl ReceiveBufferOptions {
     pub fn new(directory: PathBuf) -> Self {
@@ -33,12 +34,15 @@ impl ReceiveBufferOptions {
             max_reserved_bytes: 64 << 30,
             additional_output_bytes: 0,
             extraction_limit: None,
+            observer: None,
         }
     }
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ReceptionProgress {
     pub reserved_bytes: u64,
+    #[serde(default)]
+    pub reservation_seconds: f64,
     pub network_received_bytes: u64,
     pub storage_written_bytes: u64,
     pub compressed_consumed_bytes: u64,
@@ -66,6 +70,9 @@ struct Metrics {
     body_ns: AtomicU64,
     storage_ns: AtomicU64,
     consumer_ns: AtomicU64,
+    reservation_ns: AtomicU64,
+    received_done_ns: AtomicU64,
+    extracted_done_ns: AtomicU64,
 }
 impl Metrics {
     fn snapshot(&self, reserved: u64) -> ReceptionProgress {
@@ -73,6 +80,13 @@ impl Metrics {
         let consumed = self.consumed.load(Ordering::Relaxed);
         ReceptionProgress {
             reserved_bytes: reserved,
+            reservation_seconds: self.reservation_ns.load(Ordering::Relaxed) as f64 / 1e9,
+            reception_complete_seconds: Some(self.received_done_ns.load(Ordering::Relaxed))
+                .filter(|n| *n != 0)
+                .map(|n| n as f64 / 1e9),
+            extraction_complete_seconds: Some(self.extracted_done_ns.load(Ordering::Relaxed))
+                .filter(|n| *n != 0)
+                .map(|n| n as f64 / 1e9),
             network_received_bytes: self.received.load(Ordering::Relaxed),
             storage_written_bytes: written,
             compressed_consumed_bytes: consumed,
@@ -84,7 +98,6 @@ impl Metrics {
             receiver_body_wait_seconds: self.body_ns.load(Ordering::Relaxed) as f64 / 1e9,
             receiver_storage_write_seconds: self.storage_ns.load(Ordering::Relaxed) as f64 / 1e9,
             consumer_wait_seconds: self.consumer_ns.load(Ordering::Relaxed) as f64 / 1e9,
-            ..ReceptionProgress::default()
         }
     }
     fn emit<F: Fn(Progress)>(&self, tracker: &Tracker<F>, reserved: u64) {
@@ -369,12 +382,23 @@ impl Read for PrefixReader {
 async fn receive<F: Fn(Progress) + Send + Sync + 'static>(
     client: reqwest::Client,
     url: String,
+    object: String,
     piece: Arc<Piece>,
     options: &HydrationOptions,
     metrics: Arc<Metrics>,
     tracker: Arc<Tracker<F>>,
     reserved: u64,
 ) -> Result<()> {
+    let trace = crate::transport::Trace::new(
+        object,
+        0,
+        piece.size,
+        options
+            .receive_buffer
+            .as_ref()
+            .and_then(|o| o.observer.clone()),
+    );
+    trace.boundary(crate::transport::TransferBoundary::Headers);
     let control = &piece.owner.control;
     let wake = control.wake.notified();
     tokio::pin!(wake);
@@ -383,15 +407,19 @@ async fn receive<F: Fn(Progress) + Send + Sync + 'static>(
         return Err(Error::Cancelled);
     }
     let began = Instant::now();
-    let response = tokio::select! { biased; _=&mut wake=>return Err(Error::Cancelled), r=tokio::time::timeout(Duration::from_secs(options.stall_timeout_s),client.get(url).send())=>r.map_err(|_|Error::Transfer)?.map_err(|_|Error::Transfer)? };
+    let response = tokio::select! { biased; _=&mut wake=>return Err(Error::Cancelled), r=tokio::time::timeout(Duration::from_secs(options.stall_timeout_s),client.get(url).send())=>r.map_err(|_|{let mut f=crate::transport::TransportFailure::local("headers_deadline");f.timeout=true;trace.failure(f);Error::Transfer})?.map_err(|error|{trace.failure(crate::transport::TransportFailure::request("headers",&error));Error::Transfer})? };
     metrics.body_ns.fetch_add(
         began.elapsed().as_nanos().min(u64::MAX as u128) as u64,
         Ordering::Relaxed,
     );
     if response.status() != reqwest::StatusCode::OK {
+        let mut failure = crate::transport::TransportFailure::local("status");
+        failure.status = Some(response.status().as_u16());
+        trace.failure(failure);
         return Err(Error::Http(response.status().as_u16()));
     }
     if response.content_length().is_some_and(|n| n != piece.size) {
+        trace.failure(crate::transport::TransportFailure::local("content_length"));
         return Err(Error::Integrity("reception Content-Length".into()));
     }
     let mut body = response.bytes_stream();
@@ -404,13 +432,17 @@ async fn receive<F: Fn(Progress) + Send + Sync + 'static>(
             return Err(Error::Cancelled);
         }
         let began = Instant::now();
-        let next = tokio::select! {biased; _=&mut wake=>return Err(Error::Cancelled), b=tokio::time::timeout(Duration::from_secs(options.stall_timeout_s),body.next())=>b.map_err(|_|Error::Transfer)?};
+        let next = tokio::select! {biased; _=&mut wake=>return Err(Error::Cancelled), b=tokio::time::timeout(Duration::from_secs(options.stall_timeout_s),body.next())=>b.map_err(|_|{let mut f=crate::transport::TransportFailure::local("body_deadline");f.timeout=true;trace.failure(f);Error::Transfer})?};
         metrics.body_ns.fetch_add(
             began.elapsed().as_nanos().min(u64::MAX as u128) as u64,
             Ordering::Relaxed,
         );
         let Some(bytes) = next else { break };
-        let bytes = bytes.map_err(|_| Error::Transfer)?;
+        let bytes = bytes.map_err(|error| {
+            trace.failure(crate::transport::TransportFailure::request("body", &error));
+            Error::Transfer
+        })?;
+        trace.body(bytes.len() as u64, began.elapsed().as_secs_f64());
         metrics
             .received
             .fetch_add(bytes.len() as u64, Ordering::Relaxed);
@@ -421,6 +453,8 @@ async fn receive<F: Fn(Progress) + Send + Sync + 'static>(
             .checked_add(bytes.len() as u64)
             .filter(|n| *n <= piece.size)
             .ok_or_else(|| Error::Integrity("reception exceeds declared size".into()))?;
+        let write_trace = trace.clone();
+        let queued_at = Instant::now();
         let local = piece.clone();
         let measured = metrics.clone();
         let offset = seen;
@@ -429,8 +463,17 @@ async fn receive<F: Fn(Progress) + Send + Sync + 'static>(
             if local.owner.control.cancelled.load(Ordering::Relaxed) {
                 return Err(Error::Cancelled);
             }
-            let began = Instant::now();
-            local.file.write_all_at(&bytes, offset)?;
+            let began = queued_at;
+            local
+                .file
+                .write_all_at(&bytes, offset)
+                .inspect_err(|error| {
+                    write_trace.failure(crate::transport::TransportFailure::io(
+                        "storage_write",
+                        error,
+                    ));
+                })?;
+            write_trace.write(bytes.len() as u64, began.elapsed().as_secs_f64());
             measured.storage_ns.fetch_add(
                 began.elapsed().as_nanos().min(u64::MAX as u128) as u64,
                 Ordering::Relaxed,
@@ -454,10 +497,12 @@ async fn receive<F: Fn(Progress) + Send + Sync + 'static>(
         metrics.emit(&tracker, reserved);
     }
     if seen != piece.size {
+        trace.failure(crate::transport::TransportFailure::local("truncated_body"));
         return Err(Error::Integrity(
             "reception shorter than declared size".into(),
         ));
     }
+    trace.boundary(crate::transport::TransferBoundary::Complete);
     let mut state = piece.prefix.state.lock().map_err(|_| Error::Worker)?;
     state.eof = true;
     piece.prefix.wake.notify_all();
@@ -471,6 +516,7 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
     tracker: Arc<Tracker<F>>,
     client: reqwest::Client,
 ) -> Result<HydrationReport> {
+    let epoch = Instant::now();
     if options.retries != 0 {
         return Err(Error::Invalid(
             "progressive reserved reception requires zero retries".into(),
@@ -500,10 +546,24 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
     let output = ticket.manifest.entries.iter().map(Entry::size).sum::<u64>();
     let reserving = owner.clone();
     let configuration = cfg.clone();
-    let (pieces, reserved) =
+    let metrics = Arc::new(Metrics::default());
+    metrics.emit(&tracker, 0);
+    let reservation =
         tokio::task::spawn_blocking(move || reserve(reserving, &sizes, output, &configuration))
             .await
-            .map_err(|_| Error::Worker)??;
+            .map_err(|_| Error::Worker)?;
+    metrics.reservation_ns.store(
+        epoch.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+        Ordering::Relaxed,
+    );
+    let (pieces, reserved) = match reservation {
+        Ok(r) => r,
+        Err(error) => {
+            metrics.emit(&tracker, 0);
+            return Err(error);
+        }
+    };
+    metrics.emit(&tracker, reserved);
     fs::create_dir(&owner.staging)?;
     set_mode(&owner.staging, 0o700)?;
     let manifest = Arc::new(ticket.manifest);
@@ -514,8 +574,10 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
     })
     .await
     .map_err(|_| Error::Worker)??;
-    let metrics = Arc::new(Metrics::default());
-    let epoch = Instant::now();
+    metrics.reservation_ns.store(
+        epoch.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+        Ordering::Relaxed,
+    );
     metrics.emit(&tracker, reserved);
     let http_limit = options
         .download_limit
@@ -546,6 +608,7 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
                 let result = receive(
                     client,
                     url,
+                    chunk.name.clone(),
                     piece.clone(),
                     options,
                     metrics,
@@ -566,6 +629,11 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
         while let Some(result) = work.next().await {
             result?;
         }
+        metrics.received_done_ns.store(
+            epoch.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+            Ordering::Relaxed,
+        );
+        metrics.emit(&tracker, reserved);
         Ok::<_, Error>(epoch.elapsed().as_secs_f64())
     };
     let extraction = async {
@@ -618,6 +686,11 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
         while let Some(result) = work.next().await {
             result?;
         }
+        metrics.extracted_done_ns.store(
+            epoch.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+            Ordering::Relaxed,
+        );
+        metrics.emit(&tracker, reserved);
         Ok::<_, Error>(epoch.elapsed().as_secs_f64())
     };
     let (received_at, extracted_at) = tokio::try_join!(reception, extraction)?;
@@ -635,6 +708,7 @@ pub(super) async fn hydrate<F: Fn(Progress) + Send + Sync + 'static>(
     }
     fs::rename(&owner.staging, destination)?;
     let mut progress = metrics.snapshot(reserved);
+
     progress.reception_complete_seconds = Some(received_at);
     progress.extraction_complete_seconds = Some(extracted_at);
     (tracker.callback)(Progress {

@@ -134,6 +134,31 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
     let imported = scratch.0.join("imported");
     let released = scratch.0.join("released");
     let ticket = Ticket {
+        source: crate::model::ModelSource::Legacy(crate::model::LegacySource {
+            manifest: crate::Manifest {
+                format: "shards-v1".into(),
+                compress: "none".into(),
+                sha256: "a".repeat(64),
+                total_size: model_bytes.len() as u64,
+                raw_size: model_bytes.len() as u64,
+                chunks: vec![crate::Chunk {
+                    name: "model-piece".into(),
+                    size: model_bytes.len() as u64,
+                    raw: model_bytes.len() as u64,
+                    shard: 0,
+                    seq: 0,
+                    sha256: "b".repeat(64),
+                }],
+                files: BTreeMap::from([(
+                    "config.json".into(),
+                    crate::FileInfo {
+                        size: 2,
+                        sha256: None,
+                    },
+                )]),
+            },
+            urls: BTreeMap::from([("model-piece".into(), format!("{base}/model-piece"))]),
+        }),
         model: "test".into(),
         revision: "revision".into(),
         concurrency: 2,
@@ -145,29 +170,6 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
             early_launch: true,
             ..Default::default()
         },
-        manifest: crate::Manifest {
-            format: "shards-v1".into(),
-            compress: "none".into(),
-            sha256: "a".repeat(64),
-            total_size: model_bytes.len() as u64,
-            raw_size: model_bytes.len() as u64,
-            chunks: vec![crate::Chunk {
-                name: "model-piece".into(),
-                size: model_bytes.len() as u64,
-                raw: model_bytes.len() as u64,
-                shard: 0,
-                seq: 0,
-                sha256: "b".repeat(64),
-            }],
-            files: BTreeMap::from([(
-                "config.json".into(),
-                crate::FileInfo {
-                    size: 2,
-                    sha256: None,
-                },
-            )]),
-        },
-        urls: BTreeMap::from([("model-piece".into(), format!("{base}/model-piece"))]),
         runtime: Some(crate::runtime::RuntimeTicket {
             hydration: None,
             artifact: ArtifactTicket {

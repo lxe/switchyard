@@ -10,6 +10,7 @@ mod hydrate;
 mod manifest;
 mod pack;
 mod paths;
+pub mod transport;
 mod verify;
 
 pub use hydrate::{

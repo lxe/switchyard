@@ -11,6 +11,7 @@ publish = false
 license = "MIT"
 
 [workspace.dependencies]
+switchyard-weights = { path = "crates/switchyard-weights", version = "0.5.0" }
 switchyard-artifact-tools = { path = "crates/switchyard-artifact-tools", version = "0.5.0" }
 switchyard-artifacts = { path = "crates/switchyard-artifacts", version = "0.5.0" }
 switchyard-provider = { path = "crates/switchyard-provider", version = "0.5.0" }

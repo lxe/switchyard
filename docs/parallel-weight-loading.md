@@ -2,7 +2,7 @@
 
 Switchyard's raw extent path downloads independent byte intervals into private, pre-sized regular files. A serving consumer can load a safetensors tensor after every interval covering that tensor has finished writing. TAR is unnecessary for this path: it is inherited packaging in `shards-v1`, whose sequential TAR reader prevents later pieces of one large file from being consumed independently.
 
-The implementation is split between `switchyard-artifacts::extents`, which owns generic format validation, HTTP and filesystem operations, and `switchyard-weights`, which owns safetensors parsing and the local vLLM completion bridge. Simulator, scheduler, provider adapters, fleet pins and existing artifact-v1 manifests are unchanged.
+The implementation is split between `switchyard-artifacts::extents`, which owns generic format validation, HTTP and filesystem operations, and `switchyard-weights`, which owns safetensors parsing and the local vLLM completion bridge. Agent and live fleet model sources select either this extent representation or the existing legacy representation. Runtime and compiler-cache manifests retain artifact-v1.
 
 ## Extent manifest
 
@@ -32,7 +32,7 @@ The layout `id` covers format, content identity and extent descriptors. `content
 
 An extent becomes complete only after exact EOF, any requested digest check and all writes. `wait_range` and `wait_any` register notifications before testing completion, so completion and cancellation cannot be missed between checking and waiting. A `CompletedRange` retains staging ownership and permits bounded reads of only that interval. Pre-sizing a file or creating a mapping does not make its unfilled bytes readable by the loader; the completion contract is mandatory.
 
-Only the asynchronous hydration owner publishes the directory after all writers stop. File descriptors can be opened under the publication lock and continue naming the same inode after rename. Dropping the running future cancels readers and writers; cleanup waits for the final blocking worker or lease. No detached worker can publish. An existing destination is refused, preserving exclusive publication rather than introducing an implicit reuse contract. A completed publication may remain when a later consumer fails; partial files are never published, and consumer failure never authorizes inference readiness.
+Only the asynchronous hydration owner publishes the directory after all writers stop. File descriptors can be opened under the publication lock and continue naming the same inode after rename. Dropping the running future cancels readers and writers; cleanup waits for the final blocking worker or lease. No detached worker can publish. The generic API refuses an existing destination by default. An explicit trusted reuse option accepts a completed publication only when its private receipt matches the canonical content identity; verified mode does not use that receipt as verification. A completed publication may remain when a later consumer fails; partial files are never published, and consumer failure never authorizes inference readiness.
 
 Verified mode checks manifest/content identities, hashes every extent and each final file, and fsyncs final file contents. Existing artifact-v1's verified API remains unchanged. Trusted mode performs no content hashes, archive/cache staging, fsync or final filesystem scan. It retains manifest topology, path/type/mode checks, exact pre-sized file coverage, HTTP boundaries and cancellation/publication ownership. The caller must own destination ancestors exclusively; these checks are not a defense against another process replacing paths concurrently.
 
@@ -48,17 +48,7 @@ A CPU mmap view is ordinary host memory. The default adapter yields those comple
 
 The pinned implementations were inspected in runtime export `8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc`: Python 3.12.14, Torch 2.13+cu129, vLLM 0.31+cu129 and safetensors 0.8.0. Its lazy loader opens whole local files with `safe_open`; fastsafetensors, runai and instanttensor are distinct loaders rather than a guarantee of incomplete-file safety. The completion bridge uses vLLM's actual custom-loader registration and default iterator extension points. The [official loader registry documentation](https://docs.vllm.ai/en/stable/api/vllm/model_executor/model_loader/) and [safetensors metadata documentation](https://huggingface.co/docs/safetensors/metadata_parsing) describe those interfaces.
 
-The current adapter deliberately requires one engine worker, one unprefixed dense and unquantized checkpoint, supported byte-aligned scalar dtypes and ordinary tensors. Distributed workers, expert filtering, encoder-only filtering, packed dtypes and tensor subclasses fail or remain unsupported. The bridge is Linux-specific because its descriptor handoff uses `/proc`. Qwen-specific loading has not been validated.
-
-## Agent integration contract
-
-The current agent's `Ticket` still requires legacy `Manifest` and `urls`, and its engine gate waits for complete legacy model hydration. An agent integrating extents needs a tagged model-artifact choice containing an extent ticket, with a distinct representation from `shards-v1` TAR pieces. Runtime and cache artifacts can continue using artifact-v1, and all hydrators should share the existing transfer semaphore.
-
-Engine startup requires complete local config, index, tokenizer and other engine metadata in a stable metadata directory, followed by a private completion socket and its Rust owner. The agent can release a metadata-ready gate and start vLLM once that metadata and the runtime are ready, while weight hydration continues. It passes the socket in `model_loader_extra_config` and installs the adapter as a general plugin in every engine process. The loader must use the bridge for weights instead of opening pre-sized incomplete safetensors through the default loader. The bridge and hydration owner must remain alive until the engine completes assignments; failure cancels both and keeps admission closed.
-
-Inference readiness still requires successful model loading, publication, post-load initialization and the agent's existing health/tokenization/minimal-inference proof. A `done` message is tensor delivery completion, not inference readiness. The existing early-import gate alone does not provide this behavior; its full-model gate and cooperative launcher need separate metadata-ready and tensor-completion gates.
-
-Cache fingerprints should include stable model content identity, adapter implementation/loader ABI, runtime identity, engine arguments and complete GPU compatibility. The content identity's cross-layout stability is useful only after cache producers and consumers use and validate that contract. Existing cache `2b3188be…` depends on the legacy archive identity; its fingerprint cannot be relabeled. The model and plugin runtime must be rebaked, or a separate explicit migration must prove byte content and all compatibility fields before reuse.
+The current adapter deliberately requires one engine worker, one unprefixed dense and unquantized checkpoint, supported byte-aligned scalar dtypes and ordinary tensors. Distributed workers, expert filtering, encoder-only filtering, packed dtypes and tensor subclasses fail or remain unsupported. The bridge is Linux-specific because its descriptor handoff uses `/proc`. The Qwen 0.8B comparison below validates native Qwen assignment for the tested checkpoint and runtime.
 
 ## Local validation and benchmark
 
@@ -77,4 +67,37 @@ Every final source-file hash matched in both paths. Both GPU parameter hashes we
 
 These runs establish byte equivalence, safe early GPU copies and actual model/inference equivalence. The weight phase was shorter in all three pairs, but total startup was noisy and the second extent engine took longer. An additional single-wave run passed file, parameter and inference equivalence without any early GPU copy: staging/context setup can consume that layout's small overlap window. Overlap is conditional on the consumer being ready before remaining transfer work finishes. They do not establish a stable whole-startup speedup, WAN/provider throughput, large Qwen performance or the cause of the existing 2B stall. Qwen and network-provider performance require separate end-to-end measurements.
 
-The benchmark writes raw receipts and logs to its requested output directory. A compact [benchmark receipt](parallel-weight-loading-benchmark.json) accompanies this document, and the benchmark program and legacy helper reproduce the comparison. Unit/integration tests cover invalid paths, offsets, ranges, lengths, digests, duplicate headers, tensor shape/coverage, zero-sized tensors, multi-file discovery, completion/publication races, cancellation and protocol failure. Formatting and Clippy are required before integration.
+The benchmark writes raw receipts and logs to its requested output directory. A compact [benchmark receipt](parallel-weight-loading-benchmark.json) accompanies this document, and the benchmark program and legacy helper reproduce the comparison. Unit/integration tests cover invalid paths, offsets, ranges, lengths, digests, duplicate headers, tensor shape/coverage, zero-sized tensors, multi-file discovery, completion/publication races, cancellation and protocol failure. Workspace tests, formatting, strict Clippy and documentation generation validate the integration. Build the benchmark helpers with `cargo build -p switchyard-weights --release` and `cargo build -p switchyard-agent --release --example legacy_hydrate`.
+
+## Agent model sources
+
+An endpoint ticket has one model source. A legacy source retains the existing top-level `manifest` and `urls` fields. An extent source instead has `model_source.kind = "extents"`, an `artifact` containing the raw extent manifest and temporary object URLs, and a `loader` selecting the runtime Python program and bounded pinned staging buffer. The live fleet configuration uses `model_artifact.kind = "extents"` with the published prefix, layout ID, canonical-content ID and loader configuration. Mixed legacy and extent references are rejected.
+
+The agent prepares a private loader bundle and socket outside the immutable runtime. It downloads runtime archives and model extents under the same transfer semaphore. Complete model metadata is copied into that private directory, allowing the vLLM process to import and initialize after metadata is ready. Tensor delivery uses the completion bridge while remaining payload extents arrive. The engine process retains the private metadata and plugin directory for its lifetime, and the ordinary health, tokenization and inference checks determine endpoint readiness.
+
+Runtime artifact-v1 reception uses physically reserved compressed backing and independent extraction permits. A combined preflight accounts for outputs sharing a filesystem and for model RAM, RAM-backed runtime or spool storage, decoder histories, transfer buffers and pinned staging under host and cgroup memory limits. Raw model extents write into model file offsets and do not use the compressed spool. Trusted startup performs no whole-file hashes, final verification scans or file fsyncs.
+
+Extent serving caches identify canonical model content, loader code and settings, normalized engine arguments, runtime identity and launch configuration, and the selected GPU. Repacking identical files can change the layout ID while retaining the content ID. A legacy archive cache cannot be relabeled as an extent cache. Existing legacy cache requirements retain their archive identity.
+
+## Header-first weight preparation
+
+`switchyard-weights pack` parses and validates each safetensors header during preparation, then writes its length field and JSON header into one independent raw object. Bulk objects preserve the remaining canonical file bytes. Metadata files and checkpoint header extents are scheduled before bulk payload extents; the generic transport receives only prefix boundaries and priority indices.
+
+The preparation command writes `manifest.json` and an identity-named copy. Publication validates local objects, uploads them to an immutable prefix, and publishes the captured manifest last:
+
+```sh
+cargo run -p switchyard-weights --release -- pack SOURCE OBJECTS --extent-bytes 16777216
+cargo run --features artifacts -- artifacts publish-extents \
+  --config STORAGE_CONFIG --env-file CREDENTIAL_FILE --directory OBJECTS \
+  --prefix switchyard/weights/qwen3.5-0.8b/header-first-v1 --receipt PUBLICATION_RECEIPT
+```
+
+The actual Qwen 0.8B manifest and compact benchmark receipt are saved in `experiments/qwen-0.8b-header-first.manifest.json` and `experiments/qwen-0.8b-header-first.json`. The canonical weight file is 1,746,942,600 bytes; payload granularity is 16 MiB. Both the baseline and extent path loaded identical GPU parameters through vLLM's native Qwen assignment and generated token IDs `[220, 16, 15, 15]`.
+
+In one controlled, ordered pair on an RTX 5090, the weight phase including hydration took 17.15 seconds through the legacy path and 6.38 seconds through extents. Of 488 GPU copies, 481 completed before the last HTTP response. The reported constructor times, 88.16 and 81.24 seconds, exclude the initial vLLM import and include benchmark-only GPU-to-CPU parameter hashing. They are correctness measurements with isolated compiler caches, not production request-to-first-token timings.
+
+## Transport observations
+
+Optional generic transport observers report object-relative boundaries, received and written bytes, HTTP body waits, storage-write waits, and typed reqwest, Hyper and I/O causes. They retain no URLs, vendor response bodies or formatted error chains. The agent stores bounded observations and captures host state before publishing the first actual transport failure. Intentional cancellation does not create a failure snapshot or replace an earlier failure.
+
+GPU completion reports distinguish host staging time from CUDA-event DMA time and locate the first and last completed copies relative to bridge readiness. Assignment completion is acknowledged only after native model assignment and CUDA synchronization. These spans can overlap reception and should not be added to elapsed startup time.

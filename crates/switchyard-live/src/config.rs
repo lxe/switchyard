@@ -128,18 +128,45 @@ pub struct BootstrapConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(try_from = "ModelConfigInput")]
 pub struct ModelConfig {
     pub id: String,
     pub repository: String,
     pub revision: String,
-    pub archive_prefix: String,
-    pub archive_sha256: String,
+    #[serde(flatten)]
+    pub artifact: crate::model::ModelArtifact,
     pub engine: EngineConfig,
     /// Planning priors remain assumptions until a matching live measurement replaces them.
     pub prior: CapacityPrior,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caches: Vec<crate::artifacts::ServingCacheConfig>,
+}
+
+#[derive(Deserialize)]
+struct ModelConfigInput {
+    id: String,
+    repository: String,
+    revision: String,
+    engine: EngineConfig,
+    prior: CapacityPrior,
+    #[serde(default)]
+    caches: Vec<crate::artifacts::ServingCacheConfig>,
+    #[serde(flatten)]
+    artifact: std::collections::BTreeMap<String, serde_json::Value>,
+}
+impl TryFrom<ModelConfigInput> for ModelConfig {
+    type Error = serde_json::Error;
+    fn try_from(input: ModelConfigInput) -> std::result::Result<Self, Self::Error> {
+        Ok(Self {
+            id: input.id,
+            repository: input.repository,
+            revision: input.revision,
+            engine: input.engine,
+            prior: input.prior,
+            caches: input.caches,
+            artifact: serde_json::from_value(serde_json::to_value(input.artifact)?)?,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -230,6 +257,7 @@ impl ExecutionConfig {
         }
         let mut ids = std::collections::BTreeSet::new();
         for m in &self.models {
+            m.artifact.validate()?;
             let mut cache_keys = std::collections::BTreeSet::new();
             for cache in &m.caches {
                 cache.validate()?;
@@ -247,8 +275,6 @@ impl ExecutionConfig {
                 || !valid_component(&m.id)
                 || m.repository.split('/').count() != 2
                 || !valid_key_prefix(&m.repository)
-                || !valid_key_prefix(&m.archive_prefix)
-                || !valid_sha256(&m.archive_sha256)
                 || m.revision.len() != 40
                 || !m.revision.bytes().all(|b| b.is_ascii_hexdigit())
                 || m.engine.max_num_seqs == 0

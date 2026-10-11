@@ -46,7 +46,7 @@ async fn cancelled_downloader_keeps_permit_with_decoding_worker() {
     .unwrap();
 }
 
-use crate::Manifest;
+use crate::{Manifest, Ticket};
 use axum::{Router, body::Body, response::Response, routing::get};
 
 struct Server {
@@ -66,18 +66,20 @@ async fn server(router: Router) -> Server {
 }
 fn ticket(lifetime_s: u64) -> Ticket {
     Ticket {
+        source: crate::model::ModelSource::Legacy(crate::model::LegacySource {
+            manifest: Manifest {
+                format: "shards-v1".into(),
+                compress: "none".into(),
+                sha256: "a".repeat(64),
+                total_size: 0,
+                raw_size: 0,
+                chunks: vec![],
+                files: BTreeMap::new(),
+            },
+            urls: BTreeMap::new(),
+        }),
         model: "test".into(),
         revision: "test".into(),
-        manifest: Manifest {
-            format: "shards-v1".into(),
-            compress: "none".into(),
-            sha256: "a".repeat(64),
-            total_size: 0,
-            raw_size: 0,
-            chunks: vec![],
-            files: BTreeMap::new(),
-        },
-        urls: BTreeMap::new(),
         engine_args: vec![],
         concurrency: 1,
         stall_s: 1,
@@ -98,7 +100,7 @@ fn chunk(size: usize) -> Chunk {
 }
 
 fn diagnostics(piece: Chunk) -> ModelDiagnostics {
-    let mut manifest = ticket(10).manifest;
+    let mut manifest = ticket(10).legacy().unwrap().manifest.clone();
     manifest.chunks.push(piece);
     ModelDiagnostics::new(
         &manifest,
@@ -165,14 +167,14 @@ async fn consumer_backpressure_exceeding_stall_is_not_a_network_timeout() {
     let (error, bytes) = paused_consumer(previous).await;
     assert!(error.unwrap_err().to_string().contains("piece interrupted"));
     assert!(bytes < 2 << 20);
-    let (result, bytes) = paused_consumer(client(&ticket(10)).unwrap()).await;
+    let (result, bytes) = paused_consumer(client(&ticket(10).legacy().unwrap()).unwrap()).await;
     result.unwrap();
     assert_eq!(bytes, 2 << 20);
 }
 
 #[tokio::test]
 async fn total_request_deadline_still_bounds_a_paused_consumer() {
-    let (result, bytes) = paused_consumer(client(&ticket(1)).unwrap()).await;
+    let (result, bytes) = paused_consumer(client(&ticket(1).legacy().unwrap()).unwrap()).await;
     assert!(result.is_err());
     assert!(bytes < 2 << 20);
 }
@@ -194,7 +196,7 @@ async fn absent_response_headers_fail_the_network_stall_deadline() {
     let result = tokio::time::timeout(
         Duration::from_secs(3),
         transfer(
-            &client(&ticket(10)).unwrap(),
+            &client(&ticket(10).legacy().unwrap()).unwrap(),
             &secret_url,
             &chunk(128),
             sender,
@@ -238,7 +240,7 @@ async fn stalled_response_body_fails_without_local_backpressure() {
     let result = tokio::time::timeout(
         Duration::from_secs(3),
         transfer(
-            &client(&ticket(10)).unwrap(),
+            &client(&ticket(10).legacy().unwrap()).unwrap(),
             &secret_url,
             &chunk(128),
             sender,
@@ -274,7 +276,7 @@ async fn stalled_response_body_fails_without_local_backpressure() {
 #[test]
 fn diagnostic_record_counts_are_bounded_and_legacy_state_is_compatible() {
     let mut ticket = ticket(10);
-    ticket.manifest.chunks = (0..300)
+    ticket.legacy_source_mut().manifest.chunks = (0..300)
         .map(|index| {
             let mut piece = chunk(1);
             piece.name = format!("piece-{index}");
@@ -283,8 +285,12 @@ fn diagnostic_record_counts_are_bounded_and_legacy_state_is_compatible() {
         })
         .collect();
     let limit = Arc::new(Semaphore::new(20));
-    let diagnostic =
-        ModelDiagnostics::new(&ticket.manifest, &limit, Instant::now(), CHANNEL_PIECES);
+    let diagnostic = ModelDiagnostics::new(
+        ticket.legacy().unwrap().manifest,
+        &limit,
+        Instant::now(),
+        CHANNEL_PIECES,
+    );
     let observed = diagnostic.snapshot();
     assert_eq!(observed.transfers.len(), 256);
     assert_eq!(observed.omitted_transfers, 44);

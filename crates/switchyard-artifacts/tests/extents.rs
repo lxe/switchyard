@@ -492,3 +492,56 @@ async fn explicit_trusted_reuse_accepts_repacked_content_without_network() {
     assert!(destination.exists());
     server.abort();
 }
+
+#[tokio::test]
+async fn extent_observer_retains_typed_failure_without_signed_url_text() {
+    let fixture = Fixture::new(4096, 4096);
+    let (mut ticket, _state, _gate, server) = fixture.server(false, Fault::Truncate).await;
+    for url in ticket.urls.values_mut() {
+        *url = format!("{url}?credential=never-retain-this");
+    }
+    let events = Arc::new(std::sync::Mutex::new(vec![]));
+    let recording = events.clone();
+    let mut options = fixture.options();
+    options.observer = Some(switchyard_artifacts::transport::TransferObserver::new(
+        move |p| recording.lock().unwrap().push(p),
+    ));
+    let hydration =
+        ExtentHydration::prepare(ticket, &fixture.root.join("observed"), options).unwrap();
+    assert!(hydration.run().await.is_err());
+    let recorded = events.lock().unwrap();
+    let failure = recorded.iter().find_map(|e| e.failure.as_ref()).unwrap();
+    assert!(!failure.stage.is_empty());
+    let encoded = serde_json::to_string(&*recorded).unwrap();
+    assert!(!encoded.contains("never-retain-this"));
+    assert!(!encoded.contains("credential="));
+    server.abort();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn intentional_extent_cancellation_does_not_publish_a_transport_failure() {
+    let fixture = Fixture::new(32 * 4096, 4096);
+    let (ticket, state, _release, server) = fixture.server(true, Fault::None).await;
+    let events = Arc::new(std::sync::Mutex::new(vec![]));
+    let recording = events.clone();
+    let mut options = fixture.options();
+    options.observer = Some(switchyard_artifacts::transport::TransferObserver::new(
+        move |p| recording.lock().unwrap().push(p),
+    ));
+    let h = Arc::new(
+        ExtentHydration::prepare(ticket, &fixture.root.join("cancel-observed"), options).unwrap(),
+    );
+    let running = h.clone();
+    let task = tokio::spawn(async move { running.run().await });
+    tokio::time::timeout(Duration::from_secs(3), async {
+        while state.requested.load(Ordering::Relaxed) < 20 {
+            tokio::time::sleep(Duration::from_millis(2)).await;
+        }
+    })
+    .await
+    .unwrap();
+    h.cancel();
+    assert!(matches!(task.await.unwrap(), Err(Error::Cancelled)));
+    assert!(events.lock().unwrap().iter().all(|p| p.failure.is_none()));
+    server.abort();
+}

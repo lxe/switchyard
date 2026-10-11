@@ -1,7 +1,7 @@
 //! Streaming legacy TAR pieces with bounded channels and exclusively owned publication.
 use super::diagnostics::{Boundary, ModelDiagnostics, ShardTrace, TransferTrace};
 use super::{ExactReader, extract_observed, sample_rate};
-use crate::{Chunk, Error, Phase, Result, State, Ticket};
+use crate::{Chunk, Error, Phase, Result, State, model::LegacyTicket};
 use futures_util::{FutureExt, StreamExt, TryStreamExt, future::BoxFuture};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -64,7 +64,7 @@ fn real_parents(path: &Path) -> Result<()> {
     }
     Ok(())
 }
-pub(super) fn cached(ticket: &Ticket, root: &Path) -> Result<bool> {
+pub(super) fn cached(ticket: &LegacyTicket<'_>, root: &Path) -> Result<bool> {
     real_parents(root)?;
     let dest = root.join("model");
     match fs::symlink_metadata(&dest) {
@@ -93,7 +93,7 @@ pub(super) fn cached(ticket: &Ticket, root: &Path) -> Result<bool> {
 }
 
 pub(super) async fn hydrate(
-    ticket: &Ticket,
+    ticket: &LegacyTicket<'_>,
     root: &Path,
     state: Arc<RwLock<State>>,
     limit: Arc<Semaphore>,
@@ -116,7 +116,7 @@ pub(super) async fn hydrate(
         chunks.sort_by_key(|chunk| chunk.seq);
     }
     let started = Instant::now();
-    let diagnostics = ModelDiagnostics::new(&ticket.manifest, &limit, started, CHANNEL_PIECES);
+    let diagnostics = ModelDiagnostics::new(ticket.manifest, &limit, started, CHANNEL_PIECES);
     {
         let mut st = state.write().await;
         st.model_diagnostics = Some(diagnostics.clone());
@@ -302,7 +302,7 @@ fn scheduled_transfer(
     .boxed()
 }
 
-fn client(ticket: &Ticket) -> Result<reqwest::Client> {
+fn client(ticket: &LegacyTicket<'_>) -> Result<reqwest::Client> {
     reqwest::Client::builder()
         .user_agent("Switchyard/0.1")
         .connect_timeout(Duration::from_secs(15))

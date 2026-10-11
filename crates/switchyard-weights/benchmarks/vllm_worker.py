@@ -20,6 +20,12 @@ def main():
             "pinned_bytes": 1024 * 1024,
         }
     )
+    qwen = (
+        "qwen"
+        in json.loads((Path(sys.argv[2]) / "config.json").read_text())
+        .get("model_type", "")
+        .lower()
+    )
     llm = LLM(
         model=sys.argv[2],
         skip_tokenizer_init=True,
@@ -30,7 +36,12 @@ def main():
         max_model_len=64,
         max_num_seqs=1,
         max_num_batched_tokens=64,
-        gpu_memory_utilization=0.1,
+        gpu_memory_utilization=float(
+            os.environ.get("SWITCHYARD_BENCH_GPU_MEMORY", "0.25")
+        )
+        if qwen
+        else 0.1,
+        language_model_only=qwen,
         enable_prefix_caching=False,
         attention_backend="TRITON_ATTN",
         compilation_config={"mode": 0},

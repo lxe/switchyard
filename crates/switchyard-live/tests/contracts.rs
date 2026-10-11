@@ -312,6 +312,8 @@ async fn fixture_with_cache_export(
             get(|| async {
                 Json(switchyard_agent::State {
                     model_diagnostics: None,
+                    weight_loading: None,
+                    model_transport: None,
                     artifact_bytes_downloaded: 0,
                     artifact_network_bytes_downloaded: 0,
                     artifact_bytes_total: 0,
@@ -320,6 +322,7 @@ async fn fixture_with_cache_export(
                     hydration_mode: Default::default(),
                     model_storage: None,
                     runtime_storage: None,
+                    dependency_budget: None,
                     startup_milestones: vec![],
                     artifacts: vec![],
                     inference_verified: true,

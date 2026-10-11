@@ -5,7 +5,7 @@ use nix::{
     sys::signal::{Signal, killpg},
     unistd::Pid,
 };
-use std::{fs, time::Duration};
+use std::{fs, sync::Arc, time::Duration};
 use tokio::{
     process::{Child, Command},
     sync::{mpsc, oneshot},
@@ -22,6 +22,7 @@ pub(super) struct Process {
     pub(super) child: Child,
     group: Pid,
     stopped: bool,
+    retained: Vec<Arc<dyn Send + Sync>>,
 }
 impl Process {
     pub(super) fn spawn(command: &mut Command) -> Result<Self> {
@@ -35,7 +36,11 @@ impl Process {
             child,
             group: Pid::from_raw(pid),
             stopped: false,
+            retained: vec![],
         })
+    }
+    pub(super) fn retain<T: Send + Sync + 'static>(&mut self, owner: Arc<T>) {
+        self.retained.push(owner);
     }
     pub(super) async fn stop(&mut self, timeout: Duration) -> Result<()> {
         self.signal(Signal::SIGTERM)?;

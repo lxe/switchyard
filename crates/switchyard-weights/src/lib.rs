@@ -1,4 +1,14 @@
 //! Safetensors metadata and readiness, outside generic filesystem transport.
+#[cfg(unix)]
+mod bridge;
+#[cfg(unix)]
+pub use bridge::{BridgeProgress, WeightBridge};
+
+mod packing;
+pub use packing::{pack_weights, priority_extents};
+mod loader;
+pub use loader::{VllmLoaderConfig, write_vllm_bundle};
+
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use switchyard_artifacts::{

@@ -10,6 +10,7 @@ mod report;
 mod routing;
 mod workload;
 
+use crate::model::ModelManifest;
 use crate::{
     Error, Result,
     config::ExecutionConfig,
@@ -23,7 +24,6 @@ use std::{
     sync::Arc,
     time::Instant,
 };
-use switchyard_agent::Manifest;
 use switchyard_core::{Policy, Profile, Scheduler, Scheduling, scheduler::ObservedNode};
 use switchyard_provider::{Offering, Pod, Provider, storage::Storage};
 use switchyard_scheduler::BuiltinScheduler;
@@ -113,7 +113,7 @@ pub struct LiveRuntime<P: Provider> {
     provisioning_cooldowns: BTreeMap<usize, f64>,
     allocation_rejections: Vec<AllocationRejection>,
     observations: Vec<serde_json::Value>,
-    manifests: BTreeMap<String, Manifest>,
+    manifests: BTreeMap<String, ModelManifest>,
     runtime_manifest: Option<switchyard_artifacts::Manifest>,
     cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     cache_export: Option<switchyard_agent::export::CacheExportConfig>,

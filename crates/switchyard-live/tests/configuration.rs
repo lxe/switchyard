@@ -42,8 +42,12 @@ fn config() -> DeploymentConfig {
             id: "qwen-small".into(),
             repository: "Qwen/Qwen3.5-0.8B".into(),
             revision: "a".repeat(40),
-            archive_prefix: "models/qwen/revision/s1".into(),
-            archive_sha256: "a".repeat(64),
+            artifact: switchyard_live::model::ModelArtifact::Legacy(
+                switchyard_live::model::LegacyReference {
+                    archive_prefix: "models/qwen/revision/s1".into(),
+                    archive_sha256: "a".repeat(64),
+                },
+            ),
             caches: vec![],
             engine: EngineConfig {
                 max_model_len: 4096,
@@ -426,4 +430,22 @@ fn checked_diagnostic_fleet_retains_explicit_retry_policy() {
         .unwrap()
         .retries = 11;
     assert!(invalid.validate().is_err());
+}
+
+#[test]
+fn extent_model_configuration_preserves_a_distinct_reference_and_cache_identity() {
+    let legacy = config();
+    let mut wire = serde_json::to_value(&legacy).unwrap();
+    let model = wire["models"][0].as_object_mut().unwrap();
+    model.remove("archive_prefix");
+    model.remove("archive_sha256");
+    model.insert("model_artifact".into(),serde_json::json!({"kind":"extents","prefix":"switchyard/weights/layout","id":"b".repeat(64),"content_id":"c".repeat(64),"loader":{"cuda_stage":true,"pinned_bytes":1048576}}));
+    let decoded: DeploymentConfig = serde_json::from_value(wire.clone()).unwrap();
+    decoded.models[0].artifact.validate().unwrap();
+    let labels = decoded.models[0].artifact.cache_labels().unwrap();
+    assert_eq!(labels["model_content_id"], "c".repeat(64));
+    assert!(labels.contains_key("weight_loader"));
+    assert!(!labels.contains_key("model_archive_sha256"));
+    wire["models"][0]["archive_sha256"] = serde_json::Value::String("a".repeat(64));
+    assert!(serde_json::from_value::<DeploymentConfig>(wire).is_err());
 }

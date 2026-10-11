@@ -465,6 +465,9 @@ async fn reserved_receivers_reach_eof_while_decoder_budget_is_blocked() {
     .await;
     until(|| state.finished.load(Ordering::Relaxed) == 24 && limit.available_permits() == 20).await;
     let paused = observed.lock().unwrap().clone().unwrap();
+    assert!(paused.reception_complete_seconds.is_some());
+    assert!(paused.extraction_complete_seconds.is_none());
+    assert!(paused.reservation_seconds > 0.0);
     assert_eq!(paused.network_received_bytes, total);
     assert_eq!(paused.compressed_consumed_bytes, 0);
     assert_eq!(paused.decoded_bytes, 0);

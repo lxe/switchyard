@@ -30,6 +30,7 @@ pub struct ExtentOptions {
     pub priority_extents: Vec<usize>,
     /// Explicitly trust a matching canonical-content receipt in trusted streaming mode.
     pub reuse_existing: bool,
+    pub observer: Option<crate::transport::TransferObserver>,
 }
 impl Default for ExtentOptions {
     fn default() -> Self {
@@ -42,6 +43,7 @@ impl Default for ExtentOptions {
             max_bytes: 256 * 1024 * 1024 * 1024,
             priority_extents: vec![],
             reuse_existing: false,
+            observer: None,
         }
     }
 }

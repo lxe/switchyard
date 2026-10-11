@@ -26,6 +26,8 @@ parser.add_argument("--chunk-delay", type=float, default=0.004)
 parser.add_argument("--piece-bytes", type=int, default=1024 * 1024)
 parser.add_argument("--model-source", type=Path)
 parser.add_argument("--hidden-size", type=int, default=512)
+parser.add_argument("--binary-profile", choices=["debug", "release"], default="debug")
+parser.add_argument("--gpu-memory-utilization", type=float, default=0.25)
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[3]
 out = args.output.resolve()
@@ -52,8 +54,8 @@ else:
     del model
 objects = out / "objects"
 objects.mkdir(exist_ok=True)
-binary = repo / "target/debug/switchyard-weights"
-legacy = repo / "target/debug/examples/legacy_hydrate"
+binary = repo / ("target/" + args.binary_profile + "/switchyard-weights")
+legacy = repo / ("target/" + args.binary_profile + "/examples/legacy_hydrate")
 manifest_path = Path(
     subprocess.check_output(
         [
@@ -200,14 +202,45 @@ try:
                     ]
                 ),
                 "VLLM_PLUGINS": "switchyard_benchmark",
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "VLLM_CACHE_ROOT": str(out / "cache" / mode / "vllm"),
+                "TORCHINDUCTOR_CACHE_DIR": str(out / "cache" / mode / "inductor"),
+                "TRITON_CACHE_DIR": str(out / "cache" / mode / "triton"),
+                "FLASHINFER_WORKSPACE_BASE": str(out / "cache" / mode / "flashinfer"),
+                "HF_HOME": str(out / "cache" / mode / "huggingface"),
                 "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
                 "SWITCHYARD_BENCH_RECEIPT": str(out / f"{mode}-weights.json"),
                 "SWITCHYARD_BENCH_SOCKET": str(socket),
+                "SWITCHYARD_BENCH_GPU_MEMORY": str(args.gpu_memory_utilization),
                 "SWITCHYARD_BENCH_LEGACY": str(legacy),
                 "SWITCHYARD_BENCH_TICKET": str(out / "legacy-ticket.json"),
                 "SWITCHYARD_BENCH_ROOT": str(out / f"{mode}-root"),
             }
         )
+        runtime_root = Path(os.sys.prefix).parent
+        # Reuse the checked runtime launch settings, while isolating all writable caches.
+        runtime_settings = json.loads(
+            (repo / "configs/runpod/qwen-small.json").read_text()
+        )["bootstrap"]["runtime"]["environment"]
+        for key, value in runtime_settings.items():
+            env[key] = value.replace("{runtime_root}", str(runtime_root)).replace(
+                "{cache_root}", str(out / "cache" / mode)
+            )
+        wrapper_root = out / "toolchain"
+        wrapper_root.mkdir(exist_ok=True)
+        for compiler in ("gcc", "g++"):
+            wrapper = wrapper_root / compiler
+            wrapper.write_text(
+                (runtime_root / "toolchain/bin" / compiler)
+                .read_text()
+                .replace(
+                    "root=/opt/switchyard/runtime/toolchain",
+                    "root=" + str(runtime_root / "toolchain"),
+                )
+            )
+            wrapper.chmod(0o755)
+        env["CC"] = str(wrapper_root / "gcc")
+        env["CXX"] = str(wrapper_root / "g++")
         Path(env["SWITCHYARD_BENCH_ROOT"]).mkdir(exist_ok=True)
         epoch = time.perf_counter()
         before = len(transfer_events)

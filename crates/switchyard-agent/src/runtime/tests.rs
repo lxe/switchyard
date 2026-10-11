@@ -132,18 +132,20 @@ fn packed(
 }
 fn ticket(runtime: RuntimeTicket) -> Ticket {
     Ticket {
+        source: crate::model::ModelSource::Legacy(crate::model::LegacySource {
+            manifest: Manifest {
+                format: "shards-v1".into(),
+                compress: "none".into(),
+                chunks: Vec::new(),
+                total_size: 123,
+                raw_size: 0,
+                sha256: "0".repeat(64),
+                files: BTreeMap::new(),
+            },
+            urls: BTreeMap::new(),
+        }),
         model: "test-model".into(),
         revision: "model-commit".into(),
-        manifest: Manifest {
-            format: "shards-v1".into(),
-            compress: "none".into(),
-            chunks: Vec::new(),
-            total_size: 123,
-            raw_size: 0,
-            sha256: "0".repeat(64),
-            files: BTreeMap::new(),
-        },
-        urls: BTreeMap::new(),
         engine_args: vec![
             "serve".into(),
             "--model".into(),
@@ -210,6 +212,36 @@ async fn fixture() -> (Ticket, Server) {
         }),
         server,
     )
+}
+
+#[tokio::test]
+async fn decoder_budget_includes_independent_model_and_runtime_workers() {
+    let (mut ticket, _server) = fixture().await;
+    ticket.concurrency = 20;
+    let crate::model::ModelSource::Legacy(source) = &mut ticket.source else {
+        unreachable!();
+    };
+    source.manifest.compress = "zstd".into();
+    source.manifest.chunks = [0, 0, 1, 2]
+        .into_iter()
+        .enumerate()
+        .map(|(seq, shard)| crate::Chunk {
+            name: format!("chunk-{seq}"),
+            size: 1,
+            raw: 1,
+            shard,
+            seq,
+            sha256: "0".repeat(64),
+        })
+        .collect();
+    let history = 128 * 1024 * 1024;
+    assert_eq!(budget::decoder_history_bound(&ticket), (8 + 3) * history);
+    ticket.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
+    assert_eq!(budget::decoder_history_bound(&ticket), (4 + 3) * history);
+    ticket.concurrency = 2;
+    assert_eq!(budget::decoder_history_bound(&ticket), (2 + 2) * history);
+    ticket.runtime = None;
+    assert_eq!(budget::decoder_history_bound(&ticket), 2 * history);
 }
 
 #[tokio::test]

@@ -8,6 +8,7 @@ publish.workspace = true
 description = "Serving-layer safetensors completion and overlapping loader bridge"
 
 [dependencies]
+sha2.workspace = true
 switchyard-artifacts.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -15,7 +16,6 @@ tokio.workspace = true
 clap.workspace = true
 
 [dev-dependencies]
-switchyard-agent.workspace = true
 axum.workspace = true
 futures-util.workspace = true
 

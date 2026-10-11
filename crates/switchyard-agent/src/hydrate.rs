@@ -16,7 +16,7 @@ use std::{
 use switchyard_artifacts::HydrationMode;
 use tokio::{io::AsyncWriteExt, sync::RwLock};
 
-mod diagnostics;
+pub(crate) mod diagnostics;
 mod streaming;
 pub use diagnostics::{ModelDiagnostics, ModelSnapshot};
 
@@ -141,6 +141,39 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
             "early launch requires a hydrated cooperative runtime".into(),
         ));
     }
+    if let Some((artifact, loader)) = ticket.source.extent() {
+        if ticket.runtime.is_none() {
+            return Err(Error::Manifest(
+                "extent source requires a selected runtime".into(),
+            ));
+        }
+        loader.validate()?;
+        crate::model::validate_extent_caches(ticket)?;
+        if ticket.startup.mode == HydrationMode::Verified {
+            artifact.manifest.validate()?;
+        } else {
+            artifact.manifest.validate_structure()?;
+        }
+        if !(1..=64).contains(&ticket.concurrency) || ticket.lifetime_s == 0 {
+            return Err(Error::Manifest("invalid extent transfer bounds".into()));
+        }
+        let metadata = crate::model::metadata_bytes(&artifact.manifest)?;
+        let required = artifact
+            .manifest
+            .total_bytes()?
+            .checked_add(metadata)
+            .ok_or_else(|| Error::Manifest("extent capacity overflow".into()))?;
+        let observation = crate::startup::observe(root, required)?;
+        crate::startup::check_capacity(
+            &observation,
+            ticket.startup.require_model_ram,
+            loader.pinned_bytes as u64 + (64 << 20),
+        )?;
+        state.write().await.model_storage = Some(observation);
+        return Ok(());
+    }
+    let legacy = ticket.legacy()?;
+    let ticket = &legacy;
     if ticket.startup.mode == HydrationMode::Verified {
         ticket.manifest.validate()?;
     } else {
@@ -183,6 +216,27 @@ pub(crate) async fn hydrate_with_limit(
     state: Arc<RwLock<State>>,
     limit: Arc<tokio::sync::Semaphore>,
 ) -> Result<()> {
+    if let Some((artifact, _)) = ticket.source.extent() {
+        let hydration = switchyard_artifacts::extents::ExtentHydration::prepare(
+            artifact.clone(),
+            &root.join("model"),
+            switchyard_artifacts::extents::ExtentOptions {
+                mode: ticket.startup.mode,
+                concurrency: ticket.concurrency,
+                download_limit: Some(limit),
+                request_timeout: Duration::from_secs(ticket.lifetime_s),
+                ..Default::default()
+            },
+        )?;
+        let started = Instant::now();
+        let report = hydration.run().await?;
+        let mut st = state.write().await;
+        st.bytes_downloaded = report.downloaded_bytes;
+        st.hydration_seconds = started.elapsed().as_secs_f64();
+        return Ok(());
+    }
+    let legacy = ticket.legacy()?;
+    let ticket = &legacy;
     if ticket.startup.mode == HydrationMode::TrustedStreaming {
         return streaming::hydrate(ticket, root, state, limit).await;
     }

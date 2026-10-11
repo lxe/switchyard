@@ -98,18 +98,20 @@ async fn readiness_rejects_empty_tokenization_and_oversized_responses() {
 }
 pub(super) fn app(phase: Phase, engine_url: String) -> App {
     let ticket = Ticket {
+        source: crate::model::ModelSource::Legacy(crate::model::LegacySource {
+            manifest: Manifest {
+                format: "shards-v1".into(),
+                compress: "none".into(),
+                chunks: vec![],
+                total_size: 0,
+                raw_size: 0,
+                sha256: "test".into(),
+                files: BTreeMap::<String, FileInfo>::new(),
+            },
+            urls: BTreeMap::new(),
+        }),
         model: "test".into(),
         revision: "revision".into(),
-        manifest: Manifest {
-            format: "shards-v1".into(),
-            compress: "none".into(),
-            chunks: vec![],
-            total_size: 0,
-            raw_size: 0,
-            sha256: "test".into(),
-            files: BTreeMap::<String, FileInfo>::new(),
-        },
-        urls: BTreeMap::new(),
         engine_args: vec![],
         concurrency: 1,
         stall_s: 1,

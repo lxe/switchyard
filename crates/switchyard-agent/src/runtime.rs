@@ -13,8 +13,10 @@ use tokio::{
     sync::{RwLock, watch},
 };
 
+mod budget;
 mod cache;
 mod compatibility;
+pub use budget::DependencyBudget;
 
 /// Optional per-runtime transfer controls, copied from checked fleet configuration.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -98,6 +100,10 @@ pub struct ArtifactState {
     pub cached: bool,
     pub chunk_cache_hits: usize,
     pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reception: Option<switchyard_artifacts::ReceptionProgress>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transport: Option<crate::transport::TransportDiagnostics>,
 }
 
 /// Production destinations are fixed; tests inject roots without writing under /opt.
@@ -220,6 +226,8 @@ impl RuntimeTicket {
                 cached: false,
                 chunk_cache_hits: 0,
                 error: None,
+                reception: None,
+                transport: None,
             })
             .collect()
     }
@@ -300,22 +308,39 @@ pub(crate) async fn command(
     .await
 }
 
+#[cfg(test)]
 pub(crate) async fn command_with_limit(
     ticket: &Ticket,
     roots: &RootPaths,
     state: Arc<RwLock<State>>,
     download_limit: Arc<tokio::sync::Semaphore>,
 ) -> Result<Option<Command>> {
+    preflight(ticket, roots, &state).await?;
+    command_preflighted_with_limit(ticket, roots, state, download_limit).await
+}
+pub(crate) async fn preflight(
+    ticket: &Ticket,
+    roots: &RootPaths,
+    state: &RwLock<State>,
+) -> Result<()> {
     let Some(runtime) = &ticket.runtime else {
-        return Ok(None);
+        state.write().await.dependency_budget = Some(budget::check(ticket, roots)?);
+        return Ok(());
     };
     runtime.validate_launch(ticket.startup.mode)?;
+    if ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming
+        && runtime.hydration.is_some_and(|h| h.retries != 0)
+    {
+        return Err(Error::Manifest(
+            "reserved progressive runtime reception requires zero retries".into(),
+        ));
+    }
     if !(1..=64).contains(&ticket.concurrency) || ticket.stall_s == 0 || ticket.stall_s > 86400 {
         return Err(Error::Manifest("invalid artifact transfer limits".into()));
     }
     if let Err((index, error)) = validate_artifacts(runtime, &ticket.revision, ticket.startup.mode)
     {
-        mark_failure(&state, index, &error.to_string()).await;
+        mark_failure(state, index, &error.to_string()).await;
         return Err(error);
     }
     compatibility::observe_and_check(runtime).await?;
@@ -334,6 +359,18 @@ pub(crate) async fn command_with_limit(
     let observation = crate::startup::observe(roots.runtime.parent().unwrap(), required)?;
     state.write().await.runtime_storage = Some(observation.clone());
     crate::startup::check_capacity(&observation, false, 0)?;
+    state.write().await.dependency_budget = Some(budget::check(ticket, roots)?);
+    Ok(())
+}
+pub(crate) async fn command_preflighted_with_limit(
+    ticket: &Ticket,
+    roots: &RootPaths,
+    state: Arc<RwLock<State>>,
+    download_limit: Arc<tokio::sync::Semaphore>,
+) -> Result<Option<Command>> {
+    let Some(runtime) = &ticket.runtime else {
+        return Ok(None);
+    };
     state.write().await.phase = Phase::Hydrating;
     let started = Instant::now();
     let context = HydrationContext {
@@ -501,7 +538,41 @@ async fn hydrate_one(
     index: usize,
     context: &HydrationContext<'_>,
 ) -> Result<()> {
+    let diagnostic = crate::transport::TransportDiagnostics::default();
+    context.state.write().await.artifacts[index].transport = Some(diagnostic.clone());
     let options = HydrationOptions {
+        receive_buffer: if context.ticket.startup.mode
+            == switchyard_artifacts::HydrationMode::TrustedStreaming
+        {
+            let mut reservation = switchyard_artifacts::ReceiveBufferOptions::new(
+                context.roots.chunks.join("reception"),
+            );
+            use std::os::unix::fs::MetadataExt;
+            if std::fs::metadata(&context.roots.models)?.dev()
+                == std::fs::metadata(
+                    destination
+                        .ancestors()
+                        .skip(1)
+                        .find(|p| p.is_dir())
+                        .ok_or_else(|| {
+                            Error::Manifest("runtime output has no existing parent".into())
+                        })?,
+                )?
+                .dev()
+            {
+                reservation.additional_output_bytes = context
+                    .state
+                    .read()
+                    .await
+                    .dependency_budget
+                    .as_ref()
+                    .map_or(0, |b| b.model_bytes);
+            }
+            reservation.observer = Some(diagnostic.observer());
+            Some(reservation)
+        } else {
+            None
+        },
         mode: context.ticket.startup.mode,
         download_limit: Some(context.download_limit.clone()),
         cache_dir: context.roots.chunks.clone(),
@@ -509,7 +580,7 @@ async fn hydrate_one(
         extraction_concurrency: context.ticket.concurrency.min(
             if context.ticket.startup.mode == switchyard_artifacts::HydrationMode::TrustedStreaming
             {
-                20
+                4
             } else {
                 8
             },
@@ -519,7 +590,15 @@ async fn hydrate_one(
             .runtime
             .as_ref()
             .and_then(|runtime| runtime.hydration)
-            .unwrap_or_default()
+            .unwrap_or(RuntimeHydrationOptions {
+                retries: if context.ticket.startup.mode
+                    == switchyard_artifacts::HydrationMode::TrustedStreaming
+                {
+                    0
+                } else {
+                    2
+                },
+            })
             .retries,
         stall_timeout_s: context.ticket.stall_s,
         request_timeout_s: context.ticket.lifetime_s.clamp(1, 600),
@@ -564,6 +643,7 @@ async fn hydrate_one(
                 };
             item.cached = report.already_present;
             item.chunk_cache_hits = report.cache_hits;
+            item.reception = report.reception;
             totals(&mut st, context.started);
             Ok(())
         }
@@ -593,6 +673,7 @@ async fn observe_progress(
     item.downloaded_bytes = progress.verified_bytes;
     item.network_bytes_downloaded = progress.downloaded_bytes;
     item.network_verified_bytes = progress.network_verified_bytes;
+    item.reception = progress.reception;
     item.total_bytes = progress.total_bytes;
     item.unpacked_bytes = progress.unpacked_bytes;
     item.total_unpacked_bytes = progress.total_unpacked_bytes;

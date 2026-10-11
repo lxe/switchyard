@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     switchyard_agent::hydrate::hydrate(&ticket, Path::new(&args[2]), state).await?;
     println!(
         "{}",
-        serde_json::json!({"event":"hydration_complete", "seconds":start.elapsed().as_secs_f64(), "wire_bytes":ticket.manifest.total_size})
+        serde_json::json!({"event":"hydration_complete", "seconds":start.elapsed().as_secs_f64(), "wire_bytes":ticket.source.transfer_bytes()})
     );
     Ok(())
 }

@@ -54,22 +54,11 @@ impl<P: Provider> LiveRuntime<P> {
         });
         self.save("pending-launches.json", &self.pending)?;
         let manifest = self.manifests[&model.id].clone();
-        let urls = manifest
-            .chunks
-            .iter()
-            .map(|c| {
-                Ok((
-                    c.name.clone(),
-                    self.storage
-                        .presign(&format!("{}/{}", model.archive_prefix, c.name))?,
-                ))
-            })
-            .collect::<switchyard_provider::Result<_>>()?;
+        let source = model.artifact.ticket(&self.storage, manifest)?;
         let ticket = Ticket {
+            source,
             model: model.id.clone(),
             revision: model.revision.clone(),
-            manifest,
-            urls,
             engine_args: model.engine.args(
                 model,
                 &self

@@ -20,14 +20,23 @@ pub(super) async fn prepare(
     state: Arc<RwLock<State>>,
     epoch: Instant,
 ) -> Result<engine::Process> {
+    if ticket.source.extent().is_some() {
+        return extents::prepare(ticket, roots, state, epoch).await;
+    }
     // This runs before either branch can transfer, including on a tiny Docker /dev/shm.
     crate::hydrate::preflight(ticket, &roots.models, &state).await?;
+    crate::runtime::preflight(ticket, roots, &state).await?;
     let limit = Arc::new(Semaphore::new(ticket.concurrency));
     let (ready, receiver) = oneshot::channel();
     let runtime = async {
         milestone(&state, epoch, StartupEvent::RuntimeHydrationStarted).await;
-        let command =
-            crate::runtime::command_with_limit(ticket, roots, state.clone(), limit.clone()).await?;
+        let command = crate::runtime::command_preflighted_with_limit(
+            ticket,
+            roots,
+            state.clone(),
+            limit.clone(),
+        )
+        .await?;
         milestone(&state, epoch, StartupEvent::RuntimeHydrationFinished).await;
         let mut command = command.unwrap_or_else(|| {
             let mut command = Command::new("vllm");
@@ -97,3 +106,5 @@ async fn release(process: &mut engine::Process) -> Result<()> {
 
 #[cfg(test)]
 mod tests;
+
+mod extents;

@@ -177,11 +177,27 @@ pub fn cache_requirements(
     model: &ModelConfig,
 ) -> Result<BTreeMap<String, String>> {
     let mut requirements = compatibility.clone();
+    let mut model_labels = model.artifact.cache_labels()?;
+    if matches!(model.artifact, crate::model::ModelArtifact::Extents(_)) {
+        model_labels.insert(
+            "engine_arguments".into(),
+            crate::model::engine_arguments_identity(model)?,
+        );
+    }
+    for (key, value) in model_labels {
+        if requirements
+            .insert(key.clone(), value.clone())
+            .is_some_and(|v| v != value)
+        {
+            return Err(Error::Config(format!(
+                "serving cache overrides required {key}"
+            )));
+        }
+    }
     for (key, value) in [
         ("runtime_id", runtime.artifact.id.clone()),
         ("model_revision", model.revision.clone()),
         ("model_repository", model.repository.clone()),
-        ("model_archive_sha256", model.archive_sha256.clone()),
         ("engine_configuration", engine_fingerprint(&model.engine)?),
         (
             "runtime_launch_configuration",
