@@ -3,11 +3,11 @@
   "id": "vllm-0.31.0-fla-nvml",
   "target": "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/utils.py",
   "before_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
-  "after_sha256": "7256a57fb499ff3164bd529b82adfb680d21c92dd644ad28c01768caec6125ea",
+  "after_sha256": "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828",
   "replacements": [
     {
       "before": "@functools.cache\ndef get_available_device() -> str:\n    try:\n",
-      "after": "def _can_use_nvml_platform_query() -> bool:\n    # Scope the fast path to one visible GPU before any library initializes\n    # the CUDA driver. Torch's flag alone does not cover external CUDA users.\n    if (not current_platform.is_cuda() or torch.cuda.is_initialized()\n            or torch.cuda._device_count_nvml() != 1):\n        return False\n    import ctypes\n\n    try:\n        context = ctypes.c_void_p()\n        # cuCtxGetCurrent does not call cuInit. Error 3 is precisely\n        # CUDA_ERROR_NOT_INITIALIZED; every other status retains native behavior.\n        return ctypes.CDLL(\"libcuda.so.1\").cuCtxGetCurrent(ctypes.byref(context)) == 3\n    except (OSError, AttributeError):\n        return False\n\n\n@functools.cache\ndef get_available_device() -> str:\n    if _can_use_nvml_platform_query():\n        return \"cuda\"\n    try:\n"
+      "after": "def _can_use_nvml_platform_query() -> bool:\n    # Scope the fast path to one visible GPU before any library initializes\n    # the CUDA driver. Torch's flag alone does not cover external CUDA users.\n    if (not current_platform.is_cuda() or torch.cuda.is_initialized()\n            or torch.cuda._device_count_nvml() != 1):\n        return False\n    visible_devices = torch.cuda._parse_visible_devices()\n    # CUDA numeric ordinals can differ from NVML ordering. UUID selection\n    # or a single physical GPU makes the physical identity unambiguous.\n    if (torch.cuda._raw_device_count_nvml() != 1\n            and not isinstance(visible_devices[0], str)):\n        return False\n    import ctypes\n\n    try:\n        context = ctypes.c_void_p()\n        # cuCtxGetCurrent does not call cuInit. Error 3 is precisely\n        # CUDA_ERROR_NOT_INITIALIZED; every other status retains native behavior.\n        return ctypes.CDLL(\"libcuda.so.1\").cuCtxGetCurrent(ctypes.byref(context)) == 3\n    except (OSError, AttributeError):\n        return False\n\n\n@functools.cache\ndef get_available_device() -> str:\n    if _can_use_nvml_platform_query():\n        return \"cuda\"\n    try:\n"
     },
     {
       "before": "is_nvidia_hopper = is_nvidia and (\n    \"NVIDIA H\" in torch.cuda.get_device_name(0)\n    or torch.cuda.get_device_capability()[0] >= 9\n)\n",

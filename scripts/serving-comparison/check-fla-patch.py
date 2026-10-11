@@ -28,7 +28,7 @@ class NvmlError(Exception): pass
 class Probe:
     def __init__(self, *, cuda=True, visible=1, initialized=False, name='NVIDIA L40S', major=8,
                  nvml=True, physical=None, visibility=None, current_device=0,
-                 driver_status=3, driver_missing=False, query_failure=False):
+                 driver_status=3, driver_missing=False, query_failure=False, cuda_order=None):
         self.cuda=cuda; self.initialized=initialized; self.nvml=nvml
         self.current_device=current_device; self.driver_status=driver_status
         self.driver_missing=driver_missing; self.query_failure=query_failure
@@ -49,9 +49,13 @@ class Probe:
         if self.visible_ids and isinstance(self.visible_ids[0],str):
             self.visible_ids=namespace['_transform_uuid_to_ordinals'](self.visible_ids,uuids)
         self.visible_ids=[i for i in self.visible_ids if i < (len(uuids) if visible else 0)]
+        if cuda_order and (not visibility or not visibility.startswith('GPU-')):
+            self.visible_ids=[cuda_order[i] for i in self.visible_ids]
     def is_initialized(self):return self.initialized
     def _device_count_nvml(self):return self.parser['_device_count_nvml']() if self.nvml else -1
     def _get_nvml_device_index(self,index):return self.parser['_get_nvml_device_index'](index)
+    def _parse_visible_devices(self):return self.parser['_parse_visible_devices']()
+    def _raw_device_count_nvml(self):return self.parser['_raw_device_count_nvml']()
     def get_device_name(self,index=0):
         self.torch_calls+=1; self.initialized=True
         return self.physical[self.visible_ids[index]][0]
@@ -116,7 +120,8 @@ cases=[('nvml_sm89',{},True),('nvml_h100',{'name':'NVIDIA H100','major':9},True)
        ('already_initialized',{'initialized':True,'major':9},False),
        ('no_visible_gpu',{'visible':0},False),('hip_backend',{'cuda':False},False),
        ('non_nvml_native_fallback',{'nvml':False},False),
-       ('visible_physical_ordinal',{'physical':{0:('NVIDIA H100',9),1:('NVIDIA L40S',8)},'visibility':'1'},True),
+       ('multiple_physical_numeric_fallback',{'physical':{0:('NVIDIA H100',9),1:('NVIDIA L40S',8)},'visibility':'1'},False),
+       ('different_cuda_nvml_order',{'physical':{0:('NVIDIA L40S',8),1:('NVIDIA H100',9)},'visibility':'0','cuda_order':[1,0]},False),
        ('full_uuid',{'physical':{0:('NVIDIA H100',9),1:('NVIDIA L40S',8)},'visibility':'GPU-1-full-uuid'},True),
        ('abbreviated_uuid',{'physical':{0:('NVIDIA H100',9),1:('NVIDIA L40S',8)},'visibility':'GPU-1'},True),
        ('ambiguous_uuid',{'physical':{0:('NVIDIA L40S',8),1:('NVIDIA H100',9)},'visibility':'GPU-'},False),
