@@ -90,6 +90,10 @@ out.mkdir(parents=True, exist_ok=False)
 objects = args.objects.resolve()
 runtime_objects = args.runtime_objects.resolve()
 manifest = json.loads((objects / "manifest.json").read_text())
+bounded_weights = "tensor_destinations_v1" in manifest["metadata"].get("attributes", {})
+model_root = (
+    "/opt/switchyard/stream-models" if bounded_weights else "/dev/shm/switchyard"
+)
 runtime_manifest = json.loads((runtime_objects / "manifest.json").read_text())
 legacy = json.loads(args.legacy_ticket.read_text())
 configuration = json.loads(
@@ -404,13 +408,13 @@ try:
             "runtime": runtime,
             "startup": {
                 "mode": "trusted_streaming",
-                "model_root": "/dev/shm/switchyard",
-                "require_model_ram": True,
+                "model_root": model_root,
+                "require_model_ram": not bounded_weights,
                 "early_launch": args.early_launch,
             },
             "engine_args": [
                 "serve",
-                "/dev/shm/switchyard/model",
+                model_root + "/model",
                 "--served-model-name",
                 "qwen-local",
                 "--host",
@@ -440,7 +444,7 @@ try:
         }
         if args.engine_args:
             current_ticket["engine_args"] = [
-                argument.replace("{model_root}", "/dev/shm/switchyard/model")
+                argument.replace("{model_root}", model_root + "/model")
                 for argument in json.loads(args.engine_args.read_text())
             ]
         if mode == "legacy":
