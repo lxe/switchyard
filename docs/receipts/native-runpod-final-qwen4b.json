@@ -1,0 +1,3608 @@
+{
+  "format": "switchyard-native-cloud-evidence-v1",
+  "model": "qwen3.5-4b",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "allocation_started_utc": "2026-10-11T23:16:47.512140+00:00",
+  "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+  "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+  "accuracy": "accepted mixed native engine; F32 parity gated locally; BF16 approximate; cloud bake does not establish additional numerical parity",
+  "numerical_parity_measured_in_cloud": false,
+  "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "hardware": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-684ce91d-400b-df77-effa-acb338319213",
+    "driver": "580.159.04",
+    "compute_capability": "8.9",
+    "total_memory_mib": 24564
+  },
+  "pod": {
+    "id": "jx4kvtgnxqzqsz",
+    "name": "switchyard-native-launch-0d18d36092af",
+    "cost": 0.89,
+    "dataCenterId": "EUR-IS-1",
+    "cudaVersion": "13.0"
+  },
+  "runtime_build": {
+    "format": "switchyard-native-runtime-build-v1",
+    "source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+    "builder_image": "nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d",
+    "os": "ubuntu24.04",
+    "architecture": "x86_64",
+    "cuda_build": "13.0.0",
+    "cuda_build_version_origin": "builder CUDA_VERSION with installed compiler validation",
+    "cuda_compiler_version": "13.0.48",
+    "cuda_compiler_target": "compute_89",
+    "cuda_package_versions": {
+      "cuda-cccl-13-0": "13.0.50-1",
+      "cuda-command-line-tools-13-0": "13.0.0-1",
+      "cuda-compat-13-0": "580.65.06-0ubuntu1",
+      "cuda-compiler-13-0": "13.0.0-1",
+      "cuda-crt-13-0": "13.0.48-1",
+      "cuda-cub-13-0": "",
+      "cuda-cudart-11-2": "",
+      "cuda-cudart-13-0": "13.0.48-1",
+      "cuda-cudart-dev-13-0": "13.0.48-1",
+      "cuda-culibos-dev-13-0": "13.0.39-1",
+      "cuda-cuobjdump-13-0": "13.0.39-1",
+      "cuda-cupti-13-0": "13.0.48-1",
+      "cuda-cupti-dev-13-0": "13.0.48-1",
+      "cuda-cuxxfilt-13-0": "13.0.39-1",
+      "cuda-driver-dev-13-0": "13.0.48-1",
+      "cuda-gdb-13-0": "13.0.39-1",
+      "cuda-libraries-13-0": "13.0.0-1",
+      "cuda-libraries-dev-13-0": "13.0.0-1",
+      "cuda-minimal-build-13-0": "13.0.0-1",
+      "cuda-nsight-compute-13-0": "13.0.0-1",
+      "cuda-nvcc-13": "",
+      "cuda-nvcc-13-0": "13.0.48-1",
+      "cuda-nvdisasm-13-0": "13.0.39-1",
+      "cuda-nvml-dev-13-0": "13.0.39-1",
+      "cuda-nvprune-13-0": "13.0.39-1",
+      "cuda-nvrtc-13-0": "13.0.48-1",
+      "cuda-nvrtc-dev-13-0": "13.0.48-1",
+      "cuda-nvtx-13-0": "13.0.39-1",
+      "cuda-opencl-13-0": "13.0.39-1",
+      "cuda-profiler-api-13-0": "13.0.39-1",
+      "cuda-sandbox-dev-13-0": "13.0.39-1",
+      "cuda-sanitizer-13-0": "13.0.48-1",
+      "cuda-thrust-13-0": "",
+      "cuda-toolkit-13-0-config-common": "13.0.48-1",
+      "cuda-toolkit-13-config-common": "13.0.48-1",
+      "cuda-toolkit-config-common": "13.0.48-1"
+    },
+    "gpu_compute_capability": "8.9",
+    "files": [
+      {
+        "path": "bin/switchyard-engine",
+        "bytes": 64334632,
+        "sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355"
+      },
+      {
+        "path": "bin/switchyard-engine-bake",
+        "bytes": 37084096,
+        "sha256": "68850c9c3343006a524bb2aba6e287880199d3f1ef9bafabf51371d8f1baf27d"
+      },
+      {
+        "path": "lib/libcublas.so.13",
+        "bytes": 52941016,
+        "sha256": "ea443b3d282af9c82e16be974860b5ba993020bbe98988a7be201bf0c0215e88"
+      },
+      {
+        "path": "lib/libcublasLt.so.13",
+        "bytes": 538836848,
+        "sha256": "c92c4c24c257d638a61130f8a5f7f31eb6d6262c24f8e19816ff56b58b73a857"
+      },
+      {
+        "path": "lib/libcudart.so.13",
+        "bytes": 704288,
+        "sha256": "6876f4841bdbe30b187dcf8d7a7d2d6579bf12a36eeb430c7b28484ccdeed89a"
+      },
+      {
+        "path": "lib/libcurand.so.10",
+        "bytes": 132698328,
+        "sha256": "b53732a66b302b11926e00f762e2c2ba67058347ff93cf4ae709de45e93e06da"
+      },
+      {
+        "path": "lib/libgcc_s.so.1",
+        "bytes": 183024,
+        "sha256": "02f3f192bf5f79b811f1e34a650fea443d407408703448906585232383957f60"
+      },
+      {
+        "path": "lib/libstdc++.so.6",
+        "bytes": 2592224,
+        "sha256": "a68762c86d371e6041f03f03a33a78fa235809ae7d81c90185940c93c3535aed"
+      }
+    ],
+    "runtime_bytes": 829374456,
+    "numerical_accuracy": "see source commit accuracy receipt; not measured by build",
+    "serving_python": false,
+    "torch": false,
+    "vllm": false,
+    "criu": false,
+    "gpu_process_snapshot": false
+  },
+  "artifacts": [
+    {
+      "role": "runtime",
+      "id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+      "prefix": "switchyard/native-engine/runtime/a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+      "compressed_bytes": 452739512,
+      "shards": 4,
+      "files": [
+        {
+          "path": "bin/launch-engine.sh",
+          "bytes": 1686
+        },
+        {
+          "path": "bin/switchyard-engine",
+          "bytes": 64334632
+        },
+        {
+          "path": "lib/libcublas.so.13",
+          "bytes": 52941016
+        },
+        {
+          "path": "lib/libcublasLt.so.13",
+          "bytes": 538836848
+        },
+        {
+          "path": "lib/libcudart.so.13",
+          "bytes": 704288
+        },
+        {
+          "path": "lib/libcurand.so.10",
+          "bytes": 132698328
+        },
+        {
+          "path": "lib/libgcc_s.so.1",
+          "bytes": 183024
+        },
+        {
+          "path": "lib/libstdc++.so.6",
+          "bytes": 2592224
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+      "prefix": "switchyard/native-engine/models/9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+      "compressed_bytes": 6559047971,
+      "shards": 3,
+      "files": [
+        {
+          "path": "LICENSE",
+          "bytes": 11544
+        },
+        {
+          "path": "chat_template.jinja",
+          "bytes": 7756
+        },
+        {
+          "path": "config.json",
+          "bytes": 3161
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 8411565456
+        },
+        {
+          "path": "switchyard-engine.json",
+          "bytes": 161
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 12807982
+        }
+      ]
+    },
+    {
+      "role": "cache",
+      "id": "0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f",
+      "prefix": "switchyard/native-engine/cache-families/0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f",
+      "compressed_bytes": 500386,
+      "shards": 1,
+      "files": [
+        {
+          "path": "driver-family.json",
+          "bytes": 2964
+        },
+        {
+          "path": "drivers/580.159.04/bake.json",
+          "bytes": 6495
+        },
+        {
+          "path": "drivers/580.159.04/component-manifest.json",
+          "bytes": 5442
+        },
+        {
+          "path": "drivers/580.159.04/cuda/3/3/2ad65ba471e342",
+          "bytes": 537752
+        },
+        {
+          "path": "drivers/580.159.04/cuda/5/0/1c73e3706d2e61",
+          "bytes": 4386726
+        },
+        {
+          "path": "drivers/580.159.04/cuda/7/0/a099cb909ed1ab",
+          "bytes": 1456338
+        },
+        {
+          "path": "drivers/580.159.04/cuda/8/e/5921d4cd41f031",
+          "bytes": 1979392
+        },
+        {
+          "path": "drivers/580.159.04/cuda/b/4/fdbafb25b1cab7",
+          "bytes": 428972
+        },
+        {
+          "path": "drivers/580.159.04/cuda/c/3/cdcd5d8ab2481d",
+          "bytes": 106954
+        },
+        {
+          "path": "drivers/580.159.04/cuda/d/f/94ccd91b761451",
+          "bytes": 813078
+        },
+        {
+          "path": "drivers/580.159.04/cuda/f/0/6a7372492bdd70",
+          "bytes": 114007
+        },
+        {
+          "path": "drivers/580.159.04/cuda/index",
+          "bytes": 144
+        },
+        {
+          "path": "drivers/580.159.04/generated.json",
+          "bytes": 18369
+        },
+        {
+          "path": "drivers/580.159.04/identity.tsv",
+          "bytes": 39
+        }
+      ]
+    },
+    {
+      "role": "preparation",
+      "id": "afcfa180bbdda48c2781fd60579d3e7dd1fd60883874c09478c38cf8fc6cdda1",
+      "prefix": "switchyard/native-engine/preparation/afcfa180bbdda48c2781fd60579d3e7dd1fd60883874c09478c38cf8fc6cdda1",
+      "compressed_bytes": 6982168,
+      "shards": 1,
+      "files": [
+        {
+          "path": "bake-requests.json",
+          "bytes": 4832
+        },
+        {
+          "path": "bin/switchyard-engine-bake",
+          "bytes": 37084096
+        },
+        {
+          "path": "native-build.json",
+          "bytes": 3471
+        },
+        {
+          "path": "native-config.json",
+          "bytes": 271
+        }
+      ]
+    }
+  ],
+  "live_model_archive": {
+    "archive_prefix": "switchyard/native-engine/live-models/5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+    "archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+    "native_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d"
+  },
+  "cache_compatibility": {
+    "engine_configuration": "23799c638018b5aa0b223713f8fb5922e4e36f00dd588d8c52c36a2ad696e001",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+    "model_repository": "Qwen/Qwen3.5-4B",
+    "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+    "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+    "architecture": "x86_64",
+    "os": "ubuntu24.04",
+    "cuda_build": "13.0.0",
+    "gpu_compute_capability": "8.9",
+    "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+    "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+    "cuda_compiler_target": "compute_89",
+    "cuda_compiler_version": "13.0.48",
+    "native_config_sha256": "fac91f0cd9aacbae62962fdcad390c4779ad4d85ea354ffac90f7e50cf37ce63",
+    "model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+    "native_driver_cache_layout": "native-cuda-driver-family-v1"
+  },
+  "cache_family_selection": {
+    "driver": "580.159.04",
+    "component_cache_id": "9424f56de9db7c7fbc45e4dc7757a904a628ed4a08f3ab611dee5d466963050b",
+    "layout": "native-cuda-driver-family-v1"
+  },
+  "resource_bounds": {
+    "engine": {
+      "model": "qwen3.5-4b",
+      "model_root": "/work/switchyard/model",
+      "device": {
+        "kind": "cuda",
+        "ordinal": 0
+      },
+      "dtype": "bf16",
+      "max_context": 128,
+      "max_weight_bytes": 12884901888,
+      "max_batch_size": 8,
+      "queue_capacity": 64,
+      "batch_wait_ms": 2
+    },
+    "platform": {
+      "max_active_owned_pods": 1,
+      "max_hourly_usd": 1.0,
+      "pod_timeout_s": 600,
+      "initial_gpu_admission_bytes": 21474836480,
+      "gpu_allocator_cap_enforced": false,
+      "download_concurrency": 20,
+      "download_piece_bytes": 65536,
+      "receive_channel_pieces": 4
+    },
+    "requested_host": {
+      "minimum_ram_gb": 64,
+      "minimum_vcpus": 8,
+      "container_disk_gb": 30
+    }
+  },
+  "timing_s": {
+    "agent_listener_allocation_s": 32.79686065700662,
+    "ready_allocation_s": 111.5470068440045,
+    "first_content_allocation_s": 112.59453834699525,
+    "request_to_first_content_s": 1.0473475979961222
+  },
+  "container_stages": [
+    {
+      "stage": "container_started",
+      "allocation_offset_s": 6.571877956390381,
+      "provider_ts": "2026-10-11T23:16:54.084568427Z"
+    },
+    {
+      "stage": "agent_downloaded",
+      "allocation_offset_s": 7.24308443069458,
+      "provider_ts": "2026-10-11T23:16:54.756221050Z"
+    }
+  ],
+  "native_process_events": [
+    {
+      "provider_ts": "2026-10-11T23:18:30.625208098Z",
+      "details": {
+        "engine": "rust"
+      },
+      "elapsed_s": 1.3786e-05,
+      "event": "process_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:30.625780788Z",
+      "details": {
+        "kind": "cuda",
+        "ordinal": 0
+      },
+      "elapsed_s": 0.000756346,
+      "event": "device_initialization_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:30.840128381Z",
+      "details": {
+        "kind": "cuda",
+        "ordinal": 0
+      },
+      "elapsed_s": 0.214798764,
+      "event": "device_initialized"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:30.840185268Z",
+      "details": {
+        "bytes": 8411565456,
+        "files": 1
+      },
+      "elapsed_s": 0.214965819,
+      "event": "weights_read_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:31.198249402Z",
+      "details": {},
+      "elapsed_s": 0.572951786,
+      "event": "tokenizer_loaded"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:36.851081570Z",
+      "details": {
+        "bytes": 8411565456,
+        "tensors": 426
+      },
+      "elapsed_s": 6.225752003,
+      "event": "weights_read_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:38.766237728Z",
+      "details": {
+        "layers": 32,
+        "vocab": 248320
+      },
+      "elapsed_s": 8.141021645,
+      "event": "model_loaded"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:38.768958096Z",
+      "details": {
+        "address": "127.0.0.1:8000"
+      },
+      "elapsed_s": 8.143557806,
+      "event": "http_listening"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:39.704622910Z",
+      "details": {
+        "jobs": 1,
+        "sequences": 1
+      },
+      "elapsed_s": 9.079370708,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:39.705457162Z",
+      "details": {
+        "batch_size": 1,
+        "prompt_tokens": 19
+      },
+      "elapsed_s": 9.080393677,
+      "event": "batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:40.098374561Z",
+      "details": {
+        "batch_size": 1,
+        "elapsed_s": 0.393610576
+      },
+      "elapsed_s": 9.473155733,
+      "event": "batch_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:40.594563044Z",
+      "details": {
+        "jobs": 1,
+        "sequences": 1
+      },
+      "elapsed_s": 9.969439015,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:40.594605845Z",
+      "details": {
+        "batch_size": 1,
+        "prompt_tokens": 40
+      },
+      "elapsed_s": 9.969572506,
+      "event": "batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:41.462686581Z",
+      "details": {
+        "batch_size": 1,
+        "elapsed_s": 0.86799828
+      },
+      "elapsed_s": 10.837520832,
+      "event": "batch_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:41.792983679Z",
+      "details": {
+        "jobs": 1,
+        "sequences": 1
+      },
+      "elapsed_s": 11.167895327,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:41.793043973Z",
+      "details": {
+        "batch_size": 1,
+        "prompt_tokens": 40
+      },
+      "elapsed_s": 11.168010484,
+      "event": "batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:42.653164311Z",
+      "details": {
+        "batch_size": 1,
+        "elapsed_s": 0.860112474
+      },
+      "elapsed_s": 12.028051844,
+      "event": "batch_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:42.655261946Z",
+      "details": {
+        "jobs": 7,
+        "sequences": 7
+      },
+      "elapsed_s": 12.03024618,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:42.655326678Z",
+      "details": {
+        "batch_size": 7,
+        "prompt_tokens": 40
+      },
+      "elapsed_s": 12.030321262,
+      "event": "batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:43.603266512Z",
+      "details": {
+        "batch_size": 7,
+        "elapsed_s": 0.947823996
+      },
+      "elapsed_s": 12.978111023,
+      "event": "batch_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:43.986611926Z",
+      "details": {
+        "jobs": 3,
+        "sequences": 3
+      },
+      "elapsed_s": 13.361477757,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:43.986666719Z",
+      "details": {
+        "batch_size": 3,
+        "prefill_cohorts": 3,
+        "prompt_lengths": [
+          44,
+          68,
+          64
+        ]
+      },
+      "elapsed_s": 13.361576373,
+      "event": "mixed_batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.453472220Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          44,
+          68,
+          64
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.828294369,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.481328524Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          45,
+          69,
+          65
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.856279396,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.507416665Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          46,
+          70,
+          66
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.882350454000001,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.533285913Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          47,
+          71,
+          67
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.908223229,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.559281539Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          48,
+          72,
+          68
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.934219727,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.585049517Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          49,
+          73,
+          69
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.959988987,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.610759264Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          50,
+          74,
+          70
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 13.985696951,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.636584990Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          51,
+          75,
+          71
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.011523378,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.662739195Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          52,
+          76,
+          72
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.037677163,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.689090933Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          53,
+          77,
+          73
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.063857377,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.714736750Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          54,
+          78,
+          74
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.089676961,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.740490530Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          55,
+          79,
+          75
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.115417818,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.766005100Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          56,
+          80,
+          76
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.140928971,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.792145098Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          57,
+          81,
+          77
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.167067997,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.818237477Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          58,
+          82,
+          78
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.193179522,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.844566081Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          59,
+          83,
+          79
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.21948906,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.870613816Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          60,
+          84,
+          80
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.245535923,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.896828786Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          61,
+          85,
+          81
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.27175478,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.922934299Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          62,
+          86,
+          82
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.297769062,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.949509167Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          63,
+          87,
+          83
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.324435583,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:44.975841358Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          64,
+          88,
+          84
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.3507603,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.001983190Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          65,
+          89,
+          85
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.376921849,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.028078595Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          66,
+          90,
+          86
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.403008707,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.054167988Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          67,
+          91,
+          87
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.429117747,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.080595919Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          68,
+          92,
+          88
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.455549676,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.106464466Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          69,
+          93,
+          89
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.481434153,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.132506129Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          70,
+          94,
+          90
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.507469274,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.158770913Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          71,
+          95,
+          91
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.533721374,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.184968560Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          72,
+          96,
+          92
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.55993963,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.211266506Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          73,
+          97,
+          93
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.58617604,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.237203913Z",
+      "details": {
+        "active_rows": 3,
+        "positions": [
+          74,
+          98,
+          94
+        ],
+        "request_rows": [
+          0,
+          1,
+          2
+        ]
+      },
+      "elapsed_s": 14.612156017,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.263326358Z",
+      "details": {
+        "batch_size": 3,
+        "elapsed_s": 1.276703292
+      },
+      "elapsed_s": 14.63827731,
+      "event": "mixed_batch_finished"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.265463868Z",
+      "details": {
+        "jobs": 5,
+        "sequences": 5
+      },
+      "elapsed_s": 14.640402446,
+      "event": "queue_batch"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.265486721Z",
+      "details": {
+        "batch_size": 5,
+        "prefill_cohorts": 5,
+        "prompt_lengths": [
+          48,
+          52,
+          40,
+          60,
+          56
+        ]
+      },
+      "elapsed_s": 14.640456769,
+      "event": "mixed_batch_started"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:45.982021516Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          48,
+          52,
+          40,
+          60,
+          56
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.356732285,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.011600978Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          49,
+          53,
+          41,
+          61,
+          57
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.38652027,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.037893945Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          50,
+          54,
+          42,
+          62,
+          58
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.412742885,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.063627998Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          51,
+          55,
+          43,
+          63,
+          59
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.438565735,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.089519799Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          52,
+          56,
+          44,
+          64,
+          60
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.464455302,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.115488995Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          53,
+          57,
+          45,
+          65,
+          61
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.490428255,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.141568821Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          54,
+          58,
+          46,
+          66,
+          62
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.516504604,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.167784051Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          55,
+          59,
+          47,
+          67,
+          63
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.542715115,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.193830824Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          56,
+          60,
+          48,
+          68,
+          64
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.568739065,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.219766016Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          57,
+          61,
+          49,
+          69,
+          65
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.594704995,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.245774196Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          58,
+          62,
+          50,
+          70,
+          66
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.620700632,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.271694931Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          59,
+          63,
+          51,
+          71,
+          67
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.646634762,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.297728609Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          60,
+          64,
+          52,
+          72,
+          68
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.672675243,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.325402029Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          61,
+          65,
+          53,
+          73,
+          69
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.700157301,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.353113570Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          62,
+          66,
+          54,
+          74,
+          70
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.728049784,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.380147363Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          63,
+          67,
+          55,
+          75,
+          71
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.755085641,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.406979376Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          64,
+          68,
+          56,
+          76,
+          72
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.781916833,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.433548454Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          65,
+          69,
+          57,
+          77,
+          73
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.808482634,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.460773929Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          66,
+          70,
+          58,
+          78,
+          74
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.835715262,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.487873356Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          67,
+          71,
+          59,
+          79,
+          75
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.862797357,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.514954739Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          68,
+          72,
+          60,
+          80,
+          76
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.889924025,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.541517294Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          69,
+          73,
+          61,
+          81,
+          77
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.9164494,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.568247315Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          70,
+          74,
+          62,
+          82,
+          78
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.943051149,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.596258972Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          71,
+          75,
+          63,
+          83,
+          79
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.971187431,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.623363669Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          72,
+          76,
+          64,
+          84,
+          80
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 15.998296747,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.651877913Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          73,
+          77,
+          65,
+          85,
+          81
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 16.026616685,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.679466894Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          74,
+          78,
+          66,
+          86,
+          82
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 16.054421863,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.706311701Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          75,
+          79,
+          67,
+          87,
+          83
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 16.081093864,
+      "event": "mixed_decode_step"
+    },
+    {
+      "provider_ts": "2026-10-11T23:18:46.733064034Z",
+      "details": {
+        "active_rows": 5,
+        "positions": [
+          76,
+          80,
+          68,
+          88,
+          84
+        ],
+        "request_rows": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "elapsed_s": 16.10802294,
+      "event": "mixed_decode_step"
+    }
+  ],
+  "provider_lifecycle_events": [
+    {
+      "source": "system",
+      "line": "create container ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136 Pulling from lxe/switchyard-runtime",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Pulling fs layer",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "145c57f29309 Pulling fs layer",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "09da4417651a Pulling fs layer",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "e2bde8fe2b8c Pulling fs layer",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "c52adfcab032 Pulling fs layer",
+      "ts": "2026-10-11T23:16:49Z"
+    },
+    {
+      "source": "system",
+      "line": "145c57f29309 Downloading",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "145c57f29309 Download complete",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "e2bde8fe2b8c Downloading",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "09da4417651a Downloading",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Downloading",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "e2bde8fe2b8c Verifying Checksum",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "e2bde8fe2b8c Download complete",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "c52adfcab032 Downloading",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "09da4417651a Verifying Checksum",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "09da4417651a Download complete",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Verifying Checksum",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Download complete",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "c52adfcab032 Verifying Checksum",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "c52adfcab032 Download complete",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Extracting",
+      "ts": "2026-10-11T23:16:50Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Extracting",
+      "ts": "2026-10-11T23:16:51Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Extracting",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "a60ef8ec184e Pull complete",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "145c57f29309 Extracting",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "145c57f29309 Pull complete",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "09da4417651a Extracting",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "09da4417651a Pull complete",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "e2bde8fe2b8c Extracting",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "e2bde8fe2b8c Pull complete",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "c52adfcab032 Extracting",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "c52adfcab032 Pull complete",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "Digest: sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "Status: Downloaded newer image for ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+      "ts": "2026-10-11T23:16:52Z"
+    },
+    {
+      "source": "system",
+      "line": "start container for ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136: begin",
+      "ts": "2026-10-11T23:16:53Z"
+    }
+  ],
+  "agent_state": {
+    "model": "qwen3.5-4b",
+    "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "phase": "ready",
+    "bytes_downloaded": 6559047971,
+    "bytes_total": 6559047971,
+    "hydration_seconds": 94.95466553,
+    "volume_bytes_per_s": 69095436.21966338,
+    "model_cached": false,
+    "image_cached": null,
+    "error": null,
+    "artifact_bytes_downloaded": 0,
+    "artifact_network_bytes_downloaded": 453239898,
+    "artifact_bytes_total": 453239898,
+    "artifact_volume_bytes_per_s": null,
+    "artifact_network_bytes_per_s": 112938709.80868542,
+    "artifacts": [
+      {
+        "name": "runtime",
+        "id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+        "phase": "ready",
+        "downloaded_bytes": 0,
+        "network_bytes_downloaded": 452739512,
+        "network_verified_bytes": 0,
+        "total_bytes": 452739512,
+        "unpacked_bytes": 792303104,
+        "total_unpacked_bytes": 792303104,
+        "verified_chunks": 0,
+        "total_chunks": 4,
+        "cached": false,
+        "chunk_cache_hits": 0,
+        "error": null,
+        "transport": {
+          "transfers": [
+            {
+              "object": "09aa1012d9147101ce004827a3d12550de41f8805d8418dbc5a097f3a6323e13.tar.zst",
+              "offset": 0,
+              "expected_bytes": 351423960,
+              "received_bytes": 351423960,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 3.891847681,
+              "body_wait_seconds": 2.4020234000000036,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            },
+            {
+              "object": "53274d272378d79a5029ee7742ba5ffc2fad323af58cecdd67200b2f1b69d8b0.tar.zst",
+              "offset": 0,
+              "expected_bytes": 833659,
+              "received_bytes": 833659,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 0.461340799,
+              "body_wait_seconds": 0.10275789900000001,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            },
+            {
+              "object": "95ed98b9e2eb791bf76d87a6ddc9ed39b3161458e20b92d59c4ddaef40fc2edf.tar.zst",
+              "offset": 0,
+              "expected_bytes": 57021964,
+              "received_bytes": 57021964,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 1.139750642,
+              "body_wait_seconds": 0.4866663580000001,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            },
+            {
+              "object": "e83a60ba075b3aee6c342dd9eb5884c64c7fc0c6cf73cdf72d0e91ccec4c0c6d.tar.zst",
+              "offset": 0,
+              "expected_bytes": 43459929,
+              "received_bytes": 43459929,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 0.921262834,
+              "body_wait_seconds": 0.2935751419999999,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            }
+          ],
+          "omitted_transfers": 0,
+          "failure": null
+        }
+      },
+      {
+        "name": "gpu-kernels",
+        "id": "0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f",
+        "phase": "ready",
+        "downloaded_bytes": 0,
+        "network_bytes_downloaded": 500386,
+        "network_verified_bytes": 0,
+        "total_bytes": 500386,
+        "unpacked_bytes": 9877504,
+        "total_unpacked_bytes": 9877504,
+        "verified_chunks": 0,
+        "total_chunks": 1,
+        "cached": false,
+        "chunk_cache_hits": 0,
+        "error": null,
+        "transport": {
+          "transfers": [
+            {
+              "object": "6759c14e902f50dea3b016a25971e6fcb852daf1c3394cee6b3e3c4415edbdb9.tar.zst",
+              "offset": 0,
+              "expected_bytes": 500386,
+              "received_bytes": 500386,
+              "written_bytes": 0,
+              "boundary": "complete",
+              "elapsed_seconds": 0.945618297,
+              "body_wait_seconds": 0.052911326999999994,
+              "storage_write_seconds": 0.0,
+              "failure": null
+            }
+          ],
+          "omitted_transfers": 0,
+          "failure": null
+        }
+      }
+    ],
+    "inference_verified": false,
+    "hydration_mode": "trusted_streaming",
+    "model_storage": {
+      "root": "/work/switchyard",
+      "filesystem": "overlay",
+      "mount_point": "/",
+      "source": "overlay",
+      "ram_backed": false,
+      "available_bytes": 32182165504,
+      "required_bytes": 8424396060,
+      "memory_available_bytes": 235594907648,
+      "cgroup_available_bytes": 82971815936
+    },
+    "runtime_storage": {
+      "root": "/opt/switchyard",
+      "filesystem": "overlay",
+      "mount_point": "/",
+      "source": "overlay",
+      "ram_backed": false,
+      "available_bytes": 32182165504,
+      "required_bytes": 792292046,
+      "memory_available_bytes": 235568852992,
+      "cgroup_available_bytes": 82971648000
+    },
+    "dependency_budget": {
+      "model_bytes": 8424396060,
+      "model_output_required_bytes": 8424396060,
+      "runtime_output_bytes": 792292046,
+      "compressed_backing_bytes": 0,
+      "decoder_history_bound_bytes": 3221225472,
+      "loader_staging_bytes": 0,
+      "required_ram_bytes": 3759407104,
+      "preflight_seconds": 0.008341536
+    },
+    "startup_milestones": [
+      {
+        "event": "runtime_hydration_started",
+        "elapsed_s": 0.644953923
+      },
+      {
+        "event": "model_hydration_started",
+        "elapsed_s": 0.703287151
+      },
+      {
+        "event": "runtime_hydration_finished",
+        "elapsed_s": 4.658352228
+      },
+      {
+        "event": "model_hydration_finished",
+        "elapsed_s": 95.681175601
+      },
+      {
+        "event": "engine_spawned",
+        "elapsed_s": 95.682055479
+      },
+      {
+        "event": "engine_health_polling_started",
+        "elapsed_s": 95.707841861
+      },
+      {
+        "event": "engine_health_ready",
+        "elapsed_s": 104.028350911
+      }
+    ],
+    "model_diagnostics": {
+      "elapsed_s": 111.677886147,
+      "available_permits": null,
+      "transfers": [
+        {
+          "name": "655f08352d1f3b0ea5fe588840f2a47164971712f6f14aa5b65795a03ef100ff.tar.zst",
+          "shard": 0,
+          "seq": 0,
+          "expected_bytes": 6605,
+          "boundary": "complete",
+          "boundary_since_s": 0.501060097,
+          "boundary_age_s": 111.17682604999999,
+          "consumer_boundary": "complete",
+          "consumer_since_s": 0.501018148,
+          "consumer_age_s": 111.176867999,
+          "permit_wait_started_s": 9.8005e-05,
+          "permit_acquired_s": 9.8807e-05,
+          "permit_released_s": 0.501018028,
+          "permit_wait_s": 8.020000000000103e-07,
+          "permit_held_s": 0.500919221,
+          "request_s": 0.000102724,
+          "headers_s": 0.499689133,
+          "first_body_s": 0.500035345,
+          "last_body_s": 0.500035345,
+          "body_eof_s": 0.500095539,
+          "consumed_s": 0.501018028,
+          "http_version": "HTTP/1.1",
+          "http_status": 200,
+          "declared_length": 6605,
+          "remote_socket": "172.64.66.1:443",
+          "received_bytes": 6605,
+          "delivered_bytes": 6605,
+          "consumed_bytes": 6605,
+          "decoded_bytes": 26112,
+          "channel_available_slots": 4,
+          "channel_slots": 4,
+          "channel_wait_s": 5.4102e-05,
+          "body_wait_s": 0.000332547,
+          "longest_body_wait_s": 0.000330844,
+          "error_class": null
+        },
+        {
+          "name": "bb77e383eb87a0acabb8a0d5db6e78c30b70295d7ef0491c89806368f2fc187e.tar.zst",
+          "shard": 1,
+          "seq": 0,
+          "expected_bytes": 6555674116,
+          "boundary": "complete",
+          "boundary_since_s": 94.928336245,
+          "boundary_age_s": 16.749549902,
+          "consumer_boundary": "complete",
+          "consumer_since_s": 94.928293063,
+          "consumer_age_s": 16.749593083999997,
+          "permit_wait_started_s": 0.000689841,
+          "permit_acquired_s": 0.000690011,
+          "permit_released_s": 94.928292943,
+          "permit_wait_s": 1.700000000000746e-07,
+          "permit_held_s": 94.927602932,
+          "request_s": 0.000701343,
+          "headers_s": 0.509225049,
+          "first_body_s": 0.510023775,
+          "last_body_s": 94.927368641,
+          "body_eof_s": 94.927563177,
+          "consumed_s": 94.928292943,
+          "http_version": "HTTP/1.1",
+          "http_status": 200,
+          "declared_length": 6555674116,
+          "remote_socket": "172.64.190.1:443",
+          "received_bytes": 6555674116,
+          "delivered_bytes": 6555674116,
+          "consumed_bytes": 6555674116,
+          "decoded_bytes": 8411567104,
+          "channel_available_slots": 4,
+          "channel_slots": 4,
+          "channel_wait_s": 28.529608944000458,
+          "body_wait_s": 63.88334615700016,
+          "longest_body_wait_s": 0.900231666,
+          "error_class": null
+        },
+        {
+          "name": "af2f66a1ccb140204f7722e7beb0bee3c359aca447d123a4326f7527a98cc3f3.tar.zst",
+          "shard": 2,
+          "seq": 0,
+          "expected_bytes": 3367250,
+          "boundary": "complete",
+          "boundary_since_s": 1.106764056,
+          "boundary_age_s": 110.57112209099999,
+          "consumer_boundary": "complete",
+          "consumer_since_s": 1.106720644,
+          "consumer_age_s": 110.57116550299999,
+          "permit_wait_started_s": 0.001162973,
+          "permit_acquired_s": 0.001163133,
+          "permit_released_s": 1.106720524,
+          "permit_wait_s": 1.5999999999991715e-07,
+          "permit_held_s": 1.105557391,
+          "request_s": 0.001167161,
+          "headers_s": 0.772927816,
+          "first_body_s": 0.781070717,
+          "last_body_s": 1.105052109,
+          "body_eof_s": 1.105212301,
+          "consumed_s": 1.106720524,
+          "http_version": "HTTP/1.1",
+          "http_status": 200,
+          "declared_length": 3367250,
+          "remote_socket": "172.64.66.1:443",
+          "received_bytes": 3367250,
+          "delivered_bytes": 3367250,
+          "consumed_bytes": 3367250,
+          "decoded_bytes": 12810752,
+          "channel_available_slots": 4,
+          "channel_slots": 4,
+          "channel_wait_s": 0.007601118000000002,
+          "body_wait_s": 0.32394200900000003,
+          "longest_body_wait_s": 0.019161673,
+          "error_class": null
+        }
+      ],
+      "shards": [
+        {
+          "shard": 0,
+          "active_seq": 0,
+          "boundary": "complete",
+          "boundary_since_s": 0.501335316,
+          "boundary_age_s": 111.176550831,
+          "decoded_bytes": 26112,
+          "file_written_bytes": 22461
+        },
+        {
+          "shard": 1,
+          "active_seq": 0,
+          "boundary": "complete",
+          "boundary_since_s": 94.954053006,
+          "boundary_age_s": 16.723833141,
+          "decoded_bytes": 8411567104,
+          "file_written_bytes": 8411565456
+        },
+        {
+          "shard": 2,
+          "active_seq": 0,
+          "boundary": "complete",
+          "boundary_since_s": 1.109578883,
+          "boundary_age_s": 110.568307264,
+          "decoded_bytes": 12810752,
+          "file_written_bytes": 12808143
+        }
+      ],
+      "omitted_transfers": 0,
+      "omitted_shards": 0,
+      "failure": null
+    }
+  },
+  "request": {
+    "model": "qwen3.5-4b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word Paris."
+      }
+    ],
+    "max_tokens": 4,
+    "temperature": 0,
+    "stream": true
+  },
+  "frames": [
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": "Paris",
+            "role": "assistant"
+          },
+          "finish_reason": null,
+          "index": 0,
+          "token_ids": [
+            57590
+          ]
+        }
+      ],
+      "created": 1791760719,
+      "id": "sy-591-1",
+      "model": "qwen3.5-4b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.315194778
+    },
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null,
+          "index": 0,
+          "token_ids": [
+            248046
+          ]
+        }
+      ],
+      "created": 1791760719,
+      "id": "sy-591-1",
+      "model": "qwen3.5-4b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.344923272
+    },
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": "\n"
+          },
+          "finish_reason": null,
+          "index": 0,
+          "token_ids": [
+            198
+          ]
+        }
+      ],
+      "created": 1791760719,
+      "id": "sy-591-1",
+      "model": "qwen3.5-4b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.369309755
+    },
+    {
+      "choices": [
+        {
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": "stop",
+          "index": 0,
+          "token_ids": [
+            248044
+          ]
+        }
+      ],
+      "created": 1791760719,
+      "id": "sy-591-1",
+      "model": "qwen3.5-4b",
+      "object": "chat.completion.chunk",
+      "token_elapsed_s": 0.393588614
+    }
+  ],
+  "workloads": {
+    "format": "switchyard-native-hot-http-workloads-v1",
+    "model": "qwen3.5-4b",
+    "workloads": [
+      {
+        "name": "hot_single",
+        "concurrent_requests": 1,
+        "requested_token_budget": 32,
+        "emitted_tokens_including_stop_ids": 32,
+        "elapsed_s": 1.3889300329901744,
+        "aggregate_tokens_per_s": 23.039317488951134,
+        "first_content_s": {
+          "min": 0.5729640600038692,
+          "p50": 0.5729640600038692,
+          "p95": 0.5729640600038692,
+          "max": 0.5729640600038692
+        },
+        "calls": [
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-2",
+            "started_monotonic_s": 84148.082588381,
+            "finished_monotonic_s": 84149.471518414,
+            "elapsed_s": 1.3889300329901744,
+            "first_content_s": 0.5729640600038692,
+            "first_token_engine_s": 0.113287317,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          }
+        ]
+      },
+      {
+        "name": "equal_length_burst",
+        "concurrent_requests": 8,
+        "requested_token_budget": 256,
+        "emitted_tokens_including_stop_ids": 256,
+        "elapsed_s": 2.194535642003757,
+        "aggregate_tokens_per_s": 116.65337992243998,
+        "first_content_s": {
+          "min": 0.3791702429880388,
+          "p50": 1.2298168530032854,
+          "p95": 1.2308061770017957,
+          "max": 1.2308061770017957
+        },
+        "calls": [
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-4",
+            "started_monotonic_s": 84149.473747459,
+            "finished_monotonic_s": 84151.535580066,
+            "elapsed_s": 2.0618326070107287,
+            "first_content_s": 1.2299331490066834,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-3",
+            "started_monotonic_s": 84149.473898202,
+            "finished_monotonic_s": 84150.669901677,
+            "elapsed_s": 1.1960034749936312,
+            "first_content_s": 0.3791702429880388,
+            "first_token_engine_s": 0.111380462,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-9",
+            "started_monotonic_s": 84149.474162794,
+            "finished_monotonic_s": 84151.66605421,
+            "elapsed_s": 2.1918914160050917,
+            "first_content_s": 1.2298976390011376,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-8",
+            "started_monotonic_s": 84149.474034732,
+            "finished_monotonic_s": 84151.668100974,
+            "elapsed_s": 2.194066241994733,
+            "first_content_s": 1.2304531749978196,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-7",
+            "started_monotonic_s": 84149.474300663,
+            "finished_monotonic_s": 84151.666261106,
+            "elapsed_s": 2.1919604430004256,
+            "first_content_s": 1.2296725710039027,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-5",
+            "started_monotonic_s": 84149.47448029,
+            "finished_monotonic_s": 84151.53507603,
+            "elapsed_s": 2.0605957400111947,
+            "first_content_s": 1.2297360670054331,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-10",
+            "started_monotonic_s": 84149.474620076,
+            "finished_monotonic_s": 84151.66577279,
+            "elapsed_s": 2.1911527140036924,
+            "first_content_s": 1.2289977129985346,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-6",
+            "started_monotonic_s": 84149.473565332,
+            "finished_monotonic_s": 84151.53593727,
+            "elapsed_s": 2.0623719380091643,
+            "first_content_s": 1.2308061770017957,
+            "first_token_engine_s": 0.152104945,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          }
+        ]
+      },
+      {
+        "name": "varied_length_burst",
+        "concurrent_requests": 8,
+        "requested_token_budget": 256,
+        "emitted_tokens_including_stop_ids": 256,
+        "elapsed_s": 3.1806779019971145,
+        "aggregate_tokens_per_s": 80.48598691469522,
+        "first_content_s": {
+          "min": 0.37719300999015104,
+          "p50": 1.6715423929999815,
+          "p95": 2.207766873005312,
+          "max": 2.207766873005312
+        },
+        "calls": [
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-16",
+            "started_monotonic_s": 84151.669425183,
+            "finished_monotonic_s": 84154.727113353,
+            "elapsed_s": 3.057688169996254,
+            "first_content_s": 1.6066798959946027,
+            "first_token_engine_s": 0.112017273,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-11",
+            "started_monotonic_s": 84151.669570522,
+            "finished_monotonic_s": 84153.209028068,
+            "elapsed_s": 1.5394575459940825,
+            "first_content_s": 0.37719300999015104,
+            "first_token_engine_s": 0.124071246,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-14",
+            "started_monotonic_s": 84151.669761689,
+            "finished_monotonic_s": 84154.73933066,
+            "elapsed_s": 3.069568970997352,
+            "first_content_s": 1.7364048900053604,
+            "first_token_engine_s": 0.244134958,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text. Use plain text. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-15",
+            "started_monotonic_s": 84151.670108237,
+            "finished_monotonic_s": 84154.739129143,
+            "elapsed_s": 3.069020905997604,
+            "first_content_s": 1.8870044369978132,
+            "first_token_engine_s": 0.394954129,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text. Use plain text. Use plain text. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-18",
+            "started_monotonic_s": 84151.670008947,
+            "finished_monotonic_s": 84154.726906275,
+            "elapsed_s": 3.0568973280023783,
+            "first_content_s": 2.0468382270046277,
+            "first_token_engine_s": 0.55322122,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text. Use plain text. Use plain text. Use plain text. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-17",
+            "started_monotonic_s": 84151.66987955,
+            "finished_monotonic_s": 84154.849957877,
+            "elapsed_s": 3.180078327000956,
+            "first_content_s": 2.207766873005312,
+            "first_token_engine_s": 0.716199403,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text. Use plain text. Use plain text. Use plain text. Use plain text. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-13",
+            "started_monotonic_s": 84151.669670511,
+            "finished_monotonic_s": 84153.212636497,
+            "elapsed_s": 1.5429659860092215,
+            "first_content_s": 0.5054619210131932,
+            "first_token_engine_s": 0.291567306,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          },
+          {
+            "request": {
+              "model": "qwen3.5-4b",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "List the integers from 1 to 100 in order, separated by spaces. Keep writing until you reach 100. Use plain text. Use plain text. Use plain text. Use plain text. Use plain text. Use plain text. Use plain text."
+                }
+              ],
+              "max_tokens": 32,
+              "temperature": 0,
+              "stream": true
+            },
+            "request_id": "sy-591-12",
+            "started_monotonic_s": 84151.669279975,
+            "finished_monotonic_s": 84153.180448725,
+            "elapsed_s": 1.5111687500029802,
+            "first_content_s": 0.6804917940025916,
+            "first_token_engine_s": 0.466673492,
+            "emitted_token_ids": [
+              16,
+              220,
+              17,
+              220,
+              18,
+              220,
+              19,
+              220,
+              20,
+              220,
+              21,
+              220,
+              22,
+              220,
+              23,
+              220,
+              24,
+              220,
+              16,
+              15,
+              220,
+              16,
+              16,
+              220,
+              16,
+              17,
+              220,
+              16,
+              18,
+              220,
+              16,
+              19
+            ],
+            "emitted_tokens": 32,
+            "content": "1 2 3 4 5 6 7 8 9 10 11 12 13 14",
+            "finish_reason": "length",
+            "queue_wait_s": null
+          }
+        ]
+      }
+    ],
+    "queue_wait_available": false,
+    "clock": "local monotonic; native first token elapsed separately recorded",
+    "batching": "observed native batch_started telemetry; proxy arrival times may split cohorts"
+  },
+  "offline_bake": {
+    "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+    "hardware": "NVIDIA GeForce RTX 4090, GPU-07449a74-c8cb-cb5c-567f-62187235b878, 580.159.04, 8.9, 24564 MiB",
+    "native_generation_s": 23.41825703,
+    "cache_bytes": 9823363,
+    "cache_files": 9,
+    "controller_events": [
+      {
+        "stage": "allocation_started",
+        "elapsed_s": 0.00027261499781161547,
+        "name": "switchyard-native-bake-4869a93f33a8"
+      },
+      {
+        "stage": "allocation_accepted",
+        "elapsed_s": 1.2339609110058518,
+        "id": "x9wadwkrxgku8x",
+        "name": "switchyard-native-bake-4869a93f33a8",
+        "status": "RUNNING",
+        "cost": 0.89,
+        "dataCenterId": "EUR-IS-2",
+        "cudaVersion": "13.0"
+      },
+      {
+        "stage": "bake_container_ready",
+        "elapsed_s": 31.756011965000653,
+        "pod_id": "x9wadwkrxgku8x"
+      },
+      {
+        "stage": "offline_bake_started",
+        "elapsed_s": 34.53271570299694
+      },
+      {
+        "stage": "offline_bake_finished",
+        "elapsed_s": 292.4247878919996
+      },
+      {
+        "stage": "cache_published",
+        "elapsed_s": 298.18361295599607,
+        "cache_id": "9424f56de9db7c7fbc45e4dc7757a904a628ed4a08f3ab611dee5d466963050b",
+        "driver": "580.159.04",
+        "gpu": "NVIDIA GeForce RTX 4090",
+        "cache_bytes": 9823363,
+        "cache_files": 9
+      },
+      {
+        "stage": "cleanup",
+        "elapsed_s": 300.79466860600223,
+        "pod_id": "x9wadwkrxgku8x",
+        "confirmed_absent": true
+      }
+    ],
+    "cleanup": {
+      "pod_id": "x9wadwkrxgku8x",
+      "name": "switchyard-native-bake-4869a93f33a8",
+      "confirmed_absent": true
+    }
+  },
+  "launch_controller_events": [
+    {
+      "stage": "allocation_started",
+      "elapsed_s": 6.33841574699909,
+      "name": "switchyard-native-launch-0d18d36092af"
+    },
+    {
+      "stage": "allocation_accepted",
+      "elapsed_s": 7.428972918991349,
+      "id": "jx4kvtgnxqzqsz",
+      "name": "switchyard-native-launch-0d18d36092af",
+      "status": "RUNNING",
+      "cost": 0.89,
+      "dataCenterId": "EUR-IS-1",
+      "cudaVersion": "13.0"
+    },
+    {
+      "stage": "provider_log_read_notice",
+      "elapsed_s": 15.936285764997592,
+      "error_type": "TimeoutError",
+      "http_status": null
+    },
+    {
+      "stage": "agent_listener_observed",
+      "elapsed_s": 39.1352484379895,
+      "allocation_s": 32.79686065700662
+    },
+    {
+      "stage": "native_ready_observed",
+      "elapsed_s": 117.88554502199986,
+      "allocation_s": 111.5470068440045
+    },
+    {
+      "stage": "first_streamed_content",
+      "elapsed_s": 118.93292648499482,
+      "allocation_s": 112.59453834699525,
+      "request_s": 1.0473475979961222,
+      "content": "Paris"
+    },
+    {
+      "stage": "hot_workloads_started",
+      "elapsed_s": 119.09930501399504,
+      "max_tokens": 32,
+      "concurrency": 8
+    },
+    {
+      "stage": "hot_workloads_finished",
+      "elapsed_s": 125.86759352000081,
+      "workloads": [
+        {
+          "name": "hot_single",
+          "emitted_tokens": 32,
+          "elapsed_s": 1.3889300329901744,
+          "tokens_per_s": 23.039317488951134
+        },
+        {
+          "name": "equal_length_burst",
+          "emitted_tokens": 256,
+          "elapsed_s": 2.194535642003757,
+          "tokens_per_s": 116.65337992243998
+        },
+        {
+          "name": "varied_length_burst",
+          "emitted_tokens": 256,
+          "elapsed_s": 3.1806779019971145,
+          "tokens_per_s": 80.48598691469522
+        }
+      ]
+    },
+    {
+      "stage": "cleanup",
+      "elapsed_s": 130.36091381299775,
+      "pod_id": "jx4kvtgnxqzqsz",
+      "confirmed_absent": true
+    },
+    {
+      "stage": "rental_estimate",
+      "elapsed_s": 130.86327906699444,
+      "rental_duration_s": 124.52488941499905,
+      "estimated_usd": 0.030785320151638207
+    }
+  ],
+  "cleanup": {
+    "pod_id": "jx4kvtgnxqzqsz",
+    "name": "switchyard-native-launch-0d18d36092af",
+    "confirmed_absent": true
+  },
+  "limitations": {
+    "hard_gpu_allocator_cap_enforced": false,
+    "direct_gpu_weight_chunk_consumer": false,
+    "native_weight_reader": "aggregate host buffer bounded by max_weight_bytes",
+    "model_transport": "bounded Rust archive streaming into native files",
+    "image_cache_residency": "unknown",
+    "serving_python": false,
+    "torch": false,
+    "vllm": false,
+    "criu": false,
+    "serving_content_hashes": false,
+    "inference_readiness_probe": false
+  }
+}

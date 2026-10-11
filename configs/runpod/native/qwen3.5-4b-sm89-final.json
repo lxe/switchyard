@@ -11,7 +11,9 @@
     "cloud": "SECURE",
     "gpu_id": "NVIDIA GeForce RTX 4090",
     "data_centers": [
-      "EUR-IS-2"
+      "EU-RO-1",
+      "EUR-IS-2",
+      "EUR-IS-1"
     ],
     "min_cuda": "13.0",
     "allowed_cuda_versions": [

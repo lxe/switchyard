@@ -1,0 +1,267 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "data_centers": [
+      "EU-RO-1",
+      "EUR-IS-2",
+      "EUR-IS-1"
+    ],
+    "min_cuda": "13.0",
+    "disk_gb": 30,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "archive_prefix": "switchyard/native-engine/live-models/3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "bf16",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 1610612736,
+          "minimum_gpu_memory_bytes": 8589934592,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0
+        }
+      },
+      "prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 35.2,
+        "kv_tokens": 1024
+      },
+      "archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+      "caches": [
+        {
+          "name": "gpu-kernels",
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "artifact": {
+            "prefix": "switchyard/native-engine/cache-families/801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47",
+            "id": "801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47"
+          },
+          "compatibility": {
+            "engine_configuration": "5403650dddaf53d7d72e1cfbabc40fa96d53da0aaa302a625b1d6ec227b21e3a",
+            "gpu": "NVIDIA GeForce RTX 4090",
+            "model_archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+            "model_repository": "Qwen/Qwen3.5-0.8B",
+            "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+            "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+            "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+            "architecture": "x86_64",
+            "os": "ubuntu24.04",
+            "cuda_build": "13.0.0",
+            "gpu_compute_capability": "8.9",
+            "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+            "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+            "cuda_compiler_target": "compute_89",
+            "cuda_compiler_version": "13.0.48",
+            "native_config_sha256": "a6f76f7157b536a7014fc46ce3e503411c18b51a79a1d4c645199d11b21cb851",
+            "model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+            "native_driver_cache_layout": "native-cuda-driver-family-v1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "archive_prefix": "switchyard/native-engine/live-models/37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "bf16",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 8589934592,
+          "minimum_gpu_memory_bytes": 12884901888,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0
+        }
+      },
+      "prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 59.71,
+        "kv_tokens": 1024
+      },
+      "archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+      "caches": [
+        {
+          "name": "gpu-kernels",
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "artifact": {
+            "prefix": "switchyard/native-engine/cache-families/5f95cde23619a6f63ff3d3ab3357bfdfe06cb8a5341d5fdaf71e438d6896fd81",
+            "id": "5f95cde23619a6f63ff3d3ab3357bfdfe06cb8a5341d5fdaf71e438d6896fd81"
+          },
+          "compatibility": {
+            "engine_configuration": "a3509c4345729356a4d4b86c204af2bc230c6cee5c131f53e31c06b4b580e0ef",
+            "gpu": "NVIDIA GeForce RTX 4090",
+            "model_archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+            "model_repository": "Qwen/Qwen3.5-2B",
+            "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+            "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+            "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+            "architecture": "x86_64",
+            "os": "ubuntu24.04",
+            "cuda_build": "13.0.0",
+            "gpu_compute_capability": "8.9",
+            "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+            "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+            "cuda_compiler_target": "compute_89",
+            "cuda_compiler_version": "13.0.48",
+            "native_config_sha256": "2a5b70bf342947b7089c9187f0138ee45f265bad0e80cca6b2189724b8f49300",
+            "model_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461",
+            "native_driver_cache_layout": "native-cuda-driver-family-v1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5-4b",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "archive_prefix": "switchyard/native-engine/live-models/5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "bf16",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 12884901888,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0
+        }
+      },
+      "prior": {
+        "single_output_tps": 25,
+        "aggregate_output_tps": 100,
+        "input_work_per_token": 0.05,
+        "startup_s": 172.17,
+        "kv_tokens": 1024
+      },
+      "archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+      "caches": [
+        {
+          "name": "gpu-kernels",
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "artifact": {
+            "prefix": "switchyard/native-engine/cache-families/0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f",
+            "id": "0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f"
+          },
+          "compatibility": {
+            "engine_configuration": "23799c638018b5aa0b223713f8fb5922e4e36f00dd588d8c52c36a2ad696e001",
+            "gpu": "NVIDIA GeForce RTX 4090",
+            "model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+            "model_repository": "Qwen/Qwen3.5-4B",
+            "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+            "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+            "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+            "architecture": "x86_64",
+            "os": "ubuntu24.04",
+            "cuda_build": "13.0.0",
+            "gpu_compute_capability": "8.9",
+            "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+            "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+            "cuda_compiler_target": "compute_89",
+            "cuda_compiler_version": "13.0.48",
+            "native_config_sha256": "fac91f0cd9aacbae62962fdcad390c4779ad4d85ea354ffac90f7e50cf37ce63",
+            "model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+            "native_driver_cache_layout": "native-cuda-driver-family-v1"
+          }
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "max_instances": 3,
+    "max_usd_per_hour": 2.8,
+    "max_run_usd": 1.0,
+    "run_timeout_s": 1200,
+    "startup_timeout_s": 600,
+    "request_timeout_s": 120,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 3.0,
+    "experiment_timeout_s": 3600
+  },
+  "scheduling": {
+    "maximum_startup_s": 600,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.3/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f",
+    "ticket_prefix": "switchyard/bootstrap",
+    "runtime": {
+      "hydration": {
+        "retries": 0
+      },
+      "artifact": {
+        "id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+        "prefix": "switchyard/native-engine/runtime/a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "os": "ubuntu24.04",
+        "cuda_build": "13.0.0",
+        "gpu_compute_capability": "8.9",
+        "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+        "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48"
+      },
+      "program": "bin/launch-engine.sh",
+      "args": [],
+      "environment": {
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+        "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+        "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA GeForce RTX 4090",
+        "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+        "CUDA_CACHE_DISABLE": "0",
+        "CUDA_CACHE_MAXSIZE": "536870912"
+      }
+    },
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/work/switchyard",
+      "require_model_ram": false,
+      "early_launch": false
+    }
+  }
+}

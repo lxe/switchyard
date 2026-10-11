@@ -1,0 +1,448 @@
+{
+  "format": "switchyard-native-fleet-publication-v1",
+  "recorded_utc": "2026-10-11T23:20:32.531332+00:00",
+  "fleet_config": "configs/runpod/native-fleet.json",
+  "fleet_config_sha256": "51d139543a6655790fd8dbbcc39f215401cb2edf23ee0ff4e1baa1c341425262",
+  "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+  "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+  "runtime": {
+    "hydration": {
+      "retries": 0
+    },
+    "artifact": {
+      "id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+      "prefix": "switchyard/native-engine/runtime/a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "os": "ubuntu24.04",
+      "cuda_build": "13.0.0",
+      "gpu_compute_capability": "8.9",
+      "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+      "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+      "cuda_compiler_target": "compute_89",
+      "cuda_compiler_version": "13.0.48"
+    },
+    "program": "bin/launch-engine.sh",
+    "args": [],
+    "environment": {
+      "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+      "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+      "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA GeForce RTX 4090",
+      "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+      "CUDA_CACHE_DISABLE": "0",
+      "CUDA_CACHE_MAXSIZE": "536870912"
+    }
+  },
+  "agent": {
+    "url": "https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.3/switchyard-agent-x86_64-linux-musl",
+    "sha256": "8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f"
+  },
+  "models": [
+    {
+      "model": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "live_model_archive": {
+        "archive_prefix": "switchyard/native-engine/live-models/3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+        "archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+        "native_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db"
+      },
+      "cache_family": {
+        "id": "801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47",
+        "prefix": "switchyard/native-engine/cache-families/801ab59b2c2c01e5eb34fbb5154b55184b69a854ea735fcdc1531f8053bc3c47",
+        "compressed_bytes": 500383
+      },
+      "supported_drivers": [
+        "580.159.04"
+      ],
+      "selected_component_cache_id": "1e6fa9783c441341a557dcf206f9e69990120de3e119b8ed8ff530d5a26a1be9",
+      "compatibility": {
+        "engine_configuration": "5403650dddaf53d7d72e1cfbabc40fa96d53da0aaa302a625b1d6ec227b21e3a",
+        "gpu": "NVIDIA GeForce RTX 4090",
+        "model_archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+        "model_repository": "Qwen/Qwen3.5-0.8B",
+        "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+        "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+        "architecture": "x86_64",
+        "os": "ubuntu24.04",
+        "cuda_build": "13.0.0",
+        "gpu_compute_capability": "8.9",
+        "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+        "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48",
+        "native_config_sha256": "a6f76f7157b536a7014fc46ce3e503411c18b51a79a1d4c645199d11b21cb851",
+        "model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+        "native_driver_cache_layout": "native-cuda-driver-family-v1"
+      },
+      "cloud_receipt": "native-runpod-final-qwen0.8b.json",
+      "cold_launch_timing_s": {
+        "agent_listener_allocation_s": 22.277891664998606,
+        "ready_allocation_s": 22.972108114001458,
+        "first_content_allocation_s": 24.074406639003428,
+        "request_to_first_content_s": 1.1021492700092494
+      },
+      "model_cached": false,
+      "offline_bake_cleanup": {
+        "pod_id": "eah3t7xwkqjxed",
+        "name": "switchyard-native-bake-bf5f3c5c1ccd",
+        "confirmed_absent": true
+      },
+      "fresh_launch_cleanup": {
+        "pod_id": "o70whvuqi6wpye",
+        "name": "switchyard-native-launch-61b3c9246bb1",
+        "confirmed_absent": true
+      },
+      "hot_workloads": [],
+      "planning_prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 35.2,
+        "kv_tokens": 1024
+      }
+    },
+    {
+      "model": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "live_model_archive": {
+        "archive_prefix": "switchyard/native-engine/live-models/37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+        "archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+        "native_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461"
+      },
+      "cache_family": {
+        "id": "5f95cde23619a6f63ff3d3ab3357bfdfe06cb8a5341d5fdaf71e438d6896fd81",
+        "prefix": "switchyard/native-engine/cache-families/5f95cde23619a6f63ff3d3ab3357bfdfe06cb8a5341d5fdaf71e438d6896fd81",
+        "compressed_bytes": 500449
+      },
+      "supported_drivers": [
+        "580.159.04"
+      ],
+      "selected_component_cache_id": "5e46b87f2dac35795678d0b0ef114bcd454338a8024e769a4a2a9c7eb7219d26",
+      "compatibility": {
+        "engine_configuration": "a3509c4345729356a4d4b86c204af2bc230c6cee5c131f53e31c06b4b580e0ef",
+        "gpu": "NVIDIA GeForce RTX 4090",
+        "model_archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+        "model_repository": "Qwen/Qwen3.5-2B",
+        "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+        "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+        "architecture": "x86_64",
+        "os": "ubuntu24.04",
+        "cuda_build": "13.0.0",
+        "gpu_compute_capability": "8.9",
+        "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+        "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48",
+        "native_config_sha256": "2a5b70bf342947b7089c9187f0138ee45f265bad0e80cca6b2189724b8f49300",
+        "model_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461",
+        "native_driver_cache_layout": "native-cuda-driver-family-v1"
+      },
+      "cloud_receipt": "native-runpod-final-qwen2b.json",
+      "cold_launch_timing_s": {
+        "agent_listener_allocation_s": 27.415086524997605,
+        "ready_allocation_s": 60.848550711991265,
+        "first_content_allocation_s": 61.84579207099159,
+        "request_to_first_content_s": 0.9970621459942777
+      },
+      "model_cached": false,
+      "offline_bake_cleanup": {
+        "pod_id": "vp4ovktvqwli9g",
+        "name": "switchyard-native-bake-90ff36511489",
+        "confirmed_absent": true
+      },
+      "fresh_launch_cleanup": {
+        "pod_id": "egk0g2ucu6820g",
+        "name": "switchyard-native-launch-7d2c48c49197",
+        "confirmed_absent": true
+      },
+      "hot_workloads": [
+        {
+          "name": "hot_single",
+          "concurrent_requests": 1,
+          "requested_token_budget": 32,
+          "emitted_tokens_including_stop_ids": 32,
+          "elapsed_s": 0.8785940840025432,
+          "aggregate_tokens_per_s": 36.421825030075404,
+          "first_content_s": {
+            "min": 0.38468596000166144,
+            "p50": 0.38468596000166144,
+            "p95": 0.38468596000166144,
+            "max": 0.38468596000166144
+          }
+        },
+        {
+          "name": "equal_length_burst",
+          "concurrent_requests": 8,
+          "requested_token_budget": 256,
+          "emitted_tokens_including_stop_ids": 256,
+          "elapsed_s": 1.6028195490071084,
+          "aggregate_tokens_per_s": 159.7185410912808,
+          "first_content_s": {
+            "min": 0.37998114799847826,
+            "p50": 0.9424090640022769,
+            "p95": 0.9433098370063817,
+            "max": 0.9433098370063817
+          }
+        },
+        {
+          "name": "varied_length_burst",
+          "concurrent_requests": 8,
+          "requested_token_budget": 256,
+          "emitted_tokens_including_stop_ids": 256,
+          "elapsed_s": 2.31466693499533,
+          "aggregate_tokens_per_s": 110.59906551977272,
+          "first_content_s": {
+            "min": 0.37047610701119993,
+            "p50": 1.1990415929976734,
+            "p95": 1.6278197729989188,
+            "max": 1.6278197729989188
+          }
+        }
+      ],
+      "planning_prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 59.71,
+        "kv_tokens": 1024
+      }
+    },
+    {
+      "model": "qwen3.5-4b",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "live_model_archive": {
+        "archive_prefix": "switchyard/native-engine/live-models/5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+        "archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+        "native_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d"
+      },
+      "cache_family": {
+        "id": "0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f",
+        "prefix": "switchyard/native-engine/cache-families/0531832724c4600b3b1bc9902f3801dc3a2f9e7c8586a7ed321a6f56b54f070f",
+        "compressed_bytes": 500386
+      },
+      "supported_drivers": [
+        "580.159.04"
+      ],
+      "selected_component_cache_id": "9424f56de9db7c7fbc45e4dc7757a904a628ed4a08f3ab611dee5d466963050b",
+      "compatibility": {
+        "engine_configuration": "23799c638018b5aa0b223713f8fb5922e4e36f00dd588d8c52c36a2ad696e001",
+        "gpu": "NVIDIA GeForce RTX 4090",
+        "model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+        "model_repository": "Qwen/Qwen3.5-4B",
+        "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "runtime_id": "a48e3d2af7cd81fc7a860d011418b44a99fe3f30e4595f2d1ab2d86e724c0a53",
+        "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+        "architecture": "x86_64",
+        "os": "ubuntu24.04",
+        "cuda_build": "13.0.0",
+        "gpu_compute_capability": "8.9",
+        "engine_sha256": "410e210f203803846772ccc6a031bbbbb9ce1e1a0e420ea82f81b738d5163355",
+        "engine_source_commit": "1c966bba5ff60412ceb33b1fdb6745eb78943e57",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48",
+        "native_config_sha256": "fac91f0cd9aacbae62962fdcad390c4779ad4d85ea354ffac90f7e50cf37ce63",
+        "model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+        "native_driver_cache_layout": "native-cuda-driver-family-v1"
+      },
+      "cloud_receipt": "native-runpod-final-qwen4b.json",
+      "cold_launch_timing_s": {
+        "agent_listener_allocation_s": 32.79686065700662,
+        "ready_allocation_s": 111.5470068440045,
+        "first_content_allocation_s": 112.59453834699525,
+        "request_to_first_content_s": 1.0473475979961222
+      },
+      "model_cached": false,
+      "offline_bake_cleanup": {
+        "pod_id": "x9wadwkrxgku8x",
+        "name": "switchyard-native-bake-4869a93f33a8",
+        "confirmed_absent": true
+      },
+      "fresh_launch_cleanup": {
+        "pod_id": "jx4kvtgnxqzqsz",
+        "name": "switchyard-native-launch-0d18d36092af",
+        "confirmed_absent": true
+      },
+      "hot_workloads": [
+        {
+          "name": "hot_single",
+          "concurrent_requests": 1,
+          "requested_token_budget": 32,
+          "emitted_tokens_including_stop_ids": 32,
+          "elapsed_s": 1.3889300329901744,
+          "aggregate_tokens_per_s": 23.039317488951134,
+          "first_content_s": {
+            "min": 0.5729640600038692,
+            "p50": 0.5729640600038692,
+            "p95": 0.5729640600038692,
+            "max": 0.5729640600038692
+          }
+        },
+        {
+          "name": "equal_length_burst",
+          "concurrent_requests": 8,
+          "requested_token_budget": 256,
+          "emitted_tokens_including_stop_ids": 256,
+          "elapsed_s": 2.194535642003757,
+          "aggregate_tokens_per_s": 116.65337992243998,
+          "first_content_s": {
+            "min": 0.3791702429880388,
+            "p50": 1.2298168530032854,
+            "p95": 1.2308061770017957,
+            "max": 1.2308061770017957
+          }
+        },
+        {
+          "name": "varied_length_burst",
+          "concurrent_requests": 8,
+          "requested_token_budget": 256,
+          "emitted_tokens_including_stop_ids": 256,
+          "elapsed_s": 3.1806779019971145,
+          "aggregate_tokens_per_s": 80.48598691469522,
+          "first_content_s": {
+            "min": 0.37719300999015104,
+            "p50": 1.6715423929999815,
+            "p95": 2.207766873005312,
+            "max": 2.207766873005312
+          }
+        }
+      ],
+      "planning_prior": {
+        "single_output_tps": 25,
+        "aggregate_output_tps": 100,
+        "input_work_per_token": 0.05,
+        "startup_s": 172.17,
+        "kv_tokens": 1024
+      }
+    }
+  ],
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "data_centers": [
+      "EU-RO-1",
+      "EUR-IS-2",
+      "EUR-IS-1"
+    ],
+    "min_cuda": "13.0",
+    "disk_gb": 30,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "limits": {
+    "max_instances": 3,
+    "max_usd_per_hour": 2.8,
+    "max_run_usd": 1.0,
+    "run_timeout_s": 1200,
+    "startup_timeout_s": 600,
+    "request_timeout_s": 120,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 3.0,
+    "experiment_timeout_s": 3600
+  },
+  "scheduling": {
+    "maximum_startup_s": 600,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "cleanup_verification": {
+    "boundary": "provider GET after all final launches completed",
+    "checks": [
+      {
+        "pod_id": "eah3t7xwkqjxed",
+        "http_status": 404
+      },
+      {
+        "pod_id": "vp4ovktvqwli9g",
+        "http_status": 404
+      },
+      {
+        "pod_id": "x9wadwkrxgku8x",
+        "http_status": 404
+      },
+      {
+        "pod_id": "o70whvuqi6wpye",
+        "http_status": 404
+      },
+      {
+        "pod_id": "egk0g2ucu6820g",
+        "http_status": 404
+      },
+      {
+        "pod_id": "jx4kvtgnxqzqsz",
+        "http_status": 404
+      }
+    ]
+  },
+  "validation": {
+    "generic_cache_bindings": "all three families match labels generated by Rust live cache-bindings from this exact fleet configuration",
+    "component_inventory": "each complete native component tree verified offline before family packing",
+    "wrapper_fixtures": {
+      "passed": 3,
+      "scope": "exact driver selection, unsupported GPU/driver/capability rejection, identity-marker check, literal argument forwarding"
+    },
+    "fresh_cloud_serving": "all three models passed streamed direct-controller requests with exact final binary and observed driver selection",
+    "scheduler_cloud_preflight": {
+      "status": "passed",
+      "provisioned": false,
+      "source_receipt": "results/native-live-all-caches-preflight-01/preflight.json",
+      "source_receipt_sha256": "58d6c17b382c26c130886325e0a45ccbd3506388ac45346c4978d48c64db657d",
+      "checks": [
+        {
+          "input_tokens": 21,
+          "model": "qwen3.5-0.8b"
+        },
+        {
+          "input_tokens": 21,
+          "model": "qwen3.5-2b"
+        },
+        {
+          "input_tokens": 21,
+          "model": "qwen3.5-4b"
+        }
+      ],
+      "model_and_cache_references_match": true,
+      "runtime_launch_fields_match": true,
+      "scope": "read-only cloud check; normalized configuration contains default fields and omits provider credentials"
+    },
+    "scheduler_workload_gauntlet": "separate gate; not run by the direct controllers",
+    "elasticity": "separate gate; not established by direct one-pod launches"
+  },
+  "limitations": {
+    "numerical_parity_measured_in_cloud": false,
+    "bf16_accuracy": "approximate; local F32 numerical gates are separate",
+    "hard_gpu_allocator_cap_enforced": false,
+    "direct_gpu_weight_chunk_consumer": false,
+    "native_weight_reader": "aggregate host buffer bounded by max_weight_bytes",
+    "model_transport": "bounded Rust archive streaming into native files",
+    "planning_priors": "historical startup observations and throughput assumptions; not final scheduler measurements",
+    "unsupported_driver_behavior": "reject before engine execution; no automatic driver compatibility inference"
+  },
+  "allocation_rejections": [
+    {
+      "purpose": "4B final bake first attempt",
+      "http_status": 400,
+      "reason": "no capacity for fixed specifications",
+      "owned_pod_created": false
+    },
+    {
+      "purpose": "4B final fresh launch first attempt",
+      "http_status": 400,
+      "reason": "no capacity for fixed specifications",
+      "owned_pod_created": false
+    }
+  ]
+}
