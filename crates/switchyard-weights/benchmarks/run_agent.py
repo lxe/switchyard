@@ -32,11 +32,17 @@ parser.add_argument("--warm-cache-from", type=Path)
 parser.add_argument("--profile-startup", action="store_true")
 parser.add_argument("--env-override-source", type=Path)
 parser.add_argument("--cli-main-source", type=Path)
+parser.add_argument(
+    "--module-source", action="append", default=[], metavar="MODULE=PATH"
+)
 parser.add_argument("--verify-concurrency", type=int, default=0, metavar="REQUESTS")
 parser.add_argument("--concurrency", type=int, default=8)
+parser.add_argument(
+    "--decode-benchmark", type=int, default=0, metavar="REQUESTS_PER_PHASE"
+)
 parser.add_argument("--runtime-env", action="append", default=[], metavar="KEY=VALUE")
 args = parser.parse_args()
-if args.verify_concurrency < 0 or args.concurrency < 1:
+if args.verify_concurrency < 0 or args.decode_benchmark < 0 or args.concurrency < 1:
     parser.error("request count must be nonnegative and concurrency must be positive")
 repo = Path(__file__).resolve().parents[3]
 out = args.output.resolve()
@@ -135,12 +141,39 @@ try:
         installation.mkdir()
         source_overlay = None
         cli_overlay = None
-        if args.profile_startup or args.env_override_source or args.cli_main_source:
+        module_overlays = {}
+        if (
+            args.profile_startup
+            or args.env_override_source
+            or args.cli_main_source
+            or args.module_source
+        ):
             profile = installation / "startup-profile"
             profile.mkdir()
             (profile / "sitecustomize.py").write_bytes(
                 (Path(__file__).parent / "startup_profile.py").read_bytes()
             )
+            for assignment in args.module_source:
+                module, filename = assignment.split("=", 1)
+                target = (
+                    "venv/lib/python3.12/site-packages/"
+                    + module.replace(".", "/")
+                    + ".py"
+                )
+                original = next(
+                    entry
+                    for entry in runtime_manifest["entries"]
+                    if entry["path"] == target
+                )
+                source = Path(filename).read_bytes()
+                staged = module.replace(".", "_") + ".py"
+                (profile / staged).write_bytes(source)
+                module_overlays[module] = {
+                    "original_sha256": original["sha256"],
+                    "staged_sha256": hashlib.sha256(source).hexdigest(),
+                    "staged_path": "/opt/switchyard/startup-profile/" + staged,
+                    "scope": "Private diagnostic source overlay; original runtime/cache identities are retained solely as controls, not published compatibility claims.",
+                }
             if args.env_override_source:
                 original = next(
                     entry
@@ -212,7 +245,12 @@ try:
                 "hydration": {"retries": 0},
             }
         )
-        if args.profile_startup or args.env_override_source or args.cli_main_source:
+        if (
+            args.profile_startup
+            or args.env_override_source
+            or args.cli_main_source
+            or args.module_source
+        ):
             runtime["environment"]["PYTHONPATH"] = (
                 "/opt/switchyard/startup-profile:"
                 + runtime["environment"].get("PYTHONPATH", "")
@@ -229,6 +267,13 @@ try:
                 runtime["environment"]["NATIVE_CLI_MAIN_SOURCE"] = cli_overlay[
                     "staged_path"
                 ]
+        if module_overlays:
+            runtime["environment"]["NATIVE_MODULE_SOURCES"] = json.dumps(
+                {
+                    module: item["staged_path"]
+                    for module, item in module_overlays.items()
+                }
+            )
         for assignment in args.runtime_env:
             key, value = assignment.split("=", 1)
             runtime["environment"][key] = value
@@ -481,12 +526,68 @@ try:
                     "request_seconds": latencies,
                     "scope": "Bounded correctness burst after the first useful token; identical short prompts with prefix caching. This is not a throughput benchmark.",
                 }
+            decode_benchmark = None
+            if args.decode_benchmark:
+
+                def decode_request(index, endpoint=endpoint):
+                    began = time.monotonic()
+                    response = requests.post(
+                        endpoint + "/v1/chat/completions",
+                        headers=headers,
+                        json={
+                            "model": "qwen-local",
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": "Reply with exactly the word Paris.",
+                                }
+                            ],
+                            "chat_template_kwargs": {"enable_thinking": False},
+                            "max_tokens": 32,
+                            "ignore_eos": True,
+                            "temperature": 0,
+                        },
+                        timeout=60,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    assert data["usage"]["completion_tokens"] == 32
+                    return {
+                        "index": index,
+                        "elapsed_seconds": time.monotonic() - began,
+                        "output_tokens": data["usage"]["completion_tokens"],
+                        "content_sha256": hashlib.sha256(
+                            data["choices"][0]["message"]["content"].encode()
+                        ).hexdigest(),
+                    }
+
+                decode_benchmark = {}
+                for phase, workers in (("serial", 1), ("queued", args.concurrency)):
+                    began = time.monotonic()
+                    with concurrent.futures.ThreadPoolExecutor(
+                        max_workers=workers
+                    ) as executor:
+                        decoded = list(
+                            executor.map(decode_request, range(args.decode_benchmark))
+                        )
+                    elapsed = time.monotonic() - began
+                    decode_benchmark[phase] = {
+                        "requests": decoded,
+                        "maximum_inflight": workers,
+                        "elapsed_seconds": elapsed,
+                        "output_tokens_per_second": sum(
+                            r["output_tokens"] for r in decoded
+                        )
+                        / elapsed,
+                        "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration.",
+                    }
             result = {
                 "request_to_ready_seconds": ready_at,
                 "request_to_first_useful_token_seconds": first,
                 "completion": "".join(fragments),
                 "tokenized_count": tokenized.json()["count"],
                 "concurrent_verification": concurrent_verification,
+                "decode_benchmark": decode_benchmark,
                 "agent_state": last,
                 "http": [
                     {
@@ -504,6 +605,7 @@ try:
                 "native_profile_enabled": args.profile_startup,
                 "experimental_env_override_source": source_overlay,
                 "experimental_cli_main_source": cli_overlay,
+                "experimental_module_sources": module_overlays,
                 "agent_process_start_monotonic_bounds": process_start_bounds,
                 "agent_epoch_monotonic_bounds": [
                     pre_exec_lower,

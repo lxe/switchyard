@@ -35,3 +35,5 @@ Every runtime received 5,432,616,775 compressed bytes and wrote approximately 20
 The remaining hydration work lies outside the timed receiver/extractor region and is not separately instrumented here. Concurrent body-wait and consumer-wait counters sum worker time; adding them to elapsed startup would count overlapping time repeatedly.
 
 The [machine-readable timeline](../experiments/qwen-extents-cold-start-timelines.json) contains exact milestones, reception counters, tensor-loading measurements and links to each fleet configuration and smoke receipt.
+
+The [local vLLM process profile](vllm-process-startup.md) confirms an import-time CUDA query that forces a fresh interpreter and repeats serving imports. Its RTX 5090 diagnostic reduces the pre-tensor interval from 12.68 to 8.23 seconds. The GPU, runtime and engine configuration differ from these L40S runs, so that result is a scoped optimization rather than a replacement for their measured 20.6-second interval.

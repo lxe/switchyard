@@ -1,0 +1,4723 @@
+{
+  "schema_version": 1,
+  "decision": "local_fix_validated_production_derivative_not_selected",
+  "scope": "Fresh owned RTX 5090 Qwen3.5-0.8B raw-extents eager-engine containers. Different GPU, runtime and engine settings from the L40S fleet; does not partition or replace its measured 20.6s pre-tensor delay.",
+  "runtime_id": "8670fb233b5ad18dc48b504492943d36a45af4657e3527ba7a1f8c349aa2b5dc",
+  "model_content_id": "ba047becd40d1a7b6c6dfb5939e91f93b2bfc3cf139d570ea88b58a2a32c5e1e",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "driver": "615.71.09",
+    "cpu": "Intel Core i7-13700",
+    "co_tenant": "Active desktop; not reset or stopped."
+  },
+  "engine": {
+    "context_tokens": 64,
+    "max_num_seqs": 1,
+    "max_num_batched_tokens": 64,
+    "gpu_memory_utilization": 0.25,
+    "enforce_eager": true,
+    "attention_backend": "TRITON_ATTN",
+    "seed": 123
+  },
+  "cache_seed": {
+    "source_run": "qwen-profile-agent-06-lazy",
+    "files": 1185,
+    "bytes": 635436827,
+    "tree_sha256": "6ea9d6befb0c10b515a8039ae4fc53ffb35a55bbd1ebf0189a8cf786b626e9e0",
+    "hash_definition": "Sorted relative file path bytes, NUL, and raw SHA-256 digest of each file. Symlink targets are followed for regular files.",
+    "copy": "cp --archive before the request epoch; caches[] is empty in the ticket."
+  },
+  "source_patch": "deploy/hydration/patches/vllm-0.31.0-fla-nvml.json",
+  "final_strict_pair_harness_sha256": "8daed6e6e53ed388a142e36d8a97c3d6212d0a5b5971e44d5e573c1a584b8257",
+  "strict_comparison": {
+    "control_run": 8,
+    "candidate_run": 9,
+    "pre_tensor_saved_s": 4.4497042539999985,
+    "pre_tensor_reduction_fraction": 0.35088253955929105,
+    "first_token_saved_s": 4.545496169997932,
+    "serial_output_rate_ratio": 0.9986891527423827,
+    "queued_output_rate_ratio": 1.0070445582863454,
+    "identical_fixed32_outputs": true,
+    "qualification": "Identical staged profile source and native source overlay path; full native memory profiling in both. One strictly matched pair; supporting reversed unprofiled pair has different sitecustomize loading and is not the sole basis for attribution."
+  },
+  "requests_completed": 417,
+  "runs": [
+    {
+      "run": 1,
+      "variant": "control",
+      "profiled": true,
+      "module_overlay": false,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=spawn"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {},
+      "spawn_to_first_tensor_s": 12.406263761000002,
+      "spawn_to_verified_inference_s": 17.533374388,
+      "request_to_first_token_s": 30.64864116299941,
+      "agent_milestones": {
+        "runtime_hydration_started": 0.300519638,
+        "model_hydration_started": 0.800035429,
+        "model_metadata_ready": 0.907622666,
+        "model_hydration_finished": 1.5569873360000002,
+        "runtime_hydration_finished": 9.234734681,
+        "engine_spawned": 9.235066903,
+        "tensor_loading_finished": 22.505256278,
+        "inference_verified": 26.768441291
+      },
+      "first_tensor_agent_s": 21.641330664,
+      "cuda_forced_spawn": false,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": true,
+      "correctness_requests": 25,
+      "decode": null,
+      "private_receipt_sha256": "8b32cc29ea03cdefac7d0585dc71a4ca0d1ad0149a894fd0415ef5099c39bb5a",
+      "staged_profile_sha256": "2717f178304a714c115aac06277cd8c89add596535af3ef8455daef1a46dd53d",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 67,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.19272222699874,
+          "duration_s": 0.004028678999020485
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.200945522999973,
+          "duration_s": 0.00022574199829250574
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.20118647399795,
+          "duration_s": 6.591002602363005e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.201219745998969,
+          "duration_s": 5.368001438910142e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.201230257000134,
+          "duration_s": 3.835997631540522e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.201241144997766,
+          "duration_s": 3.914999979315326e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.20125035700039,
+          "duration_s": 3.777997335419059e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 119,
+          "relative_python_start_s": 4.325328720999096
+        },
+        {
+          "kind": "process_start",
+          "pid": 121,
+          "relative_python_start_s": 4.343592043998797
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.389861741998175,
+          "duration_s": 0.02271926699904725
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.492682309999509,
+          "duration_s": 0.49539110099794925
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.197129657997721,
+          "duration_s": 0.7912256000017805
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.196901022998645,
+          "duration_s": 0.7928667710002628
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 5.003546518997609,
+          "duration_s": 5.9285001043463126e-05
+        },
+        {
+          "kind": "process_start",
+          "pid": 181,
+          "relative_python_start_s": 7.11314250400028
+        },
+        {
+          "kind": "process_start",
+          "pid": 182,
+          "relative_python_start_s": 7.114213629000005
+        },
+        {
+          "kind": "process_start",
+          "pid": 220,
+          "relative_python_start_s": 11.011251790998358
+        },
+        {
+          "kind": "process_start",
+          "pid": 222,
+          "relative_python_start_s": 11.026772930999869
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.246847921000153,
+          "duration_s": 0.001332754996838048
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.24845728299988,
+          "duration_s": 0.012632273999770405
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.24842740099848,
+          "duration_s": 0.013982939999550581
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.262441415998182,
+          "duration_s": 0.003965790001529967
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.248263428999053,
+          "duration_s": 0.3307294420010294
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.802652501999546,
+          "duration_s": 0.404127879999578
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 2,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.712601862996962,
+          "duration_s": 0.6669616870021855
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 2,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 13.281711987998278,
+          "duration_s": 0.0026002060003520455
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.57907247500043,
+          "duration_s": 2.3559848879995116
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 11.579035209997528,
+          "duration_s": 2.356280094001704
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 13.93620016999921,
+          "duration_s": 0.002811890000884887
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 14.096737004998431,
+          "duration_s": 1.0262254689987458
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 13.936172117999376,
+          "duration_s": 1.344468852999853
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 15.2817498229997,
+          "duration_s": 0.002602587999717798
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 15.281661886998336,
+          "duration_s": 0.007526675999542931
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_save_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 15.457593715000257,
+          "duration_s": 0.002438592997350497
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 15.289220169997861,
+          "duration_s": 0.33392943299986655
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 182,
+          "relative_python_start_s": 15.62345746400024,
+          "duration_s": 4.529499710770324e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.9990943880002305,
+          "duration_s": 10.631982743998378
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 4.999076447998959,
+          "duration_s": 10.632033617999696
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 15.63259429000027,
+          "duration_s": 0.06511682599739288
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 67,
+          "relative_python_start_s": 15.697734768000373,
+          "duration_s": 0.4172998340000049
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.249239242002659,
+        9.266755236003519
+      ]
+    },
+    {
+      "run": 2,
+      "variant": "patched",
+      "profiled": true,
+      "module_overlay": true,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "vllm.third_party.flash_linear_attention.ops.utils": {
+          "original_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+          "staged_sha256": "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828",
+          "staged_path": "/opt/switchyard/startup-profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+          "scope": "Private diagnostic source overlay; original runtime/cache identities are retained solely as controls, not published compatibility claims."
+        }
+      },
+      "spawn_to_first_tensor_s": 7.897881011999999,
+      "spawn_to_verified_inference_s": 12.512271591000001,
+      "request_to_first_token_s": 25.656754711999383,
+      "agent_milestones": {
+        "model_hydration_started": 0.280060963,
+        "runtime_hydration_started": 0.285395516,
+        "model_metadata_ready": 0.837011527,
+        "model_hydration_finished": 1.3598521909999999,
+        "runtime_hydration_finished": 9.260280563,
+        "engine_spawned": 9.260676254,
+        "tensor_loading_finished": 17.514814558,
+        "inference_verified": 21.772947845
+      },
+      "first_tensor_agent_s": 17.158557266,
+      "cuda_forced_spawn": false,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": true,
+      "correctness_requests": 25,
+      "decode": null,
+      "private_receipt_sha256": "fb164abc2f4353382de39e2c9297f574701ba10d98ffd938217823109ded2aa5",
+      "staged_profile_sha256": "7946a5b0482148eb546d6f167d4ece4f573a15a1e08c57a0a2fd9739b3cf6d39",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 69,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.215193264997652,
+          "duration_s": 0.004069359001732664
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.223423253999499,
+          "duration_s": 0.0002289219992235303
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.223668009999528,
+          "duration_s": 6.723999831592664e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.223699823000061,
+          "duration_s": 5.432997568277642e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.223710798996763,
+          "duration_s": 3.6750025174114853e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.223721003996616,
+          "duration_s": 3.7520003388635814e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.223730309997336,
+          "duration_s": 3.7610006984323263e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 121,
+          "relative_python_start_s": 4.335246122998797
+        },
+        {
+          "kind": "process_start",
+          "pid": 123,
+          "relative_python_start_s": 4.359353330997692
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.447414005997416,
+          "duration_s": 0.5119200260014622
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.2196534119975695,
+          "duration_s": 0.7399587569998403
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.219424453996908,
+          "duration_s": 0.7416033070003323
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.974885801999335,
+          "duration_s": 6.714299888699315e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 3,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 7.0256757009992725,
+          "duration_s": 0.00010780099910334684
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 2,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 7.0256521239971335,
+          "duration_s": 0.00015003999942564406
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.071597176996875,
+          "duration_s": 0.0001312849999521859
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.071485709999251,
+          "duration_s": 0.0002779499991447665
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.149023718997341,
+          "duration_s": 0.0016514109993295278
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 4,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.160322006999195,
+          "duration_s": 0.05007453899816028
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.160221525999077,
+          "duration_s": 0.051919753997935914
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.2121905329986475,
+          "duration_s": 0.005201937001402257
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.15074142499725,
+          "duration_s": 0.38476850200095214
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 5,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.69399696599794,
+          "duration_s": 4.0627000998938456e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 4,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.693836329999613,
+          "duration_s": 0.17592934999993304
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 4,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 8.253292319997854,
+          "duration_s": 0.002900233001128072
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.535593558997789,
+          "duration_s": 1.4070623539992084
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 7.535552014000132,
+          "duration_s": 1.4074857809973764
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 8.944723271997645,
+          "duration_s": 0.0047121829993557185
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 9.127566682996985,
+          "duration_s": 1.5869382160017267
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 8.944683457997598,
+          "duration_s": 1.9469737010003882
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 10.892877551999845,
+          "duration_s": 0.0026436719999765046
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 10.892781939997803,
+          "duration_s": 0.0069780859994352795
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_save_startup_plan",
+          "depth": 3,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 11.081951375999779,
+          "duration_s": 0.0024644779987283982
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 10.899804962999042,
+          "duration_s": 0.36077372200088575
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 183,
+          "relative_python_start_s": 11.260913153997535,
+          "duration_s": 4.46660014858935e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.970508316997439,
+          "duration_s": 6.337359274002665
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 4.970489869996527,
+          "duration_s": 6.337413387002016
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 11.309613883997372,
+          "duration_s": 0.06947496800057706
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 69,
+          "relative_python_start_s": 11.379112805996556,
+          "duration_s": 0.4812700060028874
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.27878025300015,
+        9.28836528699685
+      ]
+    },
+    {
+      "run": 3,
+      "variant": "patched",
+      "profiled": false,
+      "module_overlay": true,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "vllm.third_party.flash_linear_attention.ops.utils": {
+          "original_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+          "staged_sha256": "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828",
+          "staged_path": "/opt/switchyard/startup-profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+          "scope": "Private diagnostic source overlay; original runtime/cache identities are retained solely as controls, not published compatibility claims."
+        }
+      },
+      "spawn_to_first_tensor_s": 8.090670021,
+      "spawn_to_verified_inference_s": 12.656317591000002,
+      "request_to_first_token_s": 25.8988339719981,
+      "agent_milestones": {
+        "model_hydration_started": 0.271585387,
+        "runtime_hydration_started": 0.275829726,
+        "model_metadata_ready": 0.838096048,
+        "model_hydration_finished": 1.375715488,
+        "runtime_hydration_finished": 9.346241846,
+        "engine_spawned": 9.346890461,
+        "tensor_loading_finished": 17.75219891,
+        "inference_verified": 22.003208052
+      },
+      "first_tensor_agent_s": 17.437560482,
+      "cuda_forced_spawn": false,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": true,
+      "correctness_requests": 25,
+      "decode": {
+        "serial": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.3843395639996743,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.4054698640029528,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.3854400860000169,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 0.4003027229991858,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 0.39455524100048933,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 0.39452119000270613,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 0.3932448729974567,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 0.38667888899726677,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 0.3888032579998253,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 0.38684643899978255,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 0.3856696479997481,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 0.4027652009972371,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 0.40923405699868454,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 0.4343161239994515,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 0.4327467049988627,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 0.3899460469983751,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 1,
+          "elapsed_seconds": 6.375674071998219,
+          "output_tokens_per_second": 80.30523427298293,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        },
+        "queued": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.7583720770016953,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.3776358250033809,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 1.1396752639993792,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 1.5204769260017201,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 2.2783301809977274,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 1.8988480399966647,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 2.7099562699986564,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 3.105014177999692,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 3.1158521759971336,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 3.130484826000611,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 3.1630305639992002,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 3.2077152479978395,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 3.2383977890021924,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 3.253514134001307,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 3.2067778820019157,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 3.298633805999998,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 8,
+          "elapsed_seconds": 6.409371798999928,
+          "output_tokens_per_second": 79.88302380584145,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        }
+      },
+      "private_receipt_sha256": "25430e39256cda8066cc0a7149bbe47b1cd1ca59e06401bf82da4f0fafebff67",
+      "staged_profile_sha256": "7946a5b0482148eb546d6f167d4ece4f573a15a1e08c57a0a2fd9739b3cf6d39"
+    },
+    {
+      "run": 4,
+      "variant": "control",
+      "profiled": false,
+      "module_overlay": false,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {},
+      "spawn_to_first_tensor_s": 12.920017038000001,
+      "spawn_to_verified_inference_s": 17.605795806,
+      "request_to_first_token_s": 31.031752050999785,
+      "agent_milestones": {
+        "model_hydration_started": 0.2857949,
+        "runtime_hydration_started": 0.292685794,
+        "model_metadata_ready": 0.838389656,
+        "model_hydration_finished": 1.371854863,
+        "runtime_hydration_finished": 9.459030906,
+        "engine_spawned": 9.459643396,
+        "tensor_loading_finished": 22.830628197,
+        "inference_verified": 27.065439202
+      },
+      "first_tensor_agent_s": 22.379660434,
+      "cuda_forced_spawn": true,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": true,
+      "correctness_requests": 25,
+      "decode": {
+        "serial": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.40225289500085637,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.3876800079997338,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.3869014240008255,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 0.39477726000041,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 0.4039027910002915,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 0.3934654299991962,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 0.3888674460031325,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 0.40197309699942707,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 0.38533436699799495,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 0.3888373329973547,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 0.39733334600168746,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 0.39299432700136094,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 0.3951593130004767,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 0.3966874249999819,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 0.3931829690009181,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 0.40546264400109067,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 1,
+          "elapsed_seconds": 6.315633931000775,
+          "output_tokens_per_second": 81.06866319259079,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        },
+        "queued": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 1.6592001059980248,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.40619941299883067,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.8278981729999941,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 1.2430253460006497,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 2.4680837619998783,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 2.073182561001886,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 3.248772098999325,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 2.8567171200011217,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 3.34680358499827,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 3.394381024998438,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 3.376755272001901,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 3.3718451310014643,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 3.464061575999949,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 3.4998421619966393,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 3.50913342900094,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 3.5059783020005852,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 8,
+          "elapsed_seconds": 6.760609099001158,
+          "output_tokens_per_second": 75.73282118554157,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        }
+      },
+      "private_receipt_sha256": "632307986215433f518fcab4d88db05ddad838b727a1d740bcabf21f4d7e3d37",
+      "staged_profile_sha256": null
+    },
+    {
+      "run": 5,
+      "variant": "control",
+      "profiled": true,
+      "module_overlay": false,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {},
+      "spawn_to_first_tensor_s": 13.007773318999998,
+      "spawn_to_verified_inference_s": 16.688119095999998,
+      "request_to_first_token_s": 29.92656804299986,
+      "agent_milestones": {
+        "model_hydration_started": 0.269125839,
+        "runtime_hydration_started": 0.273358444,
+        "model_metadata_ready": 0.832880972,
+        "model_hydration_finished": 1.3332088500000001,
+        "runtime_hydration_finished": 9.370390774,
+        "engine_spawned": 9.37097628,
+        "tensor_loading_finished": 22.812436321,
+        "inference_verified": 26.059095376
+      },
+      "first_tensor_agent_s": 22.378749599,
+      "cuda_forced_spawn": true,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": true,
+      "correctness_requests": 25,
+      "decode": {
+        "serial": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.4476333039965539,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.40956560899940087,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.40711139799896046,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 0.40810555599819054,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 0.412957374999678,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 0.4193818259991531,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 0.41074466300051427,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 0.40325437000137754,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 0.40347726899926784,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 0.4264807670006121,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 0.42259612000270863,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 0.41904331399928196,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 0.41143397400082904,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 0.40881171799992444,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 0.40895600899966666,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 0.40952692800055956,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 1,
+          "elapsed_seconds": 6.6298776359981275,
+          "output_tokens_per_second": 77.22616134270757,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        },
+        "queued": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.9584564500000852,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.41852742900300655,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 1.3708822959997633,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 1.783814488000644,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 2.212346451000485,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 2.628415508999751,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 3.04593379400103,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 3.45950811199873,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 3.4695655680006894,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 3.363244157000736,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 3.363457390001713,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 3.3767331540002488,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 3.39494751500024,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 3.4096806419984205,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 3.404492918998585,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 3.3967069489990536,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 8,
+          "elapsed_seconds": 6.862588002000848,
+          "output_tokens_per_second": 74.60742213443702,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        }
+      },
+      "private_receipt_sha256": "d6233407d306f0504898ed61e1640c0040f51b38b97634b59b7614a5aed64d26",
+      "staged_profile_sha256": "560b727fc68012b980bbb46f88a500d64e7e687233e0ab5f90f64510280a37ba",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 195,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.49272661500072,
+          "duration_s": 0.003981221001595259
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.50079912700312,
+          "duration_s": 0.00021391699920059182
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.501028114002111,
+          "duration_s": 6.436999683501199e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.501059580001311,
+          "duration_s": 5.572001100517809e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.501070283000445,
+          "duration_s": 4.049001290695742e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.501081166003132,
+          "duration_s": 3.6909987102262676e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.501089884000976,
+          "duration_s": 3.6439996620174497e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 247,
+          "relative_python_start_s": 4.621365902999969
+        },
+        {
+          "kind": "process_start",
+          "pid": 249,
+          "relative_python_start_s": 4.640556510999886
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.677018469003087,
+          "duration_s": 0.013757456999883289
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.7412311020016205,
+          "duration_s": 0.7187656710011652
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.49708521499997,
+          "duration_s": 0.96332423900094
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 4.496861119001551,
+          "duration_s": 0.9657219930013525
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 5.485670235000725,
+          "duration_s": 8.787200204096735e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 7.646750699001132,
+          "duration_s": 0.00016904099902603775
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 7.6467434110018075,
+          "duration_s": 0.0001937160013767425
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.utils.CoreEngineProcManager.__init__",
+          "depth": 2,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 7.646719953001593,
+          "duration_s": 0.0019200050010113046
+        },
+        {
+          "kind": "process_start",
+          "pid": 309,
+          "relative_python_start_s": 7.670660777002922
+        },
+        {
+          "kind": "process_start",
+          "pid": 310,
+          "relative_python_start_s": 7.670737323001958
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.359126191000541,
+          "duration_s": 8.508999599143863e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.359101984002336,
+          "duration_s": 4.783199983648956e-05
+        },
+        {
+          "kind": "process_start",
+          "pid": 348,
+          "relative_python_start_s": 11.581066075003037
+        },
+        {
+          "kind": "process_start",
+          "pid": 350,
+          "relative_python_start_s": 11.587368234002497
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.809703244001867,
+          "duration_s": 0.0013280399980430957
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.811323041001742,
+          "duration_s": 0.013083467998512788
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.811291350000829,
+          "duration_s": 0.014099222000368172
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.825420179000503,
+          "duration_s": 0.0031832960012252443
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 11.811119196001528,
+          "duration_s": 0.33823294100147905
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 12.380338122002286,
+          "duration_s": 0.40291499699742417
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 2,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 12.279712455001572,
+          "duration_s": 0.674762541999371
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 2,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 13.420164318002207,
+          "duration_s": 0.0026272089999110904
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 12.149430897003185,
+          "duration_s": 1.966745813999296
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 12.149393573999987,
+          "duration_s": 1.9671599410030467
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 14.118191169000056,
+          "duration_s": 0.004710111003078055
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 14.28284631600036,
+          "duration_s": 0.9035245000013674
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 14.118137522000325,
+          "duration_s": 1.2311148990011134
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 15.35031651600002,
+          "duration_s": 0.0024458610023430083
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 15.350235003999842,
+          "duration_s": 0.006848709002952091
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_save_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 15.542852010003116,
+          "duration_s": 0.0024867020001693163
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 15.357123437002883,
+          "duration_s": 0.35279412499949103
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 310,
+          "relative_python_start_s": 15.710221899000317,
+          "duration_s": 4.623499989975244e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 5.476225564001652,
+          "duration_s": 10.241152138998586
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 5.476198019001458,
+          "duration_s": 10.241203394001786
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 15.71870740000304,
+          "duration_s": 0.06324456399670453
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 195,
+          "relative_python_start_s": 15.78197700900273,
+          "duration_s": 0.4303424779973284
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.414328966999165,
+        9.429465511995659
+      ]
+    },
+    {
+      "run": 6,
+      "variant": "patched",
+      "profiled": true,
+      "module_overlay": true,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "vllm.third_party.flash_linear_attention.ops.utils": {
+          "original_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+          "staged_sha256": "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828",
+          "staged_path": "/opt/switchyard/startup-profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+          "scope": "Private diagnostic source overlay; original runtime/cache identities are retained solely as controls, not published compatibility claims."
+        }
+      },
+      "spawn_to_first_tensor_s": 8.286095942000001,
+      "spawn_to_verified_inference_s": 12.875556006999998,
+      "request_to_first_token_s": 25.941001421000692,
+      "agent_milestones": {
+        "runtime_hydration_started": 0.273926066,
+        "model_hydration_started": 0.771030867,
+        "model_metadata_ready": 0.827892785,
+        "model_hydration_finished": 1.449082535,
+        "runtime_hydration_finished": 9.163508832,
+        "engine_spawned": 9.163919926,
+        "tensor_loading_finished": 17.794912621,
+        "inference_verified": 22.039475933
+      },
+      "first_tensor_agent_s": 17.450015868,
+      "cuda_forced_spawn": false,
+      "native_memory_plan_applied": true,
+      "native_memory_plan_rejected": false,
+      "correctness_requests": 25,
+      "decode": {
+        "serial": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.4270993520003685,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.3966744639983517,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.3929186710010981,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 0.3953857640008209,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 0.4135746879983344,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 0.41574539999783156,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 0.39123931900030584,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 0.39200636700115865,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 0.3988888109997788,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 0.3995396239988622,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 0.39758391799841775,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 0.407177907996811,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 0.41358892900098,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 0.43061515700173914,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 0.40071398399959435,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 0.4199651309972978,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 1,
+          "elapsed_seconds": 6.493562290001137,
+          "output_tokens_per_second": 78.84732249175211,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        },
+        "queued": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.4083703689975664,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 1.2215390050005226,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.8221687869991001,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 3.201450558997749,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 1.6240204669993545,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 2.0214009849987633,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 2.4136555469995074,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 2.799772310001572,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 3.1952459679996537,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 3.204928144998121,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 3.208213664998766,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 3.2030673260014737,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 3.197296924998227,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 3.209815370999422,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 3.2244907549975323,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 3.2266732509997382,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 8,
+          "elapsed_seconds": 6.431119146000128,
+          "output_tokens_per_second": 79.61289293146456,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        }
+      },
+      "private_receipt_sha256": "9b9257b0902cfa282ebb98beda0c881145f5fae03792f8ae267f584af7547eb9",
+      "staged_profile_sha256": "34941865c6e8d10219c5addae80cbafbc208c83c30f093af8534a434a3161535",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 93,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.385015822997957,
+          "duration_s": 0.004838683002162725
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.3940434100004495,
+          "duration_s": 0.00024406499869655818
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.39430419099881,
+          "duration_s": 7.310998626053333e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.3943390079984965,
+          "duration_s": 5.810001312056556e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.394350339000084,
+          "duration_s": 4.064997483510524e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.394361907998245,
+          "duration_s": 3.765002475120127e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.3943713389999175,
+          "duration_s": 3.908997314283624e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 145,
+          "relative_python_start_s": 4.645428184998309
+        },
+        {
+          "kind": "process_start",
+          "pid": 147,
+          "relative_python_start_s": 4.672182002999762
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.759197561998008,
+          "duration_s": 0.518407774001389
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.390243114998157,
+          "duration_s": 0.8876340259994322
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 4.390014010998129,
+          "duration_s": 0.8892759789996489
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 5.292756798997289,
+          "duration_s": 6.453700189013034e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 7.441067561998352,
+          "duration_s": 0.00010533599925111048
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 7.4410604189979495,
+          "duration_s": 0.00013007900270167738
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.utils.CoreEngineProcManager.__init__",
+          "depth": 2,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 7.4410354959982214,
+          "duration_s": 0.015012351999757811
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.494028167999204,
+          "duration_s": 0.00015627399989170954
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.494011397000577,
+          "duration_s": 0.00020779699843842536
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.578619134998007,
+          "duration_s": 0.0016106120019685477
+        },
+        {
+          "caller_stack": [
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1395,
+              "function": "run_engine_core"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1151,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 140,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/executor/abstract.py",
+              "line": 113,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/executor/uniproc_executor.py",
+              "line": 69,
+              "function": "_init_executor"
+            },
+            {
+              "file": "vllm/v1/worker/worker_base.py",
+              "line": 343,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/worker/gpu_worker.py",
+              "line": 462,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "torch/accelerator/__init__.py",
+              "line": 198,
+              "function": "set_device_index"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 529,
+              "function": "_lazy_init"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 180,
+              "function": "synchronous"
+            }
+          ],
+          "kind": "operation_start",
+          "name": "torch._C._cuda_init",
+          "depth": 5,
+          "pid": 207,
+          "relative_python_start_s": 7.589674441998795
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 5,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.589674441998795,
+          "duration_s": 0.04624285599857103
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.5895663060000516,
+          "duration_s": 0.0481498669978464
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.637766931999067,
+          "duration_s": 0.00476555999921402
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.580300700999942,
+          "duration_s": 0.364629566000076
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 6,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 8.086402540000563,
+          "duration_s": 4.030299896840006e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 5,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 8.086240377997456,
+          "duration_s": 0.170334061000176
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 5,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 8.629644683998777,
+          "duration_s": 0.002718398998695193
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.945013180000387,
+          "duration_s": 1.4029530599982536
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 7.94497006399979,
+          "duration_s": 1.4032807709991175
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 9.349327461997746,
+          "duration_s": 0.002987274001498008
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 9.352338503998908,
+          "duration_s": 1.2305896799989569
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 9.349290687998291,
+          "duration_s": 1.23428350100221
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 4,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 10.58471952599939,
+          "duration_s": 0.002561479999712901
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 10.58462446699923,
+          "duration_s": 0.00668406000113464
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 10.591339480997704,
+          "duration_s": 0.35085924600207363
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 207,
+          "relative_python_start_s": 10.942535384998337,
+          "duration_s": 4.872800127486698e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 5.288046700999985,
+          "duration_s": 5.661208707999322
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 5.288028644998121,
+          "duration_s": 5.661259239001083
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 10.951275203999103,
+          "duration_s": 0.07600080300107948
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 93,
+          "relative_python_start_s": 11.027301425998303,
+          "duration_s": 0.45261060100165196
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.18147615199996,
+        9.198189179998735
+      ]
+    },
+    {
+      "run": 7,
+      "variant": "control",
+      "profiled": true,
+      "module_overlay": false,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {},
+      "spawn_to_first_tensor_s": 12.695826287,
+      "spawn_to_verified_inference_s": 17.47257202,
+      "request_to_first_token_s": 30.40388460000031,
+      "agent_milestones": {
+        "runtime_hydration_started": 0.268540965,
+        "model_hydration_started": 0.762986442,
+        "model_metadata_ready": 0.822681619,
+        "model_hydration_finished": 1.375260101,
+        "runtime_hydration_finished": 9.103146938,
+        "engine_spawned": 9.103438499,
+        "tensor_loading_finished": 22.328332034,
+        "inference_verified": 26.576010519
+      },
+      "first_tensor_agent_s": 21.799264786,
+      "cuda_forced_spawn": true,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": true,
+      "correctness_requests": 25,
+      "decode": null,
+      "private_receipt_sha256": "172c588a9c2d08acf0b4a521086259d59b4b5672bde6934724b7d1c2f982a8f7",
+      "staged_profile_sha256": "34941865c6e8d10219c5addae80cbafbc208c83c30f093af8534a434a3161535",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 63,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.236323018998519,
+          "duration_s": 0.0048245850011880975
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.245296451001195,
+          "duration_s": 0.0002474079992680345
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.245564067001396,
+          "duration_s": 8.982999133877456e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.245599991998461,
+          "duration_s": 5.613001121673733e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.245610837999266,
+          "duration_s": 3.918001311831176e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.245621810998273,
+          "duration_s": 3.970002580899745e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.245631083998887,
+          "duration_s": 6.326001312118024e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 115,
+          "relative_python_start_s": 4.491242175998195
+        },
+        {
+          "kind": "process_start",
+          "pid": 117,
+          "relative_python_start_s": 4.507497020000301
+        },
+        {
+          "caller_stack": [
+            {
+              "file": "vllm/third_party/flash_linear_attention/ops/index.py",
+              "line": 16,
+              "function": "<module>"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 247,
+              "function": "<lambda>"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 226,
+              "function": "importing"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 1360,
+              "function": "_find_and_load"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 1331,
+              "function": "_find_and_load_unlocked"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 935,
+              "function": "_load_unlocked"
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "line": 999,
+              "function": "exec_module"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 488,
+              "function": "_call_with_frames_removed"
+            },
+            {
+              "file": "vllm/third_party/flash_linear_attention/ops/utils.py",
+              "line": 145,
+              "function": "<module>"
+            },
+            {
+              "file": "vllm/third_party/flash_linear_attention/ops/utils.py",
+              "line": 130,
+              "function": "_check_platform"
+            },
+            {
+              "file": "vllm/third_party/flash_linear_attention/ops/utils.py",
+              "line": 123,
+              "function": "get_available_device"
+            },
+            {
+              "file": "triton/backends/nvidia/driver.py",
+              "line": 341,
+              "function": "get_current_target"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 1205,
+              "function": "current_device"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 529,
+              "function": "_lazy_init"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 180,
+              "function": "synchronous"
+            }
+          ],
+          "kind": "operation_start",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "pid": 63,
+          "relative_python_start_s": 4.549109646999568
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.549109646999568,
+          "duration_s": 0.011910338002053322
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.6128783659987675,
+          "duration_s": 0.5068471699996735
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.241526847999921,
+          "duration_s": 0.878633431999333
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 4.24130511399926,
+          "duration_s": 0.8810825319997093
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 5.139703531000123,
+          "duration_s": 7.31939981051255e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 7.216395734998514,
+          "duration_s": 0.00016646400035824627
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 7.216388632001326,
+          "duration_s": 0.00019134600006509572
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.utils.CoreEngineProcManager.__init__",
+          "depth": 2,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 7.216364685998997,
+          "duration_s": 0.0014776300013181753
+        },
+        {
+          "kind": "process_start",
+          "pid": 177,
+          "relative_python_start_s": 7.242303980001452
+        },
+        {
+          "kind": "process_start",
+          "pid": 178,
+          "relative_python_start_s": 7.245043926999642
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 10.980879681999795,
+          "duration_s": 8.582999726058915e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 10.980856867001421,
+          "duration_s": 4.751599772134796e-05
+        },
+        {
+          "kind": "process_start",
+          "pid": 216,
+          "relative_python_start_s": 11.190228174000367
+        },
+        {
+          "kind": "process_start",
+          "pid": 218,
+          "relative_python_start_s": 11.209486576000927
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.299284415999864,
+          "duration_s": 0.13431740599844488
+        },
+        {
+          "caller_stack": [
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1395,
+              "function": "run_engine_core"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1151,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 140,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/executor/abstract.py",
+              "line": 113,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/executor/uniproc_executor.py",
+              "line": 69,
+              "function": "_init_executor"
+            },
+            {
+              "file": "vllm/v1/worker/worker_base.py",
+              "line": 343,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/worker/gpu_worker.py",
+              "line": 462,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "torch/accelerator/__init__.py",
+              "line": 198,
+              "function": "set_device_index"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 529,
+              "function": "_lazy_init"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 180,
+              "function": "synchronous"
+            }
+          ],
+          "kind": "operation_start",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "pid": 178,
+          "relative_python_start_s": 11.433970843998395
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.433970843998395,
+          "duration_s": 0.015050583002448548
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.433933316999173,
+          "duration_s": 0.01629749100175104
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.450262351001584,
+          "duration_s": 0.003644953998445999
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.433720822999021,
+          "duration_s": 0.3776064430021506
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 12.048468631001015,
+          "duration_s": 0.4260822299984284
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 2,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.952565774001414,
+          "duration_s": 0.7154567079996923
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 2,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 13.232417757000803,
+          "duration_s": 0.0025600169974495657
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.81143969799814,
+          "duration_s": 2.0896614370030875
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 11.811379771999782,
+          "duration_s": 2.0900481429998763
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 13.90239061399916,
+          "duration_s": 0.002889741001126822
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 14.064120860999537,
+          "duration_s": 1.128373569001269
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 13.902357611001207,
+          "duration_s": 1.4544354949975968
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 15.358071974998893,
+          "duration_s": 0.00592465600129799
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 15.357929573998263,
+          "duration_s": 0.009170299999823328
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_save_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 15.574960302001273,
+          "duration_s": 0.002544633996876655
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 15.367165839998052,
+          "duration_s": 0.38551165900207707
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 178,
+          "relative_python_start_s": 15.752974822000397,
+          "duration_s": 4.712499867309816e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 5.134630090000428,
+          "duration_s": 10.625959257999057
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 5.1346117700013565,
+          "duration_s": 10.62600895200012
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 15.762095725000108,
+          "duration_s": 0.06577081800060114
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 63,
+          "relative_python_start_s": 15.827896445000079,
+          "duration_s": 0.43663847599964356
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.120246294001845,
+        9.133069951003563
+      ]
+    },
+    {
+      "run": 8,
+      "variant": "control",
+      "profiled": true,
+      "module_overlay": true,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork",
+        "VLLM_ENABLE_STARTUP_PLAN=0"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "vllm.third_party.flash_linear_attention.ops.utils": {
+          "original_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+          "staged_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+          "staged_path": "/opt/switchyard/startup-profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+          "scope": "Private diagnostic source overlay; original runtime/cache identities are retained solely as controls, not published compatibility claims."
+        }
+      },
+      "spawn_to_first_tensor_s": 12.681463887,
+      "spawn_to_verified_inference_s": 17.466822072,
+      "request_to_first_token_s": 30.370980072999373,
+      "agent_milestones": {
+        "model_hydration_started": 0.28010051,
+        "runtime_hydration_started": 0.284256494,
+        "model_metadata_ready": 0.845036727,
+        "model_hydration_finished": 1.3439800530000001,
+        "runtime_hydration_finished": 9.012520037,
+        "engine_spawned": 9.012944556,
+        "tensor_loading_finished": 22.212154538,
+        "inference_verified": 26.479766628
+      },
+      "first_tensor_agent_s": 21.694408443,
+      "cuda_forced_spawn": true,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": false,
+      "correctness_requests": 25,
+      "decode": {
+        "serial": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.38907992399981595,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.389776828000322,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.3977667500003008,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 0.39177536299757776,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 0.38867505499729305,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 0.45110850900164223,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 0.39747220700155594,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 0.40897168800074724,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 0.41577080600109184,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 0.3830112839968933,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 0.4666898370014678,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 0.3860809870020603,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 0.4160255839997262,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 0.41068683200137457,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 0.40892260699911276,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 0.40647228799934965,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 1,
+          "elapsed_seconds": 6.509106640998652,
+          "output_tokens_per_second": 78.6590277650524,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        },
+        "queued": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.40716032899945276,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 1.209462769998936,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.8038813379971543,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 2.025392989999091,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 1.622725511999306,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 3.2205696450000687,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 2.415075359000184,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 2.8205612330020813,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 3.2185747639996407,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 3.2393122339999536,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 3.288846145002026,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 3.309815371998411,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 3.2985458610019123,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 3.3222955309975077,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 3.3103221979981754,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 3.3194757109995408,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 8,
+          "elapsed_seconds": 6.545220835996588,
+          "output_tokens_per_second": 78.22501529423826,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        }
+      },
+      "private_receipt_sha256": "baf7a0302de735ed04ecf472ca567cec0f82e4d25da70d51bd19c178e05f8e83",
+      "staged_profile_sha256": "34941865c6e8d10219c5addae80cbafbc208c83c30f093af8534a434a3161535",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 62,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.286756483001227,
+          "duration_s": 0.004802421000931645
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.295692889001657,
+          "duration_s": 0.00022439699750975706
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.295932930999697,
+          "duration_s": 6.775000656489283e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.295967066998855,
+          "duration_s": 6.237001798581332e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.295978672002093,
+          "duration_s": 4.150999302510172e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.295989932001248,
+          "duration_s": 3.949000529246405e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.295999449001101,
+          "duration_s": 4.050998541060835e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 114,
+          "relative_python_start_s": 4.535373300001083
+        },
+        {
+          "kind": "process_start",
+          "pid": 116,
+          "relative_python_start_s": 4.552468949001195
+        },
+        {
+          "caller_stack": [
+            {
+              "file": "vllm/third_party/flash_linear_attention/ops/index.py",
+              "line": 16,
+              "function": "<module>"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 247,
+              "function": "<lambda>"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 226,
+              "function": "importing"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 1360,
+              "function": "_find_and_load"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 1331,
+              "function": "_find_and_load_unlocked"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 935,
+              "function": "_load_unlocked"
+            },
+            {
+              "file": "<frozen importlib._bootstrap_external>",
+              "line": 999,
+              "function": "exec_module"
+            },
+            {
+              "file": "<frozen importlib._bootstrap>",
+              "line": 488,
+              "function": "_call_with_frames_removed"
+            },
+            {
+              "file": "profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+              "line": 145,
+              "function": "<module>"
+            },
+            {
+              "file": "profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+              "line": 130,
+              "function": "_check_platform"
+            },
+            {
+              "file": "profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+              "line": 123,
+              "function": "get_available_device"
+            },
+            {
+              "file": "triton/backends/nvidia/driver.py",
+              "line": 341,
+              "function": "get_current_target"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 1205,
+              "function": "current_device"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 529,
+              "function": "_lazy_init"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 180,
+              "function": "synchronous"
+            }
+          ],
+          "kind": "operation_start",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "pid": 62,
+          "relative_python_start_s": 4.59467861200028
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.59467861200028,
+          "duration_s": 0.012982893000298645
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.669252212999709,
+          "duration_s": 0.5132334640002227
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.291937434001738,
+          "duration_s": 0.8908460610000475
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 4.291711490001035,
+          "duration_s": 0.8924769869990996
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 5.197644559000764,
+          "duration_s": 5.744499867432751e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 7.232171244999336,
+          "duration_s": 0.00016643699927954003
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 7.232163828000921,
+          "duration_s": 0.00019917700046789832
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.utils.CoreEngineProcManager.__init__",
+          "depth": 2,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 7.232140338001045,
+          "duration_s": 0.0018926099983218592
+        },
+        {
+          "kind": "process_start",
+          "pid": 176,
+          "relative_python_start_s": 7.257639022998774
+        },
+        {
+          "kind": "process_start",
+          "pid": 177,
+          "relative_python_start_s": 7.259601429999748
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 10.93630820099861,
+          "duration_s": 8.669001545058563e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 10.936286244999792,
+          "duration_s": 4.70020022476092e-05
+        },
+        {
+          "kind": "process_start",
+          "pid": 215,
+          "relative_python_start_s": 11.155156994002027
+        },
+        {
+          "kind": "process_start",
+          "pid": 217,
+          "relative_python_start_s": 11.181213101001049
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.262173821000033,
+          "duration_s": 0.1419927060014743
+        },
+        {
+          "caller_stack": [
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1395,
+              "function": "run_engine_core"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1151,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 140,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/executor/abstract.py",
+              "line": 113,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/executor/uniproc_executor.py",
+              "line": 69,
+              "function": "_init_executor"
+            },
+            {
+              "file": "vllm/v1/worker/worker_base.py",
+              "line": 343,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/worker/gpu_worker.py",
+              "line": 462,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "torch/accelerator/__init__.py",
+              "line": 198,
+              "function": "set_device_index"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 529,
+              "function": "_lazy_init"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 180,
+              "function": "synchronous"
+            }
+          ],
+          "kind": "operation_start",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "pid": 177,
+          "relative_python_start_s": 11.40461403700101
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 2,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.40461403700101,
+          "duration_s": 0.014374067999597173
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.404569111000455,
+          "duration_s": 0.015419955001561902
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.420023059999949,
+          "duration_s": 0.00375057199926232
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.404291547998582,
+          "duration_s": 0.3893539260025136
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 12.072642095001356,
+          "duration_s": 0.40185697699780576
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 2,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.977880591999565,
+          "duration_s": 0.6632227280024381
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 2,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 13.19223724100084,
+          "duration_s": 0.0027996579992759507
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.793775392001407,
+          "duration_s": 2.069607436998922
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 11.793710688001738,
+          "duration_s": 2.0699275189981563
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 13.864559795001696,
+          "duration_s": 9.747996955411509e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 14.033167549001519,
+          "duration_s": 1.150317161998828
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 13.864532129999134,
+          "duration_s": 1.475310158002685
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 15.340957504999096,
+          "duration_s": 0.0024282779995701276
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 15.340872463999403,
+          "duration_s": 0.0076134800001455005
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_save_startup_plan",
+          "depth": 1,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 15.551687907001906,
+          "duration_s": 2.8198999643791467e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 15.348522899999807,
+          "duration_s": 0.3734157380022225
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 177,
+          "relative_python_start_s": 15.722239516999252,
+          "duration_s": 4.566400093608536e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 5.1929891370018595,
+          "duration_s": 10.535974099999294
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 5.192970943000546,
+          "duration_s": 10.536015146000864
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 15.730204655999842,
+          "duration_s": 0.06640450100167072
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 62,
+          "relative_python_start_s": 15.79663593100122,
+          "duration_s": 0.4168165429982764
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.040562782000052,
+        9.053307379999751
+      ]
+    },
+    {
+      "run": 9,
+      "variant": "patched",
+      "profiled": true,
+      "module_overlay": true,
+      "runtime_env": [
+        "VLLM_WORKER_MULTIPROC_METHOD=fork",
+        "VLLM_ENABLE_STARTUP_PLAN=0"
+      ],
+      "agent_sha256": "e3659b061e75e31f412d7e546394ac6297b86d61584a2789c1408ae139fabc36",
+      "source_overlay": {
+        "vllm.third_party.flash_linear_attention.ops.utils": {
+          "original_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
+          "staged_sha256": "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828",
+          "staged_path": "/opt/switchyard/startup-profile/vllm_third_party_flash_linear_attention_ops_utils.py",
+          "scope": "Private diagnostic source overlay; original runtime/cache identities are retained solely as controls, not published compatibility claims."
+        }
+      },
+      "spawn_to_first_tensor_s": 8.231759633000001,
+      "spawn_to_verified_inference_s": 12.814555654999998,
+      "request_to_first_token_s": 25.82548390300144,
+      "agent_milestones": {
+        "model_hydration_started": 0.279728976,
+        "runtime_hydration_started": 0.283884228,
+        "model_metadata_ready": 0.833151122,
+        "model_hydration_finished": 1.371119077,
+        "runtime_hydration_finished": 9.092940154,
+        "engine_spawned": 9.093590901,
+        "tensor_loading_finished": 17.656215643,
+        "inference_verified": 21.908146556
+      },
+      "first_tensor_agent_s": 17.325350534000002,
+      "cuda_forced_spawn": false,
+      "native_memory_plan_applied": false,
+      "native_memory_plan_rejected": false,
+      "correctness_requests": 25,
+      "decode": {
+        "serial": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.3890834839985473,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.4503787959984038,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 0.40386547899834113,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 0.4034295849996852,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 0.41893949099903693,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 0.451360413000657,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 0.4173940759974357,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 0.4535000340001716,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 0.4039362869989418,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 0.38668905300073675,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 0.3905268750022515,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 0.38562176399864256,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 0.3824878500017803,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 0.3872544490004657,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 0.39870437499848776,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 0.3936566269985633,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 1,
+          "elapsed_seconds": 6.517650285000855,
+          "output_tokens_per_second": 78.55591779421974,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        },
+        "queued": {
+          "requests": [
+            {
+              "index": 0,
+              "elapsed_seconds": 0.9268124359987269,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 1,
+              "elapsed_seconds": 0.4062017510004807,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 2,
+              "elapsed_seconds": 1.3075621930001944,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 3,
+              "elapsed_seconds": 2.1194177769975795,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 4,
+              "elapsed_seconds": 1.713011589999951,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 5,
+              "elapsed_seconds": 3.2953941939995275,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 6,
+              "elapsed_seconds": 2.5164632180021727,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 7,
+              "elapsed_seconds": 2.899672888997884,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 8,
+              "elapsed_seconds": 3.2771342109990655,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 9,
+              "elapsed_seconds": 3.1461152250012674,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 10,
+              "elapsed_seconds": 3.162288372997864,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 11,
+              "elapsed_seconds": 3.1394238939974457,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 12,
+              "elapsed_seconds": 3.1167399789992487,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 13,
+              "elapsed_seconds": 3.1671105490022455,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 14,
+              "elapsed_seconds": 3.198765514000115,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            },
+            {
+              "index": 15,
+              "elapsed_seconds": 3.2006070729985368,
+              "output_tokens": 32,
+              "content_sha256": "b439340504ef4d950801a66884ac893a3479ea9141481e996ee62fc8073bb35b"
+            }
+          ],
+          "maximum_inflight": 8,
+          "elapsed_seconds": 6.499435186000483,
+          "output_tokens_per_second": 78.77607597392878,
+          "scope": "Direct agent HTTP calls; fixed 32-token decode with EOS ignored, identical prompts, same small eager-engine fixture. Not a saturation calibration."
+        }
+      },
+      "private_receipt_sha256": "36d1fa4e9aeb55a58815c87f23f5f31e6d2ba17fecbc715502ea88b97b5ff870",
+      "staged_profile_sha256": "34941865c6e8d10219c5addae80cbafbc208c83c30f093af8534a434a3161535",
+      "native_events": [
+        {
+          "kind": "process_start",
+          "pid": 61,
+          "relative_python_start_s": 0.0
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.launcher.setup_server",
+          "depth": 0,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.3355436679994455,
+          "duration_s": 0.004805830001714639
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.344640176001121,
+          "duration_s": 0.00023630699797649868
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.344898100000137,
+          "duration_s": 9.701001545181498e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.344946151999466,
+          "duration_s": 6.7399996623862535e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.3449582169996575,
+          "duration_s": 4.025001544505358e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.344969197001774,
+          "duration_s": 4.089000867679715e-06
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.models.registry._ModelRegistry._try_inspect_model_cls",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.344978707002156,
+          "duration_s": 3.979999746661633e-06
+        },
+        {
+          "kind": "process_start",
+          "pid": 113,
+          "relative_python_start_s": 4.58405300099912
+        },
+        {
+          "kind": "process_start",
+          "pid": 115,
+          "relative_python_start_s": 4.616239140999824
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.7236781870014966,
+          "duration_s": 0.513434693999443
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_model_config",
+          "depth": 1,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.34073109000019,
+          "duration_s": 0.8966953410017595
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.engine.arg_utils.EngineArgs.create_engine_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 4.340505176001898,
+          "duration_s": 0.8984007069993822
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 5.253367397999682,
+          "duration_s": 6.57740019960329e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 7.3115494459998445,
+          "duration_s": 0.00011365700265741907
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 7.311542563002149,
+          "duration_s": 0.00014005499906488694
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.utils.CoreEngineProcManager.__init__",
+          "depth": 2,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 7.311515197001427,
+          "duration_s": 0.017876360998343443
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils._maybe_force_spawn",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.372720436000236,
+          "duration_s": 0.00012986400179215707
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.utils.system_utils.get_mp_context",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.372679473999597,
+          "duration_s": 0.00020458300059544854
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.__init__",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.466542617999949,
+          "duration_s": 0.0017216010019183159
+        },
+        {
+          "caller_stack": [
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1395,
+              "function": "run_engine_core"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 1151,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/engine/core.py",
+              "line": 140,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/executor/abstract.py",
+              "line": 113,
+              "function": "__init__"
+            },
+            {
+              "file": "vllm/v1/executor/uniproc_executor.py",
+              "line": 69,
+              "function": "_init_executor"
+            },
+            {
+              "file": "vllm/v1/worker/worker_base.py",
+              "line": 343,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "vllm/tracing/otel.py",
+              "line": 175,
+              "function": "sync_wrapper"
+            },
+            {
+              "file": "vllm/v1/worker/gpu_worker.py",
+              "line": 462,
+              "function": "init_device"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 183,
+              "function": "synchronous"
+            },
+            {
+              "file": "torch/accelerator/__init__.py",
+              "line": 198,
+              "function": "set_device_index"
+            },
+            {
+              "file": "torch/cuda/__init__.py",
+              "line": 529,
+              "function": "_lazy_init"
+            },
+            {
+              "file": "profile/sitecustomize.py",
+              "line": 180,
+              "function": "synchronous"
+            }
+          ],
+          "kind": "operation_start",
+          "name": "torch._C._cuda_init",
+          "depth": 5,
+          "pid": 175,
+          "relative_python_start_s": 7.477428712001711
+        },
+        {
+          "kind": "operation",
+          "name": "torch._C._cuda_init",
+          "depth": 5,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.477428712001711,
+          "duration_s": 0.05915691200061701
+        },
+        {
+          "kind": "operation",
+          "name": "torch.accelerator.set_device_index",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.477313732000766,
+          "duration_s": 0.06079987300108769
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.init_worker_distributed_environment",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.538165404999745,
+          "duration_s": 0.004728293002699502
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.init_device",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.468334789002256,
+          "duration_s": 0.3869128849983099
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 6,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.999340533002396,
+          "duration_s": 4.059299681102857e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.initialize_model",
+          "depth": 5,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.9991827640005795,
+          "duration_s": 0.18099227299899212
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.model_executor.model_loader.utils.process_weights_after_loading",
+          "depth": 5,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 8.541054250999878,
+          "duration_s": 0.002649993999511935
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.load_model",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.855329313002585,
+          "duration_s": 1.418627821996779
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.load_model",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 7.855286748999788,
+          "duration_s": 1.4189488740012166
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_apply_startup_plan",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 9.275250988001062,
+          "duration_s": 1.6537000192329288e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.profile_run",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 9.447442079999746,
+          "duration_s": 1.163808417000837
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.determine_available_memory",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 9.275216746002116,
+          "duration_s": 1.5083080279982823
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu.model_runner.GPUModelRunner.initialize_kv_cache",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 10.784690783999395,
+          "duration_s": 0.002530636000301456
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.initialize_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 10.784601859002578,
+          "duration_s": 0.007569133998913458
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.startup_plan.maybe_save_startup_plan",
+          "depth": 4,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 10.985311910000746,
+          "duration_s": 1.872899883892387e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.worker.gpu_worker.Worker.compile_or_warm_up_model",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 10.79220955799974,
+          "duration_s": 0.38376732200049446
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.tokenizers.registry.cached_tokenizer_from_config",
+          "depth": 3,
+          "error_type": null,
+          "pid": 175,
+          "relative_python_start_s": 11.17638196000189,
+          "duration_s": 6.582800051546656e-05
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.__init__",
+          "depth": 1,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 5.248449799000809,
+          "duration_s": 5.934845071999007
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.v1.engine.async_llm.AsyncLLM.from_vllm_config",
+          "depth": 0,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 5.248430948999157,
+          "duration_s": 5.934891794000578
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.app.build_app",
+          "depth": 0,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 11.18487466499937,
+          "duration_s": 0.07647905500198249
+        },
+        {
+          "kind": "operation",
+          "name": "vllm.entrypoints.launchers.api_server.app_state.init_app_state",
+          "depth": 0,
+          "error_type": null,
+          "pid": 61,
+          "relative_python_start_s": 11.261377815000742,
+          "duration_s": 0.46391170599963516
+        }
+      ],
+      "first_python_agent_s_bounds": [
+        9.132057850998535,
+        9.149770005999017
+      ]
+    }
+  ]
+}

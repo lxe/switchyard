@@ -14,12 +14,15 @@ import os
 import sys
 import threading
 import time
+import traceback
 
 OUTPUT = os.environ.get("NATIVE_STARTUP_PROFILE")
 TARGETS = {
+    "vllm.utils.system_utils": ["get_mp_context", "_maybe_force_spawn"],
     "torch._C": ["_cuda_init"],
     "torch.accelerator": ["set_device_index"],
     "torch.cuda": ["init"],
+    "vllm.v1.engine.utils": ["CoreEngineProcManager.__init__"],
     "vllm.engine.arg_utils": [
         "EngineArgs.create_engine_config",
         "EngineArgs.create_model_config",
@@ -100,6 +103,19 @@ if cli_override := os.environ.get("NATIVE_CLI_MAIN_SOURCE"):
     sys.meta_path.insert(0, CliMainFinder())
 
 
+if module_sources := os.environ.get("NATIVE_MODULE_SOURCES"):
+    source_paths = json.loads(module_sources)
+
+    class ModuleSourceFinder(importlib.abc.MetaPathFinder):
+        def find_spec(self, fullname, path, target=None):
+            source = source_paths.get(fullname)
+            if source is None:
+                return None
+            return importlib.util.spec_from_file_location(fullname, source)
+
+    sys.meta_path.insert(0, ModuleSourceFinder())
+
+
 def record(event):
     event.update(pid=os.getpid(), thread=threading.get_ident())
     os.write(fd, (json.dumps(event, separators=(",", ":")) + "\n").encode())
@@ -112,6 +128,16 @@ def wrap(function, label):
         started = time.monotonic()
         record(
             {
+                **(
+                    {
+                        "caller_stack": [
+                            {"file": f.filename, "line": f.lineno, "function": f.name}
+                            for f in traceback.extract_stack(limit=16)[:-1]
+                        ]
+                    }
+                    if label == "torch._C._cuda_init"
+                    else {}
+                ),
                 "kind": "operation_start",
                 "name": label,
                 "started_monotonic": started,
