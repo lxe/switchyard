@@ -1,0 +1,98 @@
+[
+  [
+    {
+      "role": "user",
+      "content": "The capital of France is"
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "The capital of Italy is"
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "The capital of Japan is"
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "The capital of Spain is"
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "What is 17 plus 25? Answer briefly."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Return a JSON object with the keys red and blue, each with value 1."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Write one Python function that returns the square of its argument."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Translate good morning to Spanish."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "List the first five prime numbers."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Complete this sequence: 2, 4, 8, 16,"
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Answer with one word: the opposite of cold."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Explain gravity in one short sentence."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "你好。请用中文回答：一加一等于几？"
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "What is a mutex? Use one sentence."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Reply with exactly the word Paris."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Repeat this sentence exactly: The quick brown fox jumps over the lazy dog."
+    }
+  ]
+]

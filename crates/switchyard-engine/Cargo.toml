@@ -1,0 +1,31 @@
+[package]
+name = "switchyard-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "Lean local inference engine with explicit model state and bounded batching"
+
+[dependencies]
+candle-core = { git = "https://github.com/huggingface/candle", rev = "c68b24997319b8d76e5a4e775dab197c7f26322a" }
+candle-nn = { git = "https://github.com/huggingface/candle", rev = "c68b24997319b8d76e5a4e775dab197c7f26322a" }
+axum.workspace = true
+tokio.workspace = true
+futures-util.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokenizers.workspace = true
+minijinja.workspace = true
+minijinja-contrib.workspace = true
+reqwest.workspace = true
+sha2.workspace = true
+
+[features]
+default = []
+cuda = ["candle-core/cuda", "candle-nn/cuda"]
+
+[lints]
+workspace = true

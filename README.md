@@ -13,6 +13,7 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Artifacts](crates/switchyard-artifacts) | Deterministic archives, integrity checks, bounded transfer, and atomic hydration without cloud or engine dependencies |
 | [Weight loading](crates/switchyard-weights) | Header-first safetensors publication and completion leases for incremental vLLM weight loading through the pod agent |
 | [Artifact tools](crates/switchyard-artifact-tools) | Independent build, pack, publish, verify, and hydrate commands |
+| [Native inference engine](crates/switchyard-engine) | Initial Rust/CUDA Qwen3.5 text engine, bounded request batching, streamed HTTP and token comparisons |
 | [Runtime builder](crates/switchyard-runtime-build) | Locked serving environment assembly inside an isolated Docker build |
 | [Shared contracts](crates/switchyard-core) | Configuration, known request inputs, observable fleet state, and the pluggable `Scheduler` interface |
 
@@ -88,13 +89,16 @@ Run commands with `switchyard` after installation, or with `cargo run --locked -
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
-cargo test --locked --workspace --all-features --all-targets
-RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --all-features --no-deps
+cargo clippy --locked --workspace --exclude switchyard-engine --all-features --all-targets -- -D warnings
+cargo clippy --locked -p switchyard-engine --all-targets -- -D warnings
+cargo test --locked --workspace --exclude switchyard-engine --all-features --all-targets
+cargo test --locked -p switchyard-engine --all-targets
+RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --exclude switchyard-engine --all-features --no-deps
+RUSTDOCFLAGS='-D warnings' cargo doc --locked -p switchyard-engine --no-deps
 cargo run --locked --release -- fuzz --cases 1000 --seed 42
 ```
 
-Use `--workspace` to include every package's tests. The `bench` command measures software overhead separately from virtual GPU throughput; `--max-seconds` optionally enforces a host-specific regression budget. Generated results and local experiment data are ignored by Git.
+The native engine's optional `cuda` feature requires a CUDA toolkit; CPU CI tests it separately so fleet simulation stays portable. Use `--workspace` to include every package's tests. The `bench` command measures software overhead separately from virtual GPU throughput; `--max-seconds` optionally enforces a host-specific regression budget. Generated results and local experiment data are ignored by Git.
 
 ## Live GPU experiments
 
