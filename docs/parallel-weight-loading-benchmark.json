@@ -1,0 +1,126 @@
+{
+  "hardware": "NVIDIA GeForce RTX 5090, local desktop workloads retained",
+  "build_profile": "debug",
+  "versions": {
+    "python": "3.12.14",
+    "torch": "2.13.0+cu129",
+    "vllm": "0.31.0",
+    "safetensors": "0.8.0"
+  },
+  "fixture": {
+    "file_bytes": 126901364,
+    "extent_bytes": 8388608,
+    "chunk_delay_seconds": 0.004,
+    "torch": "2.13.0+cu129"
+  },
+  "model": "synthetic deterministic dense Llama, 4 layers, hidden 1024, intermediate 4096, vocab 256, BF16, seed 123",
+  "transfer_concurrency": 20,
+  "pinned_buffer_bytes": 1048576,
+  "runs": [
+    {
+      "pair": 1,
+      "legacy": {
+        "hydration_seconds": 1.398883796,
+        "wire_bytes": 126924800,
+        "weight_seconds": 1.4233110820005095,
+        "engine_ready_seconds": 9.24033459599923,
+        "inference_seconds": 0.44778768900141586,
+        "http_span_seconds": 1.367988949001301
+      },
+      "extents": {
+        "hydration_seconds": 0.630132963,
+        "report": {
+          "completed_extents": 18,
+          "copy_buffer_bound": 1179648,
+          "downloaded_bytes": 126901364,
+          "file_bytes": 126901364
+        },
+        "early_gpu_tensors": 34,
+        "total_tensors": 39,
+        "weight_seconds": 0.6389699039991683,
+        "engine_ready_seconds": 7.720129252998959,
+        "inference_seconds": 0.17741653800112545,
+        "http_span_seconds": 0.5975889869987441,
+        "first_gpu_copy_finished_after_first_http_seconds": 0.5288876199992956,
+        "first_gpu_copy_before_last_http_seconds": 0.06870136699944851
+      },
+      "extent_bytes": 8388608,
+      "consumer_staging_initialization": "after connect"
+    },
+    {
+      "pair": 2,
+      "legacy": {
+        "hydration_seconds": 1.2840490199999999,
+        "wire_bytes": 126924800,
+        "weight_seconds": 1.3061042730005283,
+        "engine_ready_seconds": 8.433818721001444,
+        "inference_seconds": 0.1656125379995501,
+        "http_span_seconds": 1.2582689610007947
+      },
+      "extents": {
+        "hydration_seconds": 0.655372393,
+        "report": {
+          "completed_extents": 18,
+          "copy_buffer_bound": 1179648,
+          "downloaded_bytes": 126901364,
+          "file_bytes": 126901364
+        },
+        "early_gpu_tensors": 4,
+        "total_tensors": 39,
+        "weight_seconds": 1.064817784999832,
+        "engine_ready_seconds": 10.202697826998701,
+        "inference_seconds": 0.15780817300037597,
+        "http_span_seconds": 0.6120077809991926,
+        "first_gpu_copy_finished_after_first_http_seconds": 0.5390788469994732,
+        "first_gpu_copy_before_last_http_seconds": 0.07292893399971945
+      },
+      "extent_bytes": 8388608,
+      "consumer_staging_initialization": "after connect"
+    },
+    {
+      "pair": 3,
+      "extent_bytes": 4194304,
+      "consumer_staging_initialization": "before connect",
+      "legacy": {
+        "hydration_seconds": 0.580315078,
+        "wire_bytes": 126924800,
+        "weight_seconds": 0.6037752490010462,
+        "engine_ready_seconds": 7.6806379050012765,
+        "inference_seconds": 0.15439403199889057,
+        "http_span_seconds": 0.5540835009996954
+      },
+      "extents": {
+        "hydration_seconds": 0.563853439,
+        "report": {
+          "completed_extents": 33,
+          "copy_buffer_bound": 1310720,
+          "downloaded_bytes": 126901364,
+          "file_bytes": 126901364
+        },
+        "early_gpu_tensors": 32,
+        "total_tensors": 39,
+        "first_gpu_copy_finished_after_first_http_seconds": 0.266751741999542,
+        "first_gpu_copy_before_last_http_seconds": 0.27147288600099273,
+        "weight_seconds": 0.5728633879989502,
+        "engine_ready_seconds": 7.5861888700001145,
+        "inference_seconds": 0.15235682300044573,
+        "http_span_seconds": 0.5382246280005347
+      }
+    }
+  ],
+  "validation": {
+    "final_file_hashes_equal": true,
+    "gpu_parameters_sha256": "2a16b0a32249f5d5cc6b7838d96ac88961480e398070d2c02a3e523caa6d01a4",
+    "tokens": [
+      119,
+      233,
+      233,
+      233
+    ]
+  },
+  "limitation": "Controlled throttled loopback. Actual pinned vLLM model load and inference. No stable whole-startup speedup or Qwen/provider/stall-cause claim.",
+  "observations": [
+    "A single-wave 18-extent run passed file, parameter and inference equivalence but had no early GPU copies; staging/context setup can consume the small overlap window.",
+    "Final adapter prepares the stream and pinned buffer before connection. The final 33-extent fixture spans two transfer waves."
+  ]
+}

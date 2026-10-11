@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "switchyard-extent-loader"
+version = "0.4.1"
+description = "Local vLLM completion bridge for Rust Switchyard extents"
+requires-python = ">=3.12"
+# torch and vLLM come from the caller's immutable serving runtime.
+
+[project.entry-points."vllm.general_plugins"]
+switchyard_extents = "switchyard_extent_loader:register"
+
+[tool.setuptools]
+py-modules = ["switchyard_extent_loader"]

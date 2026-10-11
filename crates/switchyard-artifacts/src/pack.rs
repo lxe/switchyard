@@ -97,7 +97,7 @@ pub fn pack(
     Ok(manifest)
 }
 
-fn collect(root: &Path, directory: &Path, entries: &mut Vec<Entry>) -> Result<()> {
+pub(crate) fn collect(root: &Path, directory: &Path, entries: &mut Vec<Entry>) -> Result<()> {
     for item in fs::read_dir(directory)? {
         let item = item?;
         let path = item.path();

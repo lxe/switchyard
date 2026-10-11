@@ -535,7 +535,7 @@ impl Drop for TemporaryDirectory {
     }
 }
 
-fn make_removable(path: &Path) -> Result<()> {
+pub(crate) fn make_removable(path: &Path) -> Result<()> {
     if fs::symlink_metadata(path)?.is_dir() {
         set_mode(path, 0o700)?;
         for entry in fs::read_dir(path)? {
