@@ -3,10 +3,64 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from benchmark_artifacts import artifacts, named_directories, runtime_ticket
+from benchmark_artifacts import (
+    artifacts,
+    named_directories,
+    runtime_ticket,
+    without_cpu_snapshot,
+)
 
 
 class LocalArtifactTests(unittest.TestCase):
+    def test_without_criu_removes_snapshot_transport_but_keeps_serving_inputs(self):
+        runtime = {
+            "program": "python",
+            "args": [],
+            "compatibility": {},
+            "environment": {
+                "VLLM_CPU_SNAPSHOT_ROOT": "{components_root}/cpu-process",
+                "VLLM_CPU_SNAPSHOT_PROGRAM": "/cpu-restore",
+                "VLLM_CPU_SNAPSHOT_CLOCK_OFFSET_S": "100",
+                "VLLM_ENGINE_STARTUP_POLICY": "fixed-profile-policy",
+                "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+            },
+            "components": [{"name": "cpu-process"}, {"name": "other-runtime"}],
+            "artifact": {"id": "runtime-identity"},
+            "hydration": {"retries": 0},
+        }
+        selected = without_cpu_snapshot(runtime)
+        self.assertEqual(selected["components"], [{"name": "other-runtime"}])
+        self.assertEqual(
+            selected["environment"],
+            {
+                "VLLM_ENGINE_STARTUP_POLICY": "fixed-profile-policy",
+                "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+            },
+        )
+        self.assertEqual(selected["artifact"], runtime["artifact"])
+        self.assertEqual(selected["hydration"], runtime["hydration"])
+        self.assertIn("VLLM_CPU_SNAPSHOT_ROOT", runtime["environment"])
+        self.assertEqual(len(runtime["components"]), 2)
+        ticket = runtime_ticket(
+            selected,
+            {"id": "a" * 64, "chunks": []},
+            [
+                {
+                    "name": "other-runtime",
+                    "manifest": {"id": "b" * 64, "chunks": []},
+                    "compatibility": {},
+                }
+            ],
+            [],
+            "http://fixture",
+        )
+        self.assertEqual(
+            [item["name"] for item in ticket["components"]], ["other-runtime"]
+        )
+        self.assertFalse(
+            any(key.startswith("VLLM_CPU_SNAPSHOT_") for key in ticket["environment"])
+        )
+
     def test_components_keep_identity_compatibility_and_scoped_urls(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

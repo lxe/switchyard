@@ -6,6 +6,20 @@ import re
 from pathlib import Path
 
 
+def without_cpu_snapshot(configuration):
+    """Select ordinary CPU startup without changing GPU or hydration policy."""
+    runtime = copy.deepcopy(configuration)
+    runtime["environment"] = {
+        key: value
+        for key, value in runtime["environment"].items()
+        if not key.startswith("VLLM_CPU_SNAPSHOT_")
+    }
+    runtime["components"] = [
+        item for item in runtime.get("components", []) if item["name"] != "cpu-process"
+    ]
+    return runtime
+
+
 def named_directories(assignments):
     directories = {}
     for value in assignments:

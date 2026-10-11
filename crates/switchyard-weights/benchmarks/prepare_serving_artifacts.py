@@ -1,4 +1,4 @@
-"""Bind final tensor weights, warmed caches and a CPU snapshot for one rollout.
+"""Bind final tensor weights, warmed caches and an optional CPU snapshot.
 
 The model must already contain the bounded transport's immutable tensor index.
 The caller supplies the loader identity from the final integrated agent source.
@@ -13,6 +13,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from benchmark_artifacts import without_cpu_snapshot
+
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -26,7 +28,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bake", type=Path, required=True)
     parser.add_argument("--model-objects", type=Path, required=True)
-    parser.add_argument("--cpu-artifact", type=Path, required=True)
+    parser.add_argument("--cpu-artifact", type=Path)
+    parser.add_argument(
+        "--without-criu",
+        action="store_true",
+        help="Skip CPU snapshot artifacts; retain GPU/cache baking and ordinary imports",
+    )
     parser.add_argument("--runtime-config", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--weight-loader-identity", required=True)
@@ -34,6 +41,10 @@ def main():
     parser.add_argument("--cache-artifact", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if not args.without_criu and args.cpu_artifact is None:
+        parser.error("--cpu-artifact is required unless --without-criu is selected")
+    if args.without_criu and args.cpu_artifact is not None:
+        parser.error("--without-criu cannot be combined with --cpu-artifact")
     if re.fullmatch("[0-9a-f]{64}", args.weight_loader_identity) is None:
         parser.error("weight loader identity must be a SHA-256 digest")
 
@@ -117,7 +128,6 @@ def main():
     runtime["environment"]["VLLM_ENGINE_STARTUP_POLICY"] = json.dumps(
         read(args.policy), separators=(",", ":")
     )
-    runtime["environment"]["VLLM_CPU_SNAPSHOT_ROOT"] = "{components_root}/cpu-process"
     # This selected eager profile serves prepared native binaries. Toolchains
     # and development headers remain bake inputs, not serving dependencies.
     environment = runtime["environment"]
@@ -135,18 +145,30 @@ def main():
         for part in environment["PATH"].split(":")
         if "{components_root}/build/" not in part
     )
-    cpu = read(args.cpu_artifact / "manifest.json")
+    cpu = None
     runtime["components"] = [
         item
-        for item in runtime["components"]
+        for item in runtime.get("components", [])
         if item["name"] not in {"cpu-process", "build"}
-    ] + [
-        {
-            "name": "cpu-process",
-            "artifact": {"id": cpu["id"], "prefix": "local-cpu-process/" + cpu["id"]},
-            "compatibility": cpu["metadata"]["compatibility"],
-        }
     ]
+    if args.without_criu:
+        runtime = without_cpu_snapshot(runtime)
+        configuration["bootstrap"]["runtime"] = runtime
+    else:
+        cpu = read(args.cpu_artifact / "manifest.json")
+        runtime["environment"][
+            "VLLM_CPU_SNAPSHOT_ROOT"
+        ] = "{components_root}/cpu-process"
+        runtime["components"].append(
+            {
+                "name": "cpu-process",
+                "artifact": {
+                    "id": cpu["id"],
+                    "prefix": "local-cpu-process/" + cpu["id"],
+                },
+                "compatibility": cpu["metadata"]["compatibility"],
+            }
+        )
     labels = {
         **runtime["compatibility"],
         "runtime_id": runtime["artifact"]["id"],
@@ -203,14 +225,15 @@ def main():
             "model_manifest_id": model["id"],
             "model_content_id": model["content_id"],
             "cache_id": cache["id"],
-            "cpu_process_id": cpu["id"],
+            "cpu_snapshot_enabled": cpu is not None,
+            "cpu_process_id": cpu["id"] if cpu else None,
             "weight_loader": args.weight_loader_identity,
             "engine_arguments": arguments_identity,
             "final_layout_sha256": receipt["layout_sha256"],
             "tensor_count": len(index["tensors"]),
             "model_objects": str(args.model_objects.resolve()),
             "cache_objects": str(args.cache_artifact.resolve()),
-            "cpu_objects": str(args.cpu_artifact.resolve()),
+            "cpu_objects": str(args.cpu_artifact.resolve()) if cpu else None,
             "cuda_rollout_completed": False,
         },
     )

@@ -49,3 +49,7 @@ The next complete CRIU rollout requires a host or container service that grants 
 RunPod's documented [pod creation schema](https://docs.runpod.io/api-reference-v2/pods/create-a-pod) exposes container commands and placement constraints, but no capability or privileged-container option. Its `args`, `entrypoint` and `cmd` fields set the container command, so putting Docker daemon flags in those fields does not request elevated permissions. No alternative RunPod tier or provider-specific exception was tested.
 
 A userspace checkpoint backend would require a separate adapter implementation and measurements of the full native tree. Ordinary startup and userspace checkpointing were not substituted for this CRIU rollout. The simulator and scheduler contain no RunPod or CRIU workaround.
+
+## Ordinary startup configuration
+
+For hosts without checkpoint permissions, use the [no-CRIU bake and cold-start methods](cpu-process-snapshots.md#startup-without-criu). `prepare_serving_artifacts.py --without-criu` omits the CPU snapshot, while `run_prepared_cold.py --without-criu` can override an existing snapshot fixture. Both retain baked GPU caches, prepared tensors and fixed memory plans. The ordinary-import path has passed a fresh local serving rollout using the small Ubuntu image and normal container permissions. Its full RunPod serving rollout remains untested; GPU caches and memory profiles still need to match the allocated hardware.

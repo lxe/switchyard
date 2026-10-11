@@ -66,6 +66,24 @@ Bind that CPU artifact and the current `loader-identity` into a cache/runtime fi
 - `thread-waits.jsonl` and `container-memory.jsonl`: host/cgroup samples.
 - `receipt.json`: binary digest, final state, first-content timing and sampled memory peak.
 
+## Startup without CRIU
+
+`prepare_serving_artifacts.py --without-criu` prepares a serving fixture without a CPU snapshot. Omit `--cpu-artifact` and skip `prepare_cpu_tree.py` / `run_cpu_snapshot.sh` entirely. The native GPU bake still prepares final tensors, kernel caches and the fixed GPU memory plan. Assembly removes the CPU component and snapshot environment variables; `prepared.json` records `cpu_snapshot_enabled: false` and null CPU artifact fields. A CPU artifact and `--without-criu` cannot be supplied together.
+
+An already-prepared snapshot fixture can also be tested without rebuilding its GPU cache:
+
+```bash
+python3 -u crates/switchyard-weights/benchmarks/run_prepared_cold.py \
+  /path/to/prepared-serving /path/to/runtime-partition /path/to/legacy-ticket.json \
+  --without-criu --output results/no-criu-rollout
+```
+
+The override writes a separate selected runtime JSON beside the output and leaves the input fixture unchanged. It excludes CPU-image transport, the restore binary mount, privileged mode and host PID sharing. A fixture assembled with `--without-criu` selects this path automatically, so the cold-start flag is unnecessary for that fixture. Ordinary startup defaults to the small pinned Ubuntu serving image; `--image` can override it. The [checked-in RTX 5090 configuration](../configs/serving-profiles/qwen3.5-0.8b-rtx5090.no-criu.runtime.json) pins the same runtime, model, prepared tensors and GPU cache as the snapshot configuration, with the CPU snapshot removed.
+
+Python runs the normal prepared-import adapter and vLLM spawns its worker. Imports, CPU object construction and native worker startup execute at launch. Baked caches and the fixed serving budget remain active. No automatic sizing, inference readiness probes or recovery behavior is introduced. Receipts record `cpu_snapshot_enabled` and `cpu_restore_privileges` separately.
+
+The [local no-CRIU receipt](receipts/no-criu-local-cold-start.json) records a fresh ordinary-permission container reaching first streamed content in 28.253 s. Runtime hydration took 7.933 s; engine spawn to first content took 16.131 s; the first request itself took 0.355 s. Native telemetry confirmed prepared tensor destinations, the fixed 1 GiB KV budget, skipped memory profiling and disabled automatic sizing. The no-CRIU assembly reproduced the same GPU cache artifact identity without a CPU artifact. This was one local HTTP sample with warm source caches, not a RunPod serving test or an isolated estimate of CRIU's net benefit.
+
 ## Local timing results
 
 | Measurement | Parent-only snapshot | Native API/worker tree |

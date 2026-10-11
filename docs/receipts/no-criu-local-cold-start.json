@@ -1,0 +1,162 @@
+{
+  "cpu_snapshot_enabled": false,
+  "cpu_restore_privileges": false,
+  "agent_binary_sha256": "8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f",
+  "runtime_artifact_id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
+  "component_artifact_ids": {},
+  "cache_artifact_ids": {
+    "compiled": "c1c09ab18b96700ba65f7796cfd88f558244ec6732272c4cb67e184866a2185b"
+  },
+  "shared_hydration_concurrency": 20,
+  "request_to_ready_seconds": 27.898005478986306,
+  "request_to_first_useful_token_seconds": 28.252802758986945,
+  "direct_request_to_first_token_seconds": 0.3547874669893645,
+  "completion": "Paris",
+  "container_memory_limit": "32g",
+  "container_memory": {
+    "maximum_observed": {
+      "current_bytes": 16605052928,
+      "peak_bytes": 16605446144,
+      "anon_bytes": 3336671232,
+      "file_bytes": 13059862528,
+      "file_dirty_bytes": 10147074048,
+      "file_writeback_bytes": 4718592,
+      "shmem_bytes": 66187264
+    },
+    "sampling_error": null
+  },
+  "engine_args": [
+    "serve",
+    "/opt/switchyard/stream-models/model",
+    "--served-model-name",
+    "qwen-local",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "8000",
+    "--dtype",
+    "bfloat16",
+    "--language-model-only",
+    "--max-model-len",
+    "64",
+    "--max-num-seqs",
+    "1",
+    "--max-num-batched-tokens",
+    "64",
+    "--gpu-memory-utilization",
+    "0.25",
+    "--kv-cache-memory-bytes",
+    "1073741824",
+    "--enforce-eager",
+    "--attention-backend",
+    "TRITON_ATTN",
+    "--seed",
+    "123"
+  ],
+  "native_profile_enabled": true,
+  "schema_version": 1,
+  "scope": "Single fresh local Docker rollout in tmux session 0; small pinned Ubuntu serving image, normal container permissions, local HTTP with warm source caches, NVMe Btrfs zstd:3, 32 GiB memory cap and swap disabled. Not a RunPod result or repeated-trial comparison.",
+  "base_image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "preparation": {
+    "without_criu": true,
+    "cpu_process_id": null,
+    "gpu_cache_id": "c1c09ab18b96700ba65f7796cfd88f558244ec6732272c4cb67e184866a2185b",
+    "final_tensor_count": 272,
+    "final_layout_sha256": "044f7b92fc375b90f27cd2fbaf289c18e3379098c0d8e7819f87d871a5cc3ca8",
+    "weight_loader_identity": "dd46b40a7032f0030ba184388dd3b60405ef6804d3a3d044f06d344bbb8d5d07",
+    "gpu_cache_identity_unchanged": true
+  },
+  "runtime_hydration_seconds": 7.933473227,
+  "hydration_decoder_peak": 20,
+  "milestones": [
+    {
+      "elapsed_s": 3.874167410991504,
+      "event": "container_launch_returned"
+    },
+    {
+      "elapsed_s": 4.017519531989819,
+      "event": "runtime_hydration_started",
+      "clock": "agent_epoch_estimate"
+    },
+    {
+      "elapsed_s": 12.121212863989058,
+      "event": "runtime_hydration_finished",
+      "clock": "agent_epoch_estimate"
+    },
+    {
+      "elapsed_s": 12.122143243992468,
+      "event": "engine_spawned",
+      "clock": "agent_epoch_estimate"
+    },
+    {
+      "elapsed_s": 12.918805851993966,
+      "event": "module_prepared",
+      "module": "torch",
+      "pid": 74,
+      "duration_s": 0.7579501389991492,
+      "clock_offset_s": 0.0,
+      "clock_uncertainty_s": 0.0
+    },
+    {
+      "elapsed_s": 13.449027490991284,
+      "event": "module_prepared",
+      "module": "transformers",
+      "pid": 74,
+      "duration_s": 0.5302023339900188,
+      "clock_offset_s": 0.0,
+      "clock_uncertainty_s": 0.0
+    },
+    {
+      "elapsed_s": 16.060289169996395,
+      "event": "module_prepared",
+      "module": "vllm.entrypoints.cli.serve",
+      "pid": 74,
+      "duration_s": 2.6112331449985504,
+      "clock_offset_s": 0.0,
+      "clock_uncertainty_s": 0.0
+    },
+    {
+      "elapsed_s": 16.496276221994776,
+      "event": "module_prepared",
+      "module": "vllm.v1.worker.gpu_worker",
+      "pid": 74,
+      "duration_s": 0.4359697089967085,
+      "clock_offset_s": 0.0,
+      "clock_uncertainty_s": 0.0
+    },
+    {
+      "elapsed_s": 25.54471302399179,
+      "event": "tensor_loading_finished",
+      "clock": "agent_epoch_estimate"
+    },
+    {
+      "elapsed_s": 26.1966085969907,
+      "event": "fixed_serving_budget",
+      "pid": 189,
+      "free_memory_bytes": 29119283200,
+      "profiling_forward_skipped": true,
+      "automatic_memory_sizing": false,
+      "kv_cache_memory_bytes": 1073741824,
+      "runtime_headroom_bytes": 1073741824,
+      "clock_offset_s": 0.0,
+      "clock_uncertainty_s": 0.0
+    },
+    {
+      "elapsed_s": 27.8761286779918,
+      "event": "engine_health_ready",
+      "clock": "agent_epoch_estimate"
+    },
+    {
+      "elapsed_s": 28.252802758986945,
+      "event": "first_streamed_content",
+      "direct_request_ttft_s": 0.3547874669893645,
+      "content": "Paris"
+    },
+    {
+      "elapsed_s": 29.81562884899904,
+      "event": "owned_container_removed"
+    }
+  ],
+  "engine_spawn_to_first_token_seconds": 16.130659514994477,
+  "owned_container_removed": true
+}

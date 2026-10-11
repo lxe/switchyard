@@ -969,6 +969,8 @@ try:
                 "engine_args": current_ticket["engine_args"],
                 "runtime_environment_overrides": args.runtime_env,
                 "native_profile_enabled": args.profile_startup,
+                "cpu_snapshot_enabled": bool(runtime["environment"].get("VLLM_CPU_SNAPSHOT_ROOT")),
+                "cpu_restore_privileges": args.cpu_restore is not None,
                 "experimental_env_override_source": source_overlay,
                 "experimental_cli_main_source": cli_overlay,
                 "experimental_module_sources": module_overlays,

@@ -11,6 +11,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from benchmark_artifacts import without_cpu_snapshot
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "prepared",
@@ -32,7 +34,15 @@ parser.add_argument(
     "--case", choices=["runtime", "artifacts", "serving"], default="serving"
 )
 parser.add_argument("--agent", type=Path)
-parser.add_argument("--image", default="switchyard-local-criu")
+parser.add_argument(
+    "--image",
+    help="Override the base image; ordinary startup defaults to the small Ubuntu serving image",
+)
+parser.add_argument(
+    "--without-criu",
+    action="store_true",
+    help="Use ordinary CPU imports; omit CPU image transport and CRIU privileges",
+)
 parser.add_argument(
     "--without-native-profile",
     action="store_true",
@@ -46,14 +56,37 @@ parser.add_argument(
 args = parser.parse_args()
 project = Path(__file__).resolve().parents[3]
 prepared = json.loads((args.prepared / "prepared.json").read_text())
-runtime = json.loads((args.prepared / "runtime.json").read_text())["bootstrap"][
-    "runtime"
-]
+configuration = json.loads((args.prepared / "runtime.json").read_text())
+runtime = configuration["bootstrap"]["runtime"]
 output = args.output or project / "results/engine-startup" / (
     "direct-"
     + args.case
     + "-"
     + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S-%f")
+)
+output.parent.mkdir(parents=True, exist_ok=True)
+runtime_config = args.prepared / "runtime.json"
+if args.without_criu:
+    runtime = without_cpu_snapshot(runtime)
+    configuration["bootstrap"]["runtime"] = runtime
+    runtime_config = Path(str(output) + ".runtime.json")
+    with runtime_config.open("x") as selected:
+        json.dump(configuration, selected, indent=2)
+        selected.write("\n")
+cpu_snapshot_enabled = bool(runtime["environment"].get("VLLM_CPU_SNAPSHOT_ROOT"))
+image = args.image or (
+    "switchyard-local-criu"
+    if cpu_snapshot_enabled
+    else "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136"
+)
+print(
+    "[rollout] CPU startup: "
+    + (
+        "CRIU native process tree"
+        if cpu_snapshot_enabled
+        else "ordinary imports; CRIU disabled"
+    ),
+    flush=True,
 )
 command = [
     sys.executable,
@@ -67,24 +100,27 @@ command = [
     "--runtime-objects",
     str(args.runtime_set / "boot/artifact"),
     "--runtime-config",
-    str(args.prepared / "runtime.json"),
+    str(runtime_config),
     "--engine-args",
     str(args.prepared / "engine-args.json"),
     "--agent",
     str(args.agent or project / "target/artifacts/switchyard-agent-x86_64-linux-musl"),
-    "--cpu-restore",
-    str(
-        project
-        / "target/musl/x86_64-unknown-linux-musl/release/switchyard-cpu-snapshot"
-    ),
     "--image",
-    args.image,
+    image,
     "--memory-limit",
     "32g",
     "--mode",
     "extents",
     "--live-timeline",
 ]
+if cpu_snapshot_enabled:
+    command += [
+        "--cpu-restore",
+        str(
+            project
+            / "target/musl/x86_64-unknown-linux-musl/release/switchyard-cpu-snapshot"
+        ),
+    ]
 for component in runtime.get("components", []):
     name = component["name"]
     if name == "cpu-process":
@@ -102,14 +138,12 @@ if args.case == "serving":
         command.append("--profile-startup")
 else:
     command += ["--isolation", args.case]
-output.parent.mkdir(parents=True, exist_ok=True)
-with Path(str(output) + ".console.log").open("w") as log:
-    with subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    ) as process:
-        for line in process.stdout:
-            print(line, end="", flush=True)
-            log.write(line)
-            log.flush()
-        code = process.wait()
+with Path(str(output) + ".console.log").open("w") as log, subprocess.Popen(
+    command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+) as process:
+    for line in process.stdout:
+        print(line, end="", flush=True)
+        log.write(line)
+        log.flush()
+    code = process.wait()
 sys.exit(code)
