@@ -23,6 +23,17 @@ pub struct Settings {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Derive immutable cache labels without credentials, network access, or provisioning.
+    CacheBindings {
+        #[arg(long)]
+        config: PathBuf,
+        #[arg(long)]
+        gpu: String,
+        #[arg(long)]
+        model: Option<String>,
+        #[arg(long)]
+        out: PathBuf,
+    },
     /// Query available GPUs and timestamped rental quotes; does not provision.
     Discover {
         #[command(flatten)]
@@ -110,6 +121,42 @@ fn clients(settings: &Settings) -> Result<(DeploymentConfig, RunPod, Storage)> {
 
 pub async fn run(command: Command) -> Result<()> {
     match command {
+        Command::CacheBindings {
+            config,
+            gpu,
+            model,
+            out,
+        } => {
+            let config: DeploymentConfig = read(&config)?;
+            config.validate()?;
+            if !switchyard_provider::config::valid_text(&gpu) {
+                return Err(Error::Config("invalid cache GPU name".into()));
+            }
+            let runtime = config.bootstrap.runtime.as_ref().ok_or_else(|| {
+                Error::Config("cache bindings require a configured runtime".into())
+            })?;
+            let mut bindings = BTreeMap::new();
+            for entry in config
+                .models
+                .iter()
+                .filter(|m| model.as_ref().is_none_or(|id| id == &m.id))
+            {
+                bindings.insert(
+                    entry.id.clone(),
+                    crate::artifacts::cache_requirements(&BTreeMap::new(), &gpu, runtime, entry)?,
+                );
+            }
+            if bindings.is_empty() {
+                return Err(Error::Config(
+                    "requested model is absent from fleet configuration".into(),
+                ));
+            }
+            save(&out, &bindings)?;
+            println!(
+                "{} model cache bindings written; no network or provisioning",
+                bindings.len()
+            );
+        }
         Command::Discover { settings } => {
             let (_, provider, _) = provider_inputs(&settings)?;
             let offerings = provider.offers().await?;

@@ -10,6 +10,16 @@ The runtime must pin its `engine_sha256`. The adapter serializes the fixed servi
 
 Cache preparation and reuse retain the generic cache requirements: runtime identity, model revision/repository/archive identity, engine configuration fingerprint, runtime launch fingerprint, and GPU name. Native artifacts add the exact binary, CUDA build, GPU architecture, driver, and bake configuration labels. Changing a required label demands a compatible published artifact; the adapter does not bypass these checks.
 
+Cache publishers can derive these generic labels offline using the same Rust implementation as cache reuse:
+
+```sh
+cargo run --locked --features live -- live cache-bindings \
+  --config configs/runpod/native-fleet.json \
+  --gpu 'NVIDIA GeForce RTX 4090' --out results/native-cache-bindings.json
+```
+
+The fleet file must already pin its model and runtime artifacts. The output maps each selected model ID to required compatibility labels. This command reads no credentials, performs no network access, and creates no GPU allocation. The final native fleet file is produced after its accepted runtime and cache artifacts are published; the command above shows its intended path.
+
 ## Request protocol
 
 The existing live client requests streamed chat completion with `stream_options.include_usage=true` and `chat_template_kwargs.enable_thinking=false`. The native server reports final prompt and completion counts from actual token IDs in a usage event, followed by `[DONE]`. The output channel is bounded by the admitted token budget plus usage and completion framing; the GPU thread does not wait on client reception.
