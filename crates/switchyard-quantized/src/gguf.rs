@@ -304,7 +304,10 @@ impl<R: Read> Parser<'_, R> {
         String::from_utf8(bytes).map_err(|_| Error::Invalid("invalid UTF-8".into()))
     }
     fn value(&mut self, kind: u32, depth: usize) -> Result<Value> {
-        self.values += 1;
+        self.values = self
+            .values
+            .checked_add(1)
+            .ok_or_else(|| Error::Limit("metadata value count overflow".into()))?;
         if self.values > self.limits.values {
             return Err(Error::Limit("metadata value budget".into()));
         }
@@ -327,6 +330,11 @@ impl<R: Read> Parser<'_, R> {
                     return Err(Error::Limit("array nesting budget".into()));
                 }
                 let element_kind = self.u32()?;
+                if element_kind > 12 {
+                    return Err(Error::Invalid(format!(
+                        "unsupported array element type {element_kind}"
+                    )));
+                }
                 let length = self.u64()?;
                 if length > self.limits.values - self.values {
                     return Err(Error::Limit("array value budget".into()));

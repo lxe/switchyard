@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "measured_at_utc": "2026-10-11T21:51:42.079783+00:00",
+  "implementation_commit": "ef7118f4c5972e92429224cb72ce026a0e427732",
+  "base_commit": "600d6dd",
+  "binary_sha256": "5a6338acc90a686a32053119cc39f5e240e281756a25788fc7ba2590a006b4fe",
+  "conditions": {
+    "device": "CPU",
+    "cpu_model": "13th Gen Intel(R) Core(TM) i7-13700",
+    "architecture": "x86_64",
+    "build": "cargo release; default features; no CUDA",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (Arch Linux rust 1:1.98.1-1)",
+    "threads": 4,
+    "input_dtype": "F32",
+    "matrices": 2,
+    "weight_shape_each": [
+      256,
+      512
+    ],
+    "rows": [
+      1,
+      8,
+      64
+    ],
+    "iterations_per_sample": 50,
+    "samples_per_case": 7,
+    "warmup_iterations": 3,
+    "host_isolation": "Shared workstation; main GPU/model validation may run concurrently; frequency and affinity not pinned",
+    "input_pattern": "cos(index*0.013)",
+    "weight_pattern": "sin((index*17+seed*37)*0.071), seeds3/9",
+    "scope": "CPU projection microbenchmark; not model quality, serving throughput or GPU evidence"
+  },
+  "results": {
+    "q4": {
+      "candle_revision": "c68b24997319b8d76e5a4e775dab197c7f26322a",
+      "cases": [
+        {
+          "batched_grouped_seconds": 1.323222e-05,
+          "batched_separate_seconds": 1.675482e-05,
+          "max_abs_difference": 0.0,
+          "per_row_separate_seconds": 1.6712039999999998e-05,
+          "rows": 1,
+          "samples": {
+            "batched_grouped": [
+              1.32755e-05,
+              1.322182e-05,
+              1.326942e-05,
+              1.3093759999999999e-05,
+              1.323222e-05,
+              1.3223359999999998e-05,
+              1.3234379999999998e-05
+            ],
+            "batched_separate": [
+              1.679098e-05,
+              1.712896e-05,
+              1.675482e-05,
+              1.6682800000000002e-05,
+              1.704106e-05,
+              1.671002e-05,
+              1.664452e-05
+            ],
+            "per_row_separate": [
+              1.76957e-05,
+              1.6728660000000002e-05,
+              1.6712039999999998e-05,
+              1.65767e-05,
+              1.653266e-05,
+              1.752518e-05,
+              1.657938e-05
+            ]
+          }
+        },
+        {
+          "batched_grouped_seconds": 9.928138e-05,
+          "batched_separate_seconds": 0.00011992182000000001,
+          "max_abs_difference": 0.0,
+          "per_row_separate_seconds": 0.00013330526,
+          "rows": 8,
+          "samples": {
+            "batched_grouped": [
+              9.888618e-05,
+              9.926174e-05,
+              9.967654e-05,
+              9.928138e-05,
+              9.950566e-05,
+              9.952188e-05,
+              8.896614000000001e-05
+            ],
+            "batched_separate": [
+              0.00011884918,
+              0.00012132182,
+              0.00011842867999999999,
+              0.00012018376000000001,
+              0.00012012596,
+              0.00011992182000000001,
+              0.00011671000000000001
+            ],
+            "per_row_separate": [
+              0.00013673942,
+              0.00013278362,
+              0.00013351374,
+              0.00013330526,
+              0.00013637194,
+              0.00013294436,
+              0.00013003354
+            ]
+          }
+        },
+        {
+          "batched_grouped_seconds": 0.0005655452799999999,
+          "batched_separate_seconds": 0.00071952928,
+          "max_abs_difference": 0.0,
+          "per_row_separate_seconds": 0.00094203938,
+          "rows": 64,
+          "samples": {
+            "batched_grouped": [
+              0.00070290696,
+              0.0007245812,
+              0.00056212592,
+              0.00055578046,
+              0.0006153171,
+              0.0005655452799999999,
+              0.0005486172999999999
+            ],
+            "batched_separate": [
+              0.0008487493999999999,
+              0.00090526302,
+              0.0007123702,
+              0.0007051906,
+              0.00076452664,
+              0.0007055803400000001,
+              0.00071952928
+            ],
+            "per_row_separate": [
+              0.00104593486,
+              0.00101376206,
+              0.00094203938,
+              0.00092646756,
+              0.0009452911799999999,
+              0.0008789837000000001,
+              0.00087621906
+            ]
+          }
+        }
+      ],
+      "encoding": "Q4_0",
+      "iterations": 50,
+      "max_abs_tolerance": 1e-05,
+      "output_width": 256,
+      "packed_bytes": 147456,
+      "rayon_threads_env": "4",
+      "sample_count": 7,
+      "scope": "CPU matrix projections only; not model token throughput or quality",
+      "width": 512
+    },
+    "q8": {
+      "candle_revision": "c68b24997319b8d76e5a4e775dab197c7f26322a",
+      "cases": [
+        {
+          "batched_grouped_seconds": 5.98068e-06,
+          "batched_separate_seconds": 8.696920000000001e-06,
+          "max_abs_difference": 0.0,
+          "per_row_separate_seconds": 9.482740000000001e-06,
+          "rows": 1,
+          "samples": {
+            "batched_grouped": [
+              6.6945800000000005e-06,
+              6.5305599999999995e-06,
+              5.98068e-06,
+              5.90306e-06,
+              5.9247e-06,
+              6.47756e-06,
+              5.929419999999999e-06
+            ],
+            "batched_separate": [
+              9.628160000000001e-06,
+              9.54262e-06,
+              8.696920000000001e-06,
+              8.77686e-06,
+              8.54832e-06,
+              8.61416e-06,
+              8.6737e-06
+            ],
+            "per_row_separate": [
+              1.305754e-05,
+              9.56826e-06,
+              9.51964e-06,
+              9.482740000000001e-06,
+              8.7868e-06,
+              8.606640000000001e-06,
+              8.97564e-06
+            ]
+          }
+        },
+        {
+          "batched_grouped_seconds": 1.702494e-05,
+          "batched_separate_seconds": 2.41823e-05,
+          "max_abs_difference": 0.0,
+          "per_row_separate_seconds": 5.616214e-05,
+          "rows": 8,
+          "samples": {
+            "batched_grouped": [
+              2.168114e-05,
+              2.1638500000000003e-05,
+              1.6954739999999998e-05,
+              1.692862e-05,
+              1.703154e-05,
+              1.68921e-05,
+              1.702494e-05
+            ],
+            "batched_separate": [
+              2.775972e-05,
+              2.856594e-05,
+              2.3477720000000002e-05,
+              2.369586e-05,
+              2.938146e-05,
+              2.3444880000000002e-05,
+              2.41823e-05
+            ],
+            "per_row_separate": [
+              7.018374e-05,
+              6.92995e-05,
+              6.412424e-05,
+              5.3836480000000004e-05,
+              5.3647800000000005e-05,
+              5.367472e-05,
+              5.616214e-05
+            ]
+          }
+        },
+        {
+          "batched_grouped_seconds": 0.00010848666,
+          "batched_separate_seconds": 0.00014120818,
+          "max_abs_difference": 0.0,
+          "per_row_separate_seconds": 0.00041951722,
+          "rows": 64,
+          "samples": {
+            "batched_grouped": [
+              0.00010924737999999999,
+              0.00010848666,
+              0.00010866676,
+              0.00010908243999999999,
+              9.008947999999999e-05,
+              9.817624e-05,
+              9.430052e-05
+            ],
+            "batched_separate": [
+              0.00014940222,
+              0.00014187256,
+              0.00014120818,
+              0.0001413292,
+              0.00012029282000000001,
+              0.00012088198,
+              0.00012482992
+            ],
+            "per_row_separate": [
+              0.0004415107,
+              0.00043030446,
+              0.00043825876,
+              0.00041951722,
+              0.00040175186000000003,
+              0.00040858560000000003,
+              0.00039466094
+            ]
+          }
+        }
+      ],
+      "encoding": "Q8_0",
+      "iterations": 50,
+      "max_abs_tolerance": 1e-05,
+      "output_width": 256,
+      "packed_bytes": 278528,
+      "rayon_threads_env": "4",
+      "sample_count": 7,
+      "scope": "CPU matrix projections only; not model token throughput or quality",
+      "width": 512
+    }
+  },
+  "acceptance": {
+    "grouped_vs_independent_max_abs_tolerance": 1e-05,
+    "observed_max_abs_difference": 0.0,
+    "tests_passed": 10,
+    "all_target_clippy_warnings": 0,
+    "native_GGUF_serving_admitted": false,
+    "merged_decode_execution_implemented": false
+  }
+}

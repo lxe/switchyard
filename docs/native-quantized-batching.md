@@ -32,6 +32,26 @@ RAYON_NUM_THREADS=4 target/release/switchyard-quantized-bench \
 
 No GPU feature is enabled for this foundation's CPU tests or measurements. GPU integration requires the main thread's serialized validation slot, a numerical contract against the released model and a comparable serving workload.
 
+## Measured CPU projections
+
+The [CPU receipt](receipts/native-quantized-projections-cpu.json) records seven samples of fifty iterations on an i7-13700, with four Rayon threads and a release build. Two `[256, 512]` packed matrices receive identical F32 input. The workstation was shared; CPU frequency and affinity were not pinned. Every single/batch/grouped comparison had zero maximum absolute difference on these inputs.
+
+| Encoding | Input rows | Separate per-row calls | Separate tensor-batched calls | One grouped call |
+| --- | ---: | ---: | ---: | ---: |
+| Q4_0 | 1 | 16.71 us | 16.75 us | 13.23 us |
+| Q4_0 | 8 | 133.31 us | 119.92 us | 99.28 us |
+| Q4_0 | 64 | 942.04 us | 719.53 us | 565.55 us |
+| Q8_0 | 1 | 9.48 us | 8.70 us | 5.98 us |
+| Q8_0 | 8 | 56.16 us | 24.18 us | 17.03 us |
+| Q8_0 | 64 | 419.52 us | 141.21 us | 108.49 us |
+
+Grouping reduced latency for these CPU matrices. This measurement does not select a quantization mode for Qwen, predict GPU speedup, or close the varied-length decode gap. An ignored CUDA projection fixture is available for the main thread to run after its model validation workload; its proposed group/separate maximum absolute tolerance is `0.0001`, and no CUDA result is recorded here.
+
+```sh
+cargo test -p switchyard-quantized --features cuda \
+  --test foundations cuda_grouped_projection -- --ignored --nocapture
+```
+
 ## Qwen Gated DeltaNet weight layout
 
 The official llama.cpp Qwen conversion changes more than tensor names. It tiles V heads where released HF weights group them under each K head. This affects the V portion of QKV rows, z/b/a rows, dt/A vectors, V convolution channels and output-projection columns. `gdn::HeadOrder` computes the forward and inverse channel mapping without allocating a permutation tensor. CPU fixtures cover ratios 1, 2 and 3, including the 16-key/48-value-head configuration.

@@ -298,3 +298,61 @@ fn fused_projection_matches_independent_calls_for_batch_and_prefill() {
         );
     }
 }
+
+#[cfg(feature = "cuda")]
+#[test]
+#[ignore = "Main thread owns the GPU validation slot; CPU tests do not run this"]
+fn cuda_grouped_projection_matches_separate_calls() {
+    let device = Device::new_cuda(0).unwrap();
+    for encoding in [
+        GgmlDType::Q4_0,
+        GgmlDType::Q8_0,
+        GgmlDType::Q4K,
+        GgmlDType::Q6K,
+    ] {
+        let tensors = [
+            ("gate", support::matrix(32, 256, 3, encoding)),
+            ("up", support::matrix(48, 256, 9, encoding)),
+        ];
+        let mut file = support::fixture(&[], &tensors);
+        let index = Index::read(&mut file, IndexLimits::default()).unwrap();
+        let group =
+            ProjectionGroup::read(&mut file, &index, &["gate", "up"], 1 << 20, &device).unwrap();
+        let mut separate = Vec::new();
+        for name in ["gate", "up"] {
+            let tensor = index.tensor(name).unwrap();
+            let mut raw = vec![0; tensor.bytes() as usize];
+            file.seek(SeekFrom::Start(tensor.file_offset())).unwrap();
+            file.read_exact(&mut raw).unwrap();
+            separate.push(QMatMul::QTensor(std::sync::Arc::new(
+                qtensor_from_ggml(encoding, &raw, tensor.backend_shape(), &device).unwrap(),
+            )));
+        }
+        for rows in [1, 8, 64] {
+            let input = Tensor::from_vec(
+                (0..rows * 256)
+                    .map(|i| (i as f32 * 0.013).cos())
+                    .collect::<Vec<_>>(),
+                (rows, 256),
+                &device,
+            )
+            .unwrap();
+            let fused = group.forward(&input).unwrap();
+            for (output, op) in fused.iter().zip(&separate) {
+                let error = (output - &op.forward(&input).unwrap())
+                    .unwrap()
+                    .abs()
+                    .unwrap()
+                    .max_all()
+                    .unwrap()
+                    .to_scalar::<f32>()
+                    .unwrap();
+                eprintln!("encoding={encoding:?} rows={rows} max_abs_difference={error}");
+                assert!(
+                    error <= 1e-4,
+                    "GPU grouped/separate proposed tolerance failed"
+                );
+            }
+        }
+    }
+}
