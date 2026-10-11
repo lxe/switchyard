@@ -1,0 +1,45 @@
+{
+  "run": "results/cloud-vllm-0.8b-sampling-aot-fork-mo",
+  "started_at": "2026-10-11T04:37:49.611204+00:00",
+  "controller_exit": 0,
+  "elapsed_s": 88.01237073100128,
+  "reason": null,
+  "estimated_rental_usd": 0.023886456699599656,
+  "receipts": [
+    {
+      "cleanup_failures": [],
+      "estimated_rental_usd": 0.023886456699599656,
+      "pods": [
+        {
+          "allocated_s": 3.147167389,
+          "ended_s": 81.252938456,
+          "pod": {
+            "cost": 1.09,
+            "data_center": "US-MO-1",
+            "id": "c1vib77e4gwomm",
+            "name": "switchyard-92a8dc5cb601a7f5-0",
+            "status": "running"
+          },
+          "profile": 0,
+          "quoted": {
+            "availability": "LOW",
+            "data_center": "US-MO-1",
+            "disk_usd_per_hour": 0.010958904109589041,
+            "gpu": "NVIDIA L40S",
+            "gpu_memory_gb": 48,
+            "gpu_usd_per_hour": 1.09,
+            "quoted_at_unix_s": 1791693470
+          }
+        }
+      ]
+    }
+  ],
+  "cleanup": [
+    {
+      "pod_id": "c1vib77e4gwomm",
+      "name": "switchyard-92a8dc5cb601a7f5-0",
+      "get_status": 404
+    }
+  ],
+  "all_absent": true
+}

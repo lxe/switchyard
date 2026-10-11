@@ -1,0 +1,44 @@
+[
+  {
+    "case": "accepted",
+    "accepted": true,
+    "expected_accepted": true,
+    "no_files_changed": true
+  },
+  {
+    "case": "changed_launch_environment",
+    "accepted": false,
+    "expected_accepted": false,
+    "no_files_changed": true
+  },
+  {
+    "case": "attention_equals_override",
+    "accepted": false,
+    "expected_accepted": false,
+    "no_files_changed": true
+  },
+  {
+    "case": "attention_underscore_override",
+    "accepted": false,
+    "expected_accepted": false,
+    "no_files_changed": true
+  },
+  {
+    "case": "speculative_override",
+    "accepted": false,
+    "expected_accepted": false,
+    "no_files_changed": true
+  },
+  {
+    "case": "changed_model_revision",
+    "accepted": false,
+    "expected_accepted": false,
+    "no_files_changed": true
+  },
+  {
+    "case": "changed_gpu_binding",
+    "accepted": false,
+    "expected_accepted": false,
+    "no_files_changed": true
+  }
+]

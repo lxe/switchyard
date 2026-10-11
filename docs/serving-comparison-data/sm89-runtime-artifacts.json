@@ -105,5 +105,6 @@
     }
   },
   "offline_smoke_passed": true,
-  "gpu_acceptance_verified": false
+  "gpu_acceptance_verified": true,
+  "gpu_acceptance_receipt": "sm89-runtime-startup.json"
 }

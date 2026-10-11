@@ -22,6 +22,7 @@ p.add_argument('--cache-artifact', required=True, type=Path)
 p.add_argument('--config', required=True, type=Path)
 p.add_argument('--out', required=True, type=Path)
 p.add_argument('--profile', action='store_true')
+p.add_argument('--validate-only', action='store_true', help='Check source configuration identity without cloning or packing')
 p.add_argument('--agent-url', help='Optional immutable agent release pin; requires --agent-sha256')
 p.add_argument('--agent-sha256', help='SHA-256 of the optional agent release')
 a = p.parse_args()
@@ -41,12 +42,34 @@ assert cfg['bootstrap']['runtime']['artifact']['id'] == source['id']
 assert len(cfg['models']) == 1 and cfg['models'][0]['id'] == 'qwen3.5-0.8b'
 engine = cfg['models'][0]['engine']
 assert engine['dtype'] == 'bfloat16' and engine['language_model_only']
-assert '--attention-backend' not in engine['extra_args']  # checked native default is FlashAttention
+# Bind the entire tested configuration, including absence of speculative
+# decoding or an attention-backend override, before touching any files.
+engine_fingerprint = hashlib.sha256(json.dumps(engine, separators=(',', ':')).encode()).hexdigest()
+assert engine_fingerprint == '2104f4dff126bdef93d357755a0d12ed48ca79a0148bb6202cc10e454b1d0e40'
+assert cache_source['metadata']['compatibility']['engine_configuration'] == engine_fingerprint
 assert cfg['models'][0]['caches'][0]['artifact']['id'] == cache_source['id']
-assert cache_source['metadata']['compatibility']['runtime_id'] == source['id']
-assert cache_source['metadata']['compatibility']['gpu_compute_capability'] == '8.9'
-assert cfg['bootstrap']['runtime']['environment']['FLASHINFER_DISABLE_JIT'] == '1'
-assert cfg['bootstrap']['runtime']['environment']['VLLM_FORCE_AOT_LOAD'] == '1'
+compatibility = cache_source['metadata']['compatibility']
+model = cfg['models'][0]
+for key, value in {
+    'runtime_id': source['id'], 'model_repository': model['repository'],
+    'model_revision': model['revision'], 'model_archive_sha256': model['archive_sha256'],
+    'gpu': model['caches'][0]['gpu'], 'gpu_compute_capability': '8.9',
+}.items():
+    assert compatibility[key] == value, 'source cache identity mismatch: ' + key
+runtime = cfg['bootstrap']['runtime']
+for key, value in runtime['compatibility'].items():
+    assert source['metadata']['compatibility'][key] == value, 'source runtime identity mismatch: ' + key
+for key, value in model['caches'][0]['compatibility'].items():
+    assert compatibility[key] == value, 'source cache label mismatch: ' + key
+launch = [runtime['program'], runtime['args'], dict(sorted(runtime['environment'].items()))]
+source_launch_fingerprint = hashlib.sha256(json.dumps(launch, separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()
+assert compatibility['runtime_launch_configuration'] == source_launch_fingerprint, 'source launch configuration changed'
+assert runtime['environment']['FLASHINFER_DISABLE_JIT'] == '1'
+assert runtime['environment']['VLLM_FORCE_AOT_LOAD'] == '1'
+if a.validate_only:
+    print(json.dumps({'source_configuration_compatible': True, 'source_launch_fingerprint': source_launch_fingerprint,
+                      'engine_fingerprint': engine_fingerprint, 'no_files_changed': True}))
+    raise SystemExit(0)
 for artifact, tree in [(a.runtime_artifact, a.runtime_tree), (a.cache_artifact, a.cache_tree)]:
     subprocess.run([cli, 'artifacts', 'verify', '--manifest', str(artifact / 'manifest.json'),
                     '--directory', str(tree)], check=True)
