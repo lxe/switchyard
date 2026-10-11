@@ -237,6 +237,7 @@ fn serving_artifacts_are_optional_and_cache_identity_tracks_engine_configuration
         id: "b".repeat(64),
     };
     cfg.bootstrap.runtime = Some(ServingRuntimeConfig {
+        components: vec![],
         hydration: None,
         artifact: reference.clone(),
         compatibility: Default::default(),
@@ -290,6 +291,7 @@ fn serving_configuration_rejects_escaping_programs_and_unbound_caches() {
     assert!(cfg.validate().is_err());
     cfg.models[0].caches.clear();
     cfg.bootstrap.runtime = Some(ServingRuntimeConfig {
+        components: vec![],
         hydration: None,
         artifact: ArtifactRef {
             prefix: "artifacts/runtime".into(),
@@ -535,4 +537,38 @@ fn extent_model_configuration_preserves_a_distinct_reference_and_cache_identity(
     );
     wire["models"][0]["archive_sha256"] = serde_json::Value::String("a".repeat(64));
     assert!(serde_json::from_value::<DeploymentConfig>(wire).is_err());
+}
+
+#[test]
+fn runtime_component_identity_changes_cache_fingerprint_and_empty_layout_is_compatible() {
+    use switchyard_live::artifacts::{
+        ArtifactRef, ServingRuntimeComponent, runtime_launch_fingerprint,
+    };
+    let cfg: DeploymentConfig = serde_json::from_str(include_str!(
+        "../../../configs/runpod/qwen-extents-l40s-strict.json"
+    ))
+    .unwrap();
+    let mut runtime = cfg.bootstrap.runtime.unwrap();
+    let original = runtime_launch_fingerprint(&runtime).unwrap();
+    let legacy = (&runtime.program, &runtime.args, &runtime.environment);
+    use sha2::{Digest, Sha256};
+    assert_eq!(
+        original,
+        format!("{:x}", Sha256::digest(serde_json::to_vec(&legacy).unwrap()))
+    );
+    runtime.components.push(ServingRuntimeComponent {
+        name: "build".into(),
+        artifact: ArtifactRef {
+            prefix: "runtime/build".into(),
+            id: "a".repeat(64),
+        },
+        compatibility: Default::default(),
+    });
+    runtime.validate().unwrap();
+    let composite = runtime_launch_fingerprint(&runtime).unwrap();
+    assert_ne!(original, composite);
+    runtime.components[0].artifact.id = "b".repeat(64);
+    assert_ne!(composite, runtime_launch_fingerprint(&runtime).unwrap());
+    runtime.components.push(runtime.components[0].clone());
+    assert!(runtime.validate().is_err());
 }

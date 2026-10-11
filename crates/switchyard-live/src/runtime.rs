@@ -117,6 +117,7 @@ pub struct LiveRuntime<P: Provider> {
     observations: Vec<serde_json::Value>,
     manifests: BTreeMap<String, ModelManifest>,
     runtime_manifest: Option<switchyard_artifacts::Manifest>,
+    component_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     cache_export: Option<switchyard_agent::export::CacheExportConfig>,
     planners: BTreeMap<String, Arc<Planner>>,
@@ -176,6 +177,7 @@ impl<P: Provider> LiveRuntime<P> {
             profiles,
             profile_offerings,
             runtime_manifest,
+            component_manifests,
             cache_manifests,
         } = profiles::prepare(&provider, &storage, &config, out).await?;
         let scheduling = config.scheduling.clone();
@@ -196,6 +198,7 @@ impl<P: Provider> LiveRuntime<P> {
             observations: vec![],
             manifests,
             runtime_manifest,
+            component_manifests,
             cache_manifests,
             cache_export: None,
             planners,

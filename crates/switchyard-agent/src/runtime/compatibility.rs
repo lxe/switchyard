@@ -62,6 +62,12 @@ fn requirements(
     runtime: &RuntimeTicket,
 ) -> impl Iterator<Item = &std::collections::BTreeMap<String, String>> {
     std::iter::once(&runtime.artifact.manifest)
+        .chain(
+            runtime
+                .components
+                .iter()
+                .map(|part| &part.artifact.manifest),
+        )
         .chain(runtime.caches.iter().map(|cache| &cache.artifact.manifest))
         .map(|manifest| &manifest.metadata.compatibility)
         .chain(

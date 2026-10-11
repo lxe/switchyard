@@ -98,6 +98,7 @@ fn fixture(engine_url: String, stop_succeeds: bool) -> Fixture {
         lifetime_s: 10,
         startup: Default::default(),
         runtime: Some(RuntimeTicket {
+            components: vec![],
             hydration: None,
             artifact: ArtifactTicket {
                 manifest,

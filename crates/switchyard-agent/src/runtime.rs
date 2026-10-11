@@ -16,7 +16,9 @@ use tokio::{
 mod budget;
 mod cache;
 mod compatibility;
+mod launch;
 pub use budget::DependencyBudget;
+pub(crate) use launch::command_staged_with_limit;
 
 /// Optional per-runtime transfer controls, copied from checked fleet configuration.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -47,6 +49,9 @@ pub struct RuntimeTicket {
     pub hydration: Option<RuntimeHydrationOptions>,
     pub artifact: ArtifactTicket,
     pub compatibility: BTreeMap<String, String>,
+    /// Immutable sibling trees needed after the boot runtime is available.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub components: Vec<RuntimeComponent>,
     /// Executable relative to /opt/switchyard/runtime; internal symlinks are supported.
     pub program: String,
     /// Prefix arguments; the model ticket's engine_args follow these arguments.
@@ -63,6 +68,15 @@ pub struct RuntimeTicket {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CacheTicket {
+    pub name: String,
+    pub artifact: ArtifactTicket,
+    pub compatibility: BTreeMap<String, String>,
+}
+
+/// An immutable dependency tree published beside the boot runtime after it is ready.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RuntimeComponent {
     pub name: String,
     pub artifact: ArtifactTicket,
     pub compatibility: BTreeMap<String, String>,
@@ -114,6 +128,12 @@ pub(crate) struct RootPaths {
     pub(crate) models: PathBuf,
 }
 impl RootPaths {
+    pub(crate) fn components(&self) -> PathBuf {
+        self.runtime
+            .parent()
+            .expect("runtime root has a parent")
+            .join("components")
+    }
     pub(crate) fn production() -> Self {
         Self {
             runtime: "/opt/switchyard/runtime".into(),
@@ -131,7 +151,8 @@ impl RootPaths {
             .parent()
             .unwrap()
             .to_owned();
-        for reserved in [&roots.runtime, &roots.caches, &roots.chunks] {
+        let components = roots.components();
+        for reserved in [&roots.runtime, &roots.caches, &roots.chunks, &components] {
             if roots.models.starts_with(reserved) || reserved.starts_with(&roots.models) {
                 return Err(Error::Manifest(
                     "model root overlaps runtime storage".into(),
@@ -190,12 +211,21 @@ fn total(ticket: &ArtifactTicket) -> u64 {
 
 impl RuntimeTicket {
     pub(crate) fn total_bytes(&self) -> u64 {
-        self.caches.iter().fold(total(&self.artifact), |sum, c| {
-            sum.saturating_add(total(&c.artifact))
-        })
+        self.components
+            .iter()
+            .map(|c| &c.artifact)
+            .chain(self.caches.iter().map(|c| &c.artifact))
+            .fold(total(&self.artifact), |sum, artifact| {
+                sum.saturating_add(total(artifact))
+            })
     }
     pub(crate) fn initial_states(&self) -> Vec<ArtifactState> {
         std::iter::once(("runtime", &self.artifact))
+            .chain(
+                self.components
+                    .iter()
+                    .map(|c| (c.name.as_str(), &c.artifact)),
+            )
             .chain(self.caches.iter().map(|c| (c.name.as_str(), &c.artifact)))
             .map(|(name, ticket)| ArtifactState {
                 name: if component(name) {
@@ -250,8 +280,18 @@ impl RuntimeTicket {
             ));
         }
         let mut names = std::collections::BTreeSet::new();
-        if self.caches.len() > 64 {
+        if self.caches.len() + self.components.len() > 64 {
             return Err(Error::Manifest("too many runtime cache artifacts".into()));
+        }
+        for part in &self.components {
+            if !component(&part.name)
+                || matches!(part.name.as_str(), "runtime" | ".seeds")
+                || !names.insert(&part.name)
+            {
+                return Err(Error::Manifest(
+                    "invalid or duplicate runtime component name".into(),
+                ));
+            }
         }
         for cache in &self.caches {
             if !component(&cache.name)
@@ -355,6 +395,12 @@ pub(crate) async fn preflight(
         .manifest
         .entries
         .iter()
+        .chain(
+            runtime
+                .components
+                .iter()
+                .flat_map(|part| part.artifact.manifest.entries.iter()),
+        )
         .try_fold(0_u64, |sum, entry| {
             sum.checked_add(match entry {
                 switchyard_artifacts::Entry::File { size, .. } => *size,
@@ -380,63 +426,7 @@ pub(crate) async fn command_preflighted_with_limit(
     state: Arc<RwLock<State>>,
     download_limit: Arc<tokio::sync::Semaphore>,
 ) -> Result<Option<Command>> {
-    let Some(runtime) = &ticket.runtime else {
-        return Ok(None);
-    };
-    state.write().await.phase = Phase::Hydrating;
-    let started = Instant::now();
-    let context = HydrationContext {
-        roots,
-        ticket,
-        state: state.clone(),
-        started,
-        download_limit,
-    };
-    hydrate_one(runtime.artifact.clone(), &roots.runtime, 0, &context).await?;
-    let cache_root = roots.caches.join(&runtime.artifact.manifest.id);
-    cache::prepare_root(&cache_root)?;
-    for (i, cache) in runtime.caches.iter().enumerate() {
-        let seed = cache_root.join(".seeds").join(&cache.name);
-        hydrate_one(cache.artifact.clone(), &seed, i + 1, &context).await?;
-        let destination = cache_root.join(&cache.name);
-        let manifest = cache.artifact.manifest.clone();
-        let copied =
-            cache::writable_copy_mode(seed, destination, manifest, ticket.startup.mode).await;
-        if let Err(error) = copied {
-            mark_failure(&state, i + 1, &error.to_string()).await;
-            return Err(error);
-        }
-    }
-    let program = roots.runtime.join(&runtime.program);
-    let resolved_program = std::fs::canonicalize(&program)?;
-    if !resolved_program.starts_with(std::fs::canonicalize(&roots.runtime)?)
-        || !resolved_program.is_file()
-    {
-        return Err(Error::Manifest(
-            "runtime executable escapes the runtime directory".into(),
-        ));
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        if resolved_program.metadata()?.permissions().mode() & 0o111 == 0 {
-            return Err(Error::Manifest(
-                "runtime executable has no execute permission".into(),
-            ));
-        }
-    }
-    // Python discovers a virtual environment from the invoked symlink's directory.
-    // Resolve it for containment checks, but preserve that path when executing it.
-    let mut command = Command::new(program);
-    command.args(&runtime.args).args(&ticket.engine_args);
-    child_environment(&mut command);
-    for (key, value) in &runtime.environment {
-        command.env(key, expand(value, roots, &cache_root));
-    }
-    command
-        .env("SWITCHYARD_RUNTIME_ROOT", &roots.runtime)
-        .env("SWITCHYARD_CACHE_ROOT", cache_root);
-    Ok(Some(command))
+    command_staged_with_limit(ticket, roots, state, download_limit, None).await
 }
 
 fn validate_artifacts(
@@ -446,7 +436,12 @@ fn validate_artifacts(
 ) -> std::result::Result<(), (usize, Error)> {
     check_labels(&runtime.artifact.manifest, &runtime.compatibility, mode)
         .map_err(|error| (0, error))?;
+    for (i, part) in runtime.components.iter().enumerate() {
+        check_labels(&part.artifact.manifest, &part.compatibility, mode)
+            .map_err(|error| (i + 1, error))?;
+    }
     for (i, cache) in runtime.caches.iter().enumerate() {
+        let i = i + runtime.components.len();
         check_labels(&cache.artifact.manifest, &cache.compatibility, mode)
             .map_err(|error| (i + 1, error))?;
         let metadata = &cache.artifact.manifest.metadata.compatibility;
@@ -488,10 +483,11 @@ fn check_labels(
     Ok(())
 }
 
-fn expand(value: &str, roots: &RootPaths, cache_root: &Path) -> String {
+pub(crate) fn expand(value: &str, roots: &RootPaths, cache_root: &Path) -> String {
     value
         .replace("{runtime_root}", &roots.runtime.to_string_lossy())
         .replace("{cache_root}", &cache_root.to_string_lossy())
+        .replace("{components_root}", &roots.components().to_string_lossy())
 }
 
 /// Preserve only host execution settings; all inherited cloud/storage credentials are removed.

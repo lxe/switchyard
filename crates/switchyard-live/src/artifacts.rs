@@ -31,12 +31,24 @@ pub struct ServingRuntimeConfig {
     pub hydration: Option<switchyard_agent::runtime::RuntimeHydrationOptions>,
     pub artifact: ArtifactRef,
     #[serde(default)]
+    pub components: Vec<ServingRuntimeComponent>,
+    #[serde(default)]
     pub compatibility: BTreeMap<String, String>,
     pub program: String,
     #[serde(default)]
     pub args: Vec<String>,
     #[serde(default)]
     pub environment: BTreeMap<String, String>,
+}
+
+/// An immutable dependency tree published beside the boot runtime.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServingRuntimeComponent {
+    pub name: String,
+    pub artifact: ArtifactRef,
+    #[serde(default)]
+    pub compatibility: BTreeMap<String, String>,
 }
 
 /// Model and GPU-specific cache contents, prepared outside endpoint startup.
@@ -120,6 +132,19 @@ impl ServingRuntimeConfig {
                 .map_err(|error| Error::Config(error.to_string()))?;
         }
         self.artifact.validate()?;
+        let mut names = std::collections::BTreeSet::new();
+        if self.components.len() > 64 {
+            return Err(Error::Config("too many runtime components".into()));
+        }
+        for part in &self.components {
+            part.artifact.validate()?;
+            if !valid_component(&part.name)
+                || matches!(part.name.as_str(), "runtime" | ".seeds")
+                || !names.insert(&part.name)
+            {
+                return Err(Error::Config("invalid runtime component name".into()));
+            }
+        }
         if !valid_key_prefix(&self.program)
             || self.args.iter().any(|a| a.contains('\0'))
             || self.environment.iter().any(|(k, v)| {
@@ -224,12 +249,16 @@ pub fn engine_fingerprint(engine: &EngineConfig) -> Result<String> {
 
 /// Include launch arguments and environment flags that can change compiler-cache behavior.
 pub fn runtime_launch_fingerprint(runtime: &ServingRuntimeConfig) -> Result<String> {
-    Ok(format!(
-        "{:x}",
-        Sha256::digest(serde_json::to_vec(&(
-            &runtime.program,
-            &runtime.args,
-            &runtime.environment
-        ))?)
-    ))
+    let original = (&runtime.program, &runtime.args, &runtime.environment);
+    let bytes = if runtime.components.is_empty() {
+        serde_json::to_vec(&original)?
+    } else {
+        let components = runtime
+            .components
+            .iter()
+            .map(|part| (&part.name, &part.artifact.id, &part.compatibility))
+            .collect::<Vec<_>>();
+        serde_json::to_vec(&(original, components))?
+    };
+    Ok(format!("{:x}", Sha256::digest(bytes)))
 }

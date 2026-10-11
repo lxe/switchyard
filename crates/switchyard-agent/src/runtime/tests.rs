@@ -39,11 +39,14 @@ struct Source {
     bodies: Arc<BTreeMap<String, Vec<u8>>>,
     calls: Arc<AtomicUsize>,
     corrupt_first: Arc<AtomicBool>,
+    corrupt_name: String,
+    calls_by_object: Arc<std::sync::Mutex<BTreeMap<String, usize>>>,
 }
 struct Server {
     task: tokio::task::JoinHandle<()>,
     calls: Arc<AtomicUsize>,
     corrupt_first: Arc<AtomicBool>,
+    calls_by_object: Arc<std::sync::Mutex<BTreeMap<String, usize>>>,
 }
 impl Drop for Server {
     fn drop(&mut self) {
@@ -55,8 +58,14 @@ async fn chunk(
     RoutePath(name): RoutePath<String>,
 ) -> Response {
     source.calls.fetch_add(1, Ordering::Relaxed);
+    *source
+        .calls_by_object
+        .lock()
+        .unwrap()
+        .entry(name.clone())
+        .or_default() += 1;
     let mut body = source.bodies[&name].clone();
-    if source.corrupt_first.swap(false, Ordering::Relaxed) {
+    if name == source.corrupt_name && source.corrupt_first.swap(false, Ordering::Relaxed) {
         body[0] ^= 1;
     }
     Response::builder()
@@ -65,6 +74,8 @@ async fn chunk(
         .unwrap()
 }
 async fn serve(tickets: &mut [&mut ArtifactTicket], bodies: BTreeMap<String, Vec<u8>>) -> Server {
+    let corrupt_name = tickets[0].manifest.chunks[0].name.clone();
+    let calls_by_object = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
     for ticket in tickets {
@@ -88,6 +99,8 @@ async fn serve(tickets: &mut [&mut ArtifactTicket], bodies: BTreeMap<String, Vec
             bodies: Arc::new(bodies),
             calls: calls.clone(),
             corrupt_first: corrupt_first.clone(),
+            corrupt_name,
+            calls_by_object: calls_by_object.clone(),
         });
     let task = tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
@@ -96,6 +109,7 @@ async fn serve(tickets: &mut [&mut ArtifactTicket], bodies: BTreeMap<String, Vec
         task,
         calls,
         corrupt_first,
+        calls_by_object,
     }
 }
 fn packed(
@@ -194,6 +208,7 @@ async fn fixture() -> (Ticket, Server) {
     let server = serve(&mut [&mut runtime, &mut cache], bodies).await;
     (
         ticket(RuntimeTicket {
+            components: vec![],
             hydration: None,
             artifact: runtime,
             compatibility: BTreeMap::new(),
@@ -409,11 +424,20 @@ async fn decoder_budget_includes_independent_model_and_runtime_workers() {
         })
         .collect();
     let history = 128 * 1024 * 1024;
-    assert_eq!(budget::decoder_history_bound(&ticket), (8 + 3) * history);
+    assert_eq!(
+        budget::decoder_history_bound(&ticket),
+        (8 + 2 + 3) * history
+    );
     ticket.startup.mode = switchyard_artifacts::HydrationMode::TrustedStreaming;
-    assert_eq!(budget::decoder_history_bound(&ticket), (4 + 3) * history);
+    assert_eq!(
+        budget::decoder_history_bound(&ticket),
+        (4 + 2 + 3) * history
+    );
     ticket.concurrency = 2;
-    assert_eq!(budget::decoder_history_bound(&ticket), (2 + 2) * history);
+    assert_eq!(
+        budget::decoder_history_bound(&ticket),
+        (2 + 2 + 2) * history
+    );
     ticket.runtime = None;
     assert_eq!(budget::decoder_history_bound(&ticket), 2 * history);
 }
@@ -559,6 +583,7 @@ async fn runtime_transfer_uses_the_ticket_stall_timeout() {
         }),
         calls: Arc::new(AtomicUsize::new(0)),
         corrupt_first: Arc::new(AtomicBool::new(false)),
+        calls_by_object: Arc::new(std::sync::Mutex::new(BTreeMap::new())),
     };
     let runtime = ticket.runtime.as_mut().unwrap();
     for url in runtime.artifact.urls.values_mut() {
@@ -907,6 +932,7 @@ async fn configured_zero_runtime_retries_preserves_first_failed_attempt() {
     ticket.concurrency = 1;
     let runtime = ticket.runtime.as_mut().unwrap();
     runtime.hydration = Some(RuntimeHydrationOptions { retries: 0 });
+    let failed_object = runtime.artifact.manifest.chunks[0].name.clone();
     server.corrupt_first.store(true, Ordering::Relaxed);
     let destination = TempDir::new();
     let roots = RootPaths::under(&destination.0);
@@ -915,7 +941,10 @@ async fn configured_zero_runtime_retries_preserves_first_failed_attempt() {
             .await
             .is_err()
     );
-    assert_eq!(server.calls.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        server.calls_by_object.lock().unwrap().get(&failed_object),
+        Some(&1)
+    );
     assert!(!roots.runtime.exists());
 
     let mut invalid = ticket.clone();
@@ -928,4 +957,118 @@ async fn configured_zero_runtime_retries_preserves_first_failed_attempt() {
             .validate_launch(switchyard_artifacts::HydrationMode::Verified)
             .is_err()
     );
+}
+
+#[tokio::test]
+async fn runtime_components_have_separate_roots_and_cannot_share_cache_names() {
+    let (ticket, _server) = fixture().await;
+    let mut runtime = ticket.runtime.unwrap();
+    let part = RuntimeComponent {
+        name: "bin".into(),
+        artifact: runtime.artifact.clone(),
+        compatibility: BTreeMap::new(),
+    };
+    runtime.components.push(part);
+    runtime
+        .validate_launch(switchyard_artifacts::HydrationMode::TrustedStreaming)
+        .unwrap();
+    runtime.components[0].name = "engine".into();
+    assert!(
+        runtime
+            .validate_launch(switchyard_artifacts::HydrationMode::TrustedStreaming)
+            .is_err()
+    );
+    runtime.components[0].name = "build".into();
+    runtime
+        .validate_launch(switchyard_artifacts::HydrationMode::TrustedStreaming)
+        .unwrap();
+    runtime.components[0].name = "../build".into();
+    assert!(
+        runtime
+            .validate_launch(switchyard_artifacts::HydrationMode::TrustedStreaming)
+            .is_err()
+    );
+}
+
+#[tokio::test]
+async fn component_publication_preserves_verified_boot_reuse_and_expands_sibling_root() {
+    let (mut ticket, server) = fixture().await;
+    let runtime = ticket.runtime.as_mut().unwrap();
+    runtime.components.push(RuntimeComponent {
+        name: "bin".into(),
+        artifact: runtime.artifact.clone(),
+        compatibility: BTreeMap::new(),
+    });
+    runtime.environment.insert(
+        "DEPENDENCY".into(),
+        "{components_root}/bin/bin/python3".into(),
+    );
+    ticket.startup.mode = switchyard_artifacts::HydrationMode::Verified;
+    let destination = TempDir::new();
+    let roots = RootPaths::under(&destination.0);
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    let first = command(&ticket, &roots, state.clone())
+        .await
+        .unwrap()
+        .unwrap();
+    let runtime = ticket.runtime.as_ref().unwrap();
+    switchyard_artifacts::verify(&roots.runtime, &runtime.artifact.manifest).unwrap();
+    switchyard_artifacts::verify(&roots.components().join("bin"), &runtime.artifact.manifest)
+        .unwrap();
+    let environment = first.as_std().get_envs().collect::<BTreeMap<_, _>>();
+    assert_eq!(
+        environment[std::ffi::OsStr::new("SWITCHYARD_COMPONENTS_ROOT")],
+        Some(roots.components().as_os_str())
+    );
+    assert_eq!(
+        environment[std::ffi::OsStr::new("DEPENDENCY")],
+        Some(roots.components().join("bin/bin/python3").as_os_str())
+    );
+    let downloaded = server.calls.load(Ordering::Relaxed);
+    command(&ticket, &roots, state).await.unwrap().unwrap();
+    assert_eq!(server.calls.load(Ordering::Relaxed), downloaded);
+}
+
+#[tokio::test]
+async fn empty_runtime_components_preserve_older_agent_ticket_shape() {
+    let (ticket, _server) = fixture().await;
+    let mut runtime = ticket.runtime.unwrap();
+    let legacy = serde_json::to_value(&runtime).unwrap();
+    assert!(legacy.get("components").is_none());
+    runtime.components.push(RuntimeComponent {
+        name: "build".into(),
+        artifact: runtime.artifact.clone(),
+        compatibility: BTreeMap::new(),
+    });
+    assert_eq!(
+        serde_json::to_value(runtime).unwrap()["components"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[tokio::test]
+async fn staged_launch_without_an_artifact_preserves_native_command_fallback() {
+    let (mut ticket, _server) = fixture().await;
+    ticket.runtime = None;
+    ticket.startup.early_launch = true;
+    let destination = TempDir::new();
+    let roots = RootPaths::under(&destination.0);
+    let state = Arc::new(RwLock::new(State::new(&ticket)));
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    assert!(
+        command_staged_with_limit(
+            &ticket,
+            &roots,
+            state,
+            Arc::new(tokio::sync::Semaphore::new(1)),
+            Some(sender)
+        )
+        .await
+        .unwrap()
+        .is_none()
+    );
+    assert_eq!(receiver.await.unwrap().as_std().get_program(), "vllm");
 }

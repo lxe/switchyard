@@ -171,6 +171,7 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
             ..Default::default()
         },
         runtime: Some(crate::runtime::RuntimeTicket {
+            components: vec![],
             hydration: None,
             artifact: ArtifactTicket {
                 urls: runtime_manifest

@@ -16,6 +16,7 @@ pub(super) struct Prepared {
     pub(super) profiles: Vec<Profile>,
     pub(super) profile_offerings: Vec<Offering>,
     pub(super) runtime_manifest: Option<switchyard_artifacts::Manifest>,
+    pub(super) component_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     pub(super) cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
 }
 
@@ -48,6 +49,13 @@ pub(super) async fn prepare<P: Provider>(
     } else {
         None
     };
+    let mut component_manifests = BTreeMap::new();
+    if let Some(runtime) = &config.bootstrap.runtime {
+        for part in &runtime.components {
+            let manifest = part.artifact.resolve(storage, &part.compatibility).await?;
+            component_manifests.insert(part.name.clone(), manifest);
+        }
+    }
     let mut cache_manifests = BTreeMap::new();
     for model in &config.models {
         let manifest = model.artifact.resolve(storage).await?;
@@ -72,6 +80,11 @@ pub(super) async fn prepare<P: Provider>(
             let mut artifact_bytes = runtime_manifest
                 .as_ref()
                 .map_or(0, |m| m.chunks.iter().map(|c| c.size).sum::<u64>());
+            for manifest in component_manifests.values() {
+                artifact_bytes = artifact_bytes
+                    .checked_add(manifest.chunks.iter().map(|c| c.size).sum::<u64>())
+                    .ok_or_else(|| Error::Config("component size overflow".into()))?;
+            }
             for cache in model.caches.iter().filter(|c| c.gpu == offer.gpu) {
                 let bytes: u64 = cache_manifests[&cache.artifact.id]
                     .chunks
@@ -104,6 +117,7 @@ pub(super) async fn prepare<P: Provider>(
         profiles,
         profile_offerings,
         runtime_manifest,
+        component_manifests,
         cache_manifests,
     })
 }

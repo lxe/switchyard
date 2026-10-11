@@ -16,6 +16,8 @@ struct Objects {
     held_runtime: String,
     runtime_gate: watch::Receiver<bool>,
     runtime_requested: Arc<tokio::sync::Notify>,
+    held_dependency: String,
+    dependency_gate: watch::Receiver<bool>,
 }
 async fn object(
     HttpState(mut source): HttpState<Objects>,
@@ -25,6 +27,11 @@ async fn object(
         source.runtime_requested.notify_one();
         while !*source.runtime_gate.borrow() {
             source.runtime_gate.changed().await.unwrap();
+        }
+    }
+    if name == source.held_dependency {
+        while !*source.dependency_gate.borrow() {
+            source.dependency_gate.changed().await.unwrap();
         }
     }
     if name == source.held {
@@ -70,7 +77,14 @@ async fn until(mut f: impl FnMut() -> bool) {
     .unwrap();
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_ranges() {
+async fn boot_imports_before_dependencies_and_metadata_gate_precedes_tensor_payload() {
+    gated_fixture(false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn cancellation_while_dependency_is_pending_stops_early_child_and_bridge() {
+    gated_fixture(true).await;
+}
+async fn gated_fixture(cancel_before_dependencies: bool) {
     let mut nonce = [0; 8];
     getrandom::fill(&mut nonce).unwrap();
     let scratch =
@@ -79,7 +93,7 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     let source = scratch.0.join("model-source");
     fs::create_dir_all(&runtime).unwrap();
     fs::create_dir(&source).unwrap();
-    fs::write(runtime.join("engine"),"#!/bin/sh\nprintf '%s' \"$PYTHONPATH\" > \"$METADATA.environment\"\ntouch \"$IMPORTED\"\nread gate\ntest \"$gate\" = switchyard-metadata-ready-v1 || exit 1\ntest -f \"$3/config.json\" || exit 2\ntouch \"$METADATA\"\nsleep 60\n").unwrap();
+    fs::write(runtime.join("engine"),"#!/bin/sh\nprintf '%s' \"$PYTHONPATH\" > \"$METADATA.environment\"\nprintf '%s' \"$$\" > \"$IMPORTED\"\nread gate\ntest \"$gate\" = switchyard-metadata-ready-v1 || exit 1\ntest -f \"$3/config.json\" || exit 2\ntouch \"$METADATA\"\nsleep 60\n").unwrap();
     fs::set_permissions(runtime.join("engine"), fs::Permissions::from_mode(0o755)).unwrap();
     fs::write(source.join("config.json"), b"{}").unwrap();
     let header = br#"{"a":{"dtype":"F32","shape":[1],"data_offsets":[0,4]}}"#;
@@ -95,6 +109,20 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     let runtime_manifest = pack(
         &runtime,
         &scratch.0.join("runtime-objects"),
+        metadata.clone(),
+        PackOptions::default(),
+    )
+    .unwrap();
+    let dependency_source = scratch.0.join("dependency-source");
+    fs::create_dir(&dependency_source).unwrap();
+    fs::write(
+        dependency_source.join("compiler-ready"),
+        b"complete dependency",
+    )
+    .unwrap();
+    let dependency_manifest = pack(
+        &dependency_source,
+        &scratch.0.join("dependency-objects"),
         metadata.clone(),
         PackOptions::default(),
     )
@@ -116,6 +144,12 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
             fs::read(scratch.0.join("runtime-objects").join(&c.name)).unwrap(),
         );
     }
+    for c in &dependency_manifest.chunks {
+        bytes.insert(
+            c.name.clone(),
+            fs::read(scratch.0.join("dependency-objects").join(&c.name)).unwrap(),
+        );
+    }
     for e in &manifest.extents {
         bytes.insert(
             e.object.clone(),
@@ -124,6 +158,7 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     }
     let (gate, waiting) = watch::channel(false);
     let (runtime_gate, runtime_waiting) = watch::channel(false);
+    let (dependency_gate, dependency_waiting) = watch::channel(false);
     let runtime_requested = Arc::new(tokio::sync::Notify::new());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
@@ -136,6 +171,8 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
             held_runtime: runtime_manifest.chunks[0].name.clone(),
             runtime_gate: runtime_waiting,
             runtime_requested: runtime_requested.clone(),
+            held_dependency: dependency_manifest.chunks[0].name.clone(),
+            dependency_gate: dependency_waiting,
         });
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let roots = RootPaths::under(&scratch.0.join("hydrated"));
@@ -168,9 +205,22 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
         lifetime_s: 30,
         startup: crate::startup::StartupPolicy {
             mode: crate::startup::HydrationMode::TrustedStreaming,
+            early_launch: true,
             ..Default::default()
         },
         runtime: Some(crate::runtime::RuntimeTicket {
+            components: vec![crate::runtime::RuntimeComponent {
+                name: "build".into(),
+                artifact: ArtifactTicket {
+                    urls: dependency_manifest
+                        .chunks
+                        .iter()
+                        .map(|c| (c.name.clone(), format!("{base}/{}", c.name)))
+                        .collect(),
+                    manifest: dependency_manifest,
+                },
+                compatibility: BTreeMap::new(),
+            }],
             artifact: ArtifactTicket {
                 urls: runtime_manifest
                     .chunks
@@ -208,6 +258,9 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
         ticket.runtime.as_ref().unwrap().artifact.manifest.id
     );
 
+    let (selected, loader) = ticket.source.extent().unwrap();
+    let content_id = selected.manifest.content_id.clone();
+    let loader = loader.clone();
     let mut pending =
         tokio::spawn(async move { prepare(&ticket, &roots, state, Instant::now()).await });
     tokio::time::timeout(Duration::from_secs(5), runtime_requested.notified())
@@ -224,6 +277,32 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
         "runtime state writer was not queued"
     );
     drop(reader);
+    until(|| imported.exists()).await;
+    assert!(
+        !metadata_ready.exists(),
+        "engine gate released before its dependency was published"
+    );
+    assert!(!pending.is_finished());
+    if cancel_before_dependencies {
+        let pid = fs::read_to_string(&imported)
+            .unwrap()
+            .parse::<i32>()
+            .unwrap();
+        pending.abort();
+        assert!(matches!(pending.await, Err(ref error) if error.is_cancelled()));
+        until(|| !engine::live_group(nix::unistd::Pid::from_raw(pid)).unwrap()).await;
+        // Drop may retain a directory until its child has actually stopped. Once the
+        // group is proven gone, a fresh lease must safely reclaim any abandoned tree.
+        let replacement = sidecar(&model_root, &content_id, &loader).unwrap();
+        let reclaimed = replacement.root.clone();
+        assert!(!reclaimed.join("weights.sock").exists());
+        drop(replacement);
+        assert!(!reclaimed.exists());
+        assert!(!metadata_ready.exists());
+        server.abort();
+        return;
+    }
+    dependency_gate.send(true).unwrap();
     tokio::select! {
         _ = until(|| metadata_ready.exists()) => {},
         result = &mut pending => match result {
@@ -273,6 +352,23 @@ async fn metadata_releases_engine_before_payload_and_bridge_owns_completed_range
     assert_eq!(s.weight_loading.as_ref().unwrap().tensors_delivered, 1);
     assert!(s.model_transport.is_some());
     assert!(s.dependency_budget.is_some());
+    let milestones = &s.startup_milestones;
+    let position = |event| {
+        milestones
+            .iter()
+            .position(|m| std::mem::discriminant(&m.event) == std::mem::discriminant(&event))
+            .unwrap()
+    };
+    assert!(
+        position(StartupEvent::RuntimeBootReady) < position(StartupEvent::RuntimeHydrationFinished)
+    );
+    assert!(
+        position(StartupEvent::EngineSpawned) < position(StartupEvent::RuntimeHydrationFinished)
+    );
+    assert!(
+        position(StartupEvent::RuntimeHydrationFinished)
+            < position(StartupEvent::EngineGateReleased)
+    );
     drop(s);
     process.stop(Duration::from_secs(2)).await.unwrap();
     drop(process);

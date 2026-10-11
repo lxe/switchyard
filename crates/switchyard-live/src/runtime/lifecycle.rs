@@ -88,6 +88,20 @@ impl<P: Provider> LiveRuntime<P> {
                     });
                 }
                 Some(switchyard_agent::runtime::RuntimeTicket {
+                    components: runtime
+                        .components
+                        .iter()
+                        .map(|part| {
+                            Ok(switchyard_agent::runtime::RuntimeComponent {
+                                name: part.name.clone(),
+                                artifact: part.artifact.ticket(
+                                    &self.storage,
+                                    self.component_manifests[&part.name].clone(),
+                                )?,
+                                compatibility: part.compatibility.clone(),
+                            })
+                        })
+                        .collect::<Result<Vec<_>>>()?,
                     hydration: runtime.hydration,
                     artifact: runtime.artifact.ticket(
                         &self.storage,

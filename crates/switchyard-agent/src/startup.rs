@@ -53,6 +53,8 @@ pub enum StartupEvent {
     TensorLoadingFinished,
     RuntimeHydrationStarted,
     RuntimeHydrationFinished,
+    RuntimeBootReady,
+    EngineGateReleased,
     ModelHydrationStarted,
     ModelHydrationFinished,
     EngineSpawned,

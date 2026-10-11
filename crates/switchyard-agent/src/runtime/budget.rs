@@ -47,10 +47,22 @@ pub(super) fn check(
                     .ok_or_else(|| Error::Manifest("runtime capacity overflow".into()))
             })
     };
-    let runtime_output_bytes = runtime
+    let boot_bytes = runtime
         .map(|r| file_bytes(&r.artifact.manifest))
         .transpose()?
         .unwrap_or(0);
+    let component_bytes = runtime
+        .map(|r| {
+            r.components.iter().try_fold(0_u64, |sum, part| {
+                sum.checked_add(file_bytes(&part.artifact.manifest)?)
+                    .ok_or_else(|| Error::Manifest("component capacity overflow".into()))
+            })
+        })
+        .transpose()?
+        .unwrap_or(0);
+    let runtime_output_bytes = boot_bytes
+        .checked_add(component_bytes)
+        .ok_or_else(|| Error::Manifest("runtime capacity overflow".into()))?;
     let cache_bytes = runtime
         .map(|r| {
             r.caches.iter().try_fold(0_u64, |sum, c| {
@@ -69,6 +81,7 @@ pub(super) fn check(
     let compressed_backing_bytes = runtime
         .map(|r| {
             std::iter::once(&r.artifact)
+                .chain(r.components.iter().map(|c| &c.artifact))
                 .chain(r.caches.iter().map(|c| &c.artifact))
                 .try_fold(0_u64, |sum, a| {
                     a.manifest.chunks.iter().try_fold(sum, |sum, c| {
@@ -96,9 +109,17 @@ pub(super) fn check(
         .ok_or_else(|| Error::Manifest("host memory capacity overflow".into()))?;
     let mut devices = BTreeMap::<u64, (u64, u64)>::new();
     let mut memory: Option<u64> = None;
+    // Observing storage creates its directory; never create an unpublished boot destination.
+    let boot_storage = if roots.runtime.exists() {
+        roots.runtime.as_path()
+    } else {
+        roots.runtime.parent().unwrap()
+    };
+    let components_root = roots.components();
     for (path, bytes) in [
         (roots.models.as_path(), model_output_required_bytes),
-        (roots.runtime.parent().unwrap(), runtime_output_bytes),
+        (boot_storage, boot_bytes),
+        (components_root.as_path(), component_bytes),
         (roots.caches.as_path(), cache_bytes),
         (roots.chunks.as_path(), compressed_backing_bytes),
     ] {
@@ -167,6 +188,22 @@ pub(super) fn decoder_history_bound(ticket: &Ticket) -> u64 {
     } else {
         0
     };
+    let cache_workers = ticket.runtime.as_ref().map_or(0, |r| {
+        r.caches
+            .iter()
+            .map(|c| c.artifact.manifest.chunks.len())
+            .max()
+            .unwrap_or(0)
+            .min(runtime_workers)
+    });
+    let component_workers = ticket.runtime.as_ref().map_or(0, |r| {
+        r.components
+            .iter()
+            .map(|c| c.artifact.manifest.chunks.len())
+            .max()
+            .unwrap_or(0)
+            .min(runtime_workers)
+    });
     let model_workers = match &ticket.source {
         crate::model::ModelSource::Legacy(s) if s.manifest.compress == "zstd" => ticket
             .concurrency
@@ -187,5 +224,5 @@ pub(super) fn decoder_history_bound(ticket: &Ticket) -> u64 {
             ),
         _ => 0,
     };
-    (runtime_workers + model_workers) as u64 * 128 * 1024 * 1024
+    (runtime_workers + component_workers + cache_workers + model_workers) as u64 * 128 * 1024 * 1024
 }

@@ -164,84 +164,111 @@ pub(super) async fn prepare(
     };
     let environment = async {
         milestone(&state, epoch, StartupEvent::RuntimeHydrationStarted).await;
-        crate::runtime::command_preflighted_with_limit(ticket, roots, state.clone(), limit.clone())
+        let (boot_tx, boot_rx) = tokio::sync::oneshot::channel();
+        let (dependencies_tx, dependencies_rx) = tokio::sync::oneshot::channel();
+        let dependencies = async {
+            crate::runtime::command_staged_with_limit(
+                ticket,
+                roots,
+                state.clone(),
+                limit.clone(),
+                Some(boot_tx),
+            )
             .await?;
-        milestone(&state, epoch, StartupEvent::RuntimeHydrationFinished).await;
-        let program = roots.runtime.join(&loader.python_program);
-        let resolved = fs::canonicalize(&program)?;
-        if !resolved.starts_with(fs::canonicalize(&roots.runtime)?) || !resolved.is_file() {
-            return Err(Error::Manifest(
-                "loader Python escapes selected runtime".into(),
-            ));
-        }
-        let mut command = Command::new(program);
-        crate::runtime::child_environment(&mut command);
-        let plugin = owner.root.join("plugin");
-        command.arg(plugin.join("serve.py"));
-        let mut args = ticket.engine_args.clone();
-        if args.first().map(String::as_str) != Some("serve") || args.len() < 2 {
-            return Err(Error::Manifest(
-                "vLLM extent source requires serve model arguments".into(),
-            ));
-        }
-        args[1] = owner.root.join("metadata").to_string_lossy().into_owned();
-        let bridge_config = serde_json::json!({
-            "socket_path": bridge.path(),
-            "timeout_seconds": ticket.lifetime_s,
-            "cuda_stage": loader.cuda_stage,
-            "pinned_bytes": loader.pinned_bytes,
-        });
-        args.extend([
-            "--load-format".into(),
-            "switchyard_extents".into(),
-            "--model-loader-extra-config".into(),
-            bridge_config.to_string(),
-        ]);
-        command
-            .args(args)
-            .env("SWITCHYARD_RUNTIME_ROOT", &roots.runtime);
-        let cache_root = roots.caches.join(&runtime.artifact.manifest.id);
-        command.env("SWITCHYARD_CACHE_ROOT", &cache_root);
-        for (key, value) in &runtime.environment {
-            command.env(
-                key,
-                value
-                    .replace("{runtime_root}", &roots.runtime.to_string_lossy())
-                    .replace("{cache_root}", &cache_root.to_string_lossy()),
-            );
-        }
-        // Apply the owned loader environment after caller-supplied runtime flags.
-        let inherited = runtime.environment.get("PYTHONPATH").map(|s| {
-            s.replace("{runtime_root}", &roots.runtime.to_string_lossy())
-                .replace("{cache_root}", &cache_root.to_string_lossy())
-        });
-        let python_path = match inherited {
-            Some(p) => format!("{}:{p}", plugin.display()),
-            None => plugin.to_string_lossy().into_owned(),
+            milestone(&state, epoch, StartupEvent::RuntimeHydrationFinished).await;
+            let _ = dependencies_tx.send(());
+            Ok::<_, Error>(())
         };
-        command
-            .env("PYTHONPATH", python_path)
-            .env("VLLM_PLUGINS", "switchyard_extents");
-        command.stdin(Stdio::piped());
-        let mut process = owner.spawn(&mut command)?;
-        process.retain(owner.clone());
-        milestone(&state, epoch, StartupEvent::EngineSpawned).await;
-        // Child::wait closes any stdin it owns. Retain the gate pipe separately
-        // while watching child exit so polling wait cannot close it prematurely.
-        let mut stdin = process
-            .child
-            .stdin
-            .take()
-            .ok_or_else(|| Error::Transfer("metadata gate stdin unavailable".into()))?;
-        tokio::select! {
-            ready = ready_rx => ready.map_err(|_| Error::Transfer("metadata readiness gate cancelled".into()))?,
-            status = process.child.wait() => {
-                status?;
-                return Err(Error::Transfer("engine exited before metadata readiness".into()));
+        let launch = async {
+            let _boot_command = boot_rx
+                .await
+                .map_err(|_| Error::Transfer("boot runtime readiness cancelled".into()))?;
+            milestone(&state, epoch, StartupEvent::RuntimeBootReady).await;
+            let program = roots.runtime.join(&loader.python_program);
+            let resolved = fs::canonicalize(&program)?;
+            if !resolved.starts_with(fs::canonicalize(&roots.runtime)?) || !resolved.is_file() {
+                return Err(Error::Manifest(
+                    "loader Python escapes selected runtime".into(),
+                ));
             }
-        }
-        stdin.write_all(b"switchyard-metadata-ready-v1\n").await?;
-        stdin.shutdown().await?;
+            let mut command = Command::new(program);
+            crate::runtime::child_environment(&mut command);
+            let plugin = owner.root.join("plugin");
+            command.arg(plugin.join("serve.py"));
+            let mut args = ticket.engine_args.clone();
+            if args.first().map(String::as_str) != Some("serve") || args.len() < 2 {
+                return Err(Error::Manifest(
+                    "vLLM extent source requires serve model arguments".into(),
+                ));
+            }
+            args[1] = owner.root.join("metadata").to_string_lossy().into_owned();
+            let bridge_config = serde_json::json!({
+                "socket_path": bridge.path(),
+                "timeout_seconds": ticket.lifetime_s,
+                "cuda_stage": loader.cuda_stage,
+                "pinned_bytes": loader.pinned_bytes,
+            });
+            args.extend([
+                "--load-format".into(),
+                "switchyard_extents".into(),
+                "--model-loader-extra-config".into(),
+                bridge_config.to_string(),
+            ]);
+            command
+                .args(args)
+                .env("SWITCHYARD_RUNTIME_ROOT", &roots.runtime)
+                .env("SWITCHYARD_COMPONENTS_ROOT", roots.components())
+                .env(
+                    "SWITCHYARD_RUNTIME_ARTIFACT_ID",
+                    &runtime.artifact.manifest.id,
+                );
+            let cache_root = roots.caches.join(&runtime.artifact.manifest.id);
+            command.env("SWITCHYARD_CACHE_ROOT", &cache_root);
+            for (key, value) in &runtime.environment {
+                command.env(key, crate::runtime::expand(value, roots, &cache_root));
+            }
+            // Apply the owned loader environment after caller-supplied runtime flags.
+            let inherited = runtime
+                .environment
+                .get("PYTHONPATH")
+                .map(|s| crate::runtime::expand(s, roots, &cache_root));
+            let python_path = match inherited {
+                Some(p) => format!("{}:{p}", plugin.display()),
+                None => plugin.to_string_lossy().into_owned(),
+            };
+            command
+                .env("PYTHONPATH", python_path)
+                .env("VLLM_PLUGINS", "switchyard_extents");
+            command.stdin(Stdio::piped());
+            let mut process = owner.spawn(&mut command)?;
+            process.retain(owner.clone());
+            milestone(&state, epoch, StartupEvent::EngineSpawned).await;
+            // Child::wait closes any stdin it owns. Retain the gate pipe separately
+            // while watching child exit so polling wait cannot close it prematurely.
+            let mut stdin = process
+                .child
+                .stdin
+                .take()
+                .ok_or_else(|| Error::Transfer("metadata gate stdin unavailable".into()))?;
+            tokio::select! {
+                ready = async {
+                    tokio::try_join!(
+                        async { ready_rx.await.map_err(|_| Error::Transfer("metadata readiness gate cancelled".into())) },
+                        async { dependencies_rx.await.map_err(|_| Error::Transfer("runtime dependencies readiness cancelled".into())) }
+                    )?;
+                    Ok::<_, Error>(())
+                } => ready?,
+                status = process.child.wait() => {
+                    status?;
+                    return Err(Error::Transfer("engine exited before metadata readiness".into()));
+                }
+            }
+            stdin.write_all(b"switchyard-metadata-ready-v1\n").await?;
+            stdin.shutdown().await?;
+            milestone(&state, epoch, StartupEvent::EngineGateReleased).await;
+            Ok::<_, Error>(process)
+        };
+        let ((), process) = tokio::try_join!(dependencies, launch)?;
         Ok::<_, Error>(process)
     };
     let work = async { tokio::try_join!(network, loader_bridge, metadata_gate) };

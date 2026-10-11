@@ -393,6 +393,7 @@ async fn fixture_with_cache_export(
         )
         .unwrap();
         config.bootstrap.runtime = Some(switchyard_live::artifacts::ServingRuntimeConfig {
+            components: vec![],
             hydration: None,
             artifact: switchyard_live::artifacts::ArtifactRef {
                 prefix: "runtimes/fixture".into(),
