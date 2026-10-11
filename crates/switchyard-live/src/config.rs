@@ -363,6 +363,9 @@ fn valid_extra_args(args: &[String]) -> bool {
         "--json-model-override-args",
     ];
     args.iter().all(|arg| {
-        !arg.contains('\0') && !MANAGED.contains(&arg.split('=').next().unwrap_or_default())
+        let option = arg.split('=').next().unwrap_or_default();
+        !arg.contains('\0')
+            && !(option.starts_with("--")
+                && MANAGED.iter().any(|managed| managed.starts_with(option)))
     })
 }

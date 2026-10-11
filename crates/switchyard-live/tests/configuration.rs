@@ -120,11 +120,26 @@ fn configuration_rejects_overridden_bindings_and_invalid_resource_limits() {
         "--config",
         "--api-key",
         "--max-model-len=0",
+        "--hos=0.0.0.0",
+        "--por=1234",
+        "--served-model-n=other",
+        "--context-l=1",
+        "--mem-fraction-s=0.99",
+        "--max-running-r=999",
+        "--model-p=/other",
+        "--dtyp=float32",
     ] {
         let mut bad = config();
         bad.models[0].engine.extra_args.push(flag.into());
         assert!(bad.validate().is_err(), "{flag}");
     }
+    let mut valid = config();
+    valid.models[0].engine.extra_args.extend([
+        "--max-num-batched-tokens".into(),
+        "4096".into(),
+        "--disable-log-requests".into(),
+    ]);
+    valid.validate().unwrap();
     let mut bad = config();
     bad.models[0].engine.gpu_memory_utilization = 0.0;
     assert!(bad.validate().is_err());
