@@ -10,6 +10,7 @@ import threading
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from enum import IntEnum
 from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
@@ -274,6 +275,42 @@ class GateTests(unittest.TestCase):
 
 
 class CacheTests(unittest.TestCase):
+    def test_torch_aot_requirement_follows_native_compilation_mode(self):
+        class CompilationMode(IntEnum):
+            NONE = 0
+            COMPILE = 1
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = SimpleNamespace(
+                compilation_config=SimpleNamespace(mode=CompilationMode.NONE)
+            )
+            with (
+                patch.dict(
+                    os.environ,
+                    {
+                        "VLLM_CACHE_ROOT": directory,
+                        "SWITCHYARD_STARTUP_GATE_RELEASED": "1",
+                    },
+                ),
+                patch.dict(
+                    sys.modules,
+                    {
+                        "vllm.config.compilation": SimpleNamespace(
+                            CompilationMode=CompilationMode
+                        )
+                    },
+                ),
+            ):
+                policy = startup.Policy(cache_policy="required", telemetry=False)
+                hooks.compiler_cache(policy, config)
+                config.compilation_config.mode = CompilationMode.COMPILE
+                with self.assertRaisesRegex(RuntimeError, "Torch AOT cache is absent"):
+                    hooks.compiler_cache(policy, config)
+                cache = Path(directory) / "torch_compile_cache/torch_aot_compile"
+                cache.mkdir(parents=True)
+                (cache / "native-entry").touch()
+                hooks.compiler_cache(policy, config)
+
     def test_aliases_require_checked_sibling_ownership(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "selected"

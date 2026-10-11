@@ -11,6 +11,7 @@ import os
 import sys
 import threading
 import time
+from pathlib import Path
 
 from switchyard_vllm_startup import Policy, record
 
@@ -120,10 +121,42 @@ def model_preparation(policy, engine_args, registry):
     def engine(self, *args, **kwargs):
         result = original_engine(self, *args, **kwargs)
         join_preloads()
+        compiler_cache(policy, result)
         return result
 
     engine._switchyard_native = original_engine
     engine_args.create_engine_config = engine
+
+
+def compiler_cache(policy, config):
+    """Check AOT only when the native configuration enables compilation."""
+    compilation = getattr(config, "compilation_config", None)
+    if policy.cache_policy != "required":
+        record(
+            policy,
+            "native_compiler_cache",
+            cache_policy="native",
+            mode=getattr(getattr(compilation, "mode", None), "name", None),
+        )
+        return
+    require_gate()
+    from vllm.config.compilation import CompilationMode
+
+    applicable = compilation.mode != CompilationMode.NONE
+    cache = (
+        Path(os.environ["VLLM_CACHE_ROOT"]) / "torch_compile_cache/torch_aot_compile"
+    )
+    available = cache.is_dir() and any(cache.iterdir())
+    record(
+        policy,
+        "native_compiler_cache",
+        cache_policy="required",
+        applicable=applicable,
+        mode=compilation.mode.name,
+        available=available,
+    )
+    if applicable and not available:
+        raise RuntimeError("required native Torch AOT cache is absent")
 
 
 def process_method(policy, system):

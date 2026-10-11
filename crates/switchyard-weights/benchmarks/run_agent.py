@@ -15,28 +15,57 @@ import secrets
 import subprocess
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
 from benchmark_artifacts import artifacts, named_directories, runtime_ticket
+from timeline import Timeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
 parser.add_argument("--objects", type=Path, required=True)
 parser.add_argument("--legacy-ticket", type=Path, required=True)
 parser.add_argument("--runtime-objects", type=Path, required=True)
-parser.add_argument("--runtime-config", type=Path, help="Selected deployment or ServingRuntimeConfig JSON")
-parser.add_argument("--component-objects", action="append", default=[], metavar="NAME=PATH")
+parser.add_argument(
+    "--runtime-config",
+    type=Path,
+    help="Selected deployment or ServingRuntimeConfig JSON",
+)
+parser.add_argument(
+    "--component-objects", action="append", default=[], metavar="NAME=PATH"
+)
 parser.add_argument("--cache-objects", action="append", default=[], metavar="NAME=PATH")
-parser.add_argument("--component-delay", type=float, default=0, help="Per 64KiB supplemental response delay")
-parser.add_argument("--early-launch", action=argparse.BooleanOptionalAction, default=True)
-parser.add_argument("--engine-args", type=Path, help="Exact engine args JSON; {model_root} expands to owned model path")
+parser.add_argument(
+    "--component-delay",
+    type=float,
+    default=0,
+    help="Per 64KiB supplemental response delay",
+)
+parser.add_argument(
+    "--early-launch", action=argparse.BooleanOptionalAction, default=True
+)
+parser.add_argument(
+    "--engine-args",
+    type=Path,
+    help="Exact engine args JSON; {model_root} expands to owned model path",
+)
 parser.add_argument("--agent", type=Path, required=True)
 parser.add_argument("--image", default="ghcr.io/lxe/switchyard-runtime:ubuntu24.04")
 parser.add_argument("--model-delay", type=float, default=0)
 parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="both")
-parser.add_argument("--warm-cache-from", type=Path)
+parser.add_argument(
+    "--warm-cache-from",
+    type=Path,
+    help="Entire installation/cache tree, preserving boot-ID/compiled layout",
+)
 parser.add_argument("--profile-startup", action="store_true")
+parser.add_argument("--live-timeline", action="store_true")
+parser.add_argument(
+    "--skip-tokenize-check",
+    action="store_true",
+    help="Submit the measured streaming request directly after readiness",
+)
 parser.add_argument("--env-override-source", type=Path)
 parser.add_argument("--cli-main-source", type=Path)
 parser.add_argument(
@@ -59,18 +88,30 @@ runtime_objects = args.runtime_objects.resolve()
 manifest = json.loads((objects / "manifest.json").read_text())
 runtime_manifest = json.loads((runtime_objects / "manifest.json").read_text())
 legacy = json.loads(args.legacy_ticket.read_text())
-configuration = json.loads((args.runtime_config or repo / "configs/runpod/qwen-small.json").read_text())
+configuration = json.loads(
+    (args.runtime_config or repo / "configs/runpod/qwen-small.json").read_text()
+)
 runtime_configuration = configuration.get("bootstrap", {}).get("runtime", configuration)
-if args.runtime_config and runtime_configuration["artifact"]["id"] != runtime_manifest["id"]:
+if (
+    args.runtime_config
+    and runtime_configuration["artifact"]["id"] != runtime_manifest["id"]
+):
     raise ValueError("selected boot artifact identity mismatch")
 component_directories = named_directories(args.component_objects)
 cache_directories = named_directories(args.cache_objects)
-components = artifacts(runtime_configuration.get("components", []), component_directories, "component")
-cache_configurations = configuration.get("models", [{}])[0].get("caches", []) if cache_directories else []
+components = artifacts(
+    runtime_configuration.get("components", []), component_directories, "component"
+)
+cache_configurations = (
+    configuration.get("models", [{}])[0].get("caches", []) if cache_directories else []
+)
 caches = artifacts(cache_configurations, cache_directories, "cache")
-object_directories = {"runtime": runtime_objects, "model": objects,
-                      **{f"components-{name}": path for name, path in component_directories.items()},
-                      **{f"caches-{name}": path for name, path in cache_directories.items()}}
+object_directories = {
+    "runtime": runtime_objects,
+    "model": objects,
+    **{f"components-{name}": path for name, path in component_directories.items()},
+    **{f"caches-{name}": path for name, path in cache_directories.items()},
+}
 gateway = subprocess.check_output(
     [
         "docker",
@@ -87,6 +128,7 @@ lock = threading.Lock()
 events = []
 current_ticket = None
 ticket_requests = []
+active_timeline = None
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -116,6 +158,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         began = time.monotonic()
         received = 0
+        if active_timeline is not None:
+            active_timeline.emit(
+                "local_http_object_started",
+                at=began,
+                console=False,
+                artifact=parts[0],
+                object=parts[1],
+                expected_bytes=path.stat().st_size,
+            )
         try:
             self.send_response(200)
             self.send_header("Content-Length", str(path.stat().st_size))
@@ -131,13 +182,24 @@ class Handler(http.server.BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
         finally:
+            ended = time.monotonic()
+            if active_timeline is not None:
+                active_timeline.emit(
+                    "local_http_object_finished",
+                    at=ended,
+                    console=False,
+                    artifact=parts[0],
+                    object=parts[1],
+                    bytes=received,
+                    duration_s=ended - began,
+                )
             with lock:
                 events.append(
                     {
                         "kind": parts[0],
                         "object": parts[1],
                         "started_monotonic": began,
-                        "ended_monotonic": time.monotonic(),
+                        "ended_monotonic": ended,
                         "bytes": received,
                     }
                 )
@@ -168,6 +230,10 @@ try:
         ):
             profile = installation / "startup-profile"
             profile.mkdir()
+            # The agent uses umask 077 as container root. Preserve host ownership
+            # so the live follower can read every span without privileged access.
+            if args.profile_startup:
+                (profile / "events.jsonl").touch(mode=0o600)
             (profile / "sitecustomize.py").write_bytes(
                 (Path(__file__).parent / "startup_profile.py").read_bytes()
             )
@@ -228,6 +294,23 @@ try:
                     "docker",
                     "run",
                     "--rm",
+                    "--network",
+                    "none",
+                    "-v",
+                    str(args.warm_cache_from.resolve()) + ":/seed:ro",
+                    "--entrypoint",
+                    "/bin/test",
+                    args.image,
+                    "-d",
+                    "/seed/" + runtime_manifest["id"] + "/compiled",
+                ],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
                     "--name",
                     "switchyard-extent-cache-seed-" + secrets.token_hex(6),
                     "-v",
@@ -244,9 +327,38 @@ try:
                 check=True,
             )
         epoch = time.monotonic()
+        timeline = (
+            Timeline(root / "timeline.jsonl", epoch) if args.live_timeline else None
+        )
+        active_timeline = timeline
+        stop_followers = threading.Event()
+        profile_follower = None
+        log_follower = None
+        log_process = None
+        if timeline:
+            timeline.emit(
+                "rollout_started",
+                at=epoch,
+                utc=datetime.now(timezone.utc).isoformat(),
+                hydration_source="local_http",
+                fresh_installation=True,
+                native_profile_enabled=args.profile_startup,
+            )
+            if args.profile_startup:
+                profile_follower = threading.Thread(
+                    target=timeline.follow_native_file,
+                    args=(
+                        installation / "startup-profile/events.jsonl",
+                        stop_followers,
+                    ),
+                    daemon=True,
+                )
+                profile_follower.start()
         ticket_before = len(ticket_requests)
         before = len(events)
-        runtime = runtime_ticket(runtime_configuration, runtime_manifest, components, caches, base)
+        runtime = runtime_ticket(
+            runtime_configuration, runtime_manifest, components, caches, base
+        )
         if (
             args.profile_startup
             or args.env_override_source
@@ -320,8 +432,10 @@ try:
             "lifetime_s": 600,
         }
         if args.engine_args:
-            current_ticket["engine_args"] = [argument.replace("{model_root}", "/dev/shm/switchyard/model")
-                                               for argument in json.loads(args.engine_args.read_text())]
+            current_ticket["engine_args"] = [
+                argument.replace("{model_root}", "/dev/shm/switchyard/model")
+                for argument in json.loads(args.engine_args.read_text())
+            ]
         if mode == "legacy":
             current_ticket.update(
                 {
@@ -376,7 +490,37 @@ try:
             "-c",
             "umask 077; read task_uptime unused < /proc/uptime; printf '%s\\n' \"$task_uptime\" > /opt/switchyard/agent-exec-uptime; exec /agent",
         ]
+        if timeline:
+            timeline.emit("container_launch_started")
         subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
+        if timeline:
+            timeline.emit("container_launch_returned")
+            log_process = subprocess.Popen(
+                ["docker", "logs", "--follow", name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+
+            def follow_engine_records(
+                root=root, log_process=log_process, timeline=timeline
+            ):
+                with (root / "engine-startup.jsonl").open("w") as raw:
+                    for line in log_process.stdout:
+                        marker = "SWITCHYARD_ENGINE_STARTUP "
+                        if marker in line:
+                            item = json.loads(line.split(marker, 1)[1])
+                            raw.write(json.dumps(item, separators=(",", ":")) + "\n")
+                            raw.flush()
+                            timeline.native(item)
+                        elif (
+                            "Uvicorn running" in line
+                            or "Application startup complete" in line
+                        ):
+                            timeline.emit("native_api_ready_log_observed")
+
+            log_follower = threading.Thread(target=follow_engine_records, daemon=True)
+            log_follower.start()
         last = None
         try:
             # /proc start ticks are rounded down and use boot time. Capture the
@@ -409,6 +553,13 @@ try:
                 )
             )
             pre_exec_lower = pre_exec_boot + monotonic_before - boot_now
+            if timeline:
+                timeline.emit(
+                    "agent_exec_clock",
+                    at=pre_exec_lower,
+                    lower_monotonic=pre_exec_lower,
+                    rounding_bound_s=0.01,
+                )
             port = (
                 subprocess.check_output(["docker", "port", name, "8080/tcp"], text=True)
                 .strip()
@@ -423,6 +574,26 @@ try:
                     if response.status_code == 200:
                         last = response.json()
                         (root / "last-state.json").write_text(json.dumps(last))
+                        if timeline:
+                            timeline.state(last, pre_exec_lower + 0.005)
+                            loading = last.get("weight_loading") or {}
+                            if (
+                                loading.get("assignment_complete_seconds") is not None
+                                and "weight_bytes_delivered" not in timeline.seen
+                            ):
+                                timeline.seen.add("weight_bytes_delivered")
+                                timeline.emit(
+                                    "weight_bytes_delivered",
+                                    at=pre_exec_lower
+                                    + 0.005
+                                    + loading["assignment_complete_seconds"],
+                                    tensors=loading["tensors_delivered"],
+                                    bytes=loading["bytes_delivered"],
+                                    first_tensor_agent_s=loading.get(
+                                        "first_tensor_seconds"
+                                    ),
+                                    gpu=loading.get("gpu"),
+                                )
                         if last["phase"] == "failed":
                             raise RuntimeError(
                                 "agent failed: " + str(last.get("error"))
@@ -435,25 +606,32 @@ try:
             else:
                 raise RuntimeError("agent readiness deadline")
             ready_at = time.monotonic() - epoch
-            tokenized = requests.post(
-                endpoint + "/tokenize",
-                headers=headers,
-                json={
-                    "model": "qwen-local",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": "Reply with exactly the word Paris.",
-                        }
-                    ],
-                    "chat_template_kwargs": {"enable_thinking": False},
-                },
-                timeout=30,
-            )
-            tokenized.raise_for_status()
-            assert tokenized.json()["count"] > 0
+            if timeline:
+                timeline.emit("agent_ready_observed")
+            tokenized = None
+            if not args.skip_tokenize_check:
+                tokenized = requests.post(
+                    endpoint + "/tokenize",
+                    headers=headers,
+                    json={
+                        "model": "qwen-local",
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": "Reply with exactly the word Paris.",
+                            }
+                        ],
+                        "chat_template_kwargs": {"enable_thinking": False},
+                    },
+                    timeout=30,
+                )
+                tokenized.raise_for_status()
+                assert tokenized.json()["count"] > 0
             first = None
             fragments = []
+            request_started = time.monotonic()
+            if timeline:
+                timeline.emit("stream_request_submitted", at=request_started)
             with requests.post(
                 endpoint + "/v1/chat/completions",
                 headers=headers,
@@ -487,8 +665,23 @@ try:
                             fragments.append(text)
                             if first is None and text.strip():
                                 first = time.monotonic() - epoch
+                                if timeline:
+                                    timeline.emit(
+                                        "first_streamed_content",
+                                        at=epoch + first,
+                                        direct_request_ttft_s=epoch
+                                        + first
+                                        - request_started,
+                                        content=text,
+                                    )
             assert first is not None
             assert "".join(fragments).strip() == "Paris"
+            if timeline:
+                timeline.emit(
+                    "stream_request_completed",
+                    completion="Paris",
+                    correctness_passed=True,
+                )
             concurrent_verification = None
             if args.verify_concurrency:
                 verification_started = time.monotonic()
@@ -589,8 +782,11 @@ try:
             result = {
                 "request_to_ready_seconds": ready_at,
                 "request_to_first_useful_token_seconds": first,
+                "direct_request_to_first_token_seconds": epoch
+                + first
+                - request_started,
                 "completion": "".join(fragments),
-                "tokenized_count": tokenized.json()["count"],
+                "tokenized_count": tokenized.json()["count"] if tokenized else None,
                 "concurrent_verification": concurrent_verification,
                 "decode_benchmark": decode_benchmark,
                 "agent_state": last,
@@ -607,8 +803,12 @@ try:
                 "request_epoch_monotonic": epoch,
                 "agent_sha256": hashlib.sha256(args.agent.read_bytes()).hexdigest(),
                 "runtime_artifact_id": runtime_manifest["id"],
-                "component_artifact_ids": {item["name"]: item["manifest"]["id"] for item in components},
-                "cache_artifact_ids": {item["name"]: item["manifest"]["id"] for item in caches},
+                "component_artifact_ids": {
+                    item["name"]: item["manifest"]["id"] for item in components
+                },
+                "cache_artifact_ids": {
+                    item["name"]: item["manifest"]["id"] for item in caches
+                },
                 "early_launch": args.early_launch,
                 "engine_args": current_ticket["engine_args"],
                 "runtime_environment_overrides": args.runtime_env,
@@ -670,6 +870,20 @@ try:
                 stderr=subprocess.DEVNULL,
                 check=False,
             )
+            stop_followers.set()
+            if log_process is not None:
+                try:
+                    log_process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    log_process.terminate()
+                    log_process.wait(timeout=3)
+            for follower in (profile_follower, log_follower):
+                if follower is not None:
+                    follower.join(timeout=3)
+            if timeline:
+                timeline.emit("owned_container_removed")
+                active_timeline = None
+                timeline.close()
     if args.mode == "both":
         assert results["legacy"]["completion"] == results["extents"]["completion"]
     (out / "receipt.json").write_text(json.dumps(results, indent=2))

@@ -71,7 +71,7 @@ try:
         try:
             refresh_providers(policy)
         except RuntimeError as error:
-            assert "required native AOT cache" in str(error)
+            assert "required native AOT sampling" in str(error)
         else:
             raise AssertionError("incompatible native AOT target was accepted")
         import torch

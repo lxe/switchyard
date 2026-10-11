@@ -328,20 +328,12 @@ def refresh_providers(policy):
         if policy.compute_capability is None:
             raise RuntimeError("required cache policy needs a declared GPU target")
         artifacts = environment.get_aot_artifacts("sampling")
-        cache = (
-            Path(os.environ["VLLM_CACHE_ROOT"])
-            / "torch_compile_cache/torch_aot_compile"
-        )
         if (
             not sampling
             or not artifacts
             or not all(item.path.is_file() for item in artifacts)
-            or not cache.is_dir()
-            or not any(cache.iterdir())
         ):
-            raise RuntimeError(
-                "required native AOT cache or sampling provider is absent"
-            )
+            raise RuntimeError("required native AOT sampling provider is absent")
         record(
             policy,
             "strict_cache_ready",

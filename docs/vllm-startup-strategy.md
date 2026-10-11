@@ -26,6 +26,8 @@ The default strategy retains the native launch. Prepared spawn is available by s
 
 Preparation runs in an owned thread. Cache-dependent FlashInfer imports wait for the combined gate, preventing workspace creation or provider discovery against an incomplete cache. After the gate, the launcher creates any configured checked cache aliases and invalidates Python import caches before releasing blocked imports. It joins preparation and refreshes the pinned native FlashInfer provider inventory before constructing an engine. Required-cache policy checks the strict native flags and sampling-provider presence; native AOT loading still decides binary compatibility during execution.
 
+Required cache policy uses FlashInfer's native architecture resolver to check the sampling provider against the declared GPU target. The engine configuration checks Torch AOT files when native compilation is enabled. Eager mode uses `CompilationMode.NONE` and does not require a Torch AOT directory.
+
 `compute_capability` supplies the architecture already established by the GPU/cache compatibility check. It pins FlashInfer's architecture-list environment before imports, avoiding a CUDA initialization solely to discover compilation targets. It must match the selected GPU. The native device checks still run in the engine worker.
 
 ## Tokenizer preparation
