@@ -42,7 +42,18 @@ struct Sample {
     token_elapsed_s: Vec<Vec<f64>>,
     token_ids: Vec<Vec<u32>>,
 }
-fn run(engine: &Engine, requests: &[Generate], mode: Mode) -> Result<Sample> {
+fn run(
+    engine: &Engine,
+    requests: &[Generate],
+    mode: Mode,
+    phase: &str,
+    sample: Option<usize>,
+    telemetry: &Telemetry,
+) -> Result<Sample> {
+    telemetry.event(
+        "benchmark_mode_started",
+        serde_json::json!({"mode":mode,"phase":phase,"sample":sample}),
+    );
     let began = Instant::now();
     let mut times = vec![Vec::new(); requests.len()];
     let output: Vec<Generation> = match mode {
@@ -79,6 +90,10 @@ fn run(engine: &Engine, requests: &[Generate], mode: Mode) -> Result<Sample> {
         return Err(Error::Config("Incomplete offline timing rows".into()));
     }
     let output_tokens = ids.iter().map(Vec::len).sum();
+    telemetry.event(
+        "benchmark_mode_finished",
+        serde_json::json!({"mode":mode,"phase":phase,"sample":sample,"elapsed_s":elapsed_s}),
+    );
     Ok(Sample {
         mode,
         elapsed_s,
@@ -122,14 +137,14 @@ fn main() -> Result<()> {
     }
     let telemetry = Telemetry::default();
     let model = models::load(&config, &telemetry)?;
-    let engine = Engine::new(config.clone(), model, telemetry)?;
+    let engine = Engine::new(config.clone(), model, telemetry.clone())?;
     for request in &requests {
         engine.validate(request)?;
     }
     let modes = [Mode::Independent, Mode::Cohorts, Mode::Merged];
     let mut warmups = Vec::new();
     for mode in modes {
-        warmups.push(run(&engine, &requests, mode)?);
+        warmups.push(run(&engine, &requests, mode, "warmup", None, &telemetry)?);
     }
     let gold = &warmups[0].token_ids;
     if warmups.iter().any(|s| &s.token_ids != gold) {
@@ -145,7 +160,14 @@ fn main() -> Result<()> {
             [2, 1, 0]
         };
         for index in order {
-            let measured = run(&engine, &requests, modes[index])?;
+            let measured = run(
+                &engine,
+                &requests,
+                modes[index],
+                "measured",
+                Some(sample),
+                &telemetry,
+            )?;
             if &measured.token_ids != gold {
                 return Err(Error::Config(
                     "Full generated sequences differ during timing".into(),
