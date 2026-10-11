@@ -370,6 +370,13 @@ def refresh_providers(policy):
 
 def main():
     policy = Policy.from_environment()
+    if "VLLM_CPU_SNAPSHOT_CLOCK_OFFSET_S" in os.environ:
+        # Spawn must execute the fresh guarded entrypoint, not the checkpoint
+        # preparation script whose temporary path and arguments are obsolete.
+        restored_main = sys.modules["__main__"]
+        restored_main.__file__ = str(Path(__file__).with_name("serve.py"))
+        restored_main.__spec__ = None
+        record(policy, "process_entrypoint_rebound")
     if policy is None:
         # Preserve the legacy launcher and its native CLI defaults.
         import vllm
