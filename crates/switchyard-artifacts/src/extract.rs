@@ -127,6 +127,29 @@ pub(crate) fn extract_stream(
     verify_content: bool,
     progress: impl Fn(u64),
 ) -> Result<()> {
+    extract_stream_observed(
+        source,
+        staging,
+        manifest,
+        chunk,
+        cancelled,
+        verify_content,
+        progress,
+        |_| {},
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn extract_stream_observed(
+    source: impl Read,
+    staging: &Path,
+    manifest: &Manifest,
+    chunk: &Chunk,
+    cancelled: &AtomicBool,
+    verify_content: bool,
+    progress: impl Fn(u64),
+    file_progress: impl Fn(u64),
+) -> Result<()> {
     let mut decoder = zstd::stream::read::Decoder::new(source)?;
     decoder.window_log_max(27)?; // At most128MiB decoder history, even for untrusted frames.
     let mut archive = tar::Archive::new(LimitedReader {
@@ -180,6 +203,7 @@ pub(crate) fn extract_stream(
                         hash.update(&buffer[..count]);
                     }
                     file.write_all(&buffer[..count])?;
+                    file_progress(count as u64);
                 }
                 if verify_content {
                     file.sync_all()?;

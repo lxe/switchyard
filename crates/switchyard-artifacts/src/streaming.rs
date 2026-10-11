@@ -126,6 +126,7 @@ where
         cache_hits: 0,
         unpacked_bytes: tracker.total_unpacked,
         already_present: false,
+        reception: None,
     })
 }
 

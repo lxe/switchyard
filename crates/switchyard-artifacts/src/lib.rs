@@ -12,7 +12,10 @@ mod pack;
 mod paths;
 mod verify;
 
-pub use hydrate::{HydrationMode, HydrationOptions, HydrationReport, Phase, Progress, hydrate};
+pub use hydrate::{
+    HydrationMode, HydrationOptions, HydrationReport, Phase, Progress, ReceiveBufferOptions,
+    ReceptionProgress, hydrate,
+};
 pub use manifest::{ArtifactTicket, Chunk, Entry, Manifest, Metadata};
 pub use pack::{PackOptions, pack};
 pub use verify::{VerificationOptions, verify, verify_with_options};

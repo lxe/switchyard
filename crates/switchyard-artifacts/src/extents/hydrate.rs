@@ -26,6 +26,10 @@ pub struct ExtentOptions {
     /// Complete request/body deadline. There are no retries or stall recovery.
     pub request_timeout: Duration,
     pub max_bytes: u64,
+    /// Caller-selected extents to receive first, followed by round-robin files.
+    pub priority_extents: Vec<usize>,
+    /// Explicitly trust a matching canonical-content receipt in trusted streaming mode.
+    pub reuse_existing: bool,
 }
 impl Default for ExtentOptions {
     fn default() -> Self {
@@ -36,6 +40,8 @@ impl Default for ExtentOptions {
             buffer_bytes: 64 * 1024,
             request_timeout: Duration::from_secs(120),
             max_bytes: 256 * 1024 * 1024 * 1024,
+            priority_extents: vec![],
+            reuse_existing: false,
         }
     }
 }
@@ -46,6 +52,12 @@ pub struct ExtentReport {
     pub file_bytes: u64,
     /// Copy buffers only; excludes HTTP/TLS buffers, page cache and consumer staging.
     pub copy_buffer_bound: usize,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ExtentProgress {
+    pub received_bytes: u64,
+    pub completed_bytes: u64,
+    pub completed_extents: usize,
 }
 
 struct State {
@@ -163,6 +175,21 @@ pub struct ExtentHydration {
     destination: PathBuf,
 }
 impl ExtentHydration {
+    pub fn progress(&self) -> ExtentProgress {
+        let state = self.shared.state.lock().unwrap();
+        ExtentProgress {
+            received_bytes: self.shared.received.load(Ordering::Relaxed),
+            completed_bytes: self
+                .manifest()
+                .extents
+                .iter()
+                .zip(&state.done)
+                .filter(|(_, done)| **done)
+                .map(|(e, _)| e.length)
+                .sum(),
+            completed_extents: state.done.iter().filter(|done| **done).count(),
+        }
+    }
     pub fn prepare(
         ticket: ExtentTicket,
         destination: &Path,
@@ -172,6 +199,18 @@ impl ExtentHydration {
             ticket.manifest.validate()?;
         } else {
             ticket.manifest.validate_structure()?;
+        }
+        let priorities = options
+            .priority_extents
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        if priorities.len() != options.priority_extents.len()
+            || priorities
+                .iter()
+                .any(|i| *i >= ticket.manifest.extents.len())
+        {
+            return Err(Error::Invalid("invalid extent priority list".into()));
         }
         if !(1..=128).contains(&options.concurrency)
             || !(4096..=1024 * 1024).contains(&options.buffer_bytes)
@@ -200,8 +239,44 @@ impl ExtentHydration {
             .filter(|p| !p.as_os_str().is_empty())
             .unwrap_or(Path::new("."));
         paths::directory(parent)?;
-        if fs::symlink_metadata(destination).is_ok() {
-            return Err(Error::DestinationExists);
+        if let Ok(metadata) = fs::symlink_metadata(destination) {
+            if !options.reuse_existing
+                || options.mode != HydrationMode::TrustedStreaming
+                || !metadata.is_dir()
+            {
+                return Err(Error::DestinationExists);
+            }
+            paths::ancestors(destination)?;
+            let mut receipt = String::new();
+            File::open(destination.join(".switchyard-extents-id"))?
+                .take(256)
+                .read_to_string(&mut receipt)?;
+            if receipt.lines().nth(1) != Some(ticket.manifest.content_id.as_str())
+                || receipt.lines().count() != 2
+            {
+                return Err(Error::DestinationExists);
+            }
+            let staging = parent.join(format!(".extents-{}.unused", paths::nonce()?));
+            let shared = Arc::new(Shared {
+                manifest: ticket.manifest.clone(),
+                state: Mutex::new(State {
+                    done: vec![true; ticket.manifest.extents.len()],
+                    failed: false,
+                    published: true,
+                    root: destination.to_owned(),
+                }),
+                wake: Notify::new(),
+                cancelled: AtomicBool::new(false),
+                received: AtomicU64::new(0),
+                started: AtomicBool::new(false),
+                staging,
+            });
+            return Ok(Self {
+                shared,
+                ticket,
+                options,
+                destination: destination.to_owned(),
+            });
         }
         let staging = parent.join(format!(".extents-{}.staging", paths::nonce()?));
         fs::create_dir(&staging)?;
@@ -313,6 +388,14 @@ impl ExtentHydration {
         if self.shared.started.swap(true, Ordering::AcqRel) {
             return Err(Error::Invalid("extent hydration already started".into()));
         }
+        if self.shared.state.lock().unwrap().published {
+            return Ok(ExtentReport {
+                downloaded_bytes: 0,
+                completed_extents: self.manifest().extents.len(),
+                file_bytes: self.manifest().total_bytes()?,
+                copy_buffer_bound: 0,
+            });
+        }
         let _cancel = CancelRun(self.shared.clone());
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
@@ -328,7 +411,12 @@ impl ExtentHydration {
             schedule.push((*ordinal, i, extent));
             *ordinal += 1;
         }
-        schedule.sort_by_key(|(ordinal, i, _)| (*ordinal, *i));
+        schedule.sort_by_key(|(ordinal, i, _)| {
+            match self.options.priority_extents.iter().position(|p| p == i) {
+                Some(rank) => (0, rank, 0),
+                None => (1, *ordinal, *i),
+            }
+        });
         let mut operations = stream::iter(schedule.into_iter().map(|(_, i, extent)| (i, extent)))
             .map(|(i, extent)| self.transfer(&client, i, extent))
             .buffer_unordered(self.options.concurrency);
@@ -370,6 +458,7 @@ impl ExtentHydration {
                 working.staging.join(RECEIPT),
                 format!("{}\n{}\n", working.manifest.id, working.manifest.content_id),
             )?;
+            set_mode(&working.staging.join(RECEIPT), 0o600)?;
             Ok(())
         })
         .await

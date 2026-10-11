@@ -16,6 +16,24 @@ pub fn pack_extents(
     metadata: Metadata,
     extent_bytes: u64,
 ) -> Result<ExtentManifest> {
+    pack_extents_with_prefixes(
+        source,
+        out,
+        metadata,
+        extent_bytes,
+        &std::collections::BTreeMap::new(),
+    )
+}
+
+/// Pack caller-selected file prefixes into separate objects. Prefix lengths are
+/// byte boundaries supplied by the caller; this layer does not interpret them.
+pub fn pack_extents_with_prefixes(
+    source: &Path,
+    out: &Path,
+    metadata: Metadata,
+    extent_bytes: u64,
+    prefixes: &std::collections::BTreeMap<String, u64>,
+) -> Result<ExtentManifest> {
     if extent_bytes == 0 {
         return Err(Error::Invalid("zero extent size".into()));
     }
@@ -47,6 +65,11 @@ pub fn pack_extents(
             "extent packing does not support symlinks".into(),
         ));
     }
+    for (path, length) in prefixes {
+        if !manifest.entries.iter().any(|e| matches!(e, Entry::File {path: p, size, ..} if p==path && *length>0 && length<=size)) {
+            return Err(Error::Invalid("invalid extent prefix boundary".into()));
+        }
+    }
     let mut buffer = vec![0_u8; 64 * 1024];
     for (entry, file) in manifest.entries.iter().enumerate() {
         let Entry::File {
@@ -59,7 +82,15 @@ pub fn pack_extents(
         let mut file_hash = Sha256::new();
         let mut offset = 0;
         while offset < *size {
-            let length = extent_bytes.min(size - offset);
+            let length = if offset == 0 {
+                prefixes
+                    .get(path)
+                    .copied()
+                    .unwrap_or(extent_bytes)
+                    .min(*size)
+            } else {
+                extent_bytes.min(size - offset)
+            };
             let temporary = out.join(format!(".extent-{}.partial", paths::nonce()?));
             let result = (|| -> Result<Extent> {
                 let mut output = File::options()

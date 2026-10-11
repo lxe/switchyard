@@ -16,8 +16,11 @@ use std::{
 };
 use tokio::io::AsyncWriteExt;
 
+#[path = "buffered.rs"]
+mod buffered;
 #[path = "streaming.rs"]
 mod streaming;
+pub use buffered::{ReceiveBufferOptions, ReceptionProgress};
 
 /// Choose complete verification or streaming installation of caller-trusted artifacts.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,6 +43,8 @@ pub struct HydrationOptions {
     /// A permit covers one HTTP attempt and its streaming decoder, not backoff.
     pub download_limit: Option<Arc<tokio::sync::Semaphore>>,
     pub extraction_concurrency: usize,
+    /// Optional physically reserved spool for independent reception and extraction.
+    pub receive_buffer: Option<ReceiveBufferOptions>,
     /// Additional attempts after a failed request; partial transfers resume when supported.
     pub retries: usize,
     /// Total deadline for each HTTP attempt, including its streamed response body.
@@ -57,6 +62,7 @@ impl Default for HydrationOptions {
             download_concurrency: 8,
             download_limit: None,
             extraction_concurrency: 4,
+            receive_buffer: None,
             retries: 2,
             request_timeout_s: 120,
             stall_timeout_s: 30,
@@ -90,6 +96,8 @@ pub struct Progress {
     pub total_chunks: usize,
     pub unpacked_bytes: u64,
     pub total_unpacked_bytes: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reception: Option<ReceptionProgress>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,6 +108,8 @@ pub struct HydrationReport {
     pub cache_hits: usize,
     pub unpacked_bytes: u64,
     pub already_present: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reception: Option<ReceptionProgress>,
 }
 
 struct Tracker<F> {
@@ -124,6 +134,7 @@ impl<F: Fn(Progress)> Tracker<F> {
             total_chunks: self.total_chunks,
             unpacked_bytes,
             total_unpacked_bytes: self.total_unpacked,
+            reception: None,
         });
     }
 }
@@ -225,6 +236,7 @@ where
             },
             unpacked_bytes: total_unpacked,
             already_present: true,
+            reception: None,
         });
     }
     for chunk in &ticket.manifest.chunks {
@@ -249,6 +261,9 @@ where
         .build()
         .map_err(|_| Error::Transfer)?;
     if options.mode == HydrationMode::TrustedStreaming {
+        if options.receive_buffer.is_some() {
+            return buffered::hydrate(ticket, &destination, &options, tracker, client).await;
+        }
         return streaming::hydrate(ticket, &destination, &options, tracker, client).await;
     }
     paths::directory(&options.cache_dir)?;
@@ -319,6 +334,7 @@ where
         cache_hits,
         unpacked_bytes: total_unpacked,
         already_present: false,
+        reception: None,
     })
 }
 

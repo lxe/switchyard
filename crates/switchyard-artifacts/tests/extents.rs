@@ -433,3 +433,62 @@ async fn explicit_cancel_wakes_a_transfer_waiting_for_another_calls_budget() {
     assert_eq!(fixture.staging_count(), 0);
     server.abort();
 }
+
+#[test]
+fn caller_prefix_boundary_keeps_canonical_content_identity() {
+    let fixture = Fixture::new(5 * 4096, 4096);
+    let prefix = pack_extents_with_prefixes(
+        &fixture.root.join("source"),
+        &fixture.root.join("prefixed"),
+        fixture.manifest.metadata.clone(),
+        4096,
+        &BTreeMap::from([("nested/large".into(), 37)]),
+    )
+    .unwrap();
+    assert_eq!(prefix.content_id, fixture.manifest.content_id);
+    assert_ne!(prefix.id, fixture.manifest.id);
+    let first = prefix
+        .extents
+        .iter()
+        .find(|e| e.entry == fixture.entry())
+        .unwrap();
+    assert_eq!(first.offset, 0);
+    assert_eq!(first.length, 37);
+    assert_eq!(
+        fs::read(fixture.root.join("prefixed").join(&first.object)).unwrap(),
+        fs::read(fixture.root.join("source/nested/large")).unwrap()[..37]
+    );
+}
+#[tokio::test]
+async fn explicit_trusted_reuse_accepts_repacked_content_without_network() {
+    let fixture = Fixture::new(5 * 4096, 4096);
+    let (ticket, state, _gate, server) = fixture.server(false, Fault::None).await;
+    let destination = fixture.root.join("ready");
+    let mut options = fixture.options();
+    options.mode = HydrationMode::TrustedStreaming;
+    let hydration =
+        ExtentHydration::prepare(ticket.clone(), &destination, options.clone()).unwrap();
+    hydration.run().await.unwrap();
+    drop(hydration);
+    assert!(matches!(
+        ExtentHydration::prepare(ticket.clone(), &destination, options.clone()),
+        Err(Error::DestinationExists)
+    ));
+    let requested = state.requested.load(Ordering::Relaxed);
+    options.reuse_existing = true;
+    let reused = ExtentHydration::prepare(ticket, &destination, options).unwrap();
+    let report = reused.run().await.unwrap();
+    assert_eq!(report.downloaded_bytes, 0);
+    assert_eq!(state.requested.load(Ordering::Relaxed), requested);
+    let ready = reused.wait_range(fixture.entry(), 0, 37).await.unwrap();
+    let mut bytes = [0; 37];
+    ready.read_into(0, &mut bytes).unwrap();
+    assert_eq!(
+        bytes,
+        fs::read(fixture.root.join("source/nested/large")).unwrap()[..37]
+    );
+    drop(ready);
+    drop(reused);
+    assert!(destination.exists());
+    server.abort();
+}

@@ -426,3 +426,124 @@ async fn cancelled_blocking_worker_retains_staging_and_shared_permit_until_it_st
     assert!(!destination.exists());
     server.abort();
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn reserved_receivers_reach_eof_while_decoder_budget_is_blocked() {
+    let fixture = Fixture::new(24, 256 * 1024);
+    let (ticket, state, gate, server) = fixture.serve(true, false).await;
+    let total = fixture.manifest.chunks.iter().map(|c| c.size).sum::<u64>();
+    let destination = fixture.root.join("reserved-output");
+    let target = destination.clone();
+    let decoders = Arc::new(Semaphore::new(0));
+    let limit = Arc::new(Semaphore::new(20));
+    let mut buffer = ReceiveBufferOptions::new(fixture.root.join("spool"));
+    buffer.extraction_limit = Some(decoders.clone());
+    let options = HydrationOptions {
+        receive_buffer: Some(buffer),
+        download_limit: Some(limit.clone()),
+        extraction_concurrency: 1,
+        ..fixture.options()
+    };
+    let observed = Arc::new(Mutex::new(None));
+    let receipt = observed.clone();
+    let task = tokio::spawn(async move {
+        hydrate(ticket, &target, options, move |p| {
+            *receipt.lock().unwrap() = p.reception;
+        })
+        .await
+    });
+    until(|| state.active.load(Ordering::Relaxed) == 20).await;
+    assert_eq!(limit.available_permits(), 0);
+    gate.send(true).unwrap();
+    until(|| {
+        observed
+            .lock()
+            .unwrap()
+            .as_ref()
+            .is_some_and(|p| p.storage_written_bytes == total)
+    })
+    .await;
+    until(|| state.finished.load(Ordering::Relaxed) == 24 && limit.available_permits() == 20).await;
+    let paused = observed.lock().unwrap().clone().unwrap();
+    assert_eq!(paused.network_received_bytes, total);
+    assert_eq!(paused.compressed_consumed_bytes, 0);
+    assert_eq!(paused.decoded_bytes, 0);
+    assert_eq!(paused.buffered_bytes, total);
+    assert_eq!(paused.buffer_high_water_bytes, total);
+    assert!(state.peak.load(Ordering::Relaxed) >= 20);
+    assert!(!destination.exists());
+    assert!(!task.is_finished());
+    decoders.add_permits(1);
+    let report = task.await.unwrap().unwrap();
+    let progress = report.reception.unwrap();
+    assert_eq!(progress.compressed_consumed_bytes, total);
+    assert_eq!(progress.buffered_bytes, 0);
+    assert_eq!(progress.file_written_bytes, 24 * 256 * 1024);
+    assert_eq!(progress.reclaimed_bytes, progress.reserved_bytes);
+    assert!(
+        progress.reception_complete_seconds.unwrap()
+            <= progress.extraction_complete_seconds.unwrap()
+    );
+    verify(&destination, &fixture.manifest).unwrap();
+    assert_eq!(fs::read_dir(fixture.root.join("spool")).unwrap().count(), 0);
+    server.abort();
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn reserved_prefix_decodes_before_http_eof_and_cancellation_reclaims_backing() {
+    let fixture = Fixture::new(2, 2 * 1024 * 1024);
+    let (ticket, state, _gate, server) = fixture.serve(true, false).await;
+    let destination = fixture.root.join("reserved-output");
+    let target = destination.clone();
+    let options = HydrationOptions {
+        receive_buffer: Some(ReceiveBufferOptions::new(fixture.root.join("spool"))),
+        ..fixture.options()
+    };
+    let observed = Arc::new(Mutex::new(None));
+    let receipt = observed.clone();
+    let task = tokio::spawn(async move {
+        hydrate(ticket, &target, options, move |p| {
+            *receipt.lock().unwrap() = p.reception;
+        })
+        .await
+    });
+    until(|| {
+        observed
+            .lock()
+            .unwrap()
+            .as_ref()
+            .is_some_and(|p| p.file_written_bytes > 1024 * 1024 && p.reclaimed_bytes > 0)
+    })
+    .await;
+    assert_eq!(state.finished.load(Ordering::Relaxed), 0);
+    task.abort();
+    let _ = task.await;
+    until(|| {
+        fixture.staging().is_none()
+            && fs::read_dir(fixture.root.join("spool")).unwrap().count() == 0
+    })
+    .await;
+    assert!(!destination.exists());
+    server.abort();
+}
+#[tokio::test]
+async fn reserved_capacity_rejection_happens_before_http() {
+    let fixture = Fixture::new(1, 65536);
+    let (ticket, state, _gate, server) = fixture.serve(false, false).await;
+    let mut buffer = ReceiveBufferOptions::new(fixture.root.join("spool"));
+    buffer.max_reserved_bytes = 4096;
+    let error = hydrate(
+        ticket,
+        &fixture.root.join("output"),
+        HydrationOptions {
+            receive_buffer: Some(buffer),
+            ..fixture.options()
+        },
+        |_| {},
+    )
+    .await
+    .unwrap_err();
+    assert!(error.to_string().contains("reserved budget"));
+    assert!(state.requests.lock().unwrap().is_empty());
+    assert!(fixture.staging().is_none());
+    server.abort();
+}
