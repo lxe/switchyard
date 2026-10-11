@@ -128,6 +128,10 @@ fn configuration_rejects_overridden_bindings_and_invalid_resource_limits() {
         "--max-running-r=999",
         "--model-p=/other",
         "--dtyp=float32",
+        "--device-memory-utilization=0.99",
+        "--gpu_memory_utilization=0.99",
+        "--max_model_len=1",
+        "--no-language-model-only",
     ] {
         let mut bad = config();
         bad.models[0].engine.extra_args.push(flag.into());

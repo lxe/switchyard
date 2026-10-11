@@ -354,8 +354,10 @@ fn valid_extra_args(args: &[String]) -> bool {
         "--max-model-len",
         "--max-num-seqs",
         "--gpu-memory-utilization",
+        "--device-memory-utilization",
         "--dtype",
         "--language-model-only",
+        "--no-language-model-only",
         "--model-path",
         "--context-length",
         "--max-running-requests",
@@ -363,9 +365,9 @@ fn valid_extra_args(args: &[String]) -> bool {
         "--json-model-override-args",
     ];
     args.iter().all(|arg| {
-        let option = arg.split('=').next().unwrap_or_default();
+        let option = arg.split('=').next().unwrap_or_default().replace('_', "-");
         !arg.contains('\0')
             && !(option.starts_with("--")
-                && MANAGED.iter().any(|managed| managed.starts_with(option)))
+                && MANAGED.iter().any(|managed| managed.starts_with(&option)))
     })
 }
