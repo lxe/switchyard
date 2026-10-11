@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "scope": "Arch host CPU-only CRIU; not Ubuntu container or GPU serving proof",
+  "runtime_id": "0d55f050cee7aa0a24392b3d824869e66516685836750eca88494ea060f7aec6",
+  "snapshot_artifact_id": "43e323460796b4ed1c4c5df31dd52d000e34c3169381c3eb4c049ae6e4f808ed",
+  "profile": {
+    "architecture": "x86_64",
+    "base_os_sha256": "71ff7a6e248d9a0718344c957ec709cb6f0b18631682fa404d7cff2af3ff341d",
+    "cpu_flags_sha256": "cdd3388dc64707e03d2b4b2d9cb5d0cf1531aaa556361c19e7b215c9486e26da",
+    "cpu_vendor_model": "GenuineIntel 13th Gen Intel(R) Core(TM) i7-13700",
+    "criu_version": "Version: 4.2.1\nGitID: v4.2.1",
+    "kernel_release": "6.18.54-1-lts"
+  },
+  "compressed_bytes": 97498142,
+  "image_bytes": 447458221,
+  "prepare_duration_s": 1.398532673,
+  "dump_duration_s": 0.214092232,
+  "restore_duration_s": 0.151451785,
+  "imports": {
+    "tokenizer_prepare": 0.24114430399640696,
+    "tokenizers": 0.002232161001302302,
+    "torch": 0.6054473879994475,
+    "transformers": 0.5046357249957509,
+    "vllm_before_platform": 0.00439499800268095
+  },
+  "deferred_import": "vllm.platforms",
+  "vllm_import_complete": false,
+  "before_objects": {
+    "modules": {
+      "tokenizers": 140626724401968,
+      "torch": 140626724401168,
+      "transformers": 140621644792512,
+      "vllm": 140621643349536
+    },
+    "sentinel": 140621644580400,
+    "tokenizer": 140621643789696
+  },
+  "after_objects": {
+    "modules": {
+      "tokenizers": 140626724401968,
+      "torch": 140626724401168,
+      "transformers": 140621644792512,
+      "vllm": 140621643349536
+    },
+    "sentinel": 140621644580400,
+    "tokenizer": 140621643789696
+  },
+  "tokenizer_sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+  "tokenizer_tokens_match": true,
+  "objects_preserved": true,
+  "cuda_initialized": false,
+  "gpu_device_fds": [],
+  "gpu_driver_mappings": [
+    "/usr/lib/libcuda.so.615.71.09"
+  ],
+  "gpu_snapshot": false,
+  "proof_log": "results/cpu-snapshot/rust-roundtrip-02.log"
+}

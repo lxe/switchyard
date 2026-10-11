@@ -2276,6 +2276,8 @@ dependencies = [
  "axum",
  "clap",
  "futures-util",
+ "getrandom 0.4.3",
+ "rustix",
  "serde",
  "serde_json",
  "sha2 0.10.9",

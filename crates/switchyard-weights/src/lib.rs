@@ -6,6 +6,8 @@ pub use bridge::{BridgeProgress, WeightBridge};
 
 mod packing;
 pub use packing::{pack_weights, priority_extents};
+#[cfg(target_os = "linux")]
+pub mod cpu_snapshot;
 mod loader;
 pub mod startup_policy;
 pub use loader::{VllmLoaderConfig, write_vllm_bundle};
