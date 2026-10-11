@@ -30,7 +30,7 @@ RAYON_NUM_THREADS=4 target/release/switchyard-quantized-bench \
   --encoding-code 2 --rows 1,8,64 --iterations 20 --samples 5
 ```
 
-No GPU feature is enabled for this foundation's CPU tests or measurements. GPU integration requires the main thread's serialized validation slot, a numerical contract against the released model and a comparable serving workload.
+The CPU tests and CPU latency measurements use no GPU feature. The separate GPU projection fixture has now passed on the RTX 5090. Model integration still requires a numerical contract against the released model and a comparable serving workload.
 
 ## Measured CPU projections
 
@@ -45,7 +45,7 @@ The [CPU receipt](receipts/native-quantized-projections-cpu.json) records seven 
 | Q8_0 | 8 | 56.16 us | 24.18 us | 17.03 us |
 | Q8_0 | 64 | 419.52 us | 141.21 us | 108.49 us |
 
-Grouping reduced latency for these CPU matrices. This measurement does not select a quantization mode for Qwen, predict GPU speedup, or close the varied-length decode gap. An ignored CUDA projection fixture is available for the main thread to run after its model validation workload; its proposed group/separate maximum absolute tolerance is `0.0001`, and no CUDA result is recorded here.
+Grouping reduced latency for these CPU matrices. This measurement does not select a quantization mode for Qwen, predict GPU speedup, or close the varied-length decode gap. The separate [CUDA fixture receipt](receipts/native-quantized-projections-rtx5090.json) records an RTX 5090 run using CUDA 13.4 and driver 615.71.09. Grouped and separate Q4_0, Q8_0, Q4_K and Q6_K projections matched with zero maximum absolute difference for 1, 8 and 64 input rows, below the `0.0001` bound. The two weight matrices have shapes `[32, 256]` and `[48, 256]`. This checks the grouping operation on synthetic GPU inputs; it does not establish CPU/GPU equivalence, quantized model quality, single/batch equivalence or token throughput. The GPU test remains ignored in ordinary CPU CI so execution requires an explicit hardware validation command.
 
 ```sh
 cargo test -p switchyard-quantized --features cuda \

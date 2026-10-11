@@ -89,16 +89,16 @@ Run commands with `switchyard` after installation, or with `cargo run --locked -
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --locked --workspace --exclude switchyard-engine --all-features --all-targets -- -D warnings
-cargo clippy --locked -p switchyard-engine --all-targets -- -D warnings
-cargo test --locked --workspace --exclude switchyard-engine --all-features --all-targets
-cargo test --locked -p switchyard-engine --all-targets
-RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --exclude switchyard-engine --all-features --no-deps
-RUSTDOCFLAGS='-D warnings' cargo doc --locked -p switchyard-engine --no-deps
+cargo clippy --locked --workspace --exclude switchyard-engine --exclude switchyard-quantized --all-features --all-targets -- -D warnings
+cargo clippy --locked -p switchyard-engine -p switchyard-quantized --all-targets -- -D warnings
+cargo test --locked --workspace --exclude switchyard-engine --exclude switchyard-quantized --all-features --all-targets
+cargo test --locked -p switchyard-engine -p switchyard-quantized --all-targets
+RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --exclude switchyard-engine --exclude switchyard-quantized --all-features --no-deps
+RUSTDOCFLAGS='-D warnings' cargo doc --locked -p switchyard-engine -p switchyard-quantized --no-deps
 cargo run --locked --release -- fuzz --cases 1000 --seed 42
 ```
 
-The native engine's optional `cuda` feature requires a CUDA toolkit; CPU CI tests it separately so fleet simulation stays portable. Use `--workspace` to include every package's tests. The `bench` command measures software overhead separately from virtual GPU throughput; `--max-seconds` optionally enforces a host-specific regression budget. Generated results and local experiment data are ignored by Git.
+The native engine and quantized projection crates have optional `cuda` features that require a CUDA toolkit. CPU CI tests them separately with default features so fleet simulation stays portable. Use `--workspace` to include every package's tests. The `bench` command measures software overhead separately from virtual GPU throughput; `--max-seconds` optionally enforces a host-specific regression budget. Generated results and local experiment data are ignored by Git.
 
 ## Live GPU experiments
 

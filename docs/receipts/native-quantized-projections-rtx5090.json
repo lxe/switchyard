@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "source_commit": "88daf17ad0ff5e2fa5cf2b01cea350130f05e173",
+  "fixture": "cuda_grouped_projection_matches_separate_calls",
+  "command": "CARGO_BUILD_JOBS=6 CUDA_COMPUTE_CAP=120 cargo test -p switchyard-quantized --features cuda --test foundations cuda_grouped_projection -- --ignored --nocapture",
+  "hardware": "NVIDIA GeForce RTX 5090, 615.71.09, 12.0, 32607 MiB",
+  "cuda_toolkit": "13.4",
+  "compiler_target": "sm_120a",
+  "candle_revision": "c68b24997319b8d76e5a4e775dab197c7f26322a",
+  "test_binary_sha256": "e0a2feec643c82e5b495a8a610c6e44159043c03f7379649eb453c92bc3164f8",
+  "raw_log_sha256": "ee961d07997bfc3bb38c3cfa9e7dbcd05c7470667467a649c196cec2459406d6",
+  "fixture_shapes": {
+    "gate_weight": [
+      32,
+      256
+    ],
+    "up_weight": [
+      48,
+      256
+    ],
+    "input_rows": [
+      1,
+      8,
+      64
+    ],
+    "input_dtype": "F32"
+  },
+  "max_abs_tolerance": 0.0001,
+  "cases": [
+    {
+      "encoding": "Q4_0",
+      "input_rows": 1,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4_0",
+      "input_rows": 1,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4_0",
+      "input_rows": 8,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4_0",
+      "input_rows": 8,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4_0",
+      "input_rows": 64,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4_0",
+      "input_rows": 64,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q8_0",
+      "input_rows": 1,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q8_0",
+      "input_rows": 1,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q8_0",
+      "input_rows": 8,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q8_0",
+      "input_rows": 8,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q8_0",
+      "input_rows": 64,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q8_0",
+      "input_rows": 64,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4K",
+      "input_rows": 1,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4K",
+      "input_rows": 1,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4K",
+      "input_rows": 8,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4K",
+      "input_rows": 8,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4K",
+      "input_rows": 64,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q4K",
+      "input_rows": 64,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q6K",
+      "input_rows": 1,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q6K",
+      "input_rows": 1,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q6K",
+      "input_rows": 8,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q6K",
+      "input_rows": 8,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q6K",
+      "input_rows": 64,
+      "projection": "gate",
+      "max_abs_difference": 0.0
+    },
+    {
+      "encoding": "Q6K",
+      "input_rows": 64,
+      "projection": "up",
+      "max_abs_difference": 0.0
+    }
+  ],
+  "passed": true,
+  "scope": "Grouped versus separate packed GPU projections on synthetic weights. This is not a model quality test, CPU/GPU equivalence test, single/batch equivalence test, serving throughput measurement, or GGUF model admission."
+}
