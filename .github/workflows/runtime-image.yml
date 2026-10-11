@@ -1,0 +1,26 @@
+name: Minimal hydration runtime image
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - deploy/hydration/Dockerfile.runtime
+      - .github/workflows/runtime-image.yml
+permissions:
+  contents: read
+  packages: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build minimal Ubuntu image
+        run: docker build --platform linux/amd64 --file deploy/hydration/Dockerfile.runtime --label org.opencontainers.image.source=https://github.com/${{ github.repository }} --tag ghcr.io/${{ github.repository_owner }}/switchyard-runtime:ubuntu24.04 deploy/hydration
+      - name: Publish image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username '${{ github.repository_owner }}' --password-stdin
+          docker push ghcr.io/${{ github.repository_owner }}/switchyard-runtime:ubuntu24.04
+      - name: Record immutable image digest
+        run: docker inspect --format '{{index .RepoDigests 0}}' ghcr.io/${{ github.repository_owner }}/switchyard-runtime:ubuntu24.04 >> "$GITHUB_STEP_SUMMARY"
