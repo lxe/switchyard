@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-10",
+  "experiment": "legacy model hydration with concurrent runtime and early engine import",
+  "source_commit": "571422d",
+  "agent_source_commit": "7f703267fc7b1aaa9517ee2917081934c33fbd9f",
+  "agent_sha256": "ae3e805f97859dae310e48d5ffaa2f51e0305fe41a33726729f9462b2b4159e0",
+  "configuration": "configs/runpod/hydration-diagnostic-2b.json",
+  "configuration_sha256": "665c3fe7c7d94a97af03323a857203de0e203718e233876b863c6eae8a155212",
+  "gpu": "NVIDIA L40S",
+  "data_center": "US-TX-3",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_bytes": 4571330560,
+  "runtime_network_bytes": 5244615495,
+  "shared_transfer_slots": 20,
+  "runtime_retries": 0,
+  "model_retries": 0,
+  "stop_condition": "model publication",
+  "agent_milestones_seconds": {
+    "runtime_hydration_started": 1.5078854929999999,
+    "model_hydration_started": 2.300336002,
+    "runtime_hydration_finished": 38.832157886,
+    "engine_spawned": 38.832848115,
+    "model_hydration_finished": 74.101565082,
+    "model_gate_released": 74.10215736
+  },
+  "model_pipeline_seconds": 71.80122908,
+  "runtime_pipeline_seconds": 37.324272393,
+  "longest_completed_body_wait_seconds": 12.531351528,
+  "largest_cumulative_channel_wait_seconds": 41.407339685000046,
+  "piece20": {
+    "name": "chunk-00020",
+    "expected_bytes": 134217728,
+    "received_bytes": 134217728,
+    "delivered_bytes": 134217728,
+    "consumed_bytes": 134217728,
+    "channel_wait_s": 28.471339943000075,
+    "longest_body_wait_s": 0.072498597
+  },
+  "byte_conservation": true,
+  "transfer_failure": null,
+  "engine_readiness_measured": false,
+  "inference_calls": 0,
+  "rental": {
+    "cleanup_failures": [],
+    "estimated_rental_usd": 0.02462116770416096,
+    "pods": [
+      {
+        "allocated_s": 2.066936039,
+        "ended_s": 82.575121589,
+        "pod": {
+          "cost": 1.09,
+          "data_center": "US-TX-3",
+          "id": "u0hlrojbxcrcee",
+          "name": "switchyard-e1cb8bd06a61d029-0",
+          "status": "running"
+        },
+        "profile": 0,
+        "quoted": {
+          "availability": "LOW",
+          "data_center": "US-TX-3",
+          "disk_usd_per_hour": 0.010958904109589041,
+          "gpu": "NVIDIA L40S",
+          "gpu_memory_gb": 48,
+          "gpu_usd_per_hour": 1.09,
+          "quoted_at_unix_s": 1791687505
+        }
+      }
+    ]
+  },
+  "termination": {
+    "pod": "u0hlrojbxcrcee",
+    "http_status": 404
+  },
+  "claim_limit": "The instrumented cloud replay completed. It does not establish the cause of the earlier uninstrumented failure. Pipeline durations include local extraction and backpressure; they do not measure network capacity."
+}
