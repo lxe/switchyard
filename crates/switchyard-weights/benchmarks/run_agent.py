@@ -800,6 +800,11 @@ try:
                 ],
                 "scope": "Cold private container, actual agent ticket/preflights/runtime reception and extraction, tokenizer and native vLLM serving. Compiler caches initially empty. Correctness hashing was performed only in the separate loader comparison.",
                 "compiler_cache_seeded": args.warm_cache_from is not None,
+                "compiler_cache_artifact_hydrated": bool(caches),
+                "cache_artifact_provenance": {
+                    item["name"]: item["manifest"]["metadata"].get("attributes", {})
+                    for item in caches
+                },
                 "request_epoch_monotonic": epoch,
                 "agent_sha256": hashlib.sha256(args.agent.read_bytes()).hexdigest(),
                 "runtime_artifact_id": runtime_manifest["id"],
@@ -826,6 +831,10 @@ try:
             if args.warm_cache_from:
                 result["scope"] = (
                     "Fresh private container and runtime/model reception; compiler cache copied from a prior matching local run before the request epoch. This tests upstream cache reuse, without claiming a published artifact-v1 cache bake. Correctness hashing was performed only in the separate loader comparison."
+                )
+            elif caches:
+                result["scope"] = (
+                    "Fresh owned GPU container and empty installation; boot, build, model and diagnostic native-cache artifacts hydrated from local HTTP. Native startup profiling is enabled. The cache records its original diagnostic provenance and is not qualified for a new production deployment identity. Memory-plan acceptance remains native."
                 )
             for e in result["http"]:
                 e.pop("started_monotonic")
@@ -895,6 +904,7 @@ try:
                     for k in (
                         "request_to_ready_seconds",
                         "request_to_first_useful_token_seconds",
+                        "direct_request_to_first_token_seconds",
                         "completion",
                     )
                 }
