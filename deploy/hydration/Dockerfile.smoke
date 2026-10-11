@@ -1,0 +1,6 @@
+# syntax=docker/dockerfile:1
+# Same clean baseline as the worker; no apt, Python, or compiler added here.
+FROM --platform=linux/amd64 ubuntu:24.04@sha256:f610ab94648195aa356059f5b41d6085c9d4d903c072430cdd1af7bdb646106b
+LABEL io.switchyard.component="hydration-smoke"
+WORKDIR /opt/switchyard
+CMD ["/bin/bash", "-c", "source /opt/switchyard/runtime/runtime-env.sh && exec /opt/switchyard/runtime/venv/bin/python /opt/switchyard/runtime/smoke.py"]

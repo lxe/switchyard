@@ -1,5 +1,6 @@
 use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
+use switchyard_core::{Scheduling, validate_scheduling};
 use switchyard_provider::{
     ComputeConfig, StorageConfig,
     config::{valid_component, valid_key_prefix, valid_text, validate_endpoint},
@@ -7,24 +8,92 @@ use switchyard_provider::{
 
 /// Portable deployment settings contain credential variable names, never their values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(from = "DeploymentConfigInput")]
 pub struct DeploymentConfig {
     pub compute: ComputeConfig,
     pub storage: StorageConfig,
     pub bootstrap: BootstrapConfig,
     pub models: Vec<ModelConfig>,
     pub limits: Limits,
+    pub scheduling: Scheduling,
 }
 
 /// Execution settings shared by live backends, independent of any cloud's catalog options.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(from = "ExecutionConfigInput")]
 pub struct ExecutionConfig {
     pub storage: StorageConfig,
     pub bootstrap: BootstrapConfig,
     pub models: Vec<ModelConfig>,
     pub limits: Limits,
     pub disk_gb: u64,
+    pub scheduling: Scheduling,
+}
+
+// The omitted-block default depends on the enclosing hard startup limit. Resolve it
+// during decoding rather than encoding a sentinel in the shared Scheduling contract.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DeploymentConfigInput {
+    compute: ComputeConfig,
+    storage: StorageConfig,
+    bootstrap: BootstrapConfig,
+    models: Vec<ModelConfig>,
+    limits: Limits,
+    #[serde(default)]
+    scheduling: Option<Scheduling>,
+}
+
+impl From<DeploymentConfigInput> for DeploymentConfig {
+    fn from(input: DeploymentConfigInput) -> Self {
+        let scheduling = input
+            .scheduling
+            .unwrap_or_else(|| legacy_scheduling(&input.limits));
+        Self {
+            compute: input.compute,
+            storage: input.storage,
+            bootstrap: input.bootstrap,
+            models: input.models,
+            limits: input.limits,
+            scheduling,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExecutionConfigInput {
+    storage: StorageConfig,
+    bootstrap: BootstrapConfig,
+    models: Vec<ModelConfig>,
+    limits: Limits,
+    disk_gb: u64,
+    #[serde(default)]
+    scheduling: Option<Scheduling>,
+}
+
+impl From<ExecutionConfigInput> for ExecutionConfig {
+    fn from(input: ExecutionConfigInput) -> Self {
+        let scheduling = input
+            .scheduling
+            .unwrap_or_else(|| legacy_scheduling(&input.limits));
+        Self {
+            storage: input.storage,
+            bootstrap: input.bootstrap,
+            models: input.models,
+            limits: input.limits,
+            disk_gb: input.disk_gb,
+            scheduling,
+        }
+    }
+}
+
+fn legacy_scheduling(limits: &Limits) -> Scheduling {
+    Scheduling {
+        maximum_startup_s: limits.startup_timeout_s as f64,
+        minimum_hydration_bytes_per_s: 5_000_000.0,
+        ..Scheduling::default()
+    }
 }
 
 impl DeploymentConfig {
@@ -35,6 +104,7 @@ impl DeploymentConfig {
             models: self.models.clone(),
             limits: self.limits.clone(),
             disk_gb: self.compute.disk_gb,
+            scheduling: self.scheduling.clone(),
         }
     }
     pub fn validate(&self) -> Result<()> {
@@ -50,6 +120,8 @@ pub struct BootstrapConfig {
     pub agent_url: String,
     pub agent_sha256: String,
     pub ticket_prefix: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<crate::artifacts::ServingRuntimeConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,6 +135,8 @@ pub struct ModelConfig {
     pub engine: EngineConfig,
     /// Planning priors remain assumptions until a matching live measurement replaces them.
     pub prior: CapacityPrior,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caches: Vec<crate::artifacts::ServingCacheConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,6 +181,10 @@ pub struct Limits {
 
 impl ExecutionConfig {
     pub fn validate(&self) -> Result<()> {
+        validate_scheduling(&self.scheduling).map_err(Error::Config)?;
+        if let Some(runtime) = &self.bootstrap.runtime {
+            runtime.validate()?;
+        }
         self.storage.validate()?;
         validate_endpoint(&self.bootstrap.agent_url)?;
         let l = &self.limits;
@@ -140,6 +218,19 @@ impl ExecutionConfig {
         }
         let mut ids = std::collections::BTreeSet::new();
         for m in &self.models {
+            let mut cache_keys = std::collections::BTreeSet::new();
+            for cache in &m.caches {
+                cache.validate()?;
+                let runtime = self.bootstrap.runtime.as_ref().ok_or_else(|| {
+                    Error::Config("serving caches require a hydrated runtime".into())
+                })?;
+                cache.requirements(runtime, m)?;
+                if !cache_keys.insert((&cache.gpu, &cache.name)) {
+                    return Err(Error::Config(
+                        "duplicate serving cache for GPU and name".into(),
+                    ));
+                }
+            }
             if !ids.insert(&m.id)
                 || !valid_component(&m.id)
                 || m.repository.split('/').count() != 2

@@ -37,7 +37,7 @@ impl<P: Provider> LiveRuntime<P> {
             .iter()
             .find(|m| m.id == p.model)
             .ok_or_else(|| Error::Config("profile model missing".into()))?;
-        let offering = self.offerings[profile % self.offerings.len()].clone();
+        let offering = self.profile_offerings[profile].clone();
         let name = format!("switchyard-{}-{}", self.run_id, self.nodes.len());
         let ticket_key = format!("{}/{name}.json", self.config.bootstrap.ticket_prefix);
         self.pending.push(PendingLaunch {
@@ -67,6 +67,32 @@ impl<P: Provider> LiveRuntime<P> {
             concurrency: self.config.limits.hydration_concurrency,
             stall_s: self.config.limits.hydration_stall_s,
             lifetime_s: self.config.limits.run_timeout_s,
+            runtime: if let Some(runtime) = &self.config.bootstrap.runtime {
+                let mut caches = vec![];
+                for cache in model.caches.iter().filter(|c| c.gpu == offering.gpu) {
+                    caches.push(switchyard_agent::runtime::CacheTicket {
+                        name: cache.name.clone(),
+                        artifact: cache.artifact.ticket(
+                            &self.storage,
+                            self.cache_manifests[&cache.artifact.id].clone(),
+                        )?,
+                        compatibility: cache.requirements(runtime, model)?,
+                    });
+                }
+                Some(switchyard_agent::runtime::RuntimeTicket {
+                    artifact: runtime.artifact.ticket(
+                        &self.storage,
+                        self.runtime_manifest.clone().expect("prepared runtime"),
+                    )?,
+                    compatibility: runtime.compatibility.clone(),
+                    program: runtime.program.clone(),
+                    args: runtime.args.clone(),
+                    environment: runtime.environment.clone(),
+                    caches,
+                })
+            } else {
+                None
+            },
         };
         self.storage.put_json(&ticket_key, &ticket).await?;
         let token = nonce()?;
@@ -166,8 +192,11 @@ impl<P: Provider> LiveRuntime<P> {
                     self.observations.push(
                         serde_json::json!({"at_s":now,"pod":node.owned.pod.id,"state":state}),
                     );
-                    node.observed.host.bytes_downloaded = state.bytes_downloaded;
-                    node.observed.host.bytes_total = state.bytes_total;
+                    node.observed.host.bytes_downloaded = state
+                        .bytes_downloaded
+                        .saturating_add(state.artifact_bytes_downloaded);
+                    node.observed.host.bytes_total =
+                        state.bytes_total.saturating_add(state.artifact_bytes_total);
                     node.observed.host.phase = match state.phase {
                         Phase::Booting => StartupPhase::Booting,
                         Phase::Hydrating => StartupPhase::Hydrating,
@@ -209,6 +238,7 @@ impl<P: Provider> LiveRuntime<P> {
         if let Ok(state) = node.endpoint.state().await
             && let Some(rate) = state
                 .volume_bytes_per_s
+                .or(state.artifact_volume_bytes_per_s)
                 .filter(|r| r.is_finite() && *r > 0.0)
         {
             node.observed.host.probe = Some(HostProbe {
@@ -216,7 +246,7 @@ impl<P: Provider> LiveRuntime<P> {
                 volume_bytes_per_s: rate,
                 image_cached: state.image_cached,
                 model_cached: state.model_cached,
-                hydration_bytes: state.bytes_total,
+                hydration_bytes: state.bytes_total.saturating_add(state.artifact_bytes_total),
             });
             self.probes += 1;
         }

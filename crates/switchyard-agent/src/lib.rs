@@ -1,5 +1,6 @@
 //! Pod-side hydration tickets and observable lifecycle state. Tickets contain expiring URLs.
 pub mod hydrate;
+pub mod runtime;
 pub mod server;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -14,6 +15,9 @@ pub struct Ticket {
     pub concurrency: usize,
     pub stall_s: u64,
     pub lifetime_s: u64,
+    /// Optional separately packed serving runtime. Legacy tickets use the image's vLLM.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<runtime::RuntimeTicket>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Manifest {
@@ -65,6 +69,21 @@ pub struct State {
     /// Image cache residency is not discoverable from inside a newly running container.
     pub image_cached: Option<bool>,
     pub error: Option<String>,
+    /// Additional runtime/cache transfer bytes; legacy model counters remain separate.
+    #[serde(default)]
+    pub artifact_bytes_downloaded: u64,
+    /// Actual wire bytes, including retries; verified transfer progress remains separate.
+    #[serde(default)]
+    pub artifact_network_bytes_downloaded: u64,
+    #[serde(default)]
+    pub artifact_bytes_total: u64,
+    #[serde(default)]
+    pub artifact_volume_bytes_per_s: Option<f64>,
+    #[serde(default)]
+    pub artifacts: Vec<runtime::ArtifactState>,
+    /// True after health, tokenization, and a minimal nonstream inference succeed.
+    #[serde(default)]
+    pub inference_verified: bool,
 }
 impl State {
     pub fn new(ticket: &Ticket) -> Self {
@@ -79,12 +98,26 @@ impl State {
             model_cached: false,
             image_cached: None,
             error: None,
+            artifact_bytes_downloaded: 0,
+            artifact_network_bytes_downloaded: 0,
+            artifact_bytes_total: ticket
+                .runtime
+                .as_ref()
+                .map_or(0, runtime::RuntimeTicket::total_bytes),
+            artifact_volume_bytes_per_s: None,
+            artifacts: ticket
+                .runtime
+                .as_ref()
+                .map_or_else(Vec::new, runtime::RuntimeTicket::initial_states),
+            inference_verified: false,
         }
     }
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    Artifact(#[from] switchyard_artifacts::Error),
     #[error("invalid hydration manifest: {0}")]
     Manifest(String),
     #[error("hydration transfer failed: {0}")]

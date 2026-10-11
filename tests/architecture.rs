@@ -10,11 +10,18 @@ fn simulator_and_scheduler_do_not_link_cloud_or_model_serving_integrations() {
         .unwrap();
     assert!(output.status.success());
     let metadata: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    let pure = ["switchyard-core", "switchyard-scheduler", "switchyard-sim"];
+    let pure = [
+        "switchyard-core",
+        "switchyard-scheduler",
+        "switchyard-sim",
+        "switchyard-artifacts",
+    ];
     let integrations = [
         "switchyard-provider",
         "switchyard-agent",
         "switchyard-live",
+        "switchyard-artifact-tools",
+        "switchyard-artifacts",
         "aws-sigv4",
         "tokenizers",
         "minijinja",

@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "name": "cold-single",
+      "policy": "adaptive",
+      "calls": 1,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 16,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 100,
+      "completion_budget_s": 900,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-single",
+      "policy": "warm_only",
+      "calls": 1,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 16,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 100,
+      "completion_budget_s": 60,
+      "serial_dependencies": false
+    },
+    {
+      "name": "hot-burst-32",
+      "policy": "adaptive",
+      "calls": 32,
+      "prompt": "Explain GPU inference batching in one sentence.",
+      "planned_output": 16,
+      "max_output": 32,
+      "arrival_interval_s": 0,
+      "desired_output_tps": 500,
+      "completion_budget_s": 90,
+      "serial_dependencies": false
+    }
+  ]
+}

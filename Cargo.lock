@@ -2075,12 +2075,13 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "switchyard"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "reqwest",
  "serde",
  "serde_json",
+ "switchyard-artifact-tools",
  "switchyard-core",
  "switchyard-gauntlet",
  "switchyard-live",
@@ -2091,7 +2092,7 @@ dependencies = [
 
 [[package]]
 name = "switchyard-agent"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "axum",
  "futures-util",
@@ -2099,6 +2100,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "switchyard-artifacts",
  "tar",
  "thiserror",
  "tokio",
@@ -2107,8 +2109,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "switchyard-artifact-tools"
+version = "0.3.0"
+dependencies = [
+ "axum",
+ "clap",
+ "dotenvy",
+ "futures-util",
+ "getrandom 0.4.3",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "switchyard-artifacts",
+ "switchyard-provider",
+ "tar",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "switchyard-artifacts"
+version = "0.3.0"
+dependencies = [
+ "axum",
+ "futures-util",
+ "getrandom 0.4.3",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tar",
+ "thiserror",
+ "tokio",
+ "zstd",
+]
+
+[[package]]
 name = "switchyard-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "serde",
@@ -2117,7 +2155,7 @@ dependencies = [
 
 [[package]]
 name = "switchyard-gauntlet"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "axum",
  "futures-util",
@@ -2132,7 +2170,7 @@ dependencies = [
 
 [[package]]
 name = "switchyard-live"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "axum",
  "clap",
@@ -2146,6 +2184,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "switchyard-agent",
+ "switchyard-artifacts",
  "switchyard-core",
  "switchyard-provider",
  "switchyard-scheduler",
@@ -2156,11 +2195,12 @@ dependencies = [
 
 [[package]]
 name = "switchyard-provider"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aws-credential-types",
  "aws-sigv4",
  "axum",
+ "futures-util",
  "http",
  "percent-encoding",
  "reqwest",
@@ -2172,8 +2212,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "switchyard-runtime-build"
+version = "0.3.0"
+dependencies = [
+ "reqwest",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+]
+
+[[package]]
 name = "switchyard-scheduler"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2182,7 +2232,7 @@ dependencies = [
 
 [[package]]
 name = "switchyard-sim"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "axum",
  "futures-util",

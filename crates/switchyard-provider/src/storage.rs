@@ -1,4 +1,5 @@
 //! S3-compatible storage uses the AWS SigV4 signer; nodes receive expiring GET URLs.
+mod upload;
 use crate::{Error, Result, StorageConfig};
 use aws_credential_types::Credentials;
 use aws_sigv4::{

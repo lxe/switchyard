@@ -12,6 +12,7 @@ switchyard-core.workspace = true
 switchyard-scheduler.workspace = true
 switchyard-provider.workspace = true
 switchyard-agent.workspace = true
+switchyard-artifacts.workspace = true
 reqwest.workspace = true
 tokio.workspace = true
 serde.workspace = true

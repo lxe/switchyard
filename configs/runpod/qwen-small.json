@@ -121,13 +121,58 @@
     "hydration_concurrency": 32,
     "hydration_stall_s": 20,
     "poll_ms": 100,
-    "max_experiment_usd": 5.0,
+    "max_experiment_usd": 4.75,
     "experiment_timeout_s": 5400
   },
+  "scheduling": {
+    "maximum_startup_s": 600,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
   "bootstrap": {
-    "image": "vllm/vllm-openai:v0.31.0-cu129@sha256:ff29e51a9457f191deb332b96fa6440584fa941aa2a548449b604e2b1e5e1eeb",
-    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.2.0/switchyard-agent-x86_64-linux-musl",
-    "agent_sha256": "47545dda0c1fb4a146ced56e98d7c0cb6a448288a11d13ef025d2aa9662d5774",
-    "ticket_prefix": "switchyard/bootstrap"
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/v0.3.0/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "f8a4326524fb3293badcbc6d5186aa8c55a55296d21c076d3b55936fd32127fc",
+    "ticket_prefix": "switchyard/bootstrap",
+    "runtime": {
+      "artifact": {
+        "prefix": "switchyard/artifacts/runtime/3ebec35c9c6905ac2b4aa9d5a2f3dd98b3066880dc7e36b6ce33d341414e5c9a",
+        "id": "3ebec35c9c6905ac2b4aa9d5a2f3dd98b3066880dc7e36b6ce33d341414e5c9a"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda": "12.9",
+        "os": "ubuntu24.04",
+        "python": "3.12.14",
+        "torch": "2.13.0+cu129",
+        "vllm": "0.31.0+cu129"
+      },
+      "program": "venv/bin/python",
+      "args": [
+        "-m",
+        "vllm.entrypoints.cli.main"
+      ],
+      "environment": {
+        "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:{runtime_root}/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+        "CC": "{runtime_root}/toolchain/bin/gcc",
+        "CXX": "{runtime_root}/toolchain/bin/g++",
+        "CUDA_HOME": "{runtime_root}/cuda",
+        "CUDA_PATH": "{runtime_root}/cuda",
+        "CUDACXX": "{runtime_root}/cuda/bin/nvcc",
+        "SSL_CERT_FILE": "{runtime_root}/certs/ca-certificates.crt",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "VLLM_NO_USAGE_STATS": "1",
+        "DO_NOT_TRACK": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "HF_HOME": "{cache_root}/compiled/huggingface",
+        "TRITON_CACHE_DIR": "{cache_root}/compiled/triton",
+        "TORCHINDUCTOR_CACHE_DIR": "{cache_root}/compiled/torchinductor",
+        "VLLM_CACHE_ROOT": "{cache_root}/compiled/vllm",
+        "CUDA_CACHE_PATH": "{cache_root}/compiled/cuda",
+        "FLASHINFER_WORKSPACE_BASE": "{cache_root}/compiled/flashinfer"
+      }
+    }
   }
 }

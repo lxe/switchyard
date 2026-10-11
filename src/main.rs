@@ -16,6 +16,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Prepare and publish verified artifacts independently of fleet execution.
+    #[cfg(feature = "artifacts")]
+    Artifacts {
+        #[command(subcommand)]
+        command: switchyard_artifact_tools::cli::Command,
+    },
     /// Discover, check, execute, or recover a real RunPod experiment.
     #[cfg(feature = "live")]
     Live {
@@ -111,6 +117,8 @@ fn save<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), Box<dyn Error
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     match Cli::parse().command {
+        #[cfg(feature = "artifacts")]
+        Command::Artifacts { command } => switchyard_artifact_tools::cli::run(command).await?,
         #[cfg(feature = "live")]
         Command::Live { command } => switchyard_live::cli::run(command).await?,
         Command::Bench {

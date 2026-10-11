@@ -5,6 +5,97 @@ use std::{collections::BTreeMap, io};
 use tower::ServiceExt;
 
 const TOKEN: &str = "test-token-with-at-least-32-characters";
+
+#[tokio::test]
+async fn readiness_requires_tokenization_and_decoding_after_health() {
+    async fn tokenize(
+        axum::Json(body): axum::Json<serde_json::Value>,
+    ) -> axum::Json<serde_json::Value> {
+        assert_eq!(body["model"], "test-model");
+        assert_eq!(body["chat_template_kwargs"]["enable_thinking"], false);
+        axum::Json(serde_json::json!({"count":6,"tokens":[1,2,3,4,5,6]}))
+    }
+    async fn completion(
+        axum::Json(body): axum::Json<serde_json::Value>,
+    ) -> axum::Json<serde_json::Value> {
+        assert_eq!(body["max_tokens"], 1);
+        assert_eq!(body["stream"], false);
+        axum::Json(
+            serde_json::json!({"choices":[{"message":{"role":"assistant","content":"Yes"}}],"usage":{"prompt_tokens":6,"completion_tokens":1}}),
+        )
+    }
+    async fn invalid() -> axum::Json<serde_json::Value> {
+        axum::Json(
+            serde_json::json!({"choices":[{"message":{"content":"secret-upstream-output"}}],"usage":{"prompt_tokens":6,"completion_tokens":0}}),
+        )
+    }
+    for (path, should_pass) in [
+        ("/v1/chat/completions", true),
+        ("/invalid/v1/chat/completions", false),
+    ] {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let app = Router::new()
+            .route("/health", get(|| async { StatusCode::OK }))
+            .route("/tokenize", post(tokenize))
+            .route("/invalid/tokenize", post(tokenize))
+            .route("/v1/chat/completions", post(completion))
+            .route("/invalid/v1/chat/completions", post(invalid));
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        let base = if path.starts_with("/invalid") {
+            format!("http://{address}/invalid")
+        } else {
+            format!("http://{address}")
+        };
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(2))
+            .build()
+            .unwrap();
+        assert!(
+            client
+                .get(format!("http://{address}/health"))
+                .send()
+                .await
+                .unwrap()
+                .status()
+                .is_success()
+        );
+        let result = readiness::verify(&client, &base, "test-model").await;
+        assert_eq!(result.is_ok(), should_pass);
+        if let Err(error) = result {
+            assert!(!error.to_string().contains("secret-upstream-output"));
+        }
+        task.abort();
+    }
+}
+
+#[tokio::test]
+async fn readiness_rejects_empty_tokenization_and_oversized_responses() {
+    async fn empty() -> axum::Json<serde_json::Value> {
+        axum::Json(serde_json::json!({"count":0}))
+    }
+    async fn oversized() -> String {
+        "x".repeat((1 << 20) + 1)
+    }
+    for router in [
+        Router::new().route("/tokenize", post(empty)),
+        Router::new().route("/tokenize", post(oversized)),
+    ] {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let task = tokio::spawn(async move {
+            axum::serve(listener, router).await.unwrap();
+        });
+        assert!(
+            readiness::verify(&reqwest::Client::new(), &base, "test")
+                .await
+                .is_err()
+        );
+        task.abort();
+    }
+}
 fn app(phase: Phase, engine_url: String) -> App {
     let ticket = Ticket {
         model: "test".into(),
@@ -23,6 +114,7 @@ fn app(phase: Phase, engine_url: String) -> App {
         concurrency: 1,
         stall_s: 1,
         lifetime_s: 10,
+        runtime: None,
     };
     let mut state = State::new(&ticket);
     state.phase = phase;

@@ -1,0 +1,40 @@
+{
+  "artifact_id": "3ebec35c9c6905ac2b4aa9d5a2f3dd98b3066880dc7e36b6ce33d341414e5c9a",
+  "prefix": "switchyard/artifacts/runtime/3ebec35c9c6905ac2b4aa9d5a2f3dd98b3066880dc7e36b6ce33d341414e5c9a",
+  "entries": 184437,
+  "shards": 123,
+  "compressed_bytes": 5239264249,
+  "archive_bytes": 19589789696,
+  "pack_elapsed_s": 125.26592500400011,
+  "pack_peak_rss_kib": 208976,
+  "docker_cli_export_verified": true,
+  "published_through_rust_s3_adapter": true,
+  "fresh_r2_hydration_verified": true,
+  "cached_shards": 0,
+  "offline_downloaded_runtime_smoke": {
+    "cuda_build": "12.9",
+    "cuda_compilation_tested": true,
+    "gpu_execution_tested": false,
+    "packages": {
+      "tokenizers": "0.23.3",
+      "torch": "2.13.0+cu129",
+      "torchaudio": "2.11.0+cu129",
+      "torchcodec": "0.16.0+cu129",
+      "torchvision": "0.28.0+cu129",
+      "transformers": "5.17.0",
+      "triton": "3.7.1",
+      "vllm": "0.31.0+cu129"
+    },
+    "python": "3.12.14",
+    "status": "passed"
+  },
+  "compatibility": {
+    "architecture": "x86_64",
+    "cuda": "12.9",
+    "os": "ubuntu24.04",
+    "python": "3.12.14",
+    "torch": "2.13.0+cu129",
+    "vllm": "0.31.0+cu129"
+  },
+  "gpu_cache_bake_performed": false
+}

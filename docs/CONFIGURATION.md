@@ -2,6 +2,28 @@
 
 Configuration is JSON loaded into Rust types in [`switchyard-core/src/config.rs`](../crates/switchyard-core/src/config.rs). `init` writes a hardware catalog, an HTTP environment, and sixteen workload traces. The catalog describes public hardware priors; a trace or HTTP environment can override physical conditions to test a scheduler with stale priors. Unknown configuration fields are rejected so spelling mistakes do not silently change an experiment.
 
+## Serving artifacts
+
+Live deployments can set `bootstrap.runtime` to hydrate an executable environment
+independently of their container image. Its `artifact` contains the immutable
+manifest `id` and object `prefix`; `compatibility` lists required manifest labels.
+The agent executes the relative `program`, followed by `args` and the managed
+model-serving arguments. `environment` values can reference `{runtime_root}` and
+`{cache_root}`. The live preparation step checks identities and compatibility
+before creating a cloud resource.
+
+Each model can declare `caches` with a `name`, provider catalog `gpu` name,
+artifact reference, and additional compatibility requirements. Every cache must
+identify the runtime artifact, model revision, complete engine configuration
+fingerprint, runtime launch arguments and environment fingerprint, and GPU. When caches are configured, profiles are created only for
+GPU offerings with matching cache entries. Changes to context, concurrency,
+dtype, or engine arguments require matching cache preparation.
+
+Cache seeds remain verified immutable trees. The serving integration creates
+writable copies for engine updates, which preserves the original seed identity.
+Artifact format and filesystem rules are documented in
+[Serving hydration](HYDRATION.md).
+
 ## Hardware profiles
 
 Each profile identifies one model, workload kind (`text` or `vision`), accelerator, and serving configuration. Different quantization, parallelism, adapter settings, or engine settings should have separate IDs and measured capacity curves.
@@ -52,6 +74,14 @@ The generic provider interface does not autonomously provision or release extern
 `Scheduling` controls planning cadence, reactive drain targets, minimum planning windows, reserved warm slots, priority aging, output-estimate floors, slow-start cancellation thresholds, retry cooldown, learning rate, and whether queued requests may overtake a memory-blocked request. Reactive delay and idle retention belong to the enclosing scenario or HTTP environment. The `classes` map defines priority (smaller values first), relative warm-node service weight, permission to use reserved warm slots, and eligibility for planning announced future work. Classes are scheduling controls rather than application roles.
 
 The adaptive controller records each completed cold-host probe once and updates profile bandwidth, hydration bytes, and cache-hit estimates with an exponentially weighted moving average. Its configurable `learning_rate` is the weight of a new observation. These estimates influence later startup forecasts; a slow host can also trigger cancellation and profile cooldown. This is a baseline learning heuristic, and cannot promise optimal placement when a profile contains several very different host populations.
+
+## Live scheduling configuration
+
+Live `DeploymentConfig` and its backend-independent `ExecutionConfig` contain the same `Scheduling` object used by simulator traces and HTTP environments. Deployment projection preserves every scheduling field, and both backends use `validate_scheduling` from `switchyard-core`. Timing controls and service weights must be finite and positive; learning rate must be in `(0, 1]`, and the warm batch capacity fraction must be in `[0, 1]`.
+
+An explicit `scheduling` object uses the shared defaults for omitted fields. Older live files that omit the entire object retain their previous behavior: `maximum_startup_s` equals `limits.startup_timeout_s`, the hydration floor is `5_000_000` bytes/s, and other fields use shared defaults. This compatibility default is resolved during decoding and saved as a complete object in experiment receipts. Adding an empty object opts into shared defaults, including a 180-second controller startup deadline and a 25 MB/s hydration floor.
+
+The controller's `maximum_startup_s` is a cancellation threshold; `limits.startup_timeout_s` is the hard live reachability deadline. Keeping the controller threshold below the hard deadline permits cancellation and another placement attempt. `retry_cooldown_s` controls when the same profile can be tried again; the workload and experiment budgets still bound all attempts. The checked Qwen hydration experiment sets the controller threshold to 600 seconds, a 5 MB/s hydration floor, and a 60-second cooldown, while preserving the 900-second hard startup limit. A retry succeeds only if another placement and its startup fit within the remaining budget.
 
 ## Reproducibility and output
 

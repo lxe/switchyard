@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-10",
+  "boundary": "actual R2 S3 API using the Rust artifact CLI",
+  "fixture_only": true,
+  "artifact_id": "41faeb3ffcab6d12eec0112c91985ffbb4a33b195297406945d667c7380965fd",
+  "entries": 4,
+  "shards": 4,
+  "compressed_bytes": 411,
+  "first_hydration_network_bytes": 411,
+  "second_hydration_network_bytes": 0,
+  "second_hydration_already_present": true,
+  "republication_created_objects": 0,
+  "permissions_and_internal_symlink_execution_verified": true,
+  "full_tree_verification_passed": true,
+  "gpu_provisioned": false,
+  "runtime_imports_verified": false,
+  "gpu_cache_bake_performed": false
+}

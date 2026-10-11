@@ -1,4 +1,5 @@
 //! Live scheduler runtime and provider experiments.
+pub mod artifacts;
 mod bootstrap;
 pub mod cli;
 pub mod config;

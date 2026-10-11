@@ -17,6 +17,7 @@ http.workspace = true
 thiserror.workspace = true
 sha2.workspace = true
 tokio.workspace = true
+futures-util.workspace = true
 percent-encoding = "2.3"
 
 [dev-dependencies]

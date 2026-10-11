@@ -15,6 +15,8 @@ use sha2::{Digest, Sha256};
 use std::{future::IntoFuture, sync::Arc, time::Duration};
 use tokio::sync::RwLock;
 
+mod readiness;
+
 #[derive(Clone)]
 struct App {
     state: Arc<RwLock<State>>,
@@ -163,18 +165,16 @@ async fn proxy(AxumState(app): AxumState<App>, request: Request) -> Response {
 }
 
 async fn run_engine(ticket: &Ticket, state: Arc<RwLock<State>>) -> Result<()> {
-    crate::hydrate::hydrate(
-        ticket,
-        std::path::Path::new("/work/switchyard"),
-        state.clone(),
-    )
-    .await?;
-    let mut command = tokio::process::Command::new("vllm");
-    command
-        .args(&ticket.engine_args)
-        .kill_on_drop(true)
-        .env_remove("SWITCHYARD_AGENT_TOKEN")
-        .env_remove("SWITCHYARD_TICKET_URL");
+    let roots = crate::runtime::RootPaths::production();
+    let runtime_command = crate::runtime::command(ticket, &roots, state.clone()).await?;
+    crate::hydrate::hydrate(ticket, &roots.models, state.clone()).await?;
+    let mut command = runtime_command.unwrap_or_else(|| {
+        let mut command = tokio::process::Command::new("vllm");
+        command.args(&ticket.engine_args);
+        crate::runtime::child_environment(&mut command);
+        command
+    });
+    command.kill_on_drop(true);
     let mut child = command.spawn()?;
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
@@ -196,7 +196,12 @@ async fn run_engine(ticket: &Ticket, state: Arc<RwLock<State>>) -> Result<()> {
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
-    state.write().await.phase = Phase::Ready;
+    readiness::verify(&client, "http://127.0.0.1:8000", &ticket.model).await?;
+    {
+        let mut st = state.write().await;
+        st.inference_verified = true;
+        st.phase = Phase::Ready;
+    }
     let status = child.wait().await?;
     Err(Error::Transfer(format!(
         "inference engine exited: {status}"

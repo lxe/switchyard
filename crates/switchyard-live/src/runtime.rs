@@ -97,11 +97,14 @@ pub struct LiveRuntime<P: Provider> {
     storage: Storage,
     config: ExecutionConfig,
     offerings: Vec<Offering>,
+    profile_offerings: Vec<Offering>,
     pub profiles: Vec<Profile>,
     nodes: Vec<Node>,
     pending: Vec<PendingLaunch>,
     observations: Vec<serde_json::Value>,
     manifests: BTreeMap<String, Manifest>,
+    runtime_manifest: Option<switchyard_artifacts::Manifest>,
+    cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     planners: BTreeMap<String, Arc<Planner>>,
     epoch: Instant,
     run_id: String,
@@ -136,12 +139,11 @@ impl<P: Provider> LiveRuntime<P> {
             manifests,
             planners,
             profiles,
+            profile_offerings,
+            runtime_manifest,
+            cache_manifests,
         } = profiles::prepare(&provider, &storage, &config, out).await?;
-        let scheduling = Scheduling {
-            maximum_startup_s: config.limits.startup_timeout_s as f64,
-            minimum_hydration_bytes_per_s: 5_000_000.0,
-            ..Scheduling::default()
-        };
+        let scheduling = config.scheduling.clone();
         if out.join("pending-launches.json").exists() {
             return Err(Error::Config("output directory already contains an ownership journal; recover it or choose a new directory".into()));
         }
@@ -150,11 +152,14 @@ impl<P: Provider> LiveRuntime<P> {
             storage,
             config,
             offerings,
+            profile_offerings,
             profiles,
             nodes: vec![],
             pending: vec![],
             observations: vec![],
             manifests,
+            runtime_manifest,
+            cache_manifests,
             planners,
             epoch: Instant::now(),
             run_id: nonce()?[..16].into(),

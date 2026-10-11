@@ -177,6 +177,7 @@ fn ticket(manifest: Manifest, base: &str) -> Ticket {
         concurrency: 4,
         stall_s: 2,
         lifetime_s: 60,
+        runtime: None,
     }
 }
 

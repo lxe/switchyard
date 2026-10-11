@@ -566,7 +566,17 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
     if let Some(host) = &scenario.host_reality {
         validate_host(host)?;
     }
-    let s = &scenario.scheduling;
+    validate_scheduling(&scenario.scheduling)?;
+    for r in &scenario.requests {
+        if r.depends_on.iter().any(|id| *id >= r.id) {
+            return Err("dependencies must reference earlier requests (acyclic)".into());
+        }
+    }
+    Ok(())
+}
+
+/// Validate controller settings independently of a trace or execution backend.
+pub fn validate_scheduling(s: &Scheduling) -> Result<(), String> {
     if !s.learning_rate.is_finite()
         || !(0.0..=1.0).contains(&s.learning_rate)
         || s.learning_rate == 0.0
@@ -592,11 +602,6 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
             .any(|c| !c.weight.is_finite() || c.weight <= 0.0)
     {
         return Err("invalid scheduling control".into());
-    }
-    for r in &scenario.requests {
-        if r.depends_on.iter().any(|id| *id >= r.id) {
-            return Err("dependencies must reference earlier requests (acyclic)".into());
-        }
     }
     Ok(())
 }

@@ -11,7 +11,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-use switchyard_core::Policy;
+use switchyard_core::{FleetView, Policy, Scheduler, Scheduling};
 use switchyard_live::config::DeploymentConfig;
 use switchyard_live::{LiveRuntime, WorkCall, planner::Message};
 use switchyard_provider::{Launch, Offering, Pod, PodStatus, Provider, storage::Storage};
@@ -77,15 +77,22 @@ impl Provider for MockProvider {
     }
 }
 
-async fn fixture(
-    bad_usage: bool,
-    unknown: bool,
-) -> (
+type Fixture = (
     LiveRuntime<MockProvider>,
     MockProvider,
     PathBuf,
     tokio::task::JoinHandle<()>,
-) {
+);
+
+async fn fixture(bad_usage: bool, unknown: bool) -> Fixture {
+    fixture_with_scheduling(bad_usage, unknown, None).await
+}
+
+async fn fixture_with_scheduling(
+    bad_usage: bool,
+    unknown: bool,
+    scheduling: Option<Scheduling>,
+) -> Fixture {
     let out = std::env::temp_dir().join(format!(
         "switchyard-live-test-{}",
         switchyard_live::runtime::nonce().unwrap()
@@ -131,6 +138,12 @@ async fn fixture(
             "/state",
             get(|| async {
                 Json(switchyard_agent::State {
+                    artifact_bytes_downloaded: 0,
+                    artifact_network_bytes_downloaded: 0,
+                    artifact_bytes_total: 0,
+                    artifact_volume_bytes_per_s: None,
+                    artifacts: vec![],
+                    inference_verified: true,
                     model: "tiny".into(),
                     revision: "a".repeat(40),
                     phase: switchyard_agent::Phase::Ready,
@@ -153,7 +166,7 @@ async fn fixture(
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
-    let config:DeploymentConfig=serde_json::from_value(json!({
+    let mut config:DeploymentConfig=serde_json::from_value(json!({
         "compute":{"api_url":url,"key_env":"MOCK_KEY","cloud":"SECURE","gpu_types":["mock"],"data_centers":[],"min_cuda":"12.9",
             "disk_gb":80,"disk_usd_per_gb_month":0.1,"billing_hours_per_month":730.0},
         "bootstrap":{"image":"fixture","agent_url":"https://example.com/agent","agent_sha256":"a".repeat(64),"ticket_prefix":"tickets"},
@@ -162,6 +175,9 @@ async fn fixture(
             "prior":{"single_output_tps":100.0,"aggregate_output_tps":1000.0,"input_work_per_token":0.0,"startup_s":1.0,"kv_tokens":1000}}],
         "limits":{"max_instances":2,"max_usd_per_hour":3.0,"max_run_usd":1.0,"run_timeout_s":20,"startup_timeout_s":10,"request_timeout_s":5,"hydration_concurrency":2,"hydration_stall_s":2,"poll_ms":100}
     })).unwrap();
+    if let Some(scheduling) = scheduling {
+        config.scheduling = scheduling;
+    }
     let provider = MockProvider {
         url,
         pods: Arc::new(Mutex::new(vec![])),
@@ -209,6 +225,62 @@ fn calls(count: usize) -> Vec<WorkCall> {
             depends_on: vec![],
         })
         .collect()
+}
+
+#[tokio::test]
+async fn live_controller_receives_configured_scheduling_and_custom_service_classes() {
+    struct Observer {
+        inner: switchyard_scheduler::BuiltinScheduler,
+        observations: Arc<Mutex<Vec<serde_json::Value>>>,
+    }
+    impl Scheduler for Observer {
+        fn name(&self) -> &str {
+            "live-scheduling-observer"
+        }
+        fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<switchyard_core::Action> {
+            self.observations
+                .lock()
+                .unwrap()
+                .push(serde_json::to_value(fleet.scheduling).unwrap());
+            self.inner.decide(fleet)
+        }
+    }
+    let mut scheduling = Scheduling {
+        maximum_startup_s: 300.0,
+        minimum_hydration_bytes_per_s: 5_000_000.0,
+        retry_cooldown_s: 17.0,
+        plan_interval_s: 0.25,
+        ..Scheduling::default()
+    };
+    let mut custom = scheduling.classes["standard"].clone();
+    custom.weight = 7.0;
+    scheduling.classes.insert("custom".into(), custom);
+    let expected = serde_json::to_value(&scheduling).unwrap();
+    let (runtime, _, out, server) = fixture_with_scheduling(false, false, Some(scheduling)).await;
+    let observations = Arc::new(Mutex::new(vec![]));
+    let mut runtime = runtime.with_scheduler(Observer {
+        inner: switchyard_scheduler::BuiltinScheduler::new(Policy::Adaptive),
+        observations: observations.clone(),
+    });
+    let mut workload = calls(1);
+    workload[0].class = "custom".into();
+    let report = runtime
+        .run_workload("configured-scheduling", &workload, 200.0, 10.0)
+        .await
+        .unwrap();
+    assert_eq!(report.completed, 1);
+    assert_eq!(report.invalid_actions, 0);
+    {
+        let seen = observations.lock().unwrap();
+        assert!(!seen.is_empty());
+        assert!(seen.iter().all(|value| *value == expected));
+    }
+    let receipt: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(out.join("configuration.json")).unwrap()).unwrap();
+    assert_eq!(receipt["scheduling"], expected);
+    runtime.cleanup().await.unwrap();
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
 }
 
 #[tokio::test]
@@ -305,6 +377,9 @@ fn checked_in_fleet_and_workloads_deserialize_and_validate() {
             .unwrap();
     assert!(cases.cases.iter().any(|c| c.calls == 1000));
     assert_eq!(config.models.len(), 3);
+    assert!(config.scheduling.maximum_startup_s < config.limits.startup_timeout_s as f64);
+    assert_eq!(config.scheduling.minimum_hydration_bytes_per_s, 5_000_000.0);
+    assert_eq!(config.scheduling.retry_cooldown_s, 60.0);
 }
 
 #[test]

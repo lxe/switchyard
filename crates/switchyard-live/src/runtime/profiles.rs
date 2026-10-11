@@ -14,6 +14,9 @@ pub(super) struct Prepared {
     pub(super) manifests: BTreeMap<String, Manifest>,
     pub(super) planners: BTreeMap<String, Arc<Planner>>,
     pub(super) profiles: Vec<Profile>,
+    pub(super) profile_offerings: Vec<Offering>,
+    pub(super) runtime_manifest: Option<switchyard_artifacts::Manifest>,
+    pub(super) cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
 }
 
 pub(super) async fn prepare<P: Provider>(
@@ -34,6 +37,18 @@ pub(super) async fn prepare<P: Provider>(
     let mut manifests = BTreeMap::new();
     let mut planners = BTreeMap::new();
     let mut profiles = vec![];
+    let mut profile_offerings = vec![];
+    let runtime_manifest = if let Some(runtime) = &config.bootstrap.runtime {
+        let manifest = runtime
+            .artifact
+            .resolve(storage, &runtime.compatibility)
+            .await?;
+        runtime.validate_manifest(&manifest)?;
+        Some(manifest)
+    } else {
+        None
+    };
+    let mut cache_manifests = BTreeMap::new();
     for model in &config.models {
         let manifest: Manifest = storage
             .get_json(&format!("{}/manifest.json", model.archive_prefix))
@@ -49,20 +64,67 @@ pub(super) async fn prepare<P: Provider>(
         let planner = Planner::load(model, &out.join("tokenizers")).await?;
         manifests.insert(model.id.clone(), manifest.clone());
         planners.insert(model.id.clone(), Arc::new(planner));
-        for offer in &offerings {
-            profiles.push(profile(model, &manifest, offer));
+        for cache in &model.caches {
+            let runtime = config
+                .bootstrap
+                .runtime
+                .as_ref()
+                .expect("validated runtime");
+            let requirements = cache.requirements(runtime, model)?;
+            let manifest = cache.artifact.resolve(storage, &requirements).await?;
+            cache_manifests.insert(cache.artifact.id.clone(), manifest);
         }
+        let first_profile = profiles.len();
+        for offer in &offerings {
+            if !model.caches.is_empty() && !model.caches.iter().any(|c| c.gpu == offer.gpu) {
+                continue;
+            }
+            let mut artifact_bytes = runtime_manifest
+                .as_ref()
+                .map_or(0, |m| m.chunks.iter().map(|c| c.size).sum::<u64>());
+            for cache in model.caches.iter().filter(|c| c.gpu == offer.gpu) {
+                let bytes: u64 = cache_manifests[&cache.artifact.id]
+                    .chunks
+                    .iter()
+                    .map(|c| c.size)
+                    .sum();
+                artifact_bytes = artifact_bytes
+                    .checked_add(bytes)
+                    .ok_or_else(|| Error::Config("artifact size overflow".into()))?;
+            }
+            profiles.push(profile(model, &manifest, offer, artifact_bytes));
+            profile_offerings.push(offer.clone());
+        }
+        if profiles.len() == first_profile {
+            return Err(Error::Config(format!(
+                "model {} has no available GPU with its configured serving caches",
+                model.id
+            )));
+        }
+    }
+    if profiles.is_empty() {
+        return Err(Error::Config(
+            "no available GPU has the configured serving caches".into(),
+        ));
     }
     Ok(Prepared {
         offerings,
         manifests,
         planners,
         profiles,
+        profile_offerings,
+        runtime_manifest,
+        cache_manifests,
     })
 }
 
 /// Use the configured priors without presenting them as measured GPU performance.
-fn profile(model: &ModelConfig, manifest: &Manifest, offering: &Offering) -> Profile {
+fn profile(
+    model: &ModelConfig,
+    manifest: &Manifest,
+    offering: &Offering,
+    artifact_bytes: u64,
+) -> Profile {
     let prior = &model.prior;
     let mut curve = vec![CapacityPoint {
         in_flight: 1,
@@ -103,7 +165,7 @@ fn profile(model: &ModelConfig, manifest: &Manifest, offering: &Offering) -> Pro
         evidence: "assumed capacity and startup; timestamped provider catalog quote with configured disk rent".into(),
         source: "deployment configuration; live receipts preserve provider quotes and actual outcomes".into(),
         host: HostProfile {
-            model_bytes: manifest.total_size,
+            model_bytes: manifest.total_size.saturating_add(artifact_bytes),
             // Host image residency is unobserved; the container agent cannot measure it.
             container_image_bytes: 0,
             volume_bandwidth_bytes_per_s: vec![50_000_000.0, 200_000_000.0],

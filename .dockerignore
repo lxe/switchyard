@@ -1,0 +1,15 @@
+# Build contexts contain source and pinned build inputs only.
+**
+!Cargo.toml
+!Cargo.lock
+!src/
+!src/**
+!crates/
+!crates/**
+!deploy/
+!deploy/hydration/
+!deploy/hydration/**
+**/__pycache__/
+**/*.pyc
+**/.env*
+**/target/

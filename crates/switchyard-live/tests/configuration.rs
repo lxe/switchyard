@@ -1,3 +1,4 @@
+use switchyard_core::{Scheduling, validate_scheduling};
 use switchyard_live::config::*;
 use switchyard_provider::{ComputeConfig, StorageConfig};
 fn compute() -> ComputeConfig {
@@ -31,6 +32,7 @@ fn config() -> DeploymentConfig {
             agent_url: "https://example.com/agent".into(),
             agent_sha256: "a".repeat(64),
             ticket_prefix: "switchyard/tickets".into(),
+            runtime: None,
         },
         storage: storage("https://objects.example.test"),
         models: vec![ModelConfig {
@@ -39,6 +41,7 @@ fn config() -> DeploymentConfig {
             revision: "a".repeat(40),
             archive_prefix: "models/qwen/revision/s1".into(),
             archive_sha256: "a".repeat(64),
+            caches: vec![],
             engine: EngineConfig {
                 max_model_len: 4096,
                 max_num_seqs: 32,
@@ -68,6 +71,7 @@ fn config() -> DeploymentConfig {
             hydration_stall_s: 20,
             poll_ms: 100,
         },
+        scheduling: Scheduling::default(),
     }
 }
 
@@ -133,6 +137,81 @@ fn engine_arguments_keep_model_and_limits_as_single_managed_values() {
 }
 
 #[test]
+fn serving_artifacts_are_optional_and_cache_identity_tracks_engine_configuration() {
+    use switchyard_live::artifacts::{
+        ArtifactRef, ServingCacheConfig, ServingRuntimeConfig, engine_fingerprint,
+    };
+    let mut cfg = config();
+    let reference = ArtifactRef {
+        prefix: format!("switchyard/artifacts/{}", "b".repeat(64)),
+        id: "b".repeat(64),
+    };
+    cfg.bootstrap.runtime = Some(ServingRuntimeConfig {
+        artifact: reference.clone(),
+        compatibility: Default::default(),
+        program: "venv/bin/python".into(),
+        args: vec!["-m".into(), "vllm.entrypoints.cli.main".into()],
+        environment: [("TOKENIZERS_PARALLELISM".into(), "false".into())]
+            .into_iter()
+            .collect(),
+    });
+    cfg.models[0].caches = vec![ServingCacheConfig {
+        name: "engine".into(),
+        gpu: "NVIDIA RTX A6000".into(),
+        artifact: reference,
+        compatibility: Default::default(),
+    }];
+    cfg.validate().unwrap();
+    let before = cfg.models[0].caches[0]
+        .requirements(cfg.bootstrap.runtime.as_ref().unwrap(), &cfg.models[0])
+        .unwrap();
+    assert_eq!(
+        before["engine_configuration"],
+        engine_fingerprint(&cfg.models[0].engine).unwrap()
+    );
+    cfg.models[0].engine.max_num_seqs = 16;
+    let after = cfg.models[0].caches[0]
+        .requirements(cfg.bootstrap.runtime.as_ref().unwrap(), &cfg.models[0])
+        .unwrap();
+    assert_ne!(
+        before["engine_configuration"],
+        after["engine_configuration"]
+    );
+    cfg.models[0].caches[0]
+        .compatibility
+        .insert("model_revision".into(), "wrong".into());
+    assert!(cfg.validate().is_err());
+}
+
+#[test]
+fn serving_configuration_rejects_escaping_programs_and_unbound_caches() {
+    use switchyard_live::artifacts::{ArtifactRef, ServingCacheConfig, ServingRuntimeConfig};
+    let mut cfg = config();
+    cfg.models[0].caches = vec![ServingCacheConfig {
+        name: "engine".into(),
+        gpu: "gpu".into(),
+        artifact: ArtifactRef {
+            prefix: "artifacts/cache".into(),
+            id: "b".repeat(64),
+        },
+        compatibility: Default::default(),
+    }];
+    assert!(cfg.validate().is_err());
+    cfg.models[0].caches.clear();
+    cfg.bootstrap.runtime = Some(ServingRuntimeConfig {
+        artifact: ArtifactRef {
+            prefix: "artifacts/runtime".into(),
+            id: "b".repeat(64),
+        },
+        compatibility: Default::default(),
+        program: "../bin/python".into(),
+        args: vec![],
+        environment: Default::default(),
+    });
+    assert!(cfg.validate().is_err());
+}
+
+#[test]
 fn optional_experiment_limits_validate_and_preserve_existing_configurations() {
     let cfg = config();
     let mut value = serde_json::to_value(&cfg).unwrap();
@@ -156,4 +235,112 @@ fn optional_experiment_limits_validate_and_preserve_existing_configurations() {
     let mut bad = cfg;
     bad.limits.experiment_timeout_s = Some(0);
     assert!(bad.validate().is_err());
+}
+
+#[test]
+fn customized_scheduling_survives_deployment_projection_and_round_trip() {
+    let mut value = serde_json::to_value(config()).unwrap();
+    value["scheduling"] = serde_json::json!({
+        "maximum_startup_s": 300.0,
+        "minimum_hydration_bytes_per_s": 5_000_000.0,
+        "retry_cooldown_s": 17.0,
+        "plan_interval_s": 0.5,
+        "allow_queue_overtaking": false
+    });
+    let cfg: DeploymentConfig = serde_json::from_value(value).unwrap();
+    cfg.validate().unwrap();
+    let execution = cfg.execution();
+    assert_eq!(execution.scheduling.maximum_startup_s, 300.0);
+    assert_eq!(execution.scheduling.retry_cooldown_s, 17.0);
+    assert_eq!(execution.scheduling.plan_interval_s, 0.5);
+    assert!(!execution.scheduling.allow_queue_overtaking);
+    assert_eq!(
+        execution.scheduling.learning_rate,
+        Scheduling::default().learning_rate
+    );
+    assert_eq!(
+        serde_json::to_value(&cfg.scheduling).unwrap(),
+        serde_json::to_value(&execution.scheduling).unwrap()
+    );
+    let restored: ExecutionConfig =
+        serde_json::from_value(serde_json::to_value(&execution).unwrap()).unwrap();
+    restored.validate().unwrap();
+    assert_eq!(
+        serde_json::to_value(restored.scheduling).unwrap(),
+        serde_json::to_value(execution.scheduling).unwrap()
+    );
+}
+
+#[test]
+fn omitted_scheduling_preserves_the_legacy_live_deadline_for_both_config_types() {
+    for startup_timeout_s in [10, 900, 1800] {
+        let mut cfg = config();
+        cfg.limits.startup_timeout_s = startup_timeout_s;
+        let mut deployment = serde_json::to_value(&cfg).unwrap();
+        deployment.as_object_mut().unwrap().remove("scheduling");
+        let legacy: DeploymentConfig = serde_json::from_value(deployment).unwrap();
+        legacy.validate().unwrap();
+        assert_eq!(
+            legacy.scheduling.maximum_startup_s,
+            startup_timeout_s as f64
+        );
+        assert_eq!(legacy.scheduling.minimum_hydration_bytes_per_s, 5_000_000.0);
+        let mut execution = serde_json::to_value(cfg.execution()).unwrap();
+        execution.as_object_mut().unwrap().remove("scheduling");
+        let legacy_execution: ExecutionConfig = serde_json::from_value(execution).unwrap();
+        legacy_execution.validate().unwrap();
+        assert_eq!(
+            serde_json::to_value(legacy.scheduling).unwrap(),
+            serde_json::to_value(legacy_execution.scheduling).unwrap()
+        );
+    }
+}
+
+#[test]
+fn live_configuration_reuses_generic_scheduling_validation() {
+    let invalid = [
+        Scheduling {
+            plan_interval_s: 0.0,
+            ..Scheduling::default()
+        },
+        Scheduling {
+            maximum_startup_s: f64::NAN,
+            ..Scheduling::default()
+        },
+        Scheduling {
+            minimum_hydration_bytes_per_s: f64::INFINITY,
+            ..Scheduling::default()
+        },
+        Scheduling {
+            retry_cooldown_s: -1.0,
+            ..Scheduling::default()
+        },
+        Scheduling {
+            learning_rate: 0.0,
+            ..Scheduling::default()
+        },
+        Scheduling {
+            warm_batch_capacity_fraction: 1.1,
+            ..Scheduling::default()
+        },
+        {
+            let mut scheduling = Scheduling::default();
+            scheduling.classes.get_mut("standard").unwrap().weight = 0.0;
+            scheduling
+        },
+    ];
+    for scheduling in invalid {
+        let expected = validate_scheduling(&scheduling).unwrap_err();
+        let mut cfg = config();
+        cfg.scheduling = scheduling;
+        assert!(
+            matches!(cfg.validate(), Err(switchyard_live::Error::Config(message)) if message == expected)
+        );
+        assert!(
+            matches!(cfg.execution().validate(), Err(switchyard_live::Error::Config(message)) if message == expected)
+        );
+    }
+    let mut value = serde_json::to_value(config()).unwrap();
+    value["scheduling"]["maximum_startp_s"] = 300.into();
+    assert!(serde_json::from_value::<DeploymentConfig>(value).is_err());
 }
