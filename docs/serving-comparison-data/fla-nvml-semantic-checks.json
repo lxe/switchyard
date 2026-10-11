@@ -1,7 +1,8 @@
 {
-  "patch_spec_sha256": "5ac2ef148e5ad6e4b028c98ce2532a421b947990e5a0d70431759c4f501b9bec",
+  "patch_spec_sha256": "34596977fca564232d8e830dec39c5ca612be32e6a1fbc97625815af75644c32",
   "before_sha256": "d6c90d36505e02086954c23ca4dd2fea82a69416d68ff1d0501e16b3148b5b0c",
-  "after_sha256": "a748bef058b45f565d6f5f6f8ba1c2a3023fda3ffb3fa7fa6a2539f5d6396389",
+  "after_sha256": "7256a57fb499ff3164bd529b82adfb680d21c92dd644ad28c01768caec6125ea",
+  "native_torch_parser_sha256": "0dd55462968d927ea2dc58da0401688b151354c448c097b12c6e4e0560a66541",
   "native_cuda_guard_changed": false,
   "gpu_execution_tested": false,
   "cases": [
@@ -19,6 +20,8 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": true,
       "passed": true
     },
     {
@@ -35,6 +38,8 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": true,
       "passed": true
     },
     {
@@ -51,6 +56,8 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": true,
       "passed": true
     },
     {
@@ -67,6 +74,8 @@
       "patched_cuda_initialized": true,
       "patched_torch_calls": 2,
       "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
       "passed": true
     },
     {
@@ -83,6 +92,8 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
       "passed": true
     },
     {
@@ -99,6 +110,8 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
       "passed": true
     },
     {
@@ -115,10 +128,12 @@
       "patched_cuda_initialized": true,
       "patched_torch_calls": 2,
       "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
       "passed": true
     },
     {
-      "case": "visible_vs_assigned_logical",
+      "case": "visible_physical_ordinal",
       "original_result": [
         "nvidia",
         false
@@ -131,10 +146,12 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": true,
       "passed": true
     },
     {
-      "case": "uuid_visible_mapping",
+      "case": "full_uuid",
       "original_result": [
         "nvidia",
         false
@@ -147,6 +164,44 @@
       "patched_cuda_initialized": false,
       "patched_torch_calls": 0,
       "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": true,
+      "passed": true
+    },
+    {
+      "case": "abbreviated_uuid",
+      "original_result": [
+        "nvidia",
+        false
+      ],
+      "patched_result": [
+        "nvidia",
+        false
+      ],
+      "original_cuda_initialized": true,
+      "patched_cuda_initialized": false,
+      "patched_torch_calls": 0,
+      "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": true,
+      "passed": true
+    },
+    {
+      "case": "ambiguous_uuid",
+      "original_result": [
+        "cpu",
+        false
+      ],
+      "patched_result": [
+        "cpu",
+        false
+      ],
+      "original_cuda_initialized": false,
+      "patched_cuda_initialized": false,
+      "patched_torch_calls": 0,
+      "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
       "passed": true
     },
     {
@@ -163,6 +218,98 @@
       "patched_cuda_initialized": true,
       "patched_torch_calls": 2,
       "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
+      "passed": true
+    },
+    {
+      "case": "external_current_device",
+      "original_result": [
+        "nvidia",
+        true
+      ],
+      "patched_result": [
+        "nvidia",
+        true
+      ],
+      "original_cuda_initialized": true,
+      "patched_cuda_initialized": true,
+      "patched_torch_calls": 2,
+      "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
+      "passed": true
+    },
+    {
+      "case": "external_single_driver_initialized",
+      "original_result": [
+        "nvidia",
+        false
+      ],
+      "patched_result": [
+        "nvidia",
+        false
+      ],
+      "original_cuda_initialized": true,
+      "patched_cuda_initialized": true,
+      "patched_torch_calls": 2,
+      "patched_target_calls": 1,
+      "patched_driver_queries": 1,
+      "nvml_fast_path_expected": false,
+      "passed": true
+    },
+    {
+      "case": "driver_error",
+      "original_result": [
+        "nvidia",
+        false
+      ],
+      "patched_result": [
+        "nvidia",
+        false
+      ],
+      "original_cuda_initialized": true,
+      "patched_cuda_initialized": true,
+      "patched_torch_calls": 2,
+      "patched_target_calls": 1,
+      "patched_driver_queries": 1,
+      "nvml_fast_path_expected": false,
+      "passed": true
+    },
+    {
+      "case": "driver_unavailable",
+      "original_result": [
+        "nvidia",
+        false
+      ],
+      "patched_result": [
+        "nvidia",
+        false
+      ],
+      "original_cuda_initialized": true,
+      "patched_cuda_initialized": true,
+      "patched_torch_calls": 2,
+      "patched_target_calls": 1,
+      "patched_driver_queries": 0,
+      "nvml_fast_path_expected": false,
+      "passed": true
+    },
+    {
+      "case": "nvml_query_failure",
+      "original_result": [
+        "nvidia",
+        false
+      ],
+      "patched_result": [
+        "nvidia",
+        false
+      ],
+      "original_cuda_initialized": true,
+      "patched_cuda_initialized": true,
+      "patched_torch_calls": 2,
+      "patched_target_calls": 0,
+      "patched_driver_queries": 2,
+      "nvml_fast_path_expected": false,
       "passed": true
     }
   ]
