@@ -57,6 +57,10 @@ The 1,000-call burst targets 2,000 output tokens per second. Planned hybrid achi
 
 The unknown-hydration scenario samples additional uncached transfers over hidden 5 or 250 MB/s volume links. The controller still begins with the original profile priors. Adaptive achieves a median 3,728 burst output tokens per second at USD 0.9687, compared with planned hybrid's 2,394 at USD 1.8785. That is about 56% more throughput and 48% less rental cost in this stress fixture. Adaptive meets the burst target in two of three seeds; planned hybrid meets it in none. The diagnostics record probe observations, learned beliefs, and cancelled starts. Three seeds demonstrate the mechanism but do not establish tail reliability.
 
+## Live gauntlet
+
+The [three-model live scheduler gauntlet](LIVE_GAUNTLET.md) completed all 4,218 calls without failures, unfinished requests or invalid actions. It records every workload, throughput objective misses, cold-start phases and independent cleanup of six owned pods. Its measured GPU results are separate from the analytical simulator fixtures.
+
 ## Software performance
 
 The `bench` command measures full simulator and scheduler execution with an analytical warm-host workload. Its capacities are synthetic, and its wall-clock rate measures software overhead. It separately records the virtual output rate produced by those capacities.

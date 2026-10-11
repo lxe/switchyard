@@ -110,6 +110,8 @@ cargo run --locked --features live -- live gauntlet \
   --out results/my-experiment
 ```
 
+The [complete live gauntlet](docs/LIVE_GAUNTLET.md) records all 4,218 calls, cold-start phases, throughput objectives and confirmed resource cleanup.
+
 The preflight avoids provisioning. The gauntlet rents GPUs, validates local token counts against the serving engine, executes streamed requests through the scheduler, records actual usage and timing, and cleans up owned pods. Read the [live execution guide](docs/RUNPOD.md) for limits, artifact preparation, and crash recovery before running paid workloads.
 
 ## Project structure
