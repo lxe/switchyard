@@ -6,6 +6,7 @@ No provider allocation or credential is needed.
 """
 
 import argparse
+import hashlib
 import http.server
 import json
 import os
@@ -27,6 +28,8 @@ parser.add_argument("--image", default="ghcr.io/lxe/switchyard-runtime:ubuntu24.
 parser.add_argument("--model-delay", type=float, default=0)
 parser.add_argument("--mode", choices=["legacy", "extents", "both"], default="both")
 parser.add_argument("--warm-cache-from", type=Path)
+parser.add_argument("--profile-startup", action="store_true")
+parser.add_argument("--runtime-env", action="append", default=[], metavar="KEY=VALUE")
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[3]
 out = args.output.resolve()
@@ -54,6 +57,7 @@ control_token = secrets.token_hex(32)
 lock = threading.Lock()
 events = []
 current_ticket = None
+ticket_requests = []
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -61,6 +65,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/ticket":
+            with lock:
+                ticket_requests.append(time.monotonic())
             data = json.dumps(current_ticket).encode()
             self.send_response(200)
             self.send_header("Content-Length", str(len(data)))
@@ -120,6 +126,12 @@ try:
         root.mkdir()
         installation = root / "installation"
         installation.mkdir()
+        if args.profile_startup:
+            profile = installation / "startup-profile"
+            profile.mkdir()
+            (profile / "sitecustomize.py").write_bytes(
+                (Path(__file__).parent / "startup_profile.py").read_bytes()
+            )
         if args.warm_cache_from:
             subprocess.run(
                 [
@@ -142,6 +154,7 @@ try:
                 check=True,
             )
         epoch = time.monotonic()
+        ticket_before = len(ticket_requests)
         before = len(events)
         runtime = {
             k: runtime_configuration[k]
@@ -160,6 +173,17 @@ try:
                 "hydration": {"retries": 0},
             }
         )
+        if args.profile_startup:
+            runtime["environment"]["PYTHONPATH"] = (
+                "/opt/switchyard/startup-profile:"
+                + runtime["environment"].get("PYTHONPATH", "")
+            )
+            runtime["environment"]["NATIVE_STARTUP_PROFILE"] = (
+                "/opt/switchyard/startup-profile/events.jsonl"
+            )
+        for assignment in args.runtime_env:
+            key, value = assignment.split("=", 1)
+            runtime["environment"][key] = value
         current_ticket = {
             "model": "qwen-local",
             "revision": "2fc06364715b967f1860aea9cf38778875588b17",
@@ -249,12 +273,44 @@ try:
             "-e",
             "SWITCHYARD_AGENT_TOKEN",
             "--entrypoint",
-            "/agent",
+            "/bin/sh",
             args.image,
+            "-c",
+            "umask 077; read task_uptime unused < /proc/uptime; printf '%s\\n' \"$task_uptime\" > /opt/switchyard/agent-exec-uptime; exec /agent",
         ]
         subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
         last = None
         try:
+            # /proc start ticks are rounded down and use boot time. Capture the
+            # host boot/monotonic offset instead of assuming uptime equals monotonic.
+            pid = int(
+                subprocess.check_output(
+                    ["docker", "inspect", "--format", "{{.State.Pid}}", name], text=True
+                )
+            )
+            stat = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+            tick_seconds = 1 / os.sysconf("SC_CLK_TCK")
+            boot_start = int(stat[19]) * tick_seconds
+            monotonic_before = time.monotonic()
+            boot_now = time.clock_gettime(time.CLOCK_BOOTTIME)
+            monotonic_after = time.monotonic()
+            process_start_bounds = [
+                boot_start + monotonic_before - boot_now,
+                boot_start + tick_seconds + monotonic_after - boot_now,
+            ]
+            pre_exec_boot = float(
+                subprocess.check_output(
+                    [
+                        "docker",
+                        "exec",
+                        name,
+                        "cat",
+                        "/opt/switchyard/agent-exec-uptime",
+                    ],
+                    text=True,
+                )
+            )
+            pre_exec_lower = pre_exec_boot + monotonic_before - boot_now
             port = (
                 subprocess.check_output(["docker", "port", name, "8080/tcp"], text=True)
                 .strip()
@@ -268,6 +324,7 @@ try:
                     )
                     if response.status_code == 200:
                         last = response.json()
+                        (root / "last-state.json").write_text(json.dumps(last))
                         if last["phase"] == "failed":
                             raise RuntimeError(
                                 "agent failed: " + str(last.get("error"))
@@ -349,6 +406,16 @@ try:
                 ],
                 "scope": "Cold private container, actual agent ticket/preflights/runtime reception and extraction, tokenizer and native vLLM serving. Compiler caches initially empty. Correctness hashing was performed only in the separate loader comparison.",
                 "compiler_cache_seeded": args.warm_cache_from is not None,
+                "request_epoch_monotonic": epoch,
+                "agent_sha256": hashlib.sha256(args.agent.read_bytes()).hexdigest(),
+                "runtime_environment_overrides": args.runtime_env,
+                "native_profile_enabled": args.profile_startup,
+                "agent_process_start_monotonic_bounds": process_start_bounds,
+                "agent_epoch_monotonic_bounds": [
+                    pre_exec_lower,
+                    ticket_requests[ticket_before],
+                ],
+                "agent_epoch_bounds_explanation": "The owned benchmark shell records Linux /proc/uptime immediately before exec of the unchanged agent binary. This value is rounded down to 10 ms. The Rust epoch is created after that lower bound and before its first ticket HTTP request. Boot-time conversion is bracketed by host monotonic samples. Native Python and host request times use the same Linux CLOCK_MONOTONIC. Kernel process creation is recorded separately because GPU container hooks run before exec.",
             }
             if args.warm_cache_from:
                 result["scope"] = (
@@ -372,6 +439,18 @@ try:
             )
             raise
         finally:
+            if args.profile_startup:
+                subprocess.run(
+                    [
+                        "docker",
+                        "cp",
+                        name + ":/opt/switchyard/startup-profile/events.jsonl",
+                        str(root / "startup-profile.jsonl"),
+                    ],
+                    check=False,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
             with (root / "agent.log").open("w") as log:
                 subprocess.run(
                     ["docker", "logs", name],
