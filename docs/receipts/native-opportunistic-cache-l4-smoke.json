@@ -1,0 +1,306 @@
+{
+  "format": "switchyard-native-opportunistic-cache-smoke-v1",
+  "model": "qwen3.5-0.8b",
+  "fleet_input": "configs/runpod/native-fleet-f32-l4-opportunistic-candidate.json",
+  "workload_input": "configs/runpod/native-cache-smoke.json",
+  "runs": [
+    {
+      "label": "cache_miss",
+      "source_commit": "b7de23cb67c8f2a0e2a995efad019fef41b7ff65",
+      "cli_sha256": "5881f68d54f7f70fc103f6848323bd4291536dbffec41f8ee92f07cc04491dbd",
+      "fleet_sha256": "1f0920342fb67c0ef94acd0199f1b7eaa9884498094f13f80c087ca5c14d1c78",
+      "workloads_sha256": "75310de34fcfd4c0509311921af1b0ede73c3df84113a0dc38b16b2f4306dac7",
+      "pod_id": "r2y0g48qmbr3tr",
+      "gpu": "NVIDIA L4",
+      "driver": "595.91.07",
+      "compute_capability": "8.9",
+      "data_center": "EU-RO-1",
+      "cache_registry_status": "miss",
+      "cache_driver_status": "miss",
+      "cache_binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+      "cache_artifact_after_serving": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+      "cache_compressed_bytes": 509317,
+      "cache_cuda_files": 10,
+      "cache_cuda_file_bytes": 9895896,
+      "registry_events": [
+        {
+          "at_s": 0.137465002,
+          "binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+          "elapsed_s": 0.13541448399999997,
+          "gpu": "NVIDIA L4",
+          "model": "qwen3.5-0.8b",
+          "phase": "miss"
+        },
+        {
+          "artifact": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+          "at_s": 45.282141249,
+          "binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+          "elapsed_s": 1.4600264030000005,
+          "phase": "collected",
+          "pod": "r2y0g48qmbr3tr"
+        },
+        {
+          "at_s": 47.386611251,
+          "binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+          "detail": {
+            "chunks_created": {
+              "c99c0d57dbc66924f57e9d9ed8ba6ea84babbd6f95d88ae5716fc8756f8f7b3a.tar.zst": true
+            },
+            "id": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+            "manifest_created": true,
+            "prefix": "switchyard/native-engine/observed-cuda-caches/v1/c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6"
+          },
+          "elapsed_s": 0.657384669999999,
+          "phase": "published",
+          "pod": "r2y0g48qmbr3tr"
+        }
+      ],
+      "rental": {
+        "cleanup_failures": [],
+        "estimated_rental_usd": 0.00763219730325,
+        "pods": [
+          {
+            "allocated_s": 0.360567191,
+            "ended_s": 46.607776121,
+            "pod": {
+              "cost": 0.59,
+              "data_center": "EU-RO-1",
+              "id": "r2y0g48qmbr3tr",
+              "name": "switchyard-f7ca24fd0587187d-0",
+              "status": "running"
+            },
+            "profile": 0,
+            "quoted": {
+              "availability": "LOW",
+              "data_center": "EU-RO-1",
+              "disk_usd_per_hour": 0.00410958904109589,
+              "gpu": "NVIDIA L4",
+              "gpu_memory_gb": 24,
+              "gpu_usd_per_hour": 0.59,
+              "quoted_at_unix_s": 1791772085
+            }
+          }
+        ]
+      },
+      "cleanup": {
+        "pod_id": "r2y0g48qmbr3tr",
+        "get_status": 404
+      },
+      "outcome": {
+        "cleanup_error": null,
+        "error": null
+      },
+      "workloads": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "output_tokens_per_s": 0.8480845795285458,
+          "target_output_tokens_per_s": 200.0,
+          "ttft_p95_s": 37.035903734,
+          "budget_exceeded": false
+        },
+        {
+          "name": "hot-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "output_tokens_per_s": 19.71803246844302,
+          "target_output_tokens_per_s": 200.0,
+          "ttft_p95_s": 1.059612536000003,
+          "budget_exceeded": false
+        },
+        {
+          "name": "shared-system-prefix",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "output_tokens_per_s": 81.0637557242229,
+          "target_output_tokens_per_s": 200.0,
+          "ttft_p95_s": 2.044650236999999,
+          "budget_exceeded": false
+        }
+      ],
+      "cold_output_sha256": "80991c28c0a9a3d03f410842412781da4c2d57c618b90d4b13692252c5a3ea47",
+      "timing": {
+        "launch_to_first_content_s": 37.035903734,
+        "http_request_to_first_content_s": 6.573525465000003,
+        "agent_clock_milestones": {
+          "runtime_hydration_started": 0.64678328,
+          "model_hydration_started": 0.671404154,
+          "runtime_hydration_finished": 11.014585032,
+          "model_hydration_finished": 17.363285133,
+          "engine_spawned": 17.363885276,
+          "engine_health_polling_started": 17.386676308,
+          "engine_health_ready": 20.939600333
+        },
+        "runtime_direct_hydration_s": 10.367801752,
+        "model_direct_hydration_s": 16.691880979,
+        "engine_spawn_to_health_available_s": 3.575715057,
+        "engine_entry_to_cuda_initialized_s": 0.261689599,
+        "engine_entry_to_model_loaded_s": 3.294664035,
+        "engine_entry_to_first_prefill_completed_s": 9.954493311
+      }
+    },
+    {
+      "label": "cache_hit",
+      "source_commit": "b7de23cb67c8f2a0e2a995efad019fef41b7ff65",
+      "cli_sha256": "5881f68d54f7f70fc103f6848323bd4291536dbffec41f8ee92f07cc04491dbd",
+      "fleet_sha256": "1f0920342fb67c0ef94acd0199f1b7eaa9884498094f13f80c087ca5c14d1c78",
+      "workloads_sha256": "75310de34fcfd4c0509311921af1b0ede73c3df84113a0dc38b16b2f4306dac7",
+      "pod_id": "bnqlzqm6ietq69",
+      "gpu": "NVIDIA L4",
+      "driver": "595.91.07",
+      "compute_capability": "8.9",
+      "data_center": "EU-RO-1",
+      "cache_registry_status": "hit",
+      "cache_driver_status": "hit",
+      "cache_binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+      "cache_artifact_after_serving": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+      "cache_compressed_bytes": 509317,
+      "cache_cuda_files": 10,
+      "cache_cuda_file_bytes": 9895896,
+      "registry_events": [
+        {
+          "artifact": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+          "at_s": 0.262272875,
+          "binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+          "elapsed_s": 0.260909759,
+          "gpu": "NVIDIA L4",
+          "model": "qwen3.5-0.8b",
+          "phase": "hit"
+        },
+        {
+          "artifact": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+          "at_s": 37.576296302,
+          "binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+          "elapsed_s": 1.8257985019999978,
+          "phase": "collected",
+          "pod": "bnqlzqm6ietq69"
+        },
+        {
+          "at_s": 39.766176055,
+          "binding": "32413a58e02e6f8a109ef714703444f49058533e635d45bebe548b562e124477",
+          "detail": {
+            "chunks_created": {
+              "c99c0d57dbc66924f57e9d9ed8ba6ea84babbd6f95d88ae5716fc8756f8f7b3a.tar.zst": false
+            },
+            "id": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6",
+            "manifest_created": false,
+            "prefix": "switchyard/native-engine/observed-cuda-caches/v1/c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6"
+          },
+          "elapsed_s": 0.7097999570000013,
+          "phase": "published",
+          "pod": "bnqlzqm6ietq69"
+        }
+      ],
+      "rental": {
+        "cleanup_failures": [],
+        "estimated_rental_usd": 0.006340111490895776,
+        "pods": [
+          {
+            "allocated_s": 0.518564091,
+            "ended_s": 38.936394384,
+            "pod": {
+              "cost": 0.59,
+              "data_center": "EU-RO-1",
+              "id": "bnqlzqm6ietq69",
+              "name": "switchyard-85e63d6caa0f6d4d-0",
+              "status": "running"
+            },
+            "profile": 0,
+            "quoted": {
+              "availability": "LOW",
+              "data_center": "EU-RO-1",
+              "disk_usd_per_hour": 0.00410958904109589,
+              "gpu": "NVIDIA L4",
+              "gpu_memory_gb": 24,
+              "gpu_usd_per_hour": 0.59,
+              "quoted_at_unix_s": 1791772390
+            }
+          }
+        ]
+      },
+      "cleanup": {
+        "pod_id": "bnqlzqm6ietq69",
+        "get_status": 404
+      },
+      "outcome": {
+        "cleanup_error": null,
+        "error": null
+      },
+      "workloads": [
+        {
+          "name": "cold-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "output_tokens_per_s": 1.0438080744725684,
+          "target_output_tokens_per_s": 200.0,
+          "ttft_p95_s": 29.833138958,
+          "budget_exceeded": false
+        },
+        {
+          "name": "hot-single",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "output_tokens_per_s": 28.767306678019782,
+          "target_output_tokens_per_s": 200.0,
+          "ttft_p95_s": 0.5507960499999953,
+          "budget_exceeded": false
+        },
+        {
+          "name": "shared-system-prefix",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "output_tokens_per_s": 103.68113246682243,
+          "target_output_tokens_per_s": 200.0,
+          "ttft_p95_s": 1.3400599539999973,
+          "budget_exceeded": false
+        }
+      ],
+      "cold_output_sha256": "80991c28c0a9a3d03f410842412781da4c2d57c618b90d4b13692252c5a3ea47",
+      "timing": {
+        "launch_to_first_content_s": 29.833138958,
+        "http_request_to_first_content_s": 0.39053155299999887,
+        "agent_clock_milestones": {
+          "runtime_hydration_started": 0.674620181,
+          "model_hydration_started": 0.717723156,
+          "runtime_hydration_finished": 7.34808627,
+          "model_hydration_finished": 17.017378707,
+          "engine_spawned": 17.017771838,
+          "engine_health_polling_started": 17.026963985,
+          "engine_health_ready": 18.45003973
+        },
+        "runtime_direct_hydration_s": 6.673466089,
+        "model_direct_hydration_s": 16.299655550999997,
+        "engine_spawn_to_health_available_s": 1.4322678919999987,
+        "engine_entry_to_cuda_initialized_s": 0.2113439,
+        "engine_entry_to_model_loaded_s": 1.268263049,
+        "engine_entry_to_first_prefill_completed_s": 2.6506514230000002
+      },
+      "cache_artifact_seed": "c113cd4a08b357e0ae54310b448398ca781b471263b836216a30ddd4530a06e6"
+    }
+  ],
+  "same_exact_driver": true,
+  "same_binding": true,
+  "learned_cache_reused": true,
+  "cold_output_equal": true,
+  "estimated_total_rental_usd": 0.013972308794145776,
+  "limits": [
+    "Single samples on distinct fresh hosts; network, filesystem and host variation prevent attributing the entire timing difference to JIT caching.",
+    "Engine entry-to-first-prefill includes model loading, HTTP arrival and execution; it is not a pure JIT measurement.",
+    "Both runs missed the configured 200 output tokens/sec target.",
+    "This ten-call 0.8B smoke establishes cache collection and same-driver reuse, not three-model accuracy or full 1470-call-per-model gauntlet acceptance.",
+    "Remaining launch/agent-observation and HTTP intervals are not fully attributed by these receipts."
+  ]
+}

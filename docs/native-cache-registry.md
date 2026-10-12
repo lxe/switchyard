@@ -32,6 +32,33 @@ The selected runtime must set `NATIVE_ENGINE_CACHE_POLICY=opportunistic`, and it
 
 ## Validation and limitations
 
+The [L4 cache lifecycle receipt](receipts/native-opportunistic-cache-l4-smoke.json) records two fresh Qwen3.5 0.8B endpoints on NVIDIA L4 with driver `595.91.07`. The first endpoint had no registry entry, completed ten useful calls, and published a 509,317-byte compressed cache. The second endpoint hydrated that artifact and selected the exact driver directory. Its exported artifact had the same content identity. Both owned pods subsequently returned HTTP 404.
+
+| Measurement | Cache miss | Learned cache hit |
+| --- | ---: | ---: |
+| Runtime direct hydration | 10.37 s | 6.67 s |
+| Model direct hydration, overlapping runtime | 16.69 s | 16.30 s |
+| Engine spawn to HTTP health available | 3.58 s | 1.43 s |
+| Engine entry to completed first prefill | 9.95 s | 2.65 s |
+| Launch to first streamed content | 37.04 s | 29.83 s |
+| Eight-call shared-prefix throughput | 81.1 output tokens/s | 103.7 output tokens/s |
+
+These are single samples on distinct hosts. Transfer times also changed, so the full launch improvement cannot be attributed to the cache. Engine entry to first prefill includes loading, HTTP arrival and execution; it does not isolate JIT compilation. The first cold request produced identical content on both endpoints. Both throughput samples missed the configured 200 output tokens/s goal. Total estimated rental was $0.014.
+
+Build the controller with its live-provider feature, then run the bounded smoke in an existing tmux session:
+
+```sh
+cargo build --locked --release --features live --bin switchyard
+python deploy/native/run-gauntlet.py \
+  --binary target/release/switchyard \
+  --config configs/runpod/native-fleet-f32-l4-opportunistic-candidate.json \
+  --workloads configs/runpod/native-cache-smoke.json \
+  --env-file /path/to/provider.env --env-file /path/to/storage.env \
+  --model qwen3.5-0.8b --out results/native-cache-smoke-first
+```
+
+Use a new output directory for the second fresh launch. The fleet candidate pins the native runtime and model artifacts, has no mandatory static cache, and keeps the fixed request and memory bounds. Its planning priors are assumptions, not measured L4 performance.
+
 [The cache smoke workload](../configs/runpod/native-cache-smoke.json) makes ten useful inference calls: one cold request, one hot request and eight requests with a shared system prefix. Running it twice against fresh owned pods tests cache collection and reuse without dedicated bake requests or inference readiness probes. Driver identities, hit/miss markers, exact executable and configuration hashes, exports, publication and cleanup receipts are required to establish reuse. Two successful launches with different drivers do not demonstrate a cache hit or a cold-start improvement.
 
 The complete [native gauntlet](../configs/runpod/native-gauntlet.json) remains the scheduling and throughput gate. The smoke workload does not replace its 1,470 requests per model. Throughput targets remain goals and any missed target must be reported.

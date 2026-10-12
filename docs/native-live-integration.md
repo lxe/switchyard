@@ -56,6 +56,8 @@ Native serving reads capped host checkpoint buffers and copies tensors to CUDA a
 
 The optional [native CUDA cache registry](native-cache-registry.md) collects compiler caches from useful inference at pod retirement. Its opportunistic launch policy permits an exact-driver cache miss to compile normally, then publishes the collected cache after owned-pod release. It requires no dedicated GPU bake workload and does not add cache preparation actions to the scheduler.
 
+The [L4 cache lifecycle smoke](receipts/native-opportunistic-cache-l4-smoke.json) establishes this path on two fresh 0.8B endpoints: normal execution on a cache miss, publication after release, and exact-driver reuse on the second endpoint. Both completed ten calls and returned HTTP 404 after cleanup. This is a functional cache gate; the full three-model gauntlet and configured throughput goals remain unestablished.
+
 ## F32 fleet candidate and observed execution
 
 The [F32 fleet candidate](../configs/runpod/native-fleet-f32-prefix-candidate.json) pins the reference-tested paged-prefix engine, three native model archives and cache families validated on drivers 580.126.20 and 580.159.04. Its 64 GiB host RAM admission remains unchanged. The separately named [32 GiB candidate](../configs/runpod/native-fleet-f32-prefix-32g-candidate.json) changes only host RAM admission; it retains the engine, GPU, request, hydration and cost limits. The [read-only preflight receipt](receipts/native-f32-prefix-preflight-32g.json) validates the actual published manifests and tokenizers. Preflight does not establish 4B host-memory capacity or full cloud acceptance.
