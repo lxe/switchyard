@@ -116,6 +116,12 @@ def runtime_compatibility(build):
     return labels
 
 
+def bake_requests(config, requests):
+    if not requests:
+        raise ValueError("offline bake requires nonempty fixed requests")
+    return requests[:8] + [requests[0]] * config["engine"]["max_batch_size"]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
@@ -156,7 +162,7 @@ def main():
     requests = json.loads(args.requests.read_text())
     # One maximum-size equal-length cohort plus varied prompt lengths prepares
     # actual generation without an automatic memory sizing forward.
-    requests = requests[:8] + [requests[0]] * config["engine"]["max_batch_size"]
+    requests = bake_requests(config, requests)
     preparation_tree = args.output / "preparation-tree"
     (preparation_tree / "bin").mkdir(parents=True)
     shutil.copy2(

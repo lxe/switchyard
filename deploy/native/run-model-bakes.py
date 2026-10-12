@@ -10,6 +10,7 @@ import uuid
 from pathlib import Path
 
 from control import Control, write
+from generation_parity import required, validate_reference, verify
 from prepare_artifacts import pack_publish
 
 
@@ -25,6 +26,15 @@ def publish_model(config, prepared, output, tree, tool, control, identity):
     ):
         raise RuntimeError(
             "native bake binary, model configuration, or hardware changed"
+        )
+    if required(config):
+        reference = prepared["generation_reference"]
+        validate_reference(reference, config, prepared)
+        verify(
+            reference,
+            receipt,
+            json.loads((tree / "generated.json").read_text()),
+            tree / "generation-parity.json",
         )
     labels = {
         **prepared["compatibility"],
@@ -215,11 +225,15 @@ def main():
     parser.add_argument("--tool", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--platform-config", type=Path, required=True)
+    parser.add_argument("--generation-reference", type=Path, action="append")
     args = parser.parse_args()
     if len(args.config) != len(args.prepared):
         raise ValueError("each configuration requires one matching preparation")
     configs = [json.loads(path.read_text()) for path in args.config]
     preparations = [json.loads(path.read_text()) for path in args.prepared]
+    references = args.generation_reference or []
+    if references and len(references) != len(configs):
+        raise ValueError("each model requires one paired local generation reference")
     base = json.loads(args.platform_config.read_text())
     if (
         base["purpose"] != "native_offline_driver_cache_bake"
@@ -229,7 +243,7 @@ def main():
     ):
         raise ValueError("explicit bounded offline bake platform policy required")
     names = set()
-    for config, prepared in zip(configs, preparations):
+    for index, (config, prepared) in enumerate(zip(configs, preparations)):
         name = config["engine"]["model"]
         if (
             name in names
@@ -261,6 +275,14 @@ def main():
             raise ValueError(
                 "all model bakes require the same fixed provider/runtime policy"
             )
+        if required(config):
+            if not references:
+                raise ValueError(
+                    "cache-enabled F32 bakes require local generation references before allocation"
+                )
+            reference = json.loads(references[index].read_text())
+            validate_reference(reference, config, prepared)
+            prepared["generation_reference"] = reference
     args.output.mkdir(parents=True, exist_ok=False)
     write(args.output / "allocation-policy.json", base)
     spec = importlib.util.spec_from_file_location(

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+  "numerical_accuracy": "F32 paged-prefix engine passed local RTX 5090 teacher/reference and complete cached/uncached sequence gates; SM89 cloud numerical and serving validation pending; BF16 cache-enabled quality acceptance not established",
+  "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "provider": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_file": "/home/lxe/many-eval/app/.env",
+    "key_env": "RUNPOD_API_KEY",
+    "user_agent": "Switchyard/0.5",
+    "cloud": "SECURE",
+    "gpu_id": "NVIDIA GeForce RTX 4090",
+    "data_centers": [
+      "EU-RO-1",
+      "EUR-IS-2",
+      "EUR-IS-1"
+    ],
+    "min_cuda": "13.0",
+    "min_ram_gb": 64,
+    "min_vcpus": 8,
+    "disk_gb": 30
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "env_file": "/home/lxe/.podtrain/env",
+    "prefix": "switchyard/native-engine",
+    "url_lifetime_s": 3600
+  },
+  "limits": {
+    "max_active_owned_pods": 1,
+    "max_hourly_usd": 1.0,
+    "pod_timeout_s": 600,
+    "initial_gpu_admission_bytes": 21474836480,
+    "gpu_allocator_cap_enforced": false,
+    "download_concurrency": 20,
+    "download_piece_bytes": 65536,
+    "receive_channel_pieces": 4
+  },
+  "engine": {
+    "model": "qwen3.5-4b",
+    "model_root": "/work/switchyard/model",
+    "device": {
+      "kind": "cuda",
+      "ordinal": 0
+    },
+    "dtype": "f32",
+    "max_context": 128,
+    "max_weight_bytes": 12884901888,
+    "max_batch_size": 8,
+    "queue_capacity": 64,
+    "batch_wait_ms": 2,
+    "cache": {
+      "page_tokens": 16,
+      "checkpoint_tokens": 32,
+      "max_bytes": 268435456,
+      "max_entries": 16
+    }
+  },
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "benchmark": {
+    "max_tokens": 32,
+    "concurrency": 8
+  }
+}
