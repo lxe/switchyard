@@ -81,6 +81,7 @@ flowchart TD
 | `init --out data` | Export editable profiles, provider configuration, and sixteen workload traces |
 | `validate --profiles … --scenario …` | Check a custom trace and catalog before replay |
 | `run --profiles … --scenario … --policy adaptive` | Replay one workload |
+| `calibrate --input … --out results/calibration` | Replay cloud observations and report serving prediction errors; optional `--fit` uses declared training cases |
 | `suite --seeds 3 --out results/suite` | Compare all reference policies over the default workloads |
 | `fuzz --cases 1000 --seed 42 --out results/fuzz` | Generate workloads and save failing cases for replay |
 | `bench --sizes 1,100,1000,10000 --repetitions 3` | Measure simulator CPU execution time |
@@ -148,6 +149,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [Configuration](docs/CONFIGURATION.md) | Fields, units, validity rules, and experiment controls |
 | [API](docs/API.md) | Provider lifecycle, request admission, token streaming, and observations |
 | [Calibration](docs/CALIBRATION.md) | Measurement provenance and capacity-profile construction |
+| [Cloud observation replay](docs/EMPIRICAL_SIMULATION.md) | Configurable startup, availability, controller delays, and measured-versus-simulated serving results |
 | [Validation and results](docs/RESULTS.md) | Test coverage, reproducible comparisons, and known limitations |
 | [RunPod execution](docs/RUNPOD.md) | Checked-in fleet definitions, R2 hydration, live gauntlet, costs, and recovery |
 | [Serving hydration](docs/HYDRATION.md) | Runtime build inputs, separate model/cache artifacts, compatibility, and offline verification |

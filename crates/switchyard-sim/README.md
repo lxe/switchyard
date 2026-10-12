@@ -4,6 +4,8 @@ Deterministic GPU instance lifecycle, serving physics, and synthetic provider/Op
 
 `CloudSimulator` owns an incremental fleet. `simulate_with_scheduler` replays an offline trace with a supplied controller. The convenience replay and routing helpers compose the reference policies from `switchyard-scheduler`; the physical engine validates every returned action.
 
+`simulate_with_observations` and `CloudSimulator::with_observations` accept private capacity timelines, paired startup samples, first-use delays, and controller pauses. The CLI exposes the same configuration through `run --observations` and `serve --observations`. See [cloud observation replay](../../docs/EMPIRICAL_SIMULATION.md) for fields and examples.
+
 Run the bundled service from the workspace root:
 
 ```sh

@@ -37,6 +37,15 @@ impl CloudSimulator {
         config: CloudConfig,
         seed: u64,
     ) -> Result<Self, String> {
+        Self::with_observations(profiles, config, Observations::default(), seed)
+    }
+
+    pub fn with_observations(
+        profiles: Vec<Profile>,
+        config: CloudConfig,
+        observations: Observations,
+        seed: u64,
+    ) -> Result<Self, String> {
         if config.instance_queue_limit == 0
             || config.router_queue_limit == 0
             || !config.request_completion_budget_s.is_finite()
@@ -64,7 +73,9 @@ impl CloudSimulator {
             faults: config.faults.clone(),
         };
         validate(&profiles, &scenario)?;
+        observations.validate(&profiles, &scenario)?;
         let mut simulation = Simulation::new(profiles, scenario, seed, "external".into());
+        simulation.observations = observations;
         simulation.record_delivery = true;
         Ok(Self {
             simulation,
@@ -138,6 +149,10 @@ impl CloudSimulator {
             return Err("capacity: instance quota reached".into());
         }
         let id = sim.nodes.len();
+        if !sim.capacity_available(profile) {
+            sim.capacity_rejections += 1;
+            return Err("capacity: no instance available in the configured environment".into());
+        }
         sim.launch(profile, false);
         Ok(id)
     }

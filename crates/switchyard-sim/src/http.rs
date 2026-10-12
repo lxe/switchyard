@@ -95,6 +95,25 @@ pub async fn serve_with_config(
     bind: SocketAddr,
     clock_rate: f64,
 ) -> Result<(), Box<dyn Error>> {
+    serve_with_observations(
+        profiles,
+        config,
+        crate::observations::Observations::default(),
+        seed,
+        bind,
+        clock_rate,
+    )
+    .await
+}
+
+pub async fn serve_with_observations(
+    profiles: Vec<Profile>,
+    config: CloudConfig,
+    observations: crate::observations::Observations,
+    seed: u64,
+    bind: SocketAddr,
+    clock_rate: f64,
+) -> Result<(), Box<dyn Error>> {
     if !clock_rate.is_finite() || clock_rate < 0.0 {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -102,7 +121,7 @@ pub async fn serve_with_config(
         )
         .into());
     }
-    let simulator = CloudSimulator::with_config(profiles, config, seed)
+    let simulator = CloudSimulator::with_observations(profiles, config, observations, seed)
         .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidInput, message))?;
     let cloud = Arc::new(Mutex::new(simulator));
     let listener = tokio::net::TcpListener::bind(bind).await?;

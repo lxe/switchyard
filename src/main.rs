@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use sha2::{Digest, Sha256};
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -16,6 +17,23 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Fit declared training observations and replay measured workload shapes offline.
+    Calibrate {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long, default_value = "results/calibration")]
+        out: PathBuf,
+        #[arg(long, default_value_t = 7)]
+        seed: u64,
+        #[arg(long, default_value_t = 3)]
+        seeds: usize,
+        /// Fit only the declared training subset; omitted when replaying editable calibrated inputs.
+        #[arg(long)]
+        fit: bool,
+        /// Optional validation gate for both throughput and TTFT p95 relative error.
+        #[arg(long)]
+        max_relative_error: Option<f64>,
+    },
     /// Prepare and publish verified artifacts independently of fleet execution.
     #[cfg(feature = "artifacts")]
     Artifacts {
@@ -46,6 +64,8 @@ enum Command {
         profiles: Option<PathBuf>,
         #[arg(long)]
         environment: Option<PathBuf>,
+        #[arg(long)]
+        observations: Option<PathBuf>,
         #[arg(long, default_value_t = 7)]
         seed: u64,
         #[arg(long, default_value = "127.0.0.1:8080")]
@@ -87,6 +107,8 @@ enum Command {
         profiles: PathBuf,
         #[arg(long)]
         scenario: PathBuf,
+        #[arg(long)]
+        observations: Option<PathBuf>,
         #[arg(long, value_enum, default_value = "planned-hybrid")]
         policy: Policy,
         #[arg(long, default_value_t = 7)]
@@ -117,6 +139,82 @@ fn save<T: serde::Serialize>(path: &Path, value: &T) -> Result<(), Box<dyn Error
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     match Cli::parse().command {
+        Command::Calibrate {
+            input,
+            out,
+            seed,
+            seeds,
+            fit,
+            max_relative_error,
+        } => {
+            if seeds == 0 || seeds > 100 {
+                return Err("seeds must be between 1 and 100".into());
+            }
+            if max_relative_error.is_some_and(|v| !v.is_finite() || v <= 0.0) {
+                return Err("max-relative-error must be finite and positive".into());
+            }
+            let mut data: switchyard_gauntlet::empirical::Dataset = read(&input)?;
+            data.validate()?;
+            if fit {
+                switchyard_gauntlet::empirical::fit(&mut data)?;
+            }
+            save(&out.join("calibrated-input.json"), &data)?;
+            let mut results = vec![];
+            for offset in 0..seeds {
+                for case in &data.cases {
+                    let r = switchyard_gauntlet::empirical::replay(
+                        &data.profiles,
+                        case,
+                        seed.checked_add(offset as u64).ok_or("seed overflow")?,
+                    )?;
+                    println!(
+                        "{} / {} seed={} completed={}/{} TPS={:.1}/{:.1} TTFT_p95={:.2}/{:.2} training={}",
+                        r.model,
+                        r.workload,
+                        r.seed,
+                        r.simulated.completed,
+                        r.measured.completed,
+                        r.simulated.output_tps,
+                        r.measured.output_tps,
+                        r.simulated.ttft_p95_s,
+                        r.measured.ttft_p95_s,
+                        r.training
+                    );
+                    results.push(r);
+                }
+            }
+            save(&out.join("comparison.json"), &results)?;
+            let git = std::process::Command::new("git")
+                .args(["rev-parse", "HEAD"])
+                .output()?;
+            let status = std::process::Command::new("git")
+                .args(["status", "--porcelain"])
+                .output()?;
+            save(
+                &out.join("identity.json"),
+                &serde_json::json!({
+                    "format":"empirical-replay-v1","input_sha256":format!("{:x}",Sha256::digest(fs::read(&input)?)),
+                    "simulator_sha256":format!("{:x}",Sha256::digest(fs::read(std::env::current_exe()?)?)),
+                    "source_commit":String::from_utf8_lossy(&git.stdout).trim(),"source_dirty":!status.stdout.is_empty(),
+                    "seed":seed,"seeds":seeds,"fit":fit,"max_relative_error":max_relative_error,
+                    "calibrated_input_sha256":format!("{:x}",Sha256::digest(fs::read(out.join("calibrated-input.json"))?))
+                }),
+            )?;
+            if max_relative_error.is_some_and(|limit| {
+                results.iter().any(|r| {
+                    !r.training
+                        && (r.simulated.completed != r.measured.completed
+                            || r.invalid_decisions > 0
+                            || r.throughput_error_fraction.abs() > limit
+                            || r.ttft_p95_error_fraction.abs() > limit)
+                })
+            }) {
+                return Err(
+                    "calibration validation exceeded its tolerance; detailed comparison retained"
+                        .into(),
+                );
+            }
+        }
         #[cfg(feature = "artifacts")]
         Command::Artifacts { command } => switchyard_artifact_tools::cli::run(command).await?,
         #[cfg(feature = "live")]
@@ -161,6 +259,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::Serve {
             profiles,
             environment,
+            observations,
             seed,
             bind,
             clock_rate,
@@ -176,8 +275,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .transpose()?
                 .unwrap_or_default();
             println!("Fleet API listening on http://{bind}; clock rate {clock_rate}");
-            switchyard::http::serve_with_config(profiles, environment, seed, bind, clock_rate)
-                .await?;
+            let observations = observations
+                .as_deref()
+                .map(read)
+                .transpose()?
+                .unwrap_or_default();
+            switchyard::http::serve_with_observations(
+                profiles,
+                environment,
+                observations,
+                seed,
+                bind,
+                clock_rate,
+            )
+            .await?;
         }
         Command::Fuzz { cases, seed, out } => {
             let mut failures = vec![];
@@ -267,13 +378,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::Run {
             profiles,
             scenario,
+            observations,
             policy,
             seed,
             out,
         } => {
             let profiles: Vec<Profile> = read(&profiles)?;
             let scenario: Scenario = read(&scenario)?;
-            let run = simulate(&profiles, &scenario, policy, seed)?;
+            let observations = observations
+                .as_deref()
+                .map(read)
+                .transpose()?
+                .unwrap_or_default();
+            let run = switchyard::engine::simulate_with_observations(
+                &profiles,
+                &scenario,
+                &observations,
+                &mut switchyard::scheduler::BuiltinScheduler::new(policy),
+                seed,
+            )?;
             save(&out, &run)?;
             print!("{}", report::markdown(&[run]));
         }

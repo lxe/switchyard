@@ -469,3 +469,177 @@ fn configured_router_queue_limit_rejects_without_creating_hidden_requests() {
         assert_eq!(cloud.request(id).unwrap()["status"], "queued");
     }
 }
+
+#[test]
+fn empirical_capacity_rejection_has_no_paid_node_and_samples_stay_private() {
+    use switchyard_sim::observations::*;
+    let profile = hardware();
+    let observations = Observations {
+        profiles: std::collections::BTreeMap::from([(
+            profile.id.clone(),
+            ObservedEnvironment {
+                capacity: vec![
+                    CapacityLimit {
+                        at_s: 0.0,
+                        instances: 0,
+                    },
+                    CapacityLimit {
+                        at_s: 5.0,
+                        instances: 1,
+                    },
+                ],
+                startups: vec![StartupSample {
+                    boot_s: 1.0,
+                    hydration_s: 3.0,
+                    hydration_bytes: 300,
+                    ready_s: 5.0,
+                    first_use_s: 2.0,
+                }],
+                ..Default::default()
+            },
+        )]),
+        ..Default::default()
+    };
+    let mut cloud = CloudSimulator::with_observations(
+        vec![profile.clone()],
+        CloudConfig::default(),
+        observations,
+        7,
+    )
+    .unwrap();
+    assert!(
+        cloud
+            .provision(&profile.id)
+            .unwrap_err()
+            .starts_with("capacity:")
+    );
+    assert!(cloud.snapshot()["instances"].as_array().unwrap().is_empty());
+    assert!(!cloud.offerings().to_string().contains("first_use_s"));
+    cloud.advance(5.0).unwrap();
+    let node = cloud.provision(&profile.id).unwrap();
+    assert!(cloud.snapshot()["instances"][0]["ready_at_s"].is_null());
+    assert!(cloud.provision(&profile.id).is_err());
+    let request = cloud.enqueue(node, inference()).unwrap();
+    cloud.advance(4.0).unwrap();
+    assert!(cloud.request(request).unwrap()["first_token_at_s"].is_null());
+    cloud.advance(4.0).unwrap();
+    assert!(
+        cloud.request(request).unwrap()["first_token_at_s"]
+            .as_f64()
+            .unwrap()
+            >= 12.0
+    );
+}
+
+#[test]
+fn controller_pause_blocks_new_dispatch_but_gpu_work_continues() {
+    use switchyard_sim::observations::*;
+    let mut p = hardware();
+    p.network_bytes_per_s = 1e9;
+    let mut s = scenario((0..3).map(request).collect());
+    s.warm = vec![WarmNode {
+        profile: p.id.clone(),
+        copies: 1,
+    }];
+    s.max_nodes_per_model = 1;
+    let o = Observations {
+        controller_pauses: vec![Interval {
+            start_s: 0.2,
+            end_s: 7.0,
+        }],
+        ..Default::default()
+    };
+    let run = switchyard_sim::engine::simulate_with_observations(
+        &[p],
+        &s,
+        &o,
+        &mut BuiltinScheduler::new(Policy::WarmOnly),
+        7,
+    )
+    .unwrap();
+    assert_eq!(run.summary.completed, 3);
+    assert!(run.requests[0].completed_s.unwrap() < 7.0);
+    assert!(run.requests[1].completed_s.unwrap() < 7.0);
+    assert!(run.requests[2].started_s.unwrap() >= 7.0);
+}
+
+#[test]
+fn empirical_configuration_rejects_overlapping_pauses_and_impossible_startup() {
+    use switchyard_sim::observations::*;
+    let p = hardware();
+    let s = scenario(vec![request(0)]);
+    let mut o = Observations {
+        controller_pauses: vec![
+            Interval {
+                start_s: 1.0,
+                end_s: 3.0,
+            },
+            Interval {
+                start_s: 2.0,
+                end_s: 4.0,
+            },
+        ],
+        ..Default::default()
+    };
+    assert!(o.validate(std::slice::from_ref(&p), &s).is_err());
+    o.controller_pauses.clear();
+    o.profiles.insert(
+        p.id.clone(),
+        ObservedEnvironment {
+            startups: vec![StartupSample {
+                boot_s: 2.0,
+                hydration_s: 3.0,
+                hydration_bytes: 300,
+                ready_s: 4.0,
+                first_use_s: 0.0,
+            }],
+            ..Default::default()
+        },
+    );
+    assert!(o.validate(&[p], &s).is_err());
+}
+
+#[test]
+fn zero_startup_scale_preserves_separately_configured_first_use_delay() {
+    use switchyard_sim::observations::*;
+    let p = hardware();
+    let observations = Observations {
+        profiles: std::collections::BTreeMap::from([(
+            p.id.clone(),
+            ObservedEnvironment {
+                startups: vec![StartupSample {
+                    boot_s: 1.0,
+                    hydration_s: 3.0,
+                    hydration_bytes: 300,
+                    ready_s: 5.0,
+                    first_use_s: 2.0,
+                }],
+                ..Default::default()
+            },
+        )]),
+        ..Default::default()
+    };
+    let mut cloud = CloudSimulator::with_observations(
+        vec![p.clone()],
+        CloudConfig {
+            startup_scale: 0.0,
+            ..Default::default()
+        },
+        observations,
+        7,
+    )
+    .unwrap();
+    let node = cloud.provision(&p.id).unwrap();
+    let request = cloud.enqueue(node, inference()).unwrap();
+    cloud.advance(1.0).unwrap();
+    assert_eq!(cloud.snapshot()["instances"][node]["status"], "ready");
+    assert_eq!(
+        cloud.request(request).unwrap()["first_token_at_s"],
+        Value::Null
+    );
+    cloud.advance(2.0).unwrap();
+    let token = cloud.request(request).unwrap()["first_token_at_s"]
+        .as_f64()
+        .unwrap();
+    assert!(token >= 2.0);
+}

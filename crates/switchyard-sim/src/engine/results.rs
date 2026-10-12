@@ -176,6 +176,7 @@ impl Simulation {
             launched: self.launches,
             peak_nodes: self.peak_nodes,
             failed_launches: self.failed_launches,
+            capacity_rejections: self.capacity_rejections,
             attempts: results.iter().map(|r| r.attempts).sum(),
             output_tokens: out,
             wasted_output_tokens: self.wasted_output,

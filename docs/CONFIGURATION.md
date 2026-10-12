@@ -47,6 +47,8 @@ One output token consumes one work unit. Input work is `input_tokens × (1 − c
 
 ## Startup and host reality
 
+Optional `--observations FILE` inputs configure private capacity timelines, paired startup phases, first-use delays, and controller pauses for both trace replay and the HTTP provider. See [cloud observation configuration](EMPIRICAL_SIMULATION.md#configuration-fields) for the schema and an editable example.
+
 `startup` contains `allocation_s`, `container_s`, `weights_s`, and `engine_s`, plus symmetric fractional `jitter`. Optional `restore_samples_s` and `build_samples_s` are end-to-end startup samples and override the component sum for their respective path. `build_probability` belongs to the experiment environment; selected priming runs do not establish a production build probability. Without build samples, the reference fixture uses eight times the component sum as an explicit fallback assumption.
 
 A profile's `host` supplies a discrete `volume_bandwidth_bytes_per_s` distribution, image/model byte sizes, cache-hit probabilities, `probe_duration_s`, and `measurement_noise`. Every new instance samples a private bandwidth and cache state. Warm instances have loaded caches. Missing image and model bytes add hydration time to the startup baseline.

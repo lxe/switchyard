@@ -7,6 +7,7 @@ use crate::config::*;
 mod cloud;
 mod results;
 mod service;
+use crate::observations::{Observations, Sampling};
 use crate::scheduler::{
     Action, BuiltinScheduler, FleetView, HostObservation, HostProbe, ObservedActive, ObservedNode,
     ObservedRequest, PlannedRequest, RequestStatus, Scheduler, StartupPhase,
@@ -72,6 +73,7 @@ pub struct Summary {
     pub launched: usize,
     pub peak_nodes: usize,
     pub failed_launches: usize,
+    pub capacity_rejections: usize,
     pub attempts: usize,
     pub output_tokens: u64,
     pub wasted_output_tokens: f64,
@@ -146,6 +148,8 @@ struct Active {
     weight: f64,
 }
 struct Node {
+    first_use_s: f64,
+    first_use_until_s: Option<f64>,
     initialized: bool,
     profile: usize,
     warm: bool,
@@ -221,6 +225,11 @@ impl Random {
 }
 
 struct Simulation {
+    observations: Observations,
+    startup_indices: std::collections::BTreeMap<usize, usize>,
+    provisioning_cooldowns: std::collections::BTreeMap<usize, f64>,
+    controller_blocked_until_s: f64,
+    capacity_rejections: usize,
     profiles: Vec<Profile>,
     scenario: Scenario,
     policy: String,
@@ -266,13 +275,32 @@ pub fn simulate_with_scheduler(
     controller: &mut dyn Scheduler,
     seed: u64,
 ) -> Result<Run, String> {
+    simulate_with_observations(
+        profiles,
+        scenario,
+        &Observations::default(),
+        controller,
+        seed,
+    )
+}
+
+/// Replay empirical environment samples without revealing private outcomes to the controller.
+pub fn simulate_with_observations(
+    profiles: &[Profile],
+    scenario: &Scenario,
+    observations: &Observations,
+    controller: &mut dyn Scheduler,
+    seed: u64,
+) -> Result<Run, String> {
     validate(profiles, scenario)?;
+    observations.validate(profiles, scenario)?;
     let mut sim = Simulation::new(
         profiles.to_vec(),
         scenario.clone(),
         seed,
         controller.name().to_owned(),
     );
+    sim.observations = observations.clone();
     sim.run_until(scenario.horizon_s, Some(controller));
     sim.sample();
     Ok(sim.finish(seed, controller.diagnostics()))
@@ -281,6 +309,11 @@ pub fn simulate_with_scheduler(
 impl Simulation {
     fn new(profiles: Vec<Profile>, scenario: Scenario, seed: u64, policy: String) -> Self {
         let mut sim = Self {
+            observations: Observations::default(),
+            startup_indices: Default::default(),
+            provisioning_cooldowns: Default::default(),
+            controller_blocked_until_s: 0.0,
+            capacity_rejections: 0,
             policy,
             random: Random(seed),
             probe_random: Random(seed ^ 0x70726f6265),
@@ -490,20 +523,53 @@ impl Simulation {
         } else {
             reality.container_image_bytes
         } + if model_cached { 0 } else { reality.model_bytes };
-        let setup_until_s = self.now
+        let mut setup_until_s = self.now
             + if warm {
                 0.0
             } else {
                 total * self.scenario.startup_scale * 0.25
             };
-        let ready_s = self.now
+        let mut ready_s = self.now
             + if warm {
                 0.0
             } else {
                 total * self.scenario.startup_scale + bytes as f64 / bandwidth
             };
+        let mut bandwidth = bandwidth;
+        let mut bytes = bytes;
+        let mut first_use_s = 0.0;
+        if !warm
+            && let Some(reality) = self.observations.profiles.get(&p.id)
+            && !reality.startups.is_empty()
+        {
+            let index = self.startup_indices.entry(profile).or_default();
+            let chosen = match reality.sampling {
+                Sampling::Sequential => *index % reality.startups.len(),
+                Sampling::Bootstrap => {
+                    (self.random.unit() * reality.startups.len() as f64) as usize
+                }
+            };
+            *index += 1;
+            let sample = &reality.startups[chosen];
+            let scale = self.scenario.startup_scale;
+            setup_until_s = self.now + sample.boot_s * scale;
+            ready_s = self.now + sample.ready_s * scale;
+            bytes = if scale == 0.0 {
+                0
+            } else {
+                sample.hydration_bytes
+            };
+            bandwidth = if bytes > 0 {
+                bytes as f64 / (sample.hydration_s * scale)
+            } else {
+                bandwidth
+            };
+            first_use_s = sample.first_use_s;
+        }
         let id = self.nodes.len();
         self.nodes.push(Node {
+            first_use_s,
+            first_use_until_s: None,
             initialized: warm,
             profile,
             warm,
@@ -560,11 +626,20 @@ impl Simulation {
         }
     }
     fn control(&mut self, controller: &mut dyn Scheduler, allow_scale: bool) {
+        if self.now < self.controller_blocked_until_s
+            || self
+                .observations
+                .controller_pauses
+                .iter()
+                .any(|p| p.start_s <= self.now && self.now < p.end_s)
+        {
+            return;
+        }
         let view = FleetView {
             now: self.now,
             allow_scale,
             profiles: &self.profiles,
-            provisioning_cooldowns: Default::default(),
+            provisioning_cooldowns: self.provisioning_cooldowns.clone(),
             requests: self
                 .plans
                 .iter()
@@ -672,6 +747,19 @@ impl Simulation {
                             })
                             .count();
                         if allow_scale && live < self.scenario.max_nodes_per_model {
+                            if !self.capacity_available(profile) {
+                                let reality = &self.observations.profiles[&p.id];
+                                self.capacity_rejections += 1;
+                                self.controller_blocked_until_s =
+                                    self.now + reality.rejection_delay_s;
+                                self.provisioning_cooldowns.insert(
+                                    profile,
+                                    self.controller_blocked_until_s
+                                        + self.scenario.scheduling.retry_cooldown_s,
+                                );
+                                // A rejection is an environmental outcome, not an invalid controller action.
+                                break;
+                            }
                             self.launch(profile, false);
                             true
                         } else {
@@ -704,6 +792,19 @@ impl Simulation {
                 self.invalid_decisions += 1;
             }
         }
+    }
+
+    fn capacity_available(&self, profile: usize) -> bool {
+        let Some(reality) = self.observations.profiles.get(&self.profiles[profile].id) else {
+            return true;
+        };
+        let limit = reality.capacity.iter().rev().find(|l| l.at_s <= self.now);
+        let live = self
+            .nodes
+            .iter()
+            .filter(|n| n.profile == profile && n.ended_s.is_none())
+            .count();
+        limit.is_none_or(|l| live < l.instances)
     }
 
     fn start_probe(&mut self, id: usize) -> bool {
@@ -804,6 +905,7 @@ impl Simulation {
             return false;
         }
         let upload = r.upload_bytes as f64 / p.network_bytes_per_s;
+        let first_use_until_s = *n.first_use_until_s.get_or_insert(self.now + n.first_use_s);
         let adapter_ready = if let Some(adapter) = &r.adapter {
             if let Some(pos) = n.adapters.iter().position(|(a, _)| a == adapter) {
                 let entry = n.adapters.remove(pos).expect("existing adapter");
@@ -833,7 +935,9 @@ impl Simulation {
             prefill: p.prefill_work(r),
             output: r.actual_output as f64,
             generated: 0.0,
-            available_s: (self.now + p.network_s + upload).max(adapter_ready),
+            available_s: (self.now + p.network_s + upload)
+                .max(adapter_ready)
+                .max(first_use_until_s),
             weight,
         });
         n.last_used_s = self.now;

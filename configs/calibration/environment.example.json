@@ -1,0 +1,31 @@
+{
+  "profiles": {
+    "small-gpu": {
+      "capacity": [
+        { "at_s": 0.0, "instances": 1 },
+        { "at_s": 10.0, "instances": 2 }
+      ],
+      "startups": [
+        {
+          "boot_s": 1.0,
+          "hydration_s": 3.0,
+          "hydration_bytes": 300000000,
+          "ready_s": 6.0,
+          "first_use_s": 2.0
+        },
+        {
+          "boot_s": 2.0,
+          "hydration_s": 4.0,
+          "hydration_bytes": 300000000,
+          "ready_s": 8.0,
+          "first_use_s": 1.0
+        }
+      ],
+      "sampling": "sequential",
+      "rejection_delay_s": 0.5
+    }
+  },
+  "controller_pauses": [
+    { "start_s": 3.0, "end_s": 4.0 }
+  ]
+}

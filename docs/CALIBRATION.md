@@ -73,6 +73,8 @@ Measure adapter cold-load time separately from warmed mixed-adapter throughput. 
 
 ## Calibration workflow
 
+The [cloud observation replay guide](EMPIRICAL_SIMULATION.md) describes the checked-in native cloud dataset, configurable private environment inputs, training selection, optional fitting, and residual reports. Use `calibrate --input configs/calibration/native-cloud-observations.json` to replay it without changing its editable profile parameters.
+
 1. Preserve a sanitized measurement artifact with the exact configuration, timing boundary, request counts, token totals, failures, and replica/GPU count.
 2. Add a profile or update only fields supported by that artifact. Retain assumptions for unobserved behavior and identify the observation date.
 3. Replay the matching workload. Check completed usage, client latency, aggregate throughput, startup, and rental duration separately.

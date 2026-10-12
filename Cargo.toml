@@ -66,6 +66,7 @@ switchyard-core.workspace = true
 switchyard-scheduler.workspace = true
 switchyard-sim.workspace = true
 switchyard-gauntlet.workspace = true
+sha2.workspace = true
 clap.workspace = true
 serde.workspace = true
 serde_json.workspace = true
