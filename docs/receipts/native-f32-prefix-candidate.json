@@ -22,7 +22,7 @@
       "local_generation_reference_sha256": "9994c6f998af301ace759aecde71614cbe4f60d9da8f619fcf39568904111af6",
       "reference_rows": 16,
       "reference_token_ids": 512,
-      "cross_gpu_generation_parity_passed": null
+      "cross_gpu_generation_parity_passed": true
     },
     {
       "model": "qwen3.5-2b",
@@ -36,7 +36,7 @@
       "local_generation_reference_sha256": "3a997312a4dd0dac11a0d51f1aaae1a169096fa2ca0b8cc3585bfc7b40f10530",
       "reference_rows": 16,
       "reference_token_ids": 512,
-      "cross_gpu_generation_parity_passed": null
+      "cross_gpu_generation_parity_passed": true
     },
     {
       "model": "qwen3.5-4b",
@@ -50,7 +50,7 @@
       "local_generation_reference_sha256": "0cd32015d155f7dd3bb8b426b3b3a6e9943c8bdbfd695ca92db61c82777fce2e",
       "reference_rows": 16,
       "reference_token_ids": 512,
-      "cross_gpu_generation_parity_passed": null
+      "cross_gpu_generation_parity_passed": true
     }
   ],
   "fixed_platform": {
@@ -66,8 +66,11 @@
   },
   "quality_acceptance": {
     "f32_reference_and_sequence_gates": "local RTX 5090; see native-paged-prefix-rtx5090.json",
-    "f32_sm89_cloud_gate_passed": false,
-    "bf16_cache_enabled_accepted": false
+    "f32_sm89_cloud_gate_passed": true,
+    "bf16_cache_enabled_accepted": false,
+    "cross_gpu_generation_receipts": [
+      "docs/receipts/native-f32-bake-driver126-01.json"
+    ]
   },
   "publication": {
     "shared_runtime": {
@@ -151,6 +154,11 @@
         "receipt": "docs/receipts/native-f32-bake-start-failure-01.json",
         "pod_id": "8ie0o7seelcn50",
         "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-bake-driver126-01.json",
+        "pod_id": "dyedpq8fj2tvzg",
+        "confirmed_absent": true
       }
     ],
     "runtime_compatibility": {
@@ -162,28 +170,61 @@
       "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
       "cuda_compiler_target": "compute_89",
       "cuda_compiler_version": "13.0.48"
-    }
+    },
+    "cache_components": [
+      {
+        "model": "qwen3.5-0.8b",
+        "driver": "580.126.20",
+        "artifact": {
+          "id": "d431cc73c556af88b0157333ed81eae23035430849794b82eff1e4a6b7533d0d",
+          "prefix": "switchyard/native-engine/caches/d431cc73c556af88b0157333ed81eae23035430849794b82eff1e4a6b7533d0d",
+          "compressed_bytes": 512971
+        }
+      },
+      {
+        "model": "qwen3.5-2b",
+        "driver": "580.126.20",
+        "artifact": {
+          "id": "ce38e65504356574157d8bff680bda71800344e890e52531478d564d4b762056",
+          "prefix": "switchyard/native-engine/caches/ce38e65504356574157d8bff680bda71800344e890e52531478d564d4b762056",
+          "compressed_bytes": 513030
+        }
+      },
+      {
+        "model": "qwen3.5-4b",
+        "driver": "580.126.20",
+        "artifact": {
+          "id": "fe8ff6c9e31ed3bceb703901d5b5b21f31f13d59964d1a8de282d7402903da28",
+          "prefix": "switchyard/native-engine/caches/fe8ff6c9e31ed3bceb703901d5b5b21f31f13d59964d1a8de282d7402903da28",
+          "compressed_bytes": 513034
+        }
+      }
+    ]
   },
   "unresolved": [
-    "Bake all three models for each desired exact driver and validate new F32 cloud serving.",
+    "Complete required 580.159.04 and 580.173.02 driver bakes, assemble new F32 families and validate fresh cloud serving.",
     "Candidate planning priors are copied assumptions and require matching F32 measurements before performance claims.",
-    "Every F32 cloud bake must exactly match its retained complete local generation reference; differences require diagnosis and prevent publication."
+    "Complete F32 cloud outputs matched the local reference on driver 580.126.20; every added driver requires the same exact comparison before publication."
   ],
   "preserved_bf16_fleet": "configs/runpod/native-fleet.json",
   "build_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
   "verification": {
     "pinned_bf16_inputs_unchanged": true,
     "owned_pod_cleanup_http_status": 404,
-    "cloud_bake_started": false,
+    "cloud_bake_started": true,
     "offline_controller_fixture_tests": 17,
     "matrix_container_fixture_tests": 24,
     "unbound_candidate_validation": "F32 candidate decoded and rejected for missing binary-pinned native runtime; no labels produced, credentials, network or allocation",
-    "current_offline_rust_cache_bindings": "three models successfully derived against published shared runtime; no network or provisioning"
+    "current_offline_rust_cache_bindings": "three models successfully derived against published shared runtime; no network or provisioning",
+    "exact_cloud_generation_rows": 48,
+    "exact_cloud_generation_token_ids": 1536
   },
   "bake_request_input": "configs/runpod/native/f32-prefix-bake-requests.json",
   "bake_request_input_sha256": "7ac728a57ee9bea132a786dfa38aa15d25328007f0b70c5190a92b9ad41d3b0d",
   "bake_platforms": {
     "580.159.04": "configs/runpod/native/bake-platform-sm89-64g-driver159.json",
-    "580.173.02": "configs/runpod/native/bake-platform-sm89-64g.json"
+    "580.173.02": "configs/runpod/native/bake-platform-sm89-64g.json",
+    "discovery": "configs/runpod/native/bake-platform-sm89-64g-discovery.json",
+    "595.91.07": "configs/runpod/native/bake-platform-sm89-64g-driver595.json"
   }
 }

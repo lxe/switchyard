@@ -12,6 +12,8 @@ The provider's minimum host CUDA capability is an allocation requirement. The se
 
 `bake-platform-sm89-64g-driver159.json` requests the same fixed 64 GB host and 20 GiB GPU floor for all three models while targeting 580.159.04. It admits the listed Romania and Iceland pools. Its driver must still be observed before any weights transfer; pool names do not establish driver identity. Use the original 64 GB profile for a separate 580.173.02 bake. Both drivers need fresh F32 components for the new binary.
 
+`bake-platform-sm89-64g-discovery.json` admits the same three pools and fixed resources with a minimum reported CUDA capability of 13.0 and no exact driver target. Its completed bake observed 580.126.20 on an Iceland RTX 4090. `bake-platform-sm89-64g-driver595.json` targets the separately observed 595.91.07 host with reported CUDA 13.2. Discovery permits an offline bake to record a new driver; serving still requires a published component for the exact observed driver.
+
 Model configurations supply the model revision, native request bounds, and binary provenance. Before allocation, the controller checks that the platform admits every requested model and meets its fixed RAM, CPU, disk, and GPU-admission requirements. Every input must refer to the same shared runtime. After generation, the controller compares the bake receipt's complete native configuration, exact binary hash, and hardware identity before packing a component.
 
 ## Offline control and cleanup
@@ -49,7 +51,7 @@ The candidate now names the independently inventoried and published Ubuntu SM89 
 
 The already published native weights and live model archives retain their pinned revisions and bytes. New preparation artifacts must bind those weights to the new runtime and complete F32 cache configuration. Independently bake all three models for each desired driver, then assemble new families using the candidate's native bounds. Populate the fleet with its published shared runtime before deriving family labels, and add only verified new family references afterward. The [candidate receipt](receipts/native-f32-prefix-candidate.json) records these pending identities and fixed limits.
 
-Local RTX 5090 gates establish F32 teacher/reference agreement and complete cached/uncached sequence equality. SM89 cloud numerical, memory and serving checks remain pending. The copied scheduling priors remain planning assumptions until matching F32 measurements replace them. Existing uncached BF16 deployment files retain their original artifact references; cache-enabled BF16 quality acceptance remains unestablished.
+Local RTX 5090 gates establish F32 teacher/reference agreement and complete cached/uncached sequence equality. The [580.126.20 cloud bake](receipts/native-f32-bake-driver126-01.json) also matched all 48 rows and 1,536 output token IDs across the three models, using the identical native artifacts, configuration and requests. Each model reused 960 input-token positions within the fixed retention budget. Required driver coverage, cloud peak memory and fresh serving measurements remain pending. The copied scheduling priors remain planning assumptions until matching F32 measurements replace them. Existing uncached BF16 deployment files retain their original artifact references; cache-enabled BF16 quality acceptance remains unestablished.
 
 ## Cross-GPU generation comparison
 
