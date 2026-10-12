@@ -142,6 +142,26 @@ impl Config {
 mod tests {
     use super::*;
     #[test]
+    fn checked_image_profiles_validate_fixed_bounds() {
+        let profiles = [
+            include_str!("../../../examples/native-qwen35-0.8b-vision.json"),
+            include_str!("../../../examples/native-qwen35-2b-vision.json"),
+            include_str!("../../../examples/native-qwen35-4b-vision.json"),
+            include_str!("../../../examples/native-qwen35-0.8b-gguf-vision.json"),
+            include_str!("../../../examples/native-qwen35-2b-gguf-vision.json"),
+            include_str!("../../../examples/native-qwen35-4b-gguf-vision.json"),
+        ];
+        for source in profiles {
+            let config: Config = serde_json::from_str(source).unwrap();
+            config.validate().unwrap();
+            assert_eq!(config.max_context, 512);
+            assert_eq!(config.vision.as_ref().unwrap().max_pixels, 65_536);
+            let roundtrip: Config =
+                serde_json::from_value(serde_json::to_value(&config).unwrap()).unwrap();
+            roundtrip.validate().unwrap();
+        }
+    }
+    #[test]
     fn gguf_paths_and_activation_contract_are_explicit() {
         let mut config: Config = serde_json::from_str(include_str!(
             "../../../examples/native-qwen35-0.8b-gguf.json"

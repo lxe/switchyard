@@ -8,7 +8,7 @@ Prefix matching uses exact token IDs within one loaded model instance. The engin
 
 Within each equal-length prefill cohort, identical prefixes execute once. Different suffixes join subsequent tensor batches. For eight 80-token requests sharing 64 leading tokens, an empty cache computes 64 shared tokens and eight 16-token suffixes: 192 token positions instead of 640. Token counts measure avoided input computation, rather than predicting a proportional wall-time reduction.
 
-Completed or cancelled requests drop their private state. Cache eviction drops the cache's references; it cannot invalidate active readers. State from another model owner is rejected before cached logits can be returned. Model identity includes the loaded weights, device and precision through that owner's lifetime. This text adapter does not support LoRA or multimodal inputs; extending it requires extending the cache namespace and checkpoint contract.
+Completed or cancelled requests drop their private state. Cache eviction drops the cache's references; it cannot invalidate active readers. State from another model owner is rejected before cached logits can be returned. Model identity includes the loaded weights, device and precision through that owner's lifetime. LoRA is unsupported. The image adapter bypasses this text-token cache: identical image-placeholder tokens can refer to different image content, so image reuse requires an extended cache namespace and checkpoint contract.
 
 ## Attention page storage
 
