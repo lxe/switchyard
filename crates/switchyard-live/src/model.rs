@@ -220,10 +220,14 @@ impl ModelManifest {
 pub fn engine_arguments_identity(model: &ModelConfig) -> Result<String> {
     if model.engine.kind != crate::config::EngineKind::Vllm {
         use sha2::{Digest, Sha256};
-        return Ok(format!("{:x}",Sha256::digest(serde_json::to_vec(&(
-            "switchyard-engine-arguments-v1", model.engine.kind,
-            model.engine.args(model, "{model_root}")
-        ))?)));
+        return Ok(format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&(
+                "switchyard-engine-arguments-v1",
+                model.engine.kind,
+                model.engine.args(model, "{model_root}")
+            ))?)
+        ));
     }
     switchyard_agent::model::engine_arguments_identity(&model.engine.args(model, "{model_root}"))
         .map_err(Into::into)

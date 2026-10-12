@@ -123,6 +123,7 @@ impl<P: Provider> LiveRuntime<P> {
         let outcome: Result<()> = async {
             loop {
                 self.limits()?;
+                self.finish_observations()?;
                 let now = self.now();
                 for (id, request) in &requests {
                     if states[id].state == RequestStatus::Future && request.arrival_s <= now {

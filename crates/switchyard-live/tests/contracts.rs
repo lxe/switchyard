@@ -10,7 +10,10 @@ use serde_json::json;
 use std::{
     collections::{BTreeMap, VecDeque},
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, AtomicUsize, Ordering},
+    },
 };
 use switchyard_core::{FleetView, Policy, Scheduler, Scheduling};
 use switchyard_live::config::DeploymentConfig;
@@ -26,6 +29,8 @@ struct MockProvider {
     rejected_allocations: Arc<Mutex<VecDeque<u16>>>,
     allocation_attempts: Arc<Mutex<Vec<String>>>,
     agent_failure: Arc<Mutex<Option<String>>>,
+    state_delay_ms: Arc<AtomicU64>,
+    state_reads: Arc<AtomicUsize>,
 }
 impl Provider for MockProvider {
     fn endpoint_url(&self, _: &Pod, _: u16) -> String {
@@ -123,6 +128,8 @@ struct HttpFixture {
     model_manifest: serde_json::Value,
     bake: Option<MockBake>,
     agent_failure: Arc<Mutex<Option<String>>>,
+    state_delay_ms: Arc<AtomicU64>,
+    state_reads: Arc<AtomicUsize>,
 }
 
 async fn object_get(State(state): State<HttpFixture>, Path(key): Path<String>) -> Response<Body> {
@@ -332,6 +339,8 @@ async fn fixture_internal(
     let manifest = json!({"format":"shards-v1","compress":"none","total_size":1,"raw_size":1,"sha256":archive_hash,
         "chunks":[{"name":"chunk","size":1,"raw":1,"shard":0,"seq":0,"sha256":chunk_hash}],"files":{"config.json":{"size":1}}});
     let agent_failure = Arc::new(Mutex::new(None));
+    let state_delay_ms = Arc::new(AtomicU64::new(0));
+    let state_reads = Arc::new(AtomicUsize::new(0));
     let app = Router::new()
         .route(
             "/bucket/{*key}",
@@ -340,6 +349,11 @@ async fn fixture_internal(
         .route(
             "/state",
             get(|State(state): State<HttpFixture>| async move {
+                state.state_reads.fetch_add(1, Ordering::Relaxed);
+                tokio::time::sleep(std::time::Duration::from_millis(
+                    state.state_delay_ms.load(Ordering::Relaxed),
+                ))
+                .await;
                 let error = state.agent_failure.lock().unwrap().clone();
                 Json(switchyard_agent::State {
                     model_allocation: Default::default(),
@@ -387,6 +401,8 @@ async fn fixture_internal(
             model_manifest: manifest,
             bake: bake.clone(),
             agent_failure: agent_failure.clone(),
+            state_delay_ms: state_delay_ms.clone(),
+            state_reads: state_reads.clone(),
         });
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
@@ -518,6 +534,8 @@ async fn fixture_internal(
         rejected_allocations: Arc::new(Mutex::new(VecDeque::new())),
         allocation_attempts: Arc::new(Mutex::new(vec![])),
         agent_failure,
+        state_delay_ms,
+        state_reads,
     };
     let storage = Storage::with_keys(&config.storage, "fake".into(), "fake".into()).unwrap();
     let runtime = LiveRuntime::new(
@@ -1535,6 +1553,48 @@ async fn native_registry_does_not_export_after_canceling_an_active_remote_reques
             .events
             .iter()
             .any(|event| event == "export-start")
+    );
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+}
+
+#[tokio::test]
+async fn slow_passive_observation_does_not_block_hot_dispatch_or_cleanup() {
+    let (mut runtime, provider, out, server) = fixture(false, false).await;
+    let warm = runtime
+        .run_workload("warm", &calls(1), 200.0, 5.0)
+        .await
+        .unwrap();
+    assert_eq!(warm.completed, 1);
+    runtime.set_policy(Policy::WarmOnly);
+    let before = provider.state_reads.load(Ordering::Relaxed);
+    provider.state_delay_ms.store(3000, Ordering::Relaxed);
+    let started = std::time::Instant::now();
+    let hot = runtime
+        .run_workload("slow-state-hot", &calls(32), 200.0, 1.5)
+        .await
+        .unwrap();
+    assert_eq!(hot.completed, 32);
+    assert!(!hot.budget_exceeded);
+    assert!(started.elapsed().as_secs_f64() < 1.5);
+    assert_eq!(
+        provider.state_reads.load(Ordering::Relaxed),
+        before + 1,
+        "only one outstanding observation per host"
+    );
+    let cleanup = std::time::Instant::now();
+    runtime.cleanup().await.unwrap();
+    assert!(
+        cleanup.elapsed().as_secs_f64() < 1.0,
+        "cleanup cancels the outstanding HTTP read"
+    );
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
     );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();

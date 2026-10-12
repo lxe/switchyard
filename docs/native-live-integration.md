@@ -85,3 +85,7 @@ python deploy/native/write-gauntlet-receipt.py \
 ```
 
 The generator requires terminal execution and resolved allocation journals. It observes every owned pod through the provider API and refuses publication while any pod still exists. A missing workload, failed call, unfinished call or exceeded budget prevents a functional acceptance claim. Throughput targets have their own result fields. The receipt distinguishes the controller's checkout revision from its executable SHA, retains the pinned engine/platform identities, and reports overlapping hydration intervals and captured prefix-cache events without treating worker time as elapsed startup time.
+
+## Raw-file fleet gauntlet
+
+The [raw-range fleet](../configs/runpod/native-fleet-f32-l4-raw-ranges-candidate.json) pins all three F32 model files and uses twenty shared hydration permits. Its [first full gauntlet receipt](receipts/native-raw-range-l4-full-gauntlet.json) establishes 1,470 completed calls each for 0.8B and 2B. The 4B burst exceeded its completion budget; full three-model acceptance remains incomplete. [Router state observations](native-router-observations.md) documents the evidenced passive-polling bottleneck and its independently owned task implementation. Provider capacity and network delays remain visible in the retained receipts.

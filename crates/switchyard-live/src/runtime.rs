@@ -6,6 +6,7 @@
 mod bake;
 mod lifecycle;
 mod native_cache;
+mod observation;
 mod profiles;
 mod report;
 mod routing;
@@ -21,7 +22,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
     path::{Path, PathBuf},
     sync::Arc,
     time::Instant,
@@ -133,6 +134,8 @@ pub struct LiveRuntime<P: Provider> {
     controller: Box<dyn Scheduler + Send>,
     scheduling: Scheduling,
     tasks: JoinSet<()>,
+    state_tasks: JoinSet<observation::StateObservation>,
+    state_reads: HashMap<tokio::task::Id, (usize, f64)>,
     launches: usize,
     probes: usize,
     releases: usize,
@@ -215,6 +218,8 @@ impl<P: Provider> LiveRuntime<P> {
             controller: Box::new(BuiltinScheduler::new(policy)),
             scheduling,
             tasks: JoinSet::new(),
+            state_tasks: JoinSet::new(),
+            state_reads: HashMap::new(),
             launches: 0,
             probes: 0,
             releases: 0,

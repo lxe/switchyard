@@ -247,56 +247,6 @@ impl<P: Provider> LiveRuntime<P> {
         self.limits()?;
         Ok(true)
     }
-    pub(super) async fn observe(&mut self) -> Result<()> {
-        let now = self.now();
-        for node in &mut self.nodes {
-            if node.owned.ended_s.is_some() {
-                continue;
-            }
-            let start_s = self.epoch.elapsed().as_secs_f64();
-            let response = node.endpoint.state().await;
-            let finish_s = self.epoch.elapsed().as_secs_f64();
-            if response.is_err() {
-                super::telemetry::append(
-                    &self.out,
-                    "agent-observations.ndjson",
-                    &serde_json::json!({
-                        "at_s":finish_s,"start_s":start_s,"finish_s":finish_s,"pod":node.owned.pod.id,"status":"fetch_failed",
-                    }),
-                )?;
-            }
-            match response {
-                Ok(state) => {
-                    let at_s = finish_s;
-                    if node.bandwidth.record(
-                        at_s,
-                        received_counters(&state),
-                        &self.scheduling.probe,
-                    ) {
-                        node.observed.host.probe = None;
-                    }
-                    let observation = serde_json::json!({"at_s":at_s,"start_s":start_s,"finish_s":finish_s,"pod":node.owned.pod.id,"state":state});
-                    super::telemetry::append(&self.out, "agent-observations.ndjson", &observation)?;
-                    self.observations.push(observation);
-                    if update_observation(&mut node.observed, &state, at_s)? {
-                        println!(
-                            "{} ready after {:.1}s",
-                            self.profiles[node.observed.profile].model,
-                            at_s - node.owned.allocated_s
-                        );
-                    }
-                }
-                Err(_)
-                    if now - node.owned.allocated_s
-                        < self.config.limits.startup_timeout_s as f64 => {}
-                Err(_) => return Err(Error::Limit("agent failed to become reachable".into())),
-            }
-            if !node.observed.is_ready {
-                node.observed.ready_s = now + self.profiles[node.observed.profile].startup.engine_s;
-            }
-        }
-        Ok(())
-    }
     pub(super) async fn probe(&mut self, id: usize) -> Result<()> {
         let Some(node) = self.nodes.get_mut(id) else {
             self.invalid += 1;
@@ -431,6 +381,7 @@ impl<P: Provider> LiveRuntime<P> {
             .iter()
             .map(|node| node.observed.active.is_empty())
             .collect::<Vec<_>>();
+        self.cancel_observations().await;
         self.abort_requests().await;
         for (id, allowed) in collectable.into_iter().enumerate() {
             if allowed && let Some(cache) = self.collect_native_cache(id).await {
@@ -511,7 +462,7 @@ impl<P: Provider> LiveRuntime<P> {
     }
 }
 
-fn received_counters(state: &switchyard_agent::State) -> Vec<TransferCounter> {
+pub(super) fn received_counters(state: &switchyard_agent::State) -> Vec<TransferCounter> {
     let mut counters = vec![TransferCounter {
         source: format!(
             "model:{:?}:{}:{}",
@@ -585,7 +536,7 @@ fn artifact_progress(state: &switchyard_agent::State) -> (u64, bool) {
         })
 }
 
-fn update_observation(
+pub(super) fn update_observation(
     node: &mut ObservedNode,
     state: &switchyard_agent::State,
     at_s: f64,
