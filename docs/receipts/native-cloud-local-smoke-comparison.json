@@ -1,0 +1,465 @@
+{
+  "format": "switchyard-native-cloud-local-smoke-comparison-v1",
+  "workload_sha256": "75310de34fcfd4c0509311921af1b0ede73c3df84113a0dc38b16b2f4306dac7",
+  "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+  "cuda_build": "13.0.0",
+  "cloud_engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+  "local_engine_sha256": "37774358815f7fa83b495912655676a238cdaa89a090ab0aa302e659ddff94f8",
+  "local_gpu": "NVIDIA GeForce RTX 5090, 615.71.09, 12.0",
+  "scope": "Same native-cache-smoke messages, request identifiers, options, order and counts as RunPod; direct loopback HTTP, fresh process each run. No allocation, R2 hydration, scheduler or proxy. Existing verified local model files; filesystem cache uncontrolled. Empty-cache run then retained-driver-cache run on same GPU.",
+  "architecture_comparison": "same source commit and CUDA13.0 builder; SM89 L4 cloud versus SM120a RTX5090 local; executable bytes differ by architecture",
+  "configuration": "F32; context128; batch8; queue64; collect2ms; paged-prefix256MiB and16entries; identical model-specific weight byte caps; local model path differs. No LoRA selected.",
+  "models": [
+    {
+      "model": "qwen3.5-2b",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "cloud_gpu": {
+        "policy": "opportunistic",
+        "status": "miss",
+        "observed_gpu": "NVIDIA L4",
+        "selected_driver": "580.159.04",
+        "compute_cap": "8.9"
+      },
+      "cloud_receipt": "native-f32-l4-2b-smoke.json",
+      "cloud_model_archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+      "cloud_clock_alignment": {
+        "method": "Intersect client request/response brackets with model diagnostics elapsed plus model hydration milestone; diagnostics are created just after that milestone. Approximate alignment; small initialization gap is not measured.",
+        "agent_epoch_bracket_s": [
+          9.656591297999995,
+          9.834028199000002
+        ],
+        "agent_epoch_midpoint_s": 9.745309748499999,
+        "cumulative_milestones_estimate_s": {
+          "runtime_hydration_started": 10.485474182499999,
+          "model_hydration_started": 10.5002379965,
+          "runtime_hydration_finished": 17.2764133765,
+          "model_hydration_finished": 54.1375617805,
+          "engine_spawned": 54.138181318499996,
+          "engine_health_polling_started": 54.1552031235,
+          "engine_health_ready": 60.8406177075
+        }
+      },
+      "cloud_transfer": {
+        "runtime_compressed_bytes": 452843976,
+        "runtime_elapsed_s": 6.790939194,
+        "model_compressed_bytes": 2939006830,
+        "model_extracted_file_bytes": 3776527078,
+        "model_elapsed_s": 43.637323784,
+        "model_shards": 3,
+        "bulk_received_bytes": 2935632969,
+        "body_first_to_eof_s": 43.226579681,
+        "bulk_MB_per_s": 67.91268221229035,
+        "network_body_wait_s": 36.75290970699995,
+        "bounded_buffer_wait_s": 5.935211703999992,
+        "permit_wait_s": 1.79999999999961e-07,
+        "body_eof_to_shard_complete_s": 0.018475940000001856,
+        "storage": "overlay"
+      },
+      "cloud_engine_first_phases": {
+        "process_started": 5.31e-06,
+        "device_initialization_started": 0.000484108,
+        "device_initialized": 0.253093881,
+        "weights_read_started": 0.25322455,
+        "tokenizer_loaded": 0.552844394,
+        "weights_read_finished": 2.911178263,
+        "model_loaded": 6.370488268,
+        "http_listening": 6.468592957,
+        "batch_started": 8.53290881,
+        "prefix_prefill": 16.727345094,
+        "batch_finished": 18.272721425
+      },
+      "cloud_workloads": [
+        {
+          "name": "cold-single",
+          "elapsed_s": 73.358059895,
+          "output_tokens": 29,
+          "output_tokens_per_s": 0.3953212508824352,
+          "arrival_ttft_p95_s": 71.58622452200001,
+          "http_request_ttft_p95_s": 8.85106414300001,
+          "http_completion_elapsed_s": 10.000504331000009,
+          "input_tokens": [
+            28
+          ],
+          "content_trimmed_sha256": [
+            "ca44d3bccbbae1379ab276170dc925e85a8969f2e668ca7324dc7cdecf7ff4e5"
+          ]
+        },
+        {
+          "name": "hot-single",
+          "elapsed_s": 1.9141132299999981,
+          "output_tokens": 29,
+          "output_tokens_per_s": 15.15061885863462,
+          "arrival_ttft_p95_s": 1.0535734989999952,
+          "http_request_ttft_p95_s": 0.8535369490000022,
+          "http_completion_elapsed_s": 1.6779708810000074,
+          "input_tokens": [
+            28
+          ],
+          "content_trimmed_sha256": [
+            "ca44d3bccbbae1379ab276170dc925e85a8969f2e668ca7324dc7cdecf7ff4e5"
+          ]
+        },
+        {
+          "name": "shared-system-prefix",
+          "elapsed_s": 3.7921255859999974,
+          "output_tokens": 192,
+          "output_tokens_per_s": 50.63123455321138,
+          "arrival_ttft_p95_s": 2.184858503000001,
+          "http_request_ttft_p95_s": 1.988495706000009,
+          "http_completion_elapsed_s": 3.5046796490000105,
+          "input_tokens": [
+            69,
+            71,
+            72,
+            69,
+            71,
+            72,
+            69,
+            71
+          ],
+          "content_trimmed_sha256": [
+            "ec0ee46b83d87e0c418949307e3f99e4d7958a1fa06ad23006c34003912bb42c",
+            "0a65c801ba34844ae4e3d1f55773e85093eba101a3d8d8e03c6565d66fe1b3d3",
+            "7ae9fb1b2e113ca257f4fa3731289d54748ee6e8ee76052693144aa9943808be",
+            "ec0ee46b83d87e0c418949307e3f99e4d7958a1fa06ad23006c34003912bb42c",
+            "27c483a701d9ab7a7d0a7a08599f5e55ea021ed8490296517a0f9d3f228f6071",
+            "7ae9fb1b2e113ca257f4fa3731289d54748ee6e8ee76052693144aa9943808be",
+            "ec0ee46b83d87e0c418949307e3f99e4d7958a1fa06ad23006c34003912bb42c",
+            "64cc106da478358d529b84eaae28792c6932aa98e763e90adbf494f6e7a7ecd0"
+          ]
+        }
+      ],
+      "local_runs": [
+        {
+          "mode": "empty_driver_cache",
+          "cache_files_before": 0,
+          "cache_files_after": 23,
+          "engine_returncode": 0,
+          "listener_observed_s": 8.651669495011447,
+          "launch_to_first_content_s": 19.031434262011317,
+          "engine_first_phases": {
+            "process_started": 3.757e-06,
+            "device_initialized": 0.112551705,
+            "weights_read_started": 0.112605708,
+            "tokenizer_loaded": 0.302035202,
+            "weights_read_finished": 2.376480147,
+            "model_loaded": 8.386977164,
+            "http_listening": 8.468639639,
+            "batch_started": 8.485091125,
+            "prefix_prefill": 18.495435593,
+            "batch_finished": 19.413210833
+          },
+          "workloads": [
+            {
+              "name": "cold-single",
+              "elapsed_s": 10.937833835996571,
+              "output_tokens": 29,
+              "output_tokens_per_s": 2.6513476466026185,
+              "http_ttft_p95_s": 10.378649669000879,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "hot-single",
+              "elapsed_s": 0.24162507998698857,
+              "output_tokens": 29,
+              "output_tokens_per_s": 120.02065349160625,
+              "http_ttft_p95_s": 0.003568077998352237,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "shared-system-prefix",
+              "elapsed_s": 0.7376250980014447,
+              "output_tokens": 192,
+              "output_tokens_per_s": 260.29483069409326,
+              "http_ttft_p95_s": 0.3805318720114883,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            }
+          ]
+        },
+        {
+          "mode": "retained_driver_cache",
+          "cache_files_before": 23,
+          "cache_files_after": 23,
+          "engine_returncode": 0,
+          "listener_observed_s": 1.4364610740012722,
+          "launch_to_first_content_s": 1.5035127470036969,
+          "engine_first_phases": {
+            "process_started": 5.146e-06,
+            "device_initialized": 0.069880767,
+            "weights_read_started": 0.069937078,
+            "tokenizer_loaded": 0.290404829,
+            "weights_read_finished": 1.004958998,
+            "model_loaded": 1.403383436,
+            "http_listening": 1.404049768,
+            "batch_started": 1.411315402,
+            "prefix_prefill": 1.4709869549999999,
+            "batch_finished": 1.715828345
+          },
+          "workloads": [
+            {
+              "name": "cold-single",
+              "elapsed_s": 0.30862277299456764,
+              "output_tokens": 29,
+              "output_tokens_per_s": 93.96584613187459,
+              "http_ttft_p95_s": 0.06690777400217485,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "hot-single",
+              "elapsed_s": 0.24088920198846608,
+              "output_tokens": 29,
+              "output_tokens_per_s": 120.38729739902803,
+              "http_ttft_p95_s": 0.0034945919906022027,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "shared-system-prefix",
+              "elapsed_s": 0.5858880890009459,
+              "output_tokens": 192,
+              "output_tokens_per_s": 327.7076349638677,
+              "http_ttft_p95_s": 0.23011611399124376,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "model": "qwen3.5-4b",
+      "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "cloud_gpu": {
+        "policy": "opportunistic",
+        "status": "miss",
+        "observed_gpu": "NVIDIA L4",
+        "selected_driver": "580.178.04",
+        "compute_cap": "8.9"
+      },
+      "cloud_receipt": "native-f32-l4-4b-smoke.json",
+      "cloud_model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+      "cloud_clock_alignment": {
+        "method": "Intersect client request/response brackets with model diagnostics elapsed plus model hydration milestone; diagnostics are created just after that milestone. Approximate alignment; small initialization gap is not measured.",
+        "agent_epoch_bracket_s": [
+          15.289546167000012,
+          15.474855111999972
+        ],
+        "agent_epoch_midpoint_s": 15.382200639499992,
+        "cumulative_milestones_estimate_s": {
+          "runtime_hydration_started": 16.27909849449999,
+          "model_hydration_started": 16.308221699499992,
+          "runtime_hydration_finished": 20.36587075349999,
+          "model_hydration_finished": 124.61037276249999,
+          "engine_spawned": 124.61105591949999,
+          "engine_health_polling_started": 124.6366177715,
+          "engine_health_ready": 135.1962436755
+        }
+      },
+      "cloud_transfer": {
+        "runtime_compressed_bytes": 452843976,
+        "runtime_elapsed_s": 4.086772259,
+        "model_compressed_bytes": 6559047971,
+        "model_extracted_file_bytes": 8424396060,
+        "model_elapsed_s": 108.302151063,
+        "model_shards": 3,
+        "bulk_received_bytes": 6555674116,
+        "body_first_to_eof_s": 107.586040068,
+        "bulk_MB_per_s": 60.93424492486638,
+        "network_body_wait_s": 74.76956064100014,
+        "bounded_buffer_wait_s": 30.924821313999967,
+        "permit_wait_s": 3.609999999999378e-07,
+        "body_eof_to_shard_complete_s": 0.014218931000002044,
+        "storage": "overlay"
+      },
+      "cloud_engine_first_phases": {
+        "process_started": 7.374e-06,
+        "device_initialization_started": 0.000475002,
+        "device_initialized": 0.307994218,
+        "weights_read_started": 0.308121449,
+        "tokenizer_loaded": 0.570541748,
+        "weights_read_finished": 5.566569642,
+        "model_loaded": 10.232387547,
+        "http_listening": 10.345944892,
+        "batch_started": 11.838560571,
+        "prefix_prefill": 21.306031195,
+        "batch_finished": 24.20216151
+      },
+      "cloud_workloads": [
+        {
+          "name": "cold-single",
+          "elapsed_s": 149.29499391299998,
+          "output_tokens": 32,
+          "output_tokens_per_s": 0.21434074352585222,
+          "arrival_ttft_p95_s": 146.736382129,
+          "http_request_ttft_p95_s": 10.20291421600001,
+          "http_completion_elapsed_s": 12.681452125000021,
+          "input_tokens": [
+            28
+          ],
+          "content_trimmed_sha256": [
+            "c06146483a4b9611f7b06f4b4e09ae8e27a8ca4560d2fdff5e99c24e7fa5a689"
+          ]
+        },
+        {
+          "name": "hot-single",
+          "elapsed_s": 2.888185410999995,
+          "output_tokens": 32,
+          "output_tokens_per_s": 11.079621092927145,
+          "arrival_ttft_p95_s": 0.7338931569999829,
+          "http_request_ttft_p95_s": 0.37270690799999784,
+          "http_completion_elapsed_s": 2.4949707260000196,
+          "input_tokens": [
+            28
+          ],
+          "content_trimmed_sha256": [
+            "c06146483a4b9611f7b06f4b4e09ae8e27a8ca4560d2fdff5e99c24e7fa5a689"
+          ]
+        },
+        {
+          "name": "shared-system-prefix",
+          "elapsed_s": 7.0947194190000005,
+          "output_tokens": 217,
+          "output_tokens_per_s": 30.586128525232944,
+          "arrival_ttft_p95_s": 4.230374235999989,
+          "http_request_ttft_p95_s": 3.66331143299999,
+          "http_completion_elapsed_s": 6.438677525000003,
+          "input_tokens": [
+            69,
+            71,
+            72,
+            69,
+            71,
+            72,
+            69,
+            71
+          ],
+          "content_trimmed_sha256": [
+            "0ce2a67d48f91af2402e0b048b301db038b885f2404f8aa2e7b52681a6f183ae",
+            "8ce6b6796967f1bb54b36a5fcca07b0c23c69b39740dcc59c3f786f512b09bfc",
+            "a3bec24a92ff6e576716e908f64072477925d1545290ea7c29b3359f4a90752b",
+            "0ce2a67d48f91af2402e0b048b301db038b885f2404f8aa2e7b52681a6f183ae",
+            "8ce6b6796967f1bb54b36a5fcca07b0c23c69b39740dcc59c3f786f512b09bfc",
+            "a3bec24a92ff6e576716e908f64072477925d1545290ea7c29b3359f4a90752b",
+            "0ce2a67d48f91af2402e0b048b301db038b885f2404f8aa2e7b52681a6f183ae",
+            "8ce6b6796967f1bb54b36a5fcca07b0c23c69b39740dcc59c3f786f512b09bfc"
+          ]
+        }
+      ],
+      "local_runs": [
+        {
+          "mode": "empty_driver_cache",
+          "cache_files_before": 0,
+          "cache_files_after": 23,
+          "engine_returncode": 0,
+          "listener_observed_s": 12.418554935997236,
+          "launch_to_first_content_s": 22.559845974989003,
+          "engine_first_phases": {
+            "process_started": 2.39e-06,
+            "device_initialized": 0.075416313,
+            "weights_read_started": 0.075467846,
+            "tokenizer_loaded": 0.306876572,
+            "weights_read_finished": 5.82669554,
+            "model_loaded": 12.303167179,
+            "http_listening": 12.384835426,
+            "batch_started": 12.394554176,
+            "prefix_prefill": 22.172965977,
+            "batch_finished": 23.072001421
+          },
+          "workloads": [
+            {
+              "name": "cold-single",
+              "elapsed_s": 10.68231738099712,
+              "output_tokens": 32,
+              "output_tokens_per_s": 2.9956046856391962,
+              "http_ttft_p95_s": 10.141051572994911,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "hot-single",
+              "elapsed_s": 0.48885214400070254,
+              "output_tokens": 32,
+              "output_tokens_per_s": 65.45946538786994,
+              "http_ttft_p95_s": 0.0033167169895023108,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "shared-system-prefix",
+              "elapsed_s": 1.310050339990994,
+              "output_tokens": 217,
+              "output_tokens_per_s": 165.64248973935747,
+              "http_ttft_p95_s": 0.674352005997207,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            }
+          ]
+        },
+        {
+          "mode": "retained_driver_cache",
+          "cache_files_before": 23,
+          "cache_files_after": 23,
+          "engine_returncode": 0,
+          "listener_observed_s": 3.3903644620004343,
+          "launch_to_first_content_s": 3.4839024230022915,
+          "engine_first_phases": {
+            "process_started": 1.717e-06,
+            "device_initialized": 0.067965662,
+            "weights_read_started": 0.068022556,
+            "tokenizer_loaded": 0.284948453,
+            "weights_read_finished": 2.437672593,
+            "model_loaded": 3.354892106,
+            "http_listening": 3.355536843,
+            "batch_started": 3.363261272,
+            "prefix_prefill": 3.446234442,
+            "batch_finished": 3.937687452
+          },
+          "workloads": [
+            {
+              "name": "cold-single",
+              "elapsed_s": 0.5792332470009569,
+              "output_tokens": 32,
+              "output_tokens_per_s": 55.24544760799467,
+              "http_ttft_p95_s": 0.09340045499266125,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "hot-single",
+              "elapsed_s": 0.4897417619940825,
+              "output_tokens": 32,
+              "output_tokens_per_s": 65.34055799061436,
+              "http_ttft_p95_s": 0.003501674989820458,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            },
+            {
+              "name": "shared-system-prefix",
+              "elapsed_s": 1.0402679940016242,
+              "output_tokens": 217,
+              "output_tokens_per_s": 208.6000927177052,
+              "http_ttft_p95_s": 0.4029532900021877,
+              "all_input_counts_match_cloud": true,
+              "all_content_hashes_match_cloud": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Single samples on different GPU architectures, host drivers and CPU/filesystem environments. Executable bytes are architecture-specific; source and CUDA builder match.",
+    "Local files already exist; local times exclude R2 download, extraction, RunPod allocation, agent and external proxy. Filesystem residency was uncontrolled.",
+    "Empty then retained CUDA driver caches; filesystem warmth changes too. Stage differences do not independently isolate every JIT or CPU/filesystem cost.",
+    "Cloud has no matching driver seed. First-prefill timings include compilation and model execution; no per-kernel compiler trace was retained.",
+    "Network body-await time includes socket/TLS/client behavior. Decoder CPU, filesystem wait and underlying disk throughput were not separately measured.",
+    "Cumulative cloud agent alignment is approximate; report native-engine phases on their own monotonic clock.",
+    "All ten inputs and normalized output-content hashes matched cloud in each local run. This is recorded workload equality, not a general numerical parity claim."
+  ],
+  "local_producer_sha256": "385d75e7939e8997886947163d291ae6707a20861a57da7338661e79ae7cc06c",
+  "local_raw_receipt_sha256": "99b5e4034624cf0e1a63b432b92f1a150af417cada63fa32338a65ea0a110937"
+}
