@@ -114,18 +114,92 @@ def validate_prepared(config, prepared):
         raise ValueError("cache does not identify selected model artifact")
 
 
+def cacheless_prepared(config, prepared, shared):
+    """Bind the same native weights/configuration to an opportunistic wrapper."""
+    config_sha = hashlib.sha256(
+        (json.dumps(config["engine"], indent=2) + "\n").encode()
+    ).hexdigest()
+    if config_sha != prepared["compatibility"]["native_config_sha256"]:
+        raise ValueError("selected native configuration differs from prepared model")
+    if shared["compatibility"] != prepared.get("shared_runtime", {}).get(
+        "compatibility"
+    ) or any(
+        prepared["compatibility"].get(key) != value
+        for key, value in shared["compatibility"].items()
+    ):
+        raise ValueError("opportunistic runtime differs from prepared engine build")
+    launch = shared["launch_configuration"]
+    environment = launch["environment"]
+    if (
+        launch["artifact"]["id"] != shared["runtime"]["id"]
+        or launch["program"] != "bin/launch-engine.sh"
+        or environment.get("NATIVE_ENGINE_CACHE_POLICY") != "opportunistic"
+        or environment.get("NATIVE_ENGINE_EXPECTED_GPU") != config["provider"]["gpu_id"]
+        or environment.get("NATIVE_ENGINE_EXPECTED_COMPUTE_CAP")
+        != shared["compatibility"]["gpu_compute_capability"]
+    ):
+        raise ValueError("opportunistic runtime launch identity is invalid")
+    selected = copy.deepcopy(prepared)
+    for key in [
+        "cache",
+        "cache_compatibility",
+        "bake_receipt",
+        "component_cache",
+        "selected_driver",
+    ]:
+        selected.pop(key, None)
+    selected.update(
+        runtime=shared["runtime"],
+        shared_runtime=launch,
+        gpu_bake_completed=False,
+        cache=None,
+        cache_compatibility=None,
+        cache_policy="opportunistic",
+    )
+    return selected
+
+
+def driver_selector(by_driver, family=False, opportunistic=False):
+    if opportunistic:
+        return 'export SWITCHYARD_TICKET_URL="$NATIVE_CACHE_TICKET_URL_0"\n'
+    selector = 'case "$native_driver" in\n'
+    for index, driver in enumerate(by_driver):
+        ticket_index = 0 if family else index
+        selector += f'  {driver}) export SWITCHYARD_TICKET_URL="$NATIVE_CACHE_TICKET_URL_{ticket_index}";;\n'
+    return selector + (
+        '  *) printf "native_bootstrap_error=driver_mismatch\\n" >&2; exit 78;;\nesac\n'
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--cache-alternative", type=Path, action="append", default=[])
     parser.add_argument("--family", type=Path)
+    parser.add_argument("--shared-runtime", type=Path)
+    parser.add_argument(
+        "--cache-policy", choices=["strict", "opportunistic"], default="strict"
+    )
     parser.add_argument("--live-model", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     config = json.loads(args.config.read_text())
     prepared = json.loads(args.prepared.read_text())
+    opportunistic = args.cache_policy == "opportunistic"
+    if opportunistic:
+        if not args.shared_runtime or args.family or args.cache_alternative:
+            raise ValueError(
+                "opportunistic direct launches require --shared-runtime and no baked seeds"
+            )
+        prepared = cacheless_prepared(
+            config, prepared, json.loads(args.shared_runtime.read_text())
+        )
+    elif args.shared_runtime:
+        raise ValueError(
+            "--shared-runtime requires explicit opportunistic cache policy"
+        )
     variants = [prepared] + [json.loads(p.read_text()) for p in args.cache_alternative]
     family = json.loads(args.family.read_text()) if args.family else None
     if family:
@@ -150,7 +224,7 @@ def main():
             variants.append(variant)
         prepared = variants[0]
     by_driver = {}
-    for variant in variants:
+    for variant in [] if opportunistic else variants:
         validate_prepared(config, variant)
         if (
             variant["runtime"]["id"] != prepared["runtime"]["id"]
@@ -192,36 +266,42 @@ def main():
         live_model["archive_prefix"] if live_model else prepared["model"]["prefix"]
     )
     cache_labels = prepared["cache_compatibility"]
-    runtime = {
-        "artifact": ticket_artifact(control, prepared["runtime"]),
-        "compatibility": prepared["compatibility"],
-        "program": "bin/launch-engine.sh",
-        "args": [],
-        "hydration": {"retries": 0},
-        "environment": {
-            "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
-            "CUDA_CACHE_PATH": "{cache_root}/gpu-kernels/cuda",
-            "CUDA_CACHE_DISABLE": "0",
-            "CUDA_CACHE_MAXSIZE": "536870912",
-            "CUDA_VISIBLE_DEVICES": "0",
-            "NATIVE_ENGINE_EXPECTED_DRIVER": cache_labels.get("driver_version", ""),
-            "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": cache_labels[
-                "gpu_compute_capability"
+    runtime = (
+        {}
+        if opportunistic
+        else {
+            "artifact": ticket_artifact(control, prepared["runtime"]),
+            "compatibility": prepared["compatibility"],
+            "program": "bin/launch-engine.sh",
+            "args": [],
+            "hydration": {"retries": 0},
+            "environment": {
+                "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+                "CUDA_CACHE_PATH": "{cache_root}/gpu-kernels/cuda",
+                "CUDA_CACHE_DISABLE": "0",
+                "CUDA_CACHE_MAXSIZE": "536870912",
+                "CUDA_VISIBLE_DEVICES": "0",
+                "NATIVE_ENGINE_EXPECTED_DRIVER": cache_labels.get("driver_version", ""),
+                "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": cache_labels[
+                    "gpu_compute_capability"
+                ],
+            },
+            "caches": [
+                {
+                    "name": "gpu-kernels",
+                    "artifact": ticket_artifact(control, prepared["cache"]),
+                    "compatibility": cache_labels,
+                }
             ],
-        },
-        "caches": [
-            {
-                "name": "gpu-kernels",
-                "artifact": ticket_artifact(control, prepared["cache"]),
-                "compatibility": cache_labels,
-            }
-        ],
-    }
-    if family:
+        }
+    )
+    if family or opportunistic:
         runtime = {
             **copy.deepcopy(prepared["shared_runtime"]),
             "artifact": ticket_artifact(control, prepared["runtime"]),
-            "caches": [
+            "caches": []
+            if opportunistic
+            else [
                 {
                     "name": "gpu-kernels",
                     "artifact": ticket_artifact(control, prepared["cache"]),
@@ -257,7 +337,7 @@ def main():
             "early_launch": False,
         },
     }
-    if family:
+    if family or opportunistic:
         ticket["engine_args"] = [
             "--config-json",
             json.dumps(config["engine"]),
@@ -268,8 +348,7 @@ def main():
     control.put_json(ticket, ticket_key)
     ticket_keys = [ticket_key]
     selector_environment = {"NATIVE_CACHE_TICKET_URL_0": control.url(ticket_key)}
-    selector = 'case "$native_driver" in\n'
-    for index, variant in enumerate(variants):
+    for index, variant in enumerate([] if opportunistic else variants):
         driver = (
             variant.get("selected_driver")
             or variant["cache_compatibility"]["driver_version"]
@@ -290,11 +369,7 @@ def main():
             selector_environment["NATIVE_CACHE_TICKET_URL_" + str(index)] = control.url(
                 key
             )
-        ticket_index = 0 if family else index
-        selector += f'  {driver}) export SWITCHYARD_TICKET_URL="$NATIVE_CACHE_TICKET_URL_{ticket_index}";;\n'
-    selector += (
-        '  *) printf "native_bootstrap_error=driver_mismatch\\n" >&2; exit 78;;\nesac\n'
-    )
+    selector = driver_selector(by_driver, bool(family), opportunistic)
     memory_monitor = ""
     if config.get("measure_host_memory", False):
         memory_monitor = (
@@ -393,7 +468,15 @@ exec /opt/switchyard/agent
         ):
             line = json.loads(record)["line"]
             if line.startswith("native_selected_cache_driver="):
-                selected = by_driver[line.split("=", 1)[1]]
+                observed_driver = line.split("=", 1)[1]
+                if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", observed_driver):
+                    raise RuntimeError("observed driver telemetry is invalid")
+                if opportunistic:
+                    selected = copy.deepcopy(prepared)
+                    selected["observed_driver"] = observed_driver
+                    selected["cache_family_status"] = "miss"
+                else:
+                    selected = by_driver[observed_driver]
         if selected is None:
             raise RuntimeError(
                 "selected cache identity is missing from startup telemetry"
@@ -485,6 +568,10 @@ exec /opt/switchyard/agent
                     else {}
                 ),
                 "cache": prepared["cache"],
+                "cache_policy": args.cache_policy,
+                "cache_family_status": "miss" if opportunistic else "hit",
+                "observed_driver": prepared.get("observed_driver"),
+                "numerical_parity_measured_in_this_serving_run": False,
                 "compatibility": cache_labels,
                 "bounds": config["engine"],
                 "gpu_admission": config["limits"],

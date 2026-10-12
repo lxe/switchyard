@@ -20,21 +20,32 @@ def events(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ["config", "build", "bake", "launch", "output"]:
+    for name in ["config", "build", "launch", "output"]:
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--bake", type=Path)
     args = parser.parse_args()
     config = read(args.config)
     launch = read(args.launch / "receipt.json")
-    prepared = (
-        read(args.launch / "selected-prepared.json")
-        if (args.launch / "selected-prepared.json").exists()
-        else read(args.bake / "prepared-baked.json")
-    )
-    bake_dir = Path(prepared["bake_receipt"]).parent.parent
-    bake = read(bake_dir / "tree/bake.json")
-    parity_path = bake_dir / "tree/generation-parity.json"
+    selected_path = args.launch / "selected-prepared.json"
+    if selected_path.exists():
+        prepared = read(selected_path)
+    elif args.bake:
+        prepared = read(args.bake / "prepared-baked.json")
+    else:
+        raise ValueError("selected prepared identity or --bake is required")
+    opportunistic = prepared.get("cache_policy") == "opportunistic"
+    if opportunistic and (
+        prepared.get("cache") is not None
+        or prepared.get("cache_compatibility") is not None
+        or prepared.get("bake_receipt")
+        or prepared.get("gpu_bake_completed")
+    ):
+        raise ValueError("cacheless launch must not retain baked cache claims")
+    bake_dir = None if opportunistic else Path(prepared["bake_receipt"]).parent.parent
+    bake = read(bake_dir / "tree/bake.json") if bake_dir else None
+    parity_path = bake_dir / "tree/generation-parity.json" if bake_dir else None
     parity = None
-    if parity_path.exists():
+    if parity_path and parity_path.exists():
         parity = read(parity_path)
         if not parity["passed"] or parity != compare_generation(
             prepared["generation_reference"],
@@ -43,8 +54,10 @@ def main():
         ):
             raise ValueError("retained cloud generation comparison changed")
     cleanup = read(args.launch / "cleanup.json")
-    bake_cleanup = read(bake_dir / "cleanup.json")
-    if not cleanup["confirmed_absent"] or not bake_cleanup["confirmed_absent"]:
+    bake_cleanup = read(bake_dir / "cleanup.json") if bake_dir else None
+    if not cleanup["confirmed_absent"] or (
+        bake_cleanup and not bake_cleanup["confirmed_absent"]
+    ):
         raise ValueError("owned pod cleanup must be confirmed before receipt")
     state = read(args.launch / "agent-state-final.json")
     if state["phase"] != "ready" or state["inference_verified"]:
@@ -97,14 +110,21 @@ def main():
     }
     if not required.issubset({item["event"] for item in native}):
         raise ValueError("native phase telemetry is incomplete")
-    if gpu is None or gpu["driver"] != (
-        prepared.get("selected_driver")
-        or prepared["cache_compatibility"].get("driver_version")
-    ):
+    selected_driver = (
+        prepared["observed_driver"]
+        if opportunistic
+        else (
+            prepared.get("selected_driver")
+            or prepared["cache_compatibility"].get("driver_version")
+        )
+    )
+    if gpu is None or gpu["driver"] != selected_driver:
         raise ValueError("serving hardware does not match native cache")
     artifacts = []
     for key in ["runtime", "model", "cache", "preparation"]:
         ref = prepared[key]
+        if ref is None:
+            continue
         manifest = read(Path(ref["directory"]) / "manifest.json")
         artifacts.append(
             {
@@ -148,6 +168,8 @@ def main():
             else {}
         ),
         "cache_compatibility": prepared["cache_compatibility"],
+        "cache_policy": prepared.get("cache_policy", "strict"),
+        "cache_family_status": prepared.get("cache_family_status", "hit"),
         **(
             {
                 "cache_family_selection": {
@@ -224,7 +246,9 @@ def main():
             ),
             "controller_events": events(bake_dir / "controller-events.ndjson"),
             "cleanup": bake_cleanup,
-        },
+        }
+        if bake
+        else None,
         "launch_controller_events": events(args.launch / "controller-events.ndjson"),
         "cleanup": cleanup,
         "limitations": {
