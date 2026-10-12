@@ -39,3 +39,11 @@ Run `cargo run -p switchyard-engine --example vision_probe -- MODEL_ROOT MMPROJ 
 ## Released 2B and 4B encoder coverage
 
 The [2B/4B CPU receipt](receipts/native-vision-2b-4b-cpu.json) records actual complete encoder/merger comparisons for the released F16 projectors against selectively loaded original Hugging Face vision weights. Both use twenty-four 1024-channel vision blocks, with projector output widths of 2048 for 2B and 2560 for 4B. The fixed 256x256 image produces 64 embeddings. These gates include F16 parameter rounding and require maximum absolute error below 0.001 and relative L2 error below 0.0001. They validate these larger encoders; full image/text generation and HTTP serving for each larger model require separate receipts.
+
+## Serving configurations
+
+The `examples/native-qwen35-{0.8b,2b,4b}-vision.json` profiles combine F32 native text execution with the matching released F16 mmproj. The corresponding `-gguf-vision.json` profiles select a packed Q4_K_M text file. Put the matching original HF configuration, tokenizer and chat template in `model_root`; put the text weights and matching mmproj at the configured paths. These examples are relative to the repository working directory. Changing the text GGUF filename to a supported Q8_0 file retains the explicit byte budget.
+
+Each profile fixes the processed image budget at 65536 pixels, source images at 16 megapixels, encoded input at 8 MiB and each request at four images. Expanded image tokens count toward the 512-token context bound before admission. The text prefix cache remains enabled for text-only calls; image requests require independent state and bypass that cache. Vision currently uses separate single-row sessions rather than a shared GPU image batch. The configured byte limits bound transport/storage; they are not an automatic GPU-memory sizing promise.
+
+The 0.8B image/text numerical gate and the larger-model encoder gates establish the coverage described above. These example profiles do not by themselves establish full image generation, quantized text accuracy or serving acceptance for each larger model. Baking artifacts and provider scheduling remain separate from image execution.

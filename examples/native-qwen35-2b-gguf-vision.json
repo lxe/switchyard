@@ -1,0 +1,31 @@
+{
+  "model": "qwen3.5-2b",
+  "model_root": "data/gguf-qwen35-2b",
+  "device": {
+    "kind": "cuda",
+    "ordinal": 0
+  },
+  "dtype": "f32",
+  "max_context": 512,
+  "max_weight_bytes": 4294967296,
+  "max_batch_size": 8,
+  "queue_capacity": 64,
+  "batch_wait_ms": 2,
+  "cache": {
+    "page_tokens": 16,
+    "checkpoint_tokens": 32,
+    "max_bytes": 268435456,
+    "max_entries": 16
+  },
+  "vision": {
+    "mmproj": "data/gguf-qwen35-2b/mmproj-F16.gguf",
+    "max_encoded_bytes": 8388608,
+    "max_source_pixels": 16777216,
+    "max_pixels": 65536,
+    "max_images": 4
+  },
+  "weights": {
+    "kind": "gguf",
+    "file": "Qwen3.5-2B-Q4_K_M.gguf"
+  }
+}
