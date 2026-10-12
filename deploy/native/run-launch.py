@@ -68,7 +68,7 @@ def collect_logs(control, pod_id, stopped, bootstrap_errors):
                     seen.add(identity)
                     item["line"] = re.sub(
                         r"https?://[^\s\"'<>]+", "[url]", item.get("line", "")
-                    )
+                    ).replace(control.key, "[redacted]")
                     if (
                         item["line"].startswith("native_bootstrap_error=")
                         and not bootstrap_errors

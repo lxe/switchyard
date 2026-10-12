@@ -53,3 +53,20 @@ The test sends useful inference and requires real streamed token accounting. It 
 The [scheduler startup diagnostics](receipts/native-gauntlet-startup-diagnostics.json) record a successful 0.8B cold and hot call followed by cache rejection on two additional elastic hosts. All runtime, model, and cache transfers completed, but the launch wrapper found no validated driver variant for those hosts. The family covered only driver `580.159.04`; a cloud pool does not imply one common host driver. All four pods across the recorded attempts subsequently returned HTTP 404, with estimated rental of $0.0362. The full three-model gauntlet is not established by these partial measurements. One earlier startup failure remains unexplained because engine stderr was not retained before pod deletion.
 
 Native serving reads capped host checkpoint buffers and copies tensors to CUDA after hydration. Incoming model bytes are not loaded directly into GPU tensors. The integrated engine independently prefills equal-length groups and joins varied-length requests into shared decoding, with fixed per-row positions and state compaction. Its [three-model F32 reference gates](native-merged-decode.md) pass; endpoint and cloud throughput require separate measurements. Continuous admission, prefix reuse and paged KV allocation remain subsequent work. F32 mathematical gates pass on the recorded model workloads, while strict BF16 sequence parity with vLLM is incomplete. Quantized projection fixtures do not admit GGUF models to serving.
+
+## F32 fleet candidate and observed execution
+
+The [F32 fleet candidate](../configs/runpod/native-fleet-f32-prefix-candidate.json) pins the reference-tested paged-prefix engine, three native model archives and cache families validated on drivers 580.126.20 and 580.159.04. Its 64 GiB host RAM admission remains unchanged. The separately named [32 GiB candidate](../configs/runpod/native-fleet-f32-prefix-32g-candidate.json) changes only host RAM admission; it retains the engine, GPU, request, hydration and cost limits. The [read-only preflight receipt](receipts/native-f32-prefix-preflight-32g.json) validates the actual published manifests and tokenizers. Preflight does not establish 4B host-memory capacity or full cloud acceptance.
+
+The observer below runs the Rust scheduler gauntlet and collects provider stderr for every pod in its ownership journals. Run it in the existing tmux session. It records the CLI, fleet and workload identities, emits concise phase changes and retains detailed evidence under the selected output directory:
+
+```sh
+python deploy/native/run-gauntlet.py \
+  --binary target/release/switchyard \
+  --config configs/runpod/native-fleet-f32-prefix-32g-candidate.json \
+  --workloads configs/runpod/native-gauntlet.json \
+  --env-file /path/to/provider.env --env-file /path/to/storage.env \
+  --model qwen3.5-0.8b --out results/native-f32-gauntlet-0.8b
+```
+
+Omit `--model` for the three-model experiment only after host-memory and fresh-serving gates cover that fleet. Interrupting the observer forwards Ctrl-C to the owned Rust process and lets its cleanup finish. The observer never claims cleanup on behalf of the provider; inspect per-model `outcome.json`, ownership journals and the provider state. If a process is lost, use the existing `live recover` command with that exact run directory. Desired-throughput misses remain in workload receipts.
