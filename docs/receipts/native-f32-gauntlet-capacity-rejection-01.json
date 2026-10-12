@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-12T01:41:43.223834+00:00",
+  "scope": "Complete1470-call 0.8B scheduler experiment was invoked; initialization failed before allocation or useful inference.",
+  "observer_source": {
+    "cli_sha256": "f5094783842750e928653511083a14266a60eebba722d5983bdf7cc3d3555a17",
+    "fleet_sha256": "57b97a9189c87f284b7a27220deaabb2984adcf0c26ef1b938fb1e7818b113c1",
+    "workloads_sha256": "2f212a0d22dd1c8b94cacc50f2d75c71a6bca2c82e1304e11fb737189b0b412c",
+    "selected_model": "qwen3.5-0.8b",
+    "provider_log_api": "https://api.runpod.io/v2"
+  },
+  "observer_outcome": {
+    "returncode": 1,
+    "elapsed_s": 1.000486749006086,
+    "observed_owned_pods": [],
+    "cleanup_authority": "Rust owned-pods and pending-launches journals; inspect per-model outcome.json"
+  },
+  "error": "Error: Provider(NoCapacity)",
+  "owned_pod_journal_written": false,
+  "pending_launch_journal_written": false,
+  "models_completed": 0,
+  "provider_catalog_confirmation": [
+    {
+      "utc": "2026-10-12T01:33:51.836234+00:00",
+      "user_agent": "Switchyard/0.1",
+      "gpu": {
+        "id": "NVIDIA GeForce RTX 4090",
+        "memory": 24,
+        "price": {
+          "community": 0.34,
+          "secure": 0.89,
+          "serverless": 1.1
+        }
+      },
+      "data_centers": null
+    },
+    {
+      "utc": "2026-10-12T01:33:52.775448+00:00",
+      "user_agent": "Switchyard/0.5",
+      "gpu": {
+        "id": "NVIDIA GeForce RTX 4090",
+        "memory": 24,
+        "price": {
+          "community": 0.34,
+          "secure": 0.89,
+          "serverless": 1.1
+        }
+      },
+      "data_centers": null
+    }
+  ],
+  "rust_discovery_offer_count": 0,
+  "cause": "The constrained provider catalog returned no RTX4090 dataCenters under both matched user agents; Rust discovery returned zero offerings. This attempt failed before memory admission, model hydration or engine startup.",
+  "alternative_capacity": {
+    "observed_utc": "2026-10-12T01:39:45.439481+00:00",
+    "query": {
+      "cloud": "SECURE",
+      "count": 1,
+      "minCudaVersion": "13.0"
+    },
+    "gpu_memory_min_gb": 24,
+    "gpu_price_max_hourly_usd": 1,
+    "gpus": [
+      {
+        "id": "NVIDIA A40",
+        "memory": 48,
+        "price": {
+          "community": 0.35,
+          "secure": 0.59,
+          "serverless": 1.22
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "CA-MTL-1",
+            "name": "CA-MTL-1"
+          },
+          {
+            "availability": "LOW",
+            "id": "EU-SE-1",
+            "name": "EU-SE-1"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA L4",
+        "memory": 24,
+        "price": {
+          "community": 0.44,
+          "secure": 0.59,
+          "serverless": 0.69
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "EU-RO-1",
+            "name": "EU-RO-1"
+          },
+          {
+            "availability": "LOW",
+            "id": "EUR-IS-1",
+            "name": "EUR-IS-1"
+          },
+          {
+            "availability": "LOW",
+            "id": "US-MO-2",
+            "name": "US-MO-2"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA L40",
+        "memory": 48,
+        "price": {
+          "community": 0.69,
+          "secure": 0.82,
+          "serverless": 1.75
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "EUR-IS-2",
+            "name": "EUR-IS-2"
+          },
+          {
+            "availability": "LOW",
+            "id": "US-KS-2",
+            "name": "US-KS-2"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA RTX 6000 Ada Generation",
+        "memory": 48,
+        "price": {
+          "community": 0.74,
+          "secure": 0.99,
+          "serverless": 1.75
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "US-WA-1",
+            "name": "US-WA-1"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA RTX PRO 4000 Blackwell",
+        "memory": 24,
+        "price": {
+          "community": 0.5,
+          "secure": 0.57
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "EU-RO-1",
+            "name": "EU-RO-1"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA RTX PRO 4500 Blackwell",
+        "memory": 32,
+        "price": {
+          "community": 0.34,
+          "secure": 0.72,
+          "serverless": 1.15
+        },
+        "dataCenters": [
+          {
+            "availability": "MEDIUM",
+            "id": "EU-RO-1",
+            "name": "EU-RO-1"
+          },
+          {
+            "availability": "LOW",
+            "id": "EUR-IS-1",
+            "name": "EUR-IS-1"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA RTX PRO 4500 Blackwell Server Edition",
+        "memory": 32,
+        "price": {
+          "community": 0.5,
+          "secure": 0.72
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "US-KS-2",
+            "name": "US-KS-2"
+          }
+        ]
+      },
+      {
+        "id": "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb",
+        "memory": 24,
+        "price": {
+          "community": 0.5,
+          "secure": 0.69,
+          "serverless": 0.69
+        },
+        "dataCenters": [
+          {
+            "availability": "LOW",
+            "id": "EUR-IS-2",
+            "name": "EUR-IS-2"
+          },
+          {
+            "availability": "LOW",
+            "id": "US-PA-1",
+            "name": "US-PA-1"
+          }
+        ]
+      }
+    ]
+  },
+  "next_path": {
+    "gpu": "NVIDIA L40",
+    "memory_gb": 48,
+    "compiler_target": "compute_89",
+    "source": "https://developer.nvidia.com/cuda/gpus",
+    "required_acceptance": "New actual-GPU/driver cache bake and complete generation parity, then fresh serving and scheduler receipts. Existing4090 cache artifacts cannot be relabeled."
+  }
+}

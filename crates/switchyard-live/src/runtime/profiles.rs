@@ -26,15 +26,8 @@ pub(super) async fn prepare<P: Provider>(
     config: &ExecutionConfig,
     out: &Path,
 ) -> Result<Prepared> {
-    let offerings = provider
-        .offers()
-        .await?
-        .into_iter()
-        .filter(|o| o.total_usd_per_hour() <= config.limits.max_usd_per_hour)
-        .collect::<Vec<_>>();
-    if offerings.is_empty() {
-        return Err(switchyard_provider::Error::NoCapacity.into());
-    }
+    let quoted = provider.offers().await?;
+    let offerings = admit_offerings(quoted, config.limits.max_usd_per_hour, out)?;
     let mut manifests = BTreeMap::new();
     let mut planners = BTreeMap::new();
     let mut profiles = vec![];
@@ -127,6 +120,34 @@ pub(super) async fn prepare<P: Provider>(
     })
 }
 
+/// Persist admission evidence before returning an early capacity failure.
+fn admit_offerings(
+    quoted: Vec<Offering>,
+    max_hourly_usd: f64,
+    out: &Path,
+) -> Result<Vec<Offering>> {
+    let admitted: Vec<_> = quoted
+        .iter()
+        .filter(|o| o.total_usd_per_hour() <= max_hourly_usd)
+        .cloned()
+        .collect();
+    std::fs::write(
+        out.join("offering-admission.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "quoted": quoted,
+            "admitted": admitted,
+            "max_hourly_usd": max_hourly_usd,
+            "observed_at_unix_s": std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs(),
+            "scope": "Provider offerings and hourly admission; no allocation performed"
+        }))?,
+    )?;
+    if admitted.is_empty() {
+        return Err(switchyard_provider::Error::NoCapacity.into());
+    }
+    Ok(admitted)
+}
+
 /// Use the configured priors without presenting them as measured GPU performance.
 fn profile(
     model: &ModelConfig,
@@ -197,6 +218,41 @@ fn native_hardware_admitted(offer: &Offering, required: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn early_capacity_failure_retains_empty_and_price_rejected_quotes() {
+        let out = tempfile::tempdir().unwrap();
+        assert!(matches!(
+            admit_offerings(vec![], 1.0, out.path()),
+            Err(Error::Provider(switchyard_provider::Error::NoCapacity))
+        ));
+        let read = || -> serde_json::Value {
+            serde_json::from_slice(
+                &std::fs::read(out.path().join("offering-admission.json")).unwrap(),
+            )
+            .unwrap()
+        };
+        assert_eq!(read()["quoted"], serde_json::json!([]));
+        let offer = Offering {
+            gpu: "fixture".into(),
+            gpu_memory_gb: 24,
+            data_center: "fixture".into(),
+            availability: "LOW".into(),
+            gpu_usd_per_hour: 1.0,
+            disk_usd_per_hour: 0.01,
+            quoted_at_unix_s: 123,
+        };
+        assert!(admit_offerings(vec![offer.clone()], 1.0, out.path()).is_err());
+        assert_eq!(read()["quoted"][0]["quoted_at_unix_s"], 123);
+        assert_eq!(read()["admitted"], serde_json::json!([]));
+        assert_eq!(
+            admit_offerings(vec![offer], 1.01, out.path())
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(read()["admitted"].as_array().unwrap().len(), 1);
+    }
+
     #[test]
     fn native_admission_rejects_insufficient_and_overflowing_catalog_capacity() {
         let mut offer = Offering {

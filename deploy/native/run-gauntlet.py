@@ -55,6 +55,16 @@ def observation_phases(path):
     return phases
 
 
+def emit_log(path, offset, key):
+    with path.open(errors="replace") as source:
+        source.seek(offset)
+        for line in source.read().splitlines():
+            safe = re.sub(r"https?://[^\s]+", "[url]", line).replace(key, "[redacted]")
+            if safe:
+                print(safe, flush=True)
+        return source.tell()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, required=True)
@@ -102,13 +112,7 @@ def main():
                                    start_new_session=True)
         try:
             while process.poll() is None:
-                with log_path.open() as source_log:
-                    source_log.seek(offset)
-                    for line in source_log.read().splitlines():
-                        safe = re.sub(r"https?://[^\s]+", "[url]", line).replace(key, "[redacted]")
-                        if safe:
-                            print(safe, flush=True)
-                    offset = source_log.tell()
+                offset = emit_log(log_path, offset, key)
                 for path in args.out.glob("*/agent-observations.ndjson"):
                     for pod, phase in observation_phases(path).items():
                         identity = (path.parent.name, pod)
@@ -131,6 +135,7 @@ def main():
                         workers[pod] = worker
                         worker.start()
                 time.sleep(1)
+            emit_log(log_path, offset, key)
         except BaseException:
             if process.poll() is None:
                 print("phase=waiting_for_owned_cleanup", flush=True)

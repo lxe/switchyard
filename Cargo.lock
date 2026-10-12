@@ -2970,6 +2970,7 @@ dependencies = [
  "switchyard-core",
  "switchyard-provider",
  "switchyard-scheduler",
+ "tempfile",
  "thiserror 2.0.21",
  "tokenizers 0.22.2",
  "tokio",

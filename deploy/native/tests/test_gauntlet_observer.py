@@ -33,7 +33,7 @@ class ObserverTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             binary = root / "fixture-cli"
-            binary.write_text("#!/usr/bin/env python3\nraise SystemExit(7)\n")
+            binary.write_text("#!/usr/bin/env python3\nprint('Error: fixture-private-value https://fixture.invalid/?secret=value')\nraise SystemExit(7)\n")
             binary.chmod(0o755)
             fleet = root / "fleet.json"
             fleet.write_text(json.dumps({"compute": {"api_url": "https://selected.invalid/v2",
@@ -57,6 +57,7 @@ class ObserverTests(unittest.TestCase):
             self.assertNotIn("cleanup_confirmed", outcome)
             evidence = "".join(p.read_text() for p in output.glob("*.json"))
             self.assertNotIn("fixture-private-value", evidence + process.stdout + process.stderr)
+            self.assertIn("Error: [redacted] [url]", process.stdout)
 
     def test_latest_agent_phases_survive_partial_records(self):
         with tempfile.TemporaryDirectory() as directory:
