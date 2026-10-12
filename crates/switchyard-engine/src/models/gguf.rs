@@ -109,6 +109,11 @@ impl Source {
         };
         float("qwen35.attention.layer_norm_rms_epsilon", c.rms_norm_eps)?;
         float("qwen35.rope.freq_base", c.rope_parameters.rope_theta)?;
+        if c.hidden_act != candle_nn::Activation::Silu {
+            return Err(Error::Config(
+                "Qwen3.5 GGUF requires the published SiLU feed-forward activation".into(),
+            ));
+        }
         if c.attention_bias {
             return Err(Error::Config(
                 "GGUF biased Qwen3.5 projections unsupported".into(),
@@ -130,6 +135,27 @@ impl Source {
             value_heads: req.value_heads,
             head_width: req.head_width,
         }))
+    }
+    pub fn eos_token(&self) -> Result<u32> {
+        let eos = match self.index.metadata().get("tokenizer.ggml.eos_token_id") {
+            Some(Value::U32(value)) => *value,
+            Some(Value::U64(value)) => u32::try_from(*value)
+                .map_err(|_| Error::Config("GGUF EOS token exceeds u32".into()))?,
+            _ => {
+                return Err(Error::Config(
+                    "GGUF requires tokenizer.ggml.eos_token_id".into(),
+                ));
+            }
+        };
+        let vocabulary = self
+            .index
+            .tensor("token_embd.weight")
+            .map_err(convert)?
+            .dimensions()[1];
+        if eos as usize >= vocabulary {
+            return Err(Error::Config("GGUF EOS token exceeds vocabulary".into()));
+        }
+        Ok(eos)
     }
     pub fn builder(self: &Arc<Self>, device: &Device) -> ModelWeights<'static> {
         ModelWeights::gguf(
@@ -454,7 +480,10 @@ mod tests {
                 if dense { Some(1.0) } else { None },
             )?;
         }
-        let mut metadata = vec![("general.architecture", Value::String("qwen35".into()))];
+        let mut metadata = vec![
+            ("general.architecture", Value::String("qwen35".into())),
+            ("tokenizer.ggml.eos_token_id", Value::U32(2)),
+        ];
         for (k, v) in [
             ("block_count", 2),
             ("embedding_length", 32),
@@ -495,6 +524,7 @@ mod tests {
         std::fs::write(&path, bytes)?;
         let source = Source::open(&path, 1 << 20, &cfg, &Telemetry::default())?;
         std::fs::remove_file(&path)?;
+        assert_eq!(source.eos_token()?, 2);
         let neg = source
             .builder(&Device::Cpu)
             .pp("model.language_model.layers.0.linear_attn")

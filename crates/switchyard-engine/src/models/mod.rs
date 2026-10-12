@@ -202,7 +202,7 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
         ));
     }
     model_config.text_config.max_position_embeddings = config.max_context;
-    let eos = raw["text_config"]["eos_token_id"]
+    let mut eos = raw["text_config"]["eos_token_id"]
         .as_u64()
         .and_then(|x| u32::try_from(x).ok())
         .ok_or_else(|| Error::Config("Missing EOS token".into()))?;
@@ -236,6 +236,7 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
                 &model_config,
                 telemetry,
             )?;
+            eos = source.eos_token()?;
             let weights =
                 qwen35::ModelForCausalLM::new_with_weights(&model_config, source.builder(&device))?;
             telemetry.event(
