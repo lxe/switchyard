@@ -4,19 +4,31 @@ use super::*;
 use std::collections::BTreeMap;
 
 impl SchedulerWorld<'_> {
+    fn output_estimate(&self, id: usize) -> u64 {
+        self.output_estimates
+            .get(&id)
+            .copied()
+            .unwrap_or(self.scenario.requests[&id].planned_output)
+    }
     fn estimated_remaining(&self, id: usize, profile: &Profile) -> f64 {
         let request = &self.scenario.requests[&(id)];
         self.progress.get(&id).map_or_else(
-            || profile.prefill_work(request) + request.planned_output as f64,
+            || profile.prefill_work(request) + self.output_estimate(id) as f64,
             |(remaining_fraction, generated)| {
                 profile.prefill_work(request) * remaining_fraction
-                    + (request.planned_output as f64 - generated)
+                    + (self.output_estimate(id) as f64 - generated)
                         .max(self.scenario.scheduling.replan_output_floor)
             },
         )
     }
 
     pub(super) fn predicted_start(&self, profile: &Profile) -> f64 {
+        if self.policy == Policy::Adaptive
+            && let Some(index) = self.profiles.iter().position(|p| p.id == profile.id)
+            && let Some(start) = self.startup_observed.get(&index)
+        {
+            return *start;
+        }
         let quantile = if self.policy.plans_ahead() { 0.9 } else { 0.5 };
         let restore = percentile(profile.startup.restore_samples_s.clone(), quantile).unwrap_or(
             profile.startup.total()
@@ -53,10 +65,6 @@ impl SchedulerWorld<'_> {
             return;
         }
         let mut pools: BTreeMap<(String, Workload), Vec<usize>> = BTreeMap::new();
-        let mut job_outputs: HashMap<usize, f64> = HashMap::new();
-        for r in self.scenario.requests.values() {
-            *job_outputs.entry(r.job).or_default() += r.planned_output as f64;
-        }
         for request in self.scenario.requests.values() {
             if !request.routing_allowed {
                 continue;
@@ -112,7 +120,7 @@ impl SchedulerWorld<'_> {
                 .iter()
                 .map(|id| {
                     let job = &self.scenario.jobs[&self.scenario.requests[id].job];
-                    let output = job_outputs[&job.id];
+                    let output = self.job_outputs[&job.id];
                     job.arrival_s
                         + job
                             .completion_budget_s
@@ -141,7 +149,7 @@ impl SchedulerWorld<'_> {
                     .sum::<f64>()
                     .max(1e-8)
             };
-            let capacity_for = |profile: &Profile| {
+            let calculate_capacity = |profile: &Profile| {
                 let mean_reservation = ids
                     .iter()
                     .map(|id| {
@@ -159,7 +167,27 @@ impl SchedulerWorld<'_> {
                     .collect::<std::collections::HashSet<_>>()
                     .len()
                     > 1;
-                profile.capacity(ids.len().min(profile.max_in_flight).min(memory_slots)) * work
+                let profile_index = self
+                    .profiles
+                    .iter()
+                    .position(|p| p.id == profile.id)
+                    .expect("profile index");
+                let factor = if self.policy == Policy::Adaptive {
+                    ids.iter()
+                        .map(|id| {
+                            self.learning.capacity_factor(
+                                profile_index,
+                                &self.scenario.requests[id],
+                                &self.scenario.scheduling.heuristics,
+                            )
+                        })
+                        .fold(f64::INFINITY, f64::min)
+                } else {
+                    1.0
+                };
+                factor
+                    * profile.capacity(ids.len().min(profile.max_in_flight).min(memory_slots))
+                    * work
                     / work_for(profile)
                     * if has_adapters {
                         profile.multi_adapter_factor
@@ -167,6 +195,15 @@ impl SchedulerWorld<'_> {
                         1.0
                     }
             };
+            // Pool statistics and bucket quantiles are invariant during this decision.
+            // Compute once rather than recomputing per drain-search iteration.
+            let capacities: HashMap<_, _> = self
+                .profiles
+                .iter()
+                .filter(|p| p.model == model && p.workload == workload)
+                .map(|p| (p.id.as_str(), calculate_capacity(p)))
+                .collect();
+            let capacity_for = |profile: &Profile| capacities[profile.id.as_str()];
             let live: Vec<_> = self
                 .nodes
                 .iter()
@@ -199,46 +236,128 @@ impl SchedulerWorld<'_> {
                 .max_nodes_per_model
                 .min(ids.len())
                 .saturating_sub(total_model_nodes);
+            // Forecast when existing compatible capacity drains this known work.
+            let existing_drain = if live.is_empty() {
+                f64::INFINITY
+            } else {
+                let mut low = first_arrival;
+                let mut high = first_arrival
+                    + work
+                        / live
+                            .iter()
+                            .map(|n| capacity_for(&self.profiles[n.profile]))
+                            .sum::<f64>()
+                            .max(1e-8)
+                    + live
+                        .iter()
+                        .map(|n| (n.ready_s - first_arrival).max(0.0))
+                        .fold(0.0, f64::max);
+                for _ in 0..40 {
+                    let mid = (low + high) * 0.5;
+                    let served: f64 = live
+                        .iter()
+                        .map(|n| {
+                            capacity_for(&self.profiles[n.profile])
+                                * (mid - first_arrival.max(n.ready_s)).max(0.0)
+                        })
+                        .sum();
+                    if served >= work {
+                        high = mid;
+                    } else {
+                        low = mid;
+                    }
+                }
+                high
+            };
             let mut chosen = vec![];
             for _ in 0..available {
                 if capacity >= work {
                     break;
                 }
-                let best = candidates
+                let Some(best) = candidates
                     .iter()
                     .copied()
+                    .filter(|i| {
+                        let ready =
+                            first_arrival.max(self.now + self.predicted_start(&self.profiles[*i]));
+                        if live.is_empty() && chosen.is_empty() {
+                            return true;
+                        }
+                        let horizon = if existing_drain.is_finite() {
+                            existing_drain
+                        } else {
+                            end
+                        };
+                        let existing_at_ready: f64 = live
+                            .iter()
+                            .map(|n| {
+                                capacity_for(&self.profiles[n.profile])
+                                    * (ready - first_arrival.max(n.ready_s)).max(0.0)
+                            })
+                            .sum();
+                        let remaining = (work - existing_at_ready).max(0.0);
+                        let total_rate: f64 = live
+                            .iter()
+                            .map(|n| capacity_for(&self.profiles[n.profile]))
+                            .sum();
+                        let gain = if total_rate > 0.0 {
+                            remaining / total_rate
+                                - remaining / (total_rate + capacity_for(&self.profiles[*i]))
+                        } else {
+                            horizon - ready
+                        };
+                        ready < horizon
+                            && gain >= self.scenario.scheduling.heuristics.minimum_scale_gain_s
+                    })
                     .min_by(|a, b| {
                         let score = |i: usize| {
                             let p = &self.profiles[i];
                             let startup = self.predicted_start(p);
-                            let useful = (end - first_arrival.max(self.now + startup)).max(0.0)
+                            let contribution_end = if existing_drain.is_finite() {
+                                end.max(existing_drain)
+                            } else {
+                                end
+                            };
+                            let useful = (contribution_end - first_arrival.max(self.now + startup))
+                                .max(0.0)
                                 * capacity_for(p);
                             let cost = p.usd_per_hour
                                 * (window + startup + self.scenario.idle_timeout_s)
                                     .max(p.minimum_bill_s)
                                 / 3600.0;
-                            if self.policy == Policy::CheapestElastic {
+                            let value = if self.policy == Policy::CheapestElastic {
                                 p.usd_per_hour / capacity_for(p).max(1e-8)
                             } else if useful > 0.0 {
                                 cost / useful
                             } else {
                                 1e6 + startup / capacity_for(p).max(1e-8)
-                            }
+                            };
+                            value * self.placement_penalties.get(&i).copied().unwrap_or(1.0)
                         };
                         score(*a)
                             .total_cmp(&score(*b))
                             .then_with(|| self.profiles[*a].id.cmp(&self.profiles[*b].id))
                     })
-                    .expect("nonempty candidates");
+                else {
+                    break;
+                };
                 let p = &self.profiles[best];
                 let startup = self.predicted_start(p);
                 // Announced jobs buy capacity close to arrival, avoiding idle churn.
                 if self.now + startup + self.scenario.scheduling.plan_interval_s < first_arrival {
                     break;
                 }
-                capacity +=
-                    capacity_for(p) * (end - first_arrival.max(self.now + startup)).max(0.0);
+                let contribution_end = if self.now + startup >= end && existing_drain.is_finite() {
+                    existing_drain
+                } else {
+                    end
+                };
+                capacity += capacity_for(p)
+                    * (contribution_end - first_arrival.max(self.now + startup)).max(0.0);
                 chosen.push(best);
+                if capacity <= 1e-8 {
+                    break;
+                }
             }
             for profile in chosen {
                 self.launch(profile, false);
@@ -296,8 +415,17 @@ impl SchedulerWorld<'_> {
                         .iter()
                         .map(|a| self.estimated_remaining(a.id, p))
                         .sum();
-                    (work + p.prefill_work(request) + request.planned_output as f64)
-                        / (p.capacity(node.active.len() + 1) * 1.0)
+                    (work + p.prefill_work(request) + self.output_estimate(id) as f64)
+                        / (p.capacity(node.active.len() + 1)
+                            * if self.policy == Policy::Adaptive {
+                                self.learning.capacity_factor(
+                                    node.profile,
+                                    request,
+                                    &self.scenario.scheduling.heuristics,
+                                )
+                            } else {
+                                1.0
+                            })
                         + p.network_s * 2.0
                         + request.upload_bytes as f64 / p.network_bytes_per_s
                 };

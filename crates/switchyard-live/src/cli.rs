@@ -354,7 +354,7 @@ pub async fn run(command: Command) -> Result<()> {
     Ok(())
 }
 
-async fn execute<P: Provider>(
+async fn execute<P: Provider + 'static>(
     runtime: &mut LiveRuntime<P>,
     experiment: &Experiment,
     model: &str,

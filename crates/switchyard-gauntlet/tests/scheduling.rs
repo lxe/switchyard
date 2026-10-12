@@ -67,6 +67,7 @@ fn learned_hydration_time_changes_provisioning_choices() {
         allow_scale: true,
         profiles: &profiles,
         provisioning_cooldowns: BTreeMap::new(),
+        pending_allocations: vec![],
         requests: plans,
         states,
         nodes: vec![],
@@ -147,6 +148,7 @@ fn allocation_cooldowns_change_new_placement_and_preserve_existing_host_routing(
         allow_scale: true,
         profiles: &profiles,
         provisioning_cooldowns: BTreeMap::new(),
+        pending_allocations: vec![],
         requests: BTreeMap::from([(0, PlannedRequest::from(&trace.requests[0]))]),
         states: BTreeMap::from([(
             0,
@@ -362,6 +364,7 @@ fn probe_fleet<'a>(
         allow_scale: false,
         profiles,
         provisioning_cooldowns: BTreeMap::new(),
+        pending_allocations: vec![],
         requests: BTreeMap::new(),
         states: BTreeMap::new(),
         nodes: vec![node],
@@ -542,5 +545,290 @@ fn probe_attempts_are_throttled_and_pending_refreshes_are_not_duplicated() {
             .decide(&fleet)
             .iter()
             .any(|a| matches!(a, Action::ProbeHost { .. }))
+    );
+}
+
+fn planning_fleet<'a>(profiles: &'a [Profile], trace: &'a Scenario) -> FleetView<'a> {
+    FleetView {
+        now: 0.0,
+        allow_scale: true,
+        profiles,
+        provisioning_cooldowns: BTreeMap::new(),
+        pending_allocations: vec![],
+        requests: trace
+            .requests
+            .iter()
+            .map(|r| (r.id, PlannedRequest::from(r)))
+            .collect(),
+        states: trace
+            .requests
+            .iter()
+            .map(|r| {
+                (
+                    r.id,
+                    ObservedRequest {
+                        state: RequestStatus::Queued,
+                        completed_s: None,
+                    },
+                )
+            })
+            .collect(),
+        nodes: vec![],
+        jobs: trace.jobs.iter().map(|j| (j.id, j.clone())).collect(),
+        scheduling: &trace.scheduling,
+        max_nodes_per_model: 4,
+        idle_timeout_s: 30.0,
+        reactive_delay_s: 0.0,
+        build_probability: 0.0,
+    }
+}
+#[test]
+fn late_capacity_is_skipped_but_an_empty_fleet_gets_one_best_effort_launch() {
+    let (mut profiles, mut trace) = performance::workload(10);
+    profiles[0].startup.engine_s = 100.0;
+    profiles[0].startup.allocation_s = 0.0;
+    profiles[0].startup.container_s = 0.0;
+    profiles[0].startup.weights_s = 0.0;
+    trace.jobs[0].desired_output_tps = 10000.0;
+    let mut fleet = planning_fleet(&profiles, &trace);
+    let mut ready = loading_node(None, 0);
+    ready.is_ready = true;
+    ready.ready_s = 0.0;
+    ready.host.phase = StartupPhase::Ready;
+    fleet.nodes.push(ready);
+    let actions = BuiltinScheduler::new(Policy::Adaptive).decide(&fleet);
+    assert!(
+        !actions
+            .iter()
+            .any(|a| matches!(a, Action::Provision { .. }))
+    );
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::Route { node: 0, .. }))
+    );
+    fleet.nodes.clear();
+    let actions = BuiltinScheduler::new(Policy::Adaptive).decide(&fleet);
+    assert_eq!(
+        actions
+            .iter()
+            .filter(|a| matches!(a, Action::Provision { .. }))
+            .count(),
+        1
+    );
+}
+#[test]
+fn pending_allocations_reserve_capacity_without_becoming_routing_targets() {
+    let (profiles, trace) = performance::workload(10);
+    let mut fleet = planning_fleet(&profiles, &trace);
+    fleet.max_nodes_per_model = 1;
+    fleet
+        .pending_allocations
+        .push(switchyard_core::scheduler::PendingAllocation {
+            profile: 0,
+            started_s: 0.0,
+            expected_ready_s: 20.0,
+        });
+    let actions = BuiltinScheduler::new(Policy::Adaptive).decide(&fleet);
+    assert!(!actions.iter().any(|a| matches!(
+        a,
+        Action::Provision { .. } | Action::Route { .. } | Action::Release { .. }
+    )));
+}
+#[test]
+fn rejected_and_slow_allocations_change_placement_after_cooldown_expires() {
+    use switchyard_core::scheduler::SchedulerFeedback;
+    let (mut profiles, trace) = performance::workload(1);
+    profiles[0].usd_per_hour = 0.5;
+    let mut alternate = profiles[0].clone();
+    alternate.id = "available-alternate".into();
+    alternate.usd_per_hour = 0.6;
+    profiles.push(alternate);
+    let fleet = planning_fleet(&profiles, &trace);
+    let mut scheduler = BuiltinScheduler::new(Policy::Adaptive);
+    for _ in 0..8 {
+        scheduler.observe(SchedulerFeedback::Allocation {
+            profile: 0,
+            accepted: false,
+            elapsed_s: 10.0,
+        });
+    }
+    scheduler.observe(SchedulerFeedback::Allocation {
+        profile: 1,
+        accepted: true,
+        elapsed_s: 0.1,
+    });
+    let actions = scheduler.decide(&fleet);
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::Provision { profile: 1 }))
+    );
+    assert!(
+        !actions
+            .iter()
+            .any(|a| matches!(a, Action::Provision { profile: 0 }))
+    );
+}
+#[test]
+fn delivered_usage_learns_bounded_output_and_workload_specific_capacity() {
+    use switchyard_core::scheduler::SchedulerFeedback;
+    let (profiles, mut trace) = performance::workload(1);
+    trace.requests[0].max_output = 128;
+    trace.requests[0].planned_output = 64;
+    let mut scheduler = BuiltinScheduler::new(Policy::Adaptive);
+    let mut fleet = planning_fleet(&profiles, &trace);
+    let mut node = loading_node(None, 0);
+    node.is_ready = true;
+    node.ready_s = 0.0;
+    fleet.nodes.push(node);
+    fleet.allow_scale = false;
+    for _ in 0..200 {
+        scheduler.observe(SchedulerFeedback::Completion {
+            node: 0,
+            profile: 0,
+            request: Box::new(fleet.requests[&0].clone()),
+            output_tokens: 16,
+            input_work: 0.0,
+            started_s: 0.0,
+            completed_s: 1.0,
+        });
+    }
+    scheduler.decide(&fleet);
+    let d = scheduler.diagnostics();
+    let learned = &d["serving_learning"];
+    assert_eq!(
+        learned["output_buckets"][0]["samples"]
+            .as_array()
+            .unwrap()
+            .len(),
+        128
+    );
+    assert_eq!(learned["capacity_buckets"].as_array().unwrap().len(), 1);
+    assert_eq!(learned["completed_samples"], 200);
+}
+
+#[test]
+fn useful_capacity_is_allowed_after_an_unattainable_throughput_target() {
+    let (mut profiles, mut trace) = performance::workload(1000);
+    profiles[0].curve = vec![
+        CapacityPoint {
+            in_flight: 1,
+            work_units_per_s: 50.0,
+        },
+        CapacityPoint {
+            in_flight: 64,
+            work_units_per_s: 100.0,
+        },
+    ];
+    profiles[0].startup.engine_s = 45.0;
+    trace.jobs[0].desired_output_tps = 10000.0;
+    let mut fleet = planning_fleet(&profiles, &trace);
+    let mut ready = loading_node(None, 0);
+    ready.is_ready = true;
+    ready.ready_s = 0.0;
+    ready.host.phase = StartupPhase::Ready;
+    fleet.nodes.push(ready);
+    let actions = BuiltinScheduler::new(Policy::Adaptive).decide(&fleet);
+    assert!(
+        actions
+            .iter()
+            .any(|a| matches!(a, Action::Provision { .. })),
+        "late relative to desired TPS can still accelerate draining"
+    );
+}
+
+#[test]
+fn asynchronous_allocation_rejection_preserves_hot_service_and_hides_outcome_until_completion() {
+    use switchyard_core::scheduler::SchedulerFeedback;
+    use switchyard_sim::observations::{CapacityLimit, Observations, ObservedEnvironment};
+    struct Expansion {
+        attempted: bool,
+        inner: BuiltinScheduler,
+        rejected_at: Option<f64>,
+        rejected: bool,
+        now: f64,
+        pending_seen: bool,
+    }
+    impl Scheduler for Expansion {
+        fn name(&self) -> &str {
+            "async-rejection"
+        }
+        fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<Action> {
+            self.now = fleet.now;
+            if fleet.now < 10.0 {
+                assert!(!self.rejected);
+            }
+            if self.rejected && self.rejected_at.is_none() {
+                self.rejected_at = Some(fleet.now);
+            }
+            self.pending_seen |= !fleet.pending_allocations.is_empty();
+            let mut actions = self.inner.decide(fleet);
+            if !self.attempted {
+                self.attempted = true;
+                actions.insert(0, Action::Provision { profile: 0 });
+            }
+            actions
+        }
+        fn observe(&mut self, feedback: SchedulerFeedback) {
+            if let SchedulerFeedback::Allocation {
+                accepted: false,
+                elapsed_s,
+                ..
+            } = feedback
+            {
+                assert_eq!(elapsed_s, 10.0);
+                self.rejected = true;
+            }
+        }
+    }
+    let (profiles, trace) = performance::workload(10);
+    let expected = simulate(&profiles, &trace, Policy::WarmOnly, 7).unwrap();
+    let observations = Observations {
+        profiles: BTreeMap::from([(
+            profiles[0].id.clone(),
+            ObservedEnvironment {
+                capacity: vec![CapacityLimit {
+                    at_s: 0.0,
+                    instances: 1,
+                }],
+                rejection_delay_s: 10.0,
+                ..Default::default()
+            },
+        )]),
+        ..Default::default()
+    };
+    let mut controller = Expansion {
+        attempted: false,
+        inner: BuiltinScheduler::new(Policy::WarmOnly),
+        rejected_at: None,
+        rejected: false,
+        now: 0.0,
+        pending_seen: false,
+    };
+    let run = switchyard_sim::engine::simulate_with_observations(
+        &profiles,
+        &trace,
+        &observations,
+        &mut controller,
+        7,
+    )
+    .unwrap();
+    assert_eq!(run.summary.completed, 10);
+    assert_eq!(run.summary.invalid_decisions, 0);
+    assert_eq!(run.summary.capacity_rejections, 1);
+    assert_eq!(run.nodes.len(), 1);
+    assert!(controller.pending_seen);
+    assert!(controller.rejected_at.unwrap() >= 9.9);
+    assert_eq!(
+        run.requests
+            .iter()
+            .map(|r| r.completed_s)
+            .collect::<Vec<_>>(),
+        expected
+            .requests
+            .iter()
+            .map(|r| r.completed_s)
+            .collect::<Vec<_>>()
     );
 }

@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, HashMap, VecDeque};
 use switchyard_core::config::*;
 pub use switchyard_core::scheduler::*;
 use switchyard_core::stats::percentile;
+mod learning;
 mod policy;
 pub mod runtime;
 
@@ -13,6 +14,8 @@ pub struct BuiltinScheduler {
     blocked_profiles: HashMap<usize, f64>,
     cancellations: usize,
     beliefs: BTreeMap<usize, HostBelief>,
+    learning: learning::Learning,
+    history_limit: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -44,6 +47,8 @@ impl BuiltinScheduler {
             blocked_profiles: Default::default(),
             cancellations: 0,
             beliefs: BTreeMap::new(),
+            learning: Default::default(),
+            history_limit: Heuristics::default().history_limit,
         }
     }
 }
@@ -58,6 +63,14 @@ impl Scheduler for BuiltinScheduler {
         }
     }
     fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<Action> {
+        self.history_limit = fleet.scheduling.heuristics.history_limit;
+        if self.policy == Policy::Adaptive {
+            self.learning.update(fleet);
+        }
+        let mut planned_job_outputs = HashMap::<usize, f64>::new();
+        for request in fleet.requests.values() {
+            *planned_job_outputs.entry(request.job).or_default() += request.planned_output as f64;
+        }
         if self.policy == Policy::Adaptive {
             for (id, node) in fleet.nodes.iter().enumerate() {
                 if let Some(probe) = &node.host.probe
@@ -108,6 +121,32 @@ impl Scheduler for BuiltinScheduler {
                     )
                 })
                 .collect(),
+            startup_observed: (0..fleet.profiles.len())
+                .filter_map(|p| self.learning.startup(p).map(|s| (p, s)))
+                .collect(),
+            placement_penalties: (0..fleet.profiles.len())
+                .map(|p| {
+                    (
+                        p,
+                        if self.policy == Policy::Adaptive {
+                            self.learning.placement_penalty(p)
+                        } else {
+                            1.0
+                        },
+                    )
+                })
+                .collect(),
+            learning: &self.learning,
+            job_outputs: planned_job_outputs,
+            output_estimates: if self.policy == Policy::Adaptive {
+                fleet
+                    .requests
+                    .iter()
+                    .map(|(id, r)| (*id, self.learning.estimate(r, &fleet.scheduling.heuristics)))
+                    .collect()
+            } else {
+                Default::default()
+            },
             progress: fleet
                 .nodes
                 .iter()
@@ -119,8 +158,12 @@ impl Scheduler for BuiltinScheduler {
                 })
                 .collect(),
         };
+        // Pending intents contribute forecast capacity, but have no routable node ID.
+        for pending in &fleet.pending_allocations {
+            world.launch_forecast(pending.profile, pending.started_s, pending.expected_ready_s);
+        }
         if self.policy == Policy::Adaptive {
-            for (id, node) in world.nodes.iter_mut().enumerate() {
+            for (id, node) in world.nodes.iter_mut().take(fleet.nodes.len()).enumerate() {
                 if node.ended_s.is_some() || node.is_ready {
                     continue;
                 }
@@ -185,8 +228,13 @@ impl Scheduler for BuiltinScheduler {
         world.dispatch();
         world.actions
     }
+    fn observe(&mut self, feedback: SchedulerFeedback) {
+        if self.policy == Policy::Adaptive {
+            self.learning.observe(feedback, self.history_limit);
+        }
+    }
     fn diagnostics(&self) -> serde_json::Value {
-        serde_json::json!({"probed_hosts": self.observations, "host_beliefs": self.beliefs, "cancelled_slow_starts": self.cancellations})
+        serde_json::json!({"probed_hosts": self.observations, "host_beliefs": self.beliefs, "cancelled_slow_starts": self.cancellations, "serving_learning": self.learning.diagnostics()})
     }
 }
 
@@ -203,8 +251,20 @@ struct SchedulerWorld<'a> {
     avoided_profiles: Vec<usize>,
     startup_extra: BTreeMap<usize, f64>,
     progress: HashMap<usize, (f64, f64)>,
+    learning: &'a learning::Learning,
+    job_outputs: HashMap<usize, f64>,
+    output_estimates: HashMap<usize, u64>,
+    startup_observed: BTreeMap<usize, f64>,
+    placement_penalties: BTreeMap<usize, f64>,
 }
 impl SchedulerWorld<'_> {
+    fn launch_forecast(&mut self, profile: usize, started: f64, ready: f64) {
+        self.launch(profile, false);
+        self.actions.pop();
+        let node = self.nodes.last_mut().expect("forecast node");
+        node.allocated_s = started;
+        node.ready_s = ready;
+    }
     fn launch(&mut self, profile: usize, warm: bool) {
         self.nodes.push(ObservedNode {
             profile,

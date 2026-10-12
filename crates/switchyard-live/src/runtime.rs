@@ -8,6 +8,7 @@ mod lifecycle;
 mod native_cache;
 mod observation;
 mod profiles;
+mod provisioning;
 mod report;
 mod routing;
 mod telemetry;
@@ -110,7 +111,7 @@ struct Node {
 /// Live execution translates observations and provider actions through the simulator's scheduling contract.
 /// Only pods recorded in this runtime's ownership journal can be terminated.
 pub struct LiveRuntime<P: Provider> {
-    provider: P,
+    provider: Arc<P>,
     storage: Storage,
     config: ExecutionConfig,
     offerings: Vec<Offering>,
@@ -118,6 +119,8 @@ pub struct LiveRuntime<P: Provider> {
     pub profiles: Vec<Profile>,
     nodes: Vec<Node>,
     pending: Vec<PendingLaunch>,
+    inflight: BTreeMap<usize, switchyard_core::scheduler::PendingAllocation>,
+    launch_tasks: JoinSet<(usize, Result<provisioning::LaunchOutcome>)>,
     provisioning_cooldowns: BTreeMap<usize, f64>,
     allocation_rejections: Vec<AllocationRejection>,
     observations: Vec<serde_json::Value>,
@@ -148,7 +151,7 @@ pub fn nonce() -> Result<String> {
     Ok(bytes.iter().map(|b| format!("{b:02x}")).collect())
 }
 
-impl<P: Provider> LiveRuntime<P> {
+impl<P: Provider + 'static> LiveRuntime<P> {
     pub(crate) async fn capture_metrics(&self, name: &str, stage: &str) -> Result<()> {
         std::fs::create_dir_all(self.out.join("workloads"))?;
         let mut observations = vec![];
@@ -194,7 +197,7 @@ impl<P: Provider> LiveRuntime<P> {
             return Err(Error::Config("output directory already contains an ownership journal; recover it or choose a new directory".into()));
         }
         let runtime = Self {
-            provider,
+            provider: Arc::new(provider),
             storage,
             config,
             offerings,
@@ -202,6 +205,8 @@ impl<P: Provider> LiveRuntime<P> {
             profiles,
             nodes: vec![],
             pending: vec![],
+            inflight: BTreeMap::new(),
+            launch_tasks: JoinSet::new(),
             provisioning_cooldowns: BTreeMap::new(),
             allocation_rejections: vec![],
             observations: vec![],
@@ -265,7 +270,14 @@ impl<P: Provider> LiveRuntime<P> {
         if self.now() > self.config.limits.run_timeout_s as f64 {
             return Err(Error::Limit("wall-clock run timeout".into()));
         }
-        if self.rental_usd() >= self.config.limits.max_run_usd {
+        let pending_cost: f64 = self
+            .inflight
+            .values()
+            .map(|a| {
+                (self.now() - a.started_s).max(1.0) * self.profiles[a.profile].usd_per_hour / 3600.0
+            })
+            .sum();
+        if self.rental_usd() + pending_cost >= self.config.limits.max_run_usd {
             return Err(Error::Limit("rental cost budget".into()));
         }
         Ok(())
@@ -276,8 +288,11 @@ impl<P: Provider> LiveRuntime<P> {
         self.tasks.abort_all();
         while self.tasks.join_next().await.is_some() {}
         let now = self.now();
-        for node in &mut self.nodes {
+        for (id, node) in self.nodes.iter_mut().enumerate() {
             if !node.observed.active.is_empty() {
+                self.controller.observe(
+                    switchyard_core::scheduler::SchedulerFeedback::FailedRequest { node: id },
+                );
                 node.cache_quiescence_known = false;
                 node.observed.active.clear();
                 node.observed.last_used_s = now;

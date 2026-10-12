@@ -312,6 +312,9 @@ impl EngineConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CapacityPrior {
+    /// Exact deployment-bound serving measurements; unmatched offerings use explicit priors.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub measured: Vec<switchyard_core::calibration::ServingCalibration>,
     pub single_output_tps: f64,
     pub aggregate_output_tps: f64,
     pub input_work_per_token: f64,
@@ -342,6 +345,21 @@ pub struct Limits {
 impl ExecutionConfig {
     pub fn validate(&self) -> Result<()> {
         validate_scheduling(&self.scheduling).map_err(Error::Config)?;
+        for model in &self.models {
+            let mut ids = std::collections::BTreeSet::new();
+            for measured in &model.prior.measured {
+                measured.validate().map_err(Error::Config)?;
+                if measured.profile.model != model.id
+                    || !ids.insert(&measured.profile.id)
+                    || measured.binding_sha256
+                        != crate::calibration::binding(self, model, &measured.profile.gpu)?
+                {
+                    return Err(Error::Config(
+                        "measured profile binding mismatch or duplicate profile".into(),
+                    ));
+                }
+            }
+        }
         self.bootstrap
             .startup
             .validate()

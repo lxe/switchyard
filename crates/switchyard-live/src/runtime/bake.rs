@@ -21,7 +21,7 @@ pub struct PreparedCache {
     pub configuration: ServingCacheConfig,
 }
 
-impl<P: Provider> LiveRuntime<P> {
+impl<P: Provider + 'static> LiveRuntime<P> {
     /// Warm a single model on a selected GPU, stop the serving process, and fetch
     /// its verified cache artifact. Callers always clean up before publishing it.
     pub async fn bake_cache(

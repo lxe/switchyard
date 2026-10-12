@@ -2,6 +2,7 @@
 pub mod artifacts;
 pub mod bake;
 mod bootstrap;
+pub mod calibration;
 pub mod cli;
 pub mod config;
 pub mod model;

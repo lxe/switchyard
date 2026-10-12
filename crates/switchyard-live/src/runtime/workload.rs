@@ -9,7 +9,7 @@ use switchyard_core::{
 use switchyard_provider::Provider;
 use tokio::sync::mpsc;
 
-impl<P: Provider> LiveRuntime<P> {
+impl<P: Provider + 'static> LiveRuntime<P> {
     pub async fn run_workload(
         &mut self,
         name: &str,
@@ -123,6 +123,7 @@ impl<P: Provider> LiveRuntime<P> {
         let outcome: Result<()> = async {
             loop {
                 self.limits()?;
+                self.finish_launches()?;
                 self.finish_observations()?;
                 let now = self.now();
                 for (id, request) in &requests {
@@ -143,8 +144,19 @@ impl<P: Provider> LiveRuntime<P> {
                             }
                         }
                         Event::Completed { request, result } => {
-                            for node in &mut self.nodes {
+                            for (node_id, node) in self.nodes.iter_mut().enumerate() {
                                 if node.observed.active.iter().any(|a| a.id == request) {
+                                    if let Ok(receipt) = &result {
+                                        self.controller.observe(switchyard_core::scheduler::SchedulerFeedback::Completion {
+                                            node: node_id,
+                                            profile: node.observed.profile,
+                                            request: Box::new(requests[&request].clone()),
+                                            output_tokens: receipt.output_tokens,
+                                            input_work: self.profiles[node.observed.profile].prefill_work(&requests[&request]),
+                                            started_s: receipt.started_s,
+                                            completed_s: receipt.completed_s,
+                                        });
+                                    } else { self.controller.observe(switchyard_core::scheduler::SchedulerFeedback::FailedRequest { node: node_id }); }
                                     if result.is_ok() { node.successful_calls = node.successful_calls.saturating_add(1); }
                                     node.observed.active.retain(|a| a.id != request);
                                     node.observed.last_used_s = now;
@@ -169,12 +181,6 @@ impl<P: Provider> LiveRuntime<P> {
                         }
                     }
                 }
-                if states
-                    .values()
-                    .all(|s| matches!(s.state, RequestStatus::Done | RequestStatus::Rejected))
-                {
-                    break;
-                }
                 if now >= next_observation {
                     self.observe().await?;
                     next_observation = self.now() + 1.0;
@@ -190,6 +196,7 @@ impl<P: Provider> LiveRuntime<P> {
                     allow_scale,
                     profiles: &self.profiles,
                     provisioning_cooldowns: self.provisioning_cooldowns.clone(),
+                    pending_allocations: self.inflight.values().cloned().collect(),
                     requests: requests.clone(),
                     states: states.clone(),
                     nodes,
@@ -202,6 +209,7 @@ impl<P: Provider> LiveRuntime<P> {
                 };
                 while self.tasks.try_join_next().is_some() {}
                 let actions = self.controller.decide(&fleet);
+                if states.values().all(|s| matches!(s.state, RequestStatus::Done | RequestStatus::Rejected)) { break; }
                 if !actions.is_empty() {
                     let nodes = fleet.nodes.iter().enumerate().map(|(id, node)| serde_json::json!({
                         "id": id, "profile": node.profile, "allocated_s": node.allocated_s,
@@ -214,17 +222,14 @@ impl<P: Provider> LiveRuntime<P> {
                         "scheduler-decisions.ndjson",
                         &serde_json::json!({"at_s": fleet.now, "workload": name,
                             "scheduler": self.controller.name(), "actions": actions,
-                            "nodes": nodes, "scheduling": self.scheduling, "diagnostics": self.controller.diagnostics()}),
+                            "nodes": nodes, "pending_allocations": fleet.pending_allocations, "scheduling": self.scheduling, "diagnostics": self.controller.diagnostics()}),
                     )?;
                 }
                 for action in actions {
                     match action {
                         Action::Provision { profile } => {
-                            if !self.provision(profile).await? {
-                                // Later actions can refer to the planned new node. Replan
-                                // from observed hosts if that allocation did not happen.
-                                break;
-                            }
+                            // Newly provisioned forecasts cannot be routed until observed ready.
+                            self.start_provision(profile)?;
                         }
                         Action::Release { node } => {
                             if self
@@ -239,6 +244,9 @@ impl<P: Provider> LiveRuntime<P> {
                         }
                         Action::ProbeHost { node } => self.probe(node).await?,
                         Action::Route { request, node, .. } => {
+                            // A custom controller may refer to a forecast created in this decision.
+                            // Async allocation never makes that ID available for routing yet.
+                            if node >= self.nodes.len() && !self.inflight.is_empty() { continue; }
                             self.route_request(
                                 request,
                                 node,

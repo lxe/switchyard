@@ -1,327 +1,32 @@
 //! Ownership-safe provisioning, observations, and resource cleanup.
-use super::{AllocationRejection, LiveRuntime, Node, OwnedPod, PendingLaunch, nonce, rental_rate};
-use crate::{Error, Result, serving::Endpoint};
-use std::{collections::VecDeque, time::Duration};
-use switchyard_agent::{Phase, Ticket};
+use super::LiveRuntime;
+use crate::{Error, Result};
+use std::time::Duration;
+use switchyard_agent::Phase;
 use switchyard_core::{
-    probe::{BandwidthWindow, TransferCounter},
-    scheduler::{HostObservation, HostProbe, ObservedNode, StartupPhase},
+    probe::TransferCounter,
+    scheduler::{ObservedNode, StartupPhase},
 };
-use switchyard_provider::{Launch, Provider};
+use switchyard_provider::Provider;
 
-impl<P: Provider> LiveRuntime<P> {
-    pub(super) async fn provision(&mut self, profile: usize) -> Result<bool> {
-        if self
-            .provisioning_cooldowns
-            .get(&profile)
-            .is_some_and(|until| *until > self.now())
-        {
-            return Ok(false);
-        }
-        if self
-            .nodes
-            .iter()
-            .filter(|n| n.owned.ended_s.is_none())
-            .count()
-            >= self.config.limits.max_instances
-        {
-            return Ok(false);
-        }
-        let Some(p) = self.profiles.get(profile) else {
-            self.invalid += 1;
-            return Ok(false);
-        };
-        let rate: f64 = self
-            .nodes
-            .iter()
-            .filter(|n| n.owned.ended_s.is_none())
-            .map(|n| rental_rate(&n.owned))
-            .sum();
-        if rate + p.usd_per_hour > self.config.limits.max_usd_per_hour {
-            return Ok(false);
-        }
-        self.limits()?;
-        let p = p.clone();
-        let model = self
-            .config
-            .models
-            .iter()
-            .find(|m| m.id == p.model)
-            .ok_or_else(|| Error::Config("profile model missing".into()))?
-            .clone();
-        let offering = self.profile_offerings[profile].clone();
-        let name = format!("switchyard-{}-{}", self.run_id, self.pending.len());
-        let ticket_key = format!("{}/{name}.json", self.config.bootstrap.ticket_prefix);
-        self.pending.push(PendingLaunch {
-            name: name.clone(),
-            ticket_key: ticket_key.clone(),
-            resolved: false,
-        });
-        self.save("pending-launches.json", &self.pending)?;
-        let manifest = self.manifests[&model.id].clone();
-        let source = model.artifact.ticket(&self.storage, manifest)?;
-        let (native_cache_binding, learned_cache) =
-            self.lookup_native_cache(&model, &offering.gpu).await;
-        let learned_export = self
-            .config
-            .bootstrap
-            .native_cache_registry
-            .as_ref()
-            .zip(native_cache_binding.as_ref())
-            .map(
-                |(registry, binding)| switchyard_agent::export::CacheExportConfig {
-                    name: registry.name.clone(),
-                    compatibility: binding.compatibility.clone(),
-                    drain_timeout_s: 1,
-                    shutdown_timeout_s: 5,
-                },
-            );
-        let ticket = Ticket {
-            source,
-            model: model.id.clone(),
-            revision: model.revision.clone(),
-            engine_args: model.engine.args(
-                &model,
-                &self
-                    .config
-                    .bootstrap
-                    .startup
-                    .model_directory()
-                    .to_string_lossy(),
-            ),
-            concurrency: self.config.limits.hydration_concurrency,
-            stall_s: self.config.limits.hydration_stall_s,
-            lifetime_s: self.config.limits.run_timeout_s,
-            startup: self.config.bootstrap.startup.clone(),
-            runtime: if let Some(runtime) = &self.config.bootstrap.runtime {
-                let mut caches = vec![];
-                for cache in model.caches.iter().filter(|c| c.gpu == offering.gpu) {
-                    caches.push(switchyard_agent::runtime::CacheTicket {
-                        name: cache.name.clone(),
-                        artifact: cache.artifact.ticket(
-                            &self.storage,
-                            self.cache_manifests[&cache.artifact.id].clone(),
-                        )?,
-                        compatibility: cache.requirements(runtime, &model)?,
-                    });
-                }
-                if let Some(cache) = learned_cache {
-                    caches.push(cache);
-                }
-                Some(switchyard_agent::runtime::RuntimeTicket {
-                    components: runtime
-                        .components
-                        .iter()
-                        .map(|part| {
-                            Ok(switchyard_agent::runtime::RuntimeComponent {
-                                name: part.name.clone(),
-                                artifact: part.artifact.ticket(
-                                    &self.storage,
-                                    self.component_manifests[&part.name].clone(),
-                                )?,
-                                compatibility: part.compatibility.clone(),
-                            })
-                        })
-                        .collect::<Result<Vec<_>>>()?,
-                    hydration: runtime.hydration,
-                    artifact: runtime.artifact.ticket(
-                        &self.storage,
-                        self.runtime_manifest.clone().expect("prepared runtime"),
-                    )?,
-                    compatibility: runtime.compatibility.clone(),
-                    program: runtime.program.clone(),
-                    args: runtime.args.clone(),
-                    environment: runtime.environment.clone(),
-                    caches,
-                    cache_export: self.cache_export.clone().or(learned_export),
-                })
-            } else {
-                None
-            },
-        };
-        self.storage.put_json(&ticket_key, &ticket).await?;
-        let token = nonce()?;
-        let allocated = self.now();
-        let launched = self
-            .provider
-            .create(Launch {
-                name: name.clone(),
-                offering: offering.clone(),
-                container: self.config.bootstrap.container(
-                    self.config.disk_gb,
-                    self.storage.presign(&ticket_key)?,
-                    token.clone(),
-                ),
-            })
-            .await;
-        let pod = match launched {
-            Ok(pod) => pod,
-            Err(error) => {
-                if !matches!(error, switchyard_provider::Error::UnknownLaunch { .. }) {
-                    self.pending.last_mut().expect("journaled launch").resolved = true;
-                    self.save("pending-launches.json", &self.pending)?;
-                }
-                if let switchyard_provider::Error::AllocationRejected { status } = error {
-                    let at_s = self.now();
-                    let retry_at_s = at_s + self.scheduling.retry_cooldown_s;
-                    self.provisioning_cooldowns.insert(profile, retry_at_s);
-                    self.allocation_rejections.push(AllocationRejection {
-                        at_s,
-                        profile,
-                        name,
-                        status,
-                        retry_at_s,
-                    });
-                    self.save("allocation-rejections.json", &self.allocation_rejections)?;
-                    return Ok(false);
-                }
-                return Err(error.into());
-            }
-        };
-        // Persist provider ownership before any fallible endpoint setup.
-        let owned = OwnedPod {
-            pod: pod.clone(),
-            allocated_s: allocated,
-            ended_s: None,
-            profile,
-            quoted: offering,
-        };
-        let mut journal = self.pods();
-        journal.push(owned.clone());
-        self.save("owned-pods.json", &journal)?;
-        let endpoint = Endpoint::new(
-            self.provider.endpoint_url(&pod, 8080),
-            &token,
-            self.config.limits.request_timeout_s,
-        )?;
-        let observed = ObservedNode {
-            profile,
-            warm: false,
-            allocated_s: allocated,
-            ready_s: allocated + p.startup.total(),
-            ended_s: None,
-            active: vec![],
-            adapters: VecDeque::new(),
-            last_used_s: allocated,
-            is_ready: false,
-            host: HostObservation {
-                phase: StartupPhase::Booting,
-                bytes_downloaded: 0,
-                bytes_total: p.host.model_bytes,
-                remaining_bytes_known: false,
-                probe_pending: false,
-                probe_attempted_s: None,
-                probe: None,
-            },
-        };
-        self.nodes.push(Node {
-            owned,
-            endpoint,
-            observed,
-            ticket_key,
-            checked_tokenizer: false,
-            bandwidth: BandwidthWindow::default(),
-            native_cache_binding,
-            successful_calls: 0,
-            cache_collection_attempted: false,
-            cache_quiescence_known: true,
-        });
-        self.pending.last_mut().expect("journaled launch").resolved = true;
-        self.save("pending-launches.json", &self.pending)?;
-        if let Err(error) = self.journal() {
-            let _ = self.release(self.nodes.len() - 1).await;
-            return Err(error);
-        }
-        self.launches += 1;
-        let actual_rate: f64 = self
-            .nodes
-            .iter()
-            .filter(|n| n.owned.ended_s.is_none())
-            .map(|n| rental_rate(&n.owned))
-            .sum();
-        if actual_rate > self.config.limits.max_usd_per_hour {
-            return Err(Error::Limit(
-                "actual hourly pod quotes exceed the fleet budget".into(),
-            ));
-        }
-        self.limits()?;
-        Ok(true)
-    }
+impl<P: Provider + 'static> LiveRuntime<P> {
     pub(super) async fn probe(&mut self, id: usize) -> Result<()> {
+        let now = self.now();
         let Some(node) = self.nodes.get_mut(id) else {
             self.invalid += 1;
             return Ok(());
         };
-        let attempted_s = self.epoch.elapsed().as_secs_f64();
         if node.owned.ended_s.is_some()
             || !self
                 .scheduling
                 .probe
-                .due(attempted_s, node.observed.host.probe_attempted_s)
+                .due(now, node.observed.host.probe_attempted_s)
         {
             return Ok(());
         }
-        node.observed.host.probe_attempted_s = Some(attempted_s);
-        let response = node.endpoint.state().await;
-        let finish_s = self.epoch.elapsed().as_secs_f64();
-        if let Ok(state) = response {
-            let at_s = finish_s;
-            let counters = received_counters(&state);
-            let reset = node
-                .bandwidth
-                .record(at_s, counters.clone(), &self.scheduling.probe);
-            if reset {
-                node.observed.host.probe = None;
-            }
-            let sample = node.bandwidth.qualify(&self.scheduling.probe);
-            let reported_rate =
-                if state.hydration_mode == switchyard_artifacts::HydrationMode::TrustedStreaming {
-                    state
-                        .artifact_network_bytes_per_s
-                        .or(state.volume_bytes_per_s)
-                } else {
-                    state
-                        .volume_bytes_per_s
-                        .or(state.artifact_volume_bytes_per_s)
-                };
-            super::telemetry::append(
-                &self.out,
-                "host-probes.ndjson",
-                &serde_json::json!({"at_s": at_s, "start_s":attempted_s,"finish_s":finish_s,"node": id,
-                    "state": state, "phase": state.phase, "rate_bytes_per_s": sample.as_ref().map(|s| s.bytes_per_s),
-                    "reported_cumulative_rate_bytes_per_s": reported_rate,
-                    "counters": counters, "qualified_window": sample, "counter_reset":reset,
-                    "model_bytes_received": state.bytes_downloaded,
-                    "artifact_bytes_received": state.artifact_network_bytes_downloaded,
-                    "model_bytes_total": state.bytes_total, "artifact_bytes_total": state.artifact_bytes_total}),
-            )?;
-            if update_observation(&mut node.observed, &state, at_s)? {
-                println!(
-                    "{} ready after {:.1}s",
-                    self.profiles[node.observed.profile].model,
-                    at_s - node.owned.allocated_s
-                );
-            }
-            let Some(sample) = sample else {
-                return Ok(());
-            };
-            node.observed.host.probe = Some(HostProbe {
-                at_s: sample.at_s,
-                started_s: sample.started_s,
-                received_bytes: sample.received_bytes,
-                volume_bytes_per_s: sample.bytes_per_s,
-                image_cached: state.image_cached,
-                model_cached: state.model_cached,
-                hydration_bytes: state.bytes_total.saturating_add(state.artifact_bytes_total),
-            });
-            self.probes += 1;
-        } else {
-            super::telemetry::append(
-                &self.out,
-                "host-probes.ndjson",
-                &serde_json::json!({"at_s":finish_s,"start_s":attempted_s,"finish_s":finish_s,"node":id,"status":"fetch_failed"}),
-            )?;
-        }
+        node.observed.host.probe_attempted_s = Some(now);
+        node.observed.host.probe_pending = true;
+        self.schedule_observation(id);
         Ok(())
     }
     /// Confirm cloud termination before touching storage tickets or local receipts.
@@ -374,6 +79,7 @@ impl<P: Provider> LiveRuntime<P> {
 
     /// Terminate every owned allocation even when a ticket or receipt cannot be written.
     pub async fn cleanup(&mut self) -> Result<()> {
+        let launch_failure = self.drain_launches().await.err();
         // Remember active requests before cancellation; an aborted client is not
         // proof that the remote engine has finished it. Such nodes skip export.
         let collectable = self
@@ -389,7 +95,10 @@ impl<P: Provider> LiveRuntime<P> {
             }
         }
 
-        let mut failures = vec![];
+        let mut failures = launch_failure
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>();
         for id in 0..self.nodes.len() {
             for attempt in 0..3 {
                 match self.terminate_node(id).await {
@@ -406,7 +115,7 @@ impl<P: Provider> LiveRuntime<P> {
             .map(|n| n.owned.pod.name.clone())
             .collect();
         if let Err(error) = crate::ownership::reconcile(
-            &self.provider,
+            self.provider.as_ref(),
             &self.storage,
             &mut self.pending,
             &confirmed,
@@ -576,7 +285,9 @@ pub(super) fn update_observation(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::VecDeque;
     use switchyard_core::ProbePolicy;
+    use switchyard_core::{probe::BandwidthWindow, scheduler::HostObservation};
     fn state() -> switchyard_agent::State {
         serde_json::from_value(serde_json::json!({"model":"fixture","revision":"r1","phase":"hydrating", "bytes_downloaded":10,"bytes_total":1000,"hydration_seconds":100.0,"volume_bytes_per_s":1e12,"model_cached":false,"image_cached":null,"error":null,
             "artifact_bytes_total":10000,"artifact_bytes_downloaded":1000,"artifact_network_bytes_downloaded":100,

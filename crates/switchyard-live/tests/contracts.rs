@@ -28,6 +28,7 @@ struct MockProvider {
     bake: Option<MockBake>,
     rejected_allocations: Arc<Mutex<VecDeque<u16>>>,
     allocation_attempts: Arc<Mutex<Vec<String>>>,
+    create_delay_ms: Arc<AtomicU64>,
     agent_failure: Arc<Mutex<Option<String>>>,
     state_delay_ms: Arc<AtomicU64>,
     state_reads: Arc<AtomicUsize>,
@@ -52,6 +53,10 @@ impl Provider for MockProvider {
             .lock()
             .unwrap()
             .push(launch.name.clone());
+        tokio::time::sleep(std::time::Duration::from_millis(
+            self.create_delay_ms.load(Ordering::SeqCst),
+        ))
+        .await;
         if let Some(status) = self.rejected_allocations.lock().unwrap().pop_front() {
             return Err(switchyard_provider::Error::AllocationRejected { status });
         }
@@ -533,6 +538,7 @@ async fn fixture_internal(
         bake,
         rejected_allocations: Arc::new(Mutex::new(VecDeque::new())),
         allocation_attempts: Arc::new(Mutex::new(vec![])),
+        create_delay_ms: Arc::new(AtomicU64::new(0)),
         agent_failure,
         state_delay_ms,
         state_reads,
@@ -1596,6 +1602,75 @@ async fn slow_passive_observation_does_not_block_hot_dispatch_or_cleanup() {
             .iter()
             .all(|pod| pod.status.is_terminated())
     );
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+}
+
+#[tokio::test]
+async fn delayed_expansion_does_not_block_hot_dispatch_and_cleanup_drains_ownership() {
+    struct Expand {
+        once: bool,
+        inner: switchyard_scheduler::BuiltinScheduler,
+        pending_seen: Arc<AtomicUsize>,
+    }
+    impl Scheduler for Expand {
+        fn name(&self) -> &str {
+            "delayed-expansion"
+        }
+        fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<switchyard_core::Action> {
+            self.pending_seen
+                .fetch_max(fleet.pending_allocations.len(), Ordering::SeqCst);
+            let mut actions = self.inner.decide(fleet);
+            if !self.once {
+                self.once = true;
+                actions.insert(0, switchyard_core::Action::Provision { profile: 0 });
+                actions.insert(0, switchyard_core::Action::Provision { profile: 0 });
+            }
+            actions
+        }
+    }
+    let (mut runtime, provider, out, server) = fixture(false, false).await;
+    runtime
+        .run_workload("cold", &calls(1), 200.0, 10.0)
+        .await
+        .unwrap();
+    provider.create_delay_ms.store(1500, Ordering::SeqCst);
+    let pending_seen = Arc::new(AtomicUsize::new(0));
+    runtime = runtime.with_scheduler(Expand {
+        once: false,
+        inner: switchyard_scheduler::BuiltinScheduler::new(Policy::WarmOnly),
+        pending_seen: pending_seen.clone(),
+    });
+    let report = runtime
+        .run_workload("hot-during-allocation", &calls(32), 200.0, 10.0)
+        .await
+        .unwrap();
+    assert_eq!(report.completed, 32);
+    assert_eq!(report.invalid_actions, 0);
+    assert!(
+        report.elapsed_s < 1.0,
+        "hot work blocked by 1.5s allocation: {}",
+        report.elapsed_s
+    );
+    assert_eq!(
+        pending_seen.load(Ordering::SeqCst),
+        1,
+        "second pending launch must be rejected by max_instances"
+    );
+    runtime.cleanup().await.unwrap();
+    assert_eq!(provider.allocation_attempts.lock().unwrap().len(), 2);
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|p| p.status.is_terminated())
+    );
+    let pending: Vec<switchyard_live::runtime::PendingLaunch> =
+        serde_json::from_slice(&std::fs::read(out.join("pending-launches.json")).unwrap()).unwrap();
+    assert_eq!(pending.len(), 2);
+    assert!(pending.iter().all(|p| p.resolved));
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
 }

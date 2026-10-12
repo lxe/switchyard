@@ -184,6 +184,7 @@ enum EventKind {
     Ready(usize),
     Fault(usize),
     ProbeDone(usize),
+    AllocationRejected(usize, f64),
     Tick,
 }
 #[derive(Debug, Clone, Copy)]
@@ -228,8 +229,10 @@ struct Simulation {
     observations: Observations,
     startup_indices: std::collections::BTreeMap<usize, usize>,
     provisioning_cooldowns: std::collections::BTreeMap<usize, f64>,
-    controller_blocked_until_s: f64,
+    pending_rejections: std::collections::BTreeMap<usize, (usize, f64)>,
+    next_allocation_intent: usize,
     capacity_rejections: usize,
+    reported_completions: std::collections::BTreeSet<usize>,
     profiles: Vec<Profile>,
     scenario: Scenario,
     policy: String,
@@ -312,8 +315,10 @@ impl Simulation {
             observations: Observations::default(),
             startup_indices: Default::default(),
             provisioning_cooldowns: Default::default(),
-            controller_blocked_until_s: 0.0,
+            pending_rejections: Default::default(),
+            next_allocation_intent: 0,
             capacity_rejections: 0,
+            reported_completions: Default::default(),
             policy,
             random: Random(seed),
             probe_random: Random(seed ^ 0x70726f6265),
@@ -416,7 +421,32 @@ impl Simulation {
                     }
                     EventKind::Fault(id) => {
                         if id < self.nodes.len() {
+                            if let Some(controller) = controller.as_deref_mut() {
+                                controller.observe(
+                                    switchyard_core::scheduler::SchedulerFeedback::FailedRequest {
+                                        node: id,
+                                    },
+                                );
+                            }
                             self.fail(id);
+                        }
+                    }
+                    EventKind::AllocationRejected(intent, elapsed_s) => {
+                        if let Some((profile, _)) = self.pending_rejections.remove(&intent) {
+                            self.capacity_rejections += 1;
+                            self.provisioning_cooldowns.insert(
+                                profile,
+                                self.now + self.scenario.scheduling.retry_cooldown_s,
+                            );
+                            if let Some(controller) = controller.as_deref_mut() {
+                                controller.observe(
+                                    switchyard_core::scheduler::SchedulerFeedback::Allocation {
+                                        profile,
+                                        accepted: false,
+                                        elapsed_s,
+                                    },
+                                );
+                            }
                         }
                     }
                     EventKind::ProbeDone(id) => {
@@ -626,20 +656,48 @@ impl Simulation {
         }
     }
     fn control(&mut self, controller: &mut dyn Scheduler, allow_scale: bool) {
-        if self.now < self.controller_blocked_until_s
-            || self
-                .observations
-                .controller_pauses
-                .iter()
-                .any(|p| p.start_s <= self.now && self.now < p.end_s)
+        if self
+            .observations
+            .controller_pauses
+            .iter()
+            .any(|p| p.start_s <= self.now && self.now < p.end_s)
         {
             return;
+        }
+        // Reveal output usage only once it has reached the client.
+        for (id, state) in self.states.iter().enumerate() {
+            if state.result.completed_s.is_some_and(|at| at <= self.now)
+                && self.reported_completions.insert(id)
+                && let Some(node) = state.node
+            {
+                controller.observe(switchyard_core::scheduler::SchedulerFeedback::Completion {
+                    node,
+                    profile: self.nodes[node].profile,
+                    request: Box::new(self.plans[id].clone()),
+                    output_tokens: self.scenario.requests[id].actual_output,
+                    input_work: self.profiles[self.nodes[node].profile]
+                        .prefill_work(&self.plans[id]),
+                    started_s: state.result.started_s.unwrap_or(self.now),
+                    completed_s: state.result.completed_s.unwrap(),
+                });
+            }
         }
         let view = FleetView {
             now: self.now,
             allow_scale,
             profiles: &self.profiles,
             provisioning_cooldowns: self.provisioning_cooldowns.clone(),
+            pending_allocations: self
+                .pending_rejections
+                .values()
+                .map(
+                    |(profile, started_s)| switchyard_core::scheduler::PendingAllocation {
+                        profile: *profile,
+                        started_s: *started_s,
+                        expected_ready_s: *started_s + self.profiles[*profile].startup.total(),
+                    },
+                )
+                .collect(),
             requests: self
                 .plans
                 .iter()
@@ -746,21 +804,33 @@ impl Simulation {
                                 n.ended_s.is_none() && self.profiles[n.profile].model == p.model
                             })
                             .count();
-                        if allow_scale && live < self.scenario.max_nodes_per_model {
+                        let pending = self
+                            .pending_rejections
+                            .values()
+                            .filter(|(profile, _)| self.profiles[*profile].model == p.model)
+                            .count();
+                        if allow_scale && live + pending < self.scenario.max_nodes_per_model {
                             if !self.capacity_available(profile) {
                                 let reality = &self.observations.profiles[&p.id];
-                                self.capacity_rejections += 1;
-                                self.controller_blocked_until_s =
-                                    self.now + reality.rejection_delay_s;
-                                self.provisioning_cooldowns.insert(
-                                    profile,
-                                    self.controller_blocked_until_s
-                                        + self.scenario.scheduling.retry_cooldown_s,
+                                let delay = reality.rejection_delay_s;
+                                let intent = self.next_allocation_intent;
+                                self.next_allocation_intent += 1;
+                                self.pending_rejections.insert(intent, (profile, self.now));
+                                self.push(
+                                    self.now + delay,
+                                    EventKind::AllocationRejected(intent, delay),
                                 );
-                                // A rejection is an environmental outcome, not an invalid controller action.
-                                break;
+                                // Allocation completion is asynchronous; hot routing proceeds.
+                            } else {
+                                self.launch(profile, false);
+                                controller.observe(
+                                    switchyard_core::scheduler::SchedulerFeedback::Allocation {
+                                        profile,
+                                        accepted: true,
+                                        elapsed_s: 0.0,
+                                    },
+                                );
                             }
-                            self.launch(profile, false);
                             true
                         } else {
                             false

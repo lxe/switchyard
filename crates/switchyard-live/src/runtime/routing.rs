@@ -18,7 +18,7 @@ pub(super) struct RouteContext<'a> {
     pub(super) events: &'a mpsc::Sender<Event>,
 }
 
-impl<P: Provider> LiveRuntime<P> {
+impl<P: Provider + 'static> LiveRuntime<P> {
     pub(super) async fn route_request(
         &mut self,
         request: usize,

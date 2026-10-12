@@ -46,3 +46,7 @@ does not enable `torch.compile` or persist CUDA graphs. Removing `--enforce-eage
 changes engine identity and requires a separate cache preparation run. File-cache
 reuse may reduce compilation work; fresh processes still initialize the engine,
 load model weights, allocate device memory, and verify serving readiness.
+
+## Scheduler integration
+
+[Inference scheduling](../../docs/SCHEDULING.md) describes deployment-bound measurements, background allocation reservations, feedback histories, and ownership-safe cleanup. The checked-in measured L4 and RTX 4090 configurations reuse cloud observations while retaining their known simulation accuracy limitations.

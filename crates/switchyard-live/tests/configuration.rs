@@ -89,6 +89,7 @@ fn config() -> DeploymentConfig {
                 extra_args: vec!["--enforce-eager".into()],
             },
             prior: CapacityPrior {
+                measured: vec![],
                 single_output_tps: 100.0,
                 aggregate_output_tps: 1000.0,
                 input_work_per_token: 0.1,
@@ -756,4 +757,55 @@ fn native_file_ranges_use_generic_publication_without_a_vllm_loader() {
             .get("loader")
             .is_none()
     );
+}
+
+#[test]
+fn measured_profiles_are_bound_to_weights_runtime_precision_and_cache_compatibility() {
+    let cfg: DeploymentConfig = serde_json::from_str(include_str!(
+        "../../../configs/runpod/native-fleet-f32-l4-measured.json"
+    ))
+    .unwrap();
+    cfg.validate().unwrap();
+    let mut changed = cfg.clone();
+    changed.models[0].engine.dtype = "bf16".into();
+    assert!(changed.validate().is_err());
+    changed = cfg.clone();
+    changed.models[0].revision = "b".repeat(40);
+    assert!(changed.validate().is_err());
+    changed = cfg.clone();
+    changed.bootstrap.runtime.as_mut().unwrap().artifact.id = "b".repeat(64);
+    assert!(changed.validate().is_err());
+    changed = cfg.clone();
+    changed.models[0].prior.measured[0].schema_version = 2;
+    assert!(changed.validate().is_err());
+    changed = cfg.clone();
+    changed
+        .bootstrap
+        .native_cache_registry
+        .as_mut()
+        .unwrap()
+        .compatibility
+        .insert("different-layout".into(), "v2".into());
+    assert!(changed.validate().is_err());
+    let m = &cfg.models[0].prior.measured[0];
+    let mut target = m.profile.clone();
+    target.usd_per_hour = 99.0;
+    m.apply(&mut target, &m.binding_sha256).unwrap();
+    assert_eq!(target.usd_per_hour, 99.0);
+    assert!(m.apply(&mut target, &"f".repeat(64)).is_err());
+}
+#[test]
+fn scheduling_heuristics_reject_unbounded_or_invalid_learning_controls() {
+    let mut s = Scheduling::default();
+    s.heuristics.history_limit = 0;
+    assert!(validate_scheduling(&s).is_err());
+    s = Scheduling::default();
+    s.heuristics.minimum_samples = 129;
+    assert!(validate_scheduling(&s).is_err());
+    s = Scheduling::default();
+    s.heuristics.maximum_pending_allocations = 65;
+    assert!(validate_scheduling(&s).is_err());
+    s = Scheduling::default();
+    s.heuristics.capacity_safety_fraction = f64::NAN;
+    assert!(validate_scheduling(&s).is_err());
 }

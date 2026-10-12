@@ -333,6 +333,7 @@ pub struct Scenario {
 pub struct Scheduling {
     /// EWMA update weight for newly measured cold-host observations.
     pub learning_rate: f64,
+    pub heuristics: Heuristics,
     pub allow_queue_overtaking: bool,
     pub plan_interval_s: f64,
     pub reactive_drain_s: f64,
@@ -347,6 +348,30 @@ pub struct Scheduling {
     pub retry_cooldown_s: f64,
     /// Required bandwidth evidence and refresh cadence for host observations.
     pub probe: ProbePolicy,
+}
+
+/// Bounded conservative feedback and contribution controls for adaptive scheduling.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Heuristics {
+    pub history_limit: usize,
+    pub minimum_samples: usize,
+    pub capacity_safety_fraction: f64,
+    pub maximum_capacity_multiplier: f64,
+    pub minimum_scale_gain_s: f64,
+    pub maximum_pending_allocations: usize,
+}
+impl Default for Heuristics {
+    fn default() -> Self {
+        Self {
+            history_limit: 128,
+            minimum_samples: 4,
+            capacity_safety_fraction: 0.9,
+            maximum_capacity_multiplier: 2.0,
+            minimum_scale_gain_s: 1.0,
+            maximum_pending_allocations: 2,
+        }
+    }
 }
 
 /// Qualification and refresh controls shared by live and simulated host probes.
@@ -395,6 +420,7 @@ impl Default for Scheduling {
     fn default() -> Self {
         Self {
             learning_rate: 0.25,
+            heuristics: Heuristics::default(),
             allow_queue_overtaking: true,
             plan_interval_s: 2.0,
             reactive_drain_s: 30.0,
@@ -613,6 +639,23 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
 
 /// Validate controller settings independently of a trace or execution backend.
 pub fn validate_scheduling(s: &Scheduling) -> Result<(), String> {
+    let h = &s.heuristics;
+    if h.history_limit == 0
+        || h.history_limit > 4096
+        || h.minimum_samples == 0
+        || h.minimum_samples > h.history_limit
+        || h.maximum_pending_allocations == 0
+        || h.maximum_pending_allocations > 64
+        || !h.capacity_safety_fraction.is_finite()
+        || !(0.0..=1.0).contains(&h.capacity_safety_fraction)
+        || h.capacity_safety_fraction == 0.0
+        || !h.maximum_capacity_multiplier.is_finite()
+        || !(1.0..=10.0).contains(&h.maximum_capacity_multiplier)
+        || !h.minimum_scale_gain_s.is_finite()
+        || h.minimum_scale_gain_s < 0.0
+    {
+        return Err("invalid scheduling heuristics".into());
+    }
     let p = &s.probe;
     if [
         p.minimum_window_s,

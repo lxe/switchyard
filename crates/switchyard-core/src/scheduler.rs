@@ -165,6 +165,8 @@ pub struct FleetView<'a> {
     /// Earliest retry time for profiles whose allocation was observably rejected.
     /// These observations restrict new provisioning, not routing to existing hosts.
     pub provisioning_cooldowns: BTreeMap<usize, f64>,
+    /// Accepted controller intents awaiting a provider result; never routable.
+    pub pending_allocations: Vec<PendingAllocation>,
     pub requests: BTreeMap<usize, PlannedRequest>,
     pub states: BTreeMap<usize, ObservedRequest>,
     pub nodes: Vec<ObservedNode>,
@@ -195,10 +197,41 @@ pub enum Action {
     },
 }
 
+/// Public allocation intent, counted as reserved capacity while cloud I/O proceeds.
+#[derive(Debug, Clone, Serialize)]
+pub struct PendingAllocation {
+    pub profile: usize,
+    pub started_s: f64,
+    pub expected_ready_s: f64,
+}
+
+/// Observed outcomes only. A completion must never be sent before client delivery.
+#[derive(Debug, Clone)]
+pub enum SchedulerFeedback {
+    Allocation {
+        profile: usize,
+        accepted: bool,
+        elapsed_s: f64,
+    },
+    Completion {
+        node: usize,
+        profile: usize,
+        request: Box<PlannedRequest>,
+        output_tokens: u64,
+        input_work: f64,
+        started_s: f64,
+        completed_s: f64,
+    },
+    FailedRequest {
+        node: usize,
+    },
+}
+
 /// Implement this trait to test an independent scheduler against the same fleet.
 pub trait Scheduler {
     fn name(&self) -> &str;
     fn decide(&mut self, fleet: &FleetView<'_>) -> Vec<Action>;
+    fn observe(&mut self, _feedback: SchedulerFeedback) {}
     fn diagnostics(&self) -> serde_json::Value {
         serde_json::Value::Null
     }

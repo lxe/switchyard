@@ -1,4 +1,5 @@
 //! Inference inputs, hardware profiles, and scheduler observation contracts.
+pub mod calibration;
 pub mod config;
 pub mod probe;
 pub mod scheduler;

@@ -1,0 +1,670 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "data_centers": [
+      "EU-RO-1",
+      "EUR-IS-2",
+      "EUR-IS-1",
+      "US-GA-2"
+    ],
+    "min_cuda": "13.0",
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8,
+    "disk_gb": 30,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730.0
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.4/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "66ec5c78c203133157caf6bcfbb2cdae59309a2097962316de9d27dcc14b32bf",
+    "ticket_prefix": "switchyard/bootstrap",
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/work/switchyard",
+      "require_model_ram": false,
+      "early_launch": false
+    },
+    "runtime": {
+      "hydration": {
+        "retries": 0
+      },
+      "artifact": {
+        "prefix": "switchyard/native-engine/runtime/3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+        "id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46"
+      },
+      "components": [],
+      "compatibility": {
+        "architecture": "x86_64",
+        "cuda_build": "13.0.0",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48",
+        "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+        "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "gpu_compute_capability": "8.9",
+        "os": "ubuntu24.04"
+      },
+      "program": "bin/launch-engine.sh",
+      "args": [],
+      "environment": {
+        "CUDA_CACHE_DISABLE": "0",
+        "CUDA_CACHE_MAXSIZE": "536870912",
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+        "NATIVE_ENGINE_CACHE_POLICY": "opportunistic",
+        "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+        "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+        "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA GeForce RTX 4090"
+      }
+    },
+    "native_cache_registry": {
+      "name": "gpu-kernels",
+      "registry_prefix": "switchyard/native-engine/cuda-registry/v1",
+      "artifact_prefix": "switchyard/native-engine/observed-cuda-caches/v1",
+      "compatibility": {
+        "native_driver_cache_layout": "native-cuda-driver-family-v1"
+      },
+      "lookup_timeout_s": 3,
+      "collection_timeout_s": 30,
+      "publication_timeout_s": 60,
+      "max_artifact_bytes": 536870912,
+      "transfer_concurrency": 4
+    }
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/6bd7045e79f40dc0a52cf112e084bc71b36c408d911e213a7b2c27f000cdc348",
+        "id": "6bd7045e79f40dc0a52cf112e084bc71b36c408d911e213a7b2c27f000cdc348",
+        "content_id": "53ace81977da5fc7c79bcf555b7f550d9aa3b7136fe0825f16f5d02564f41a48"
+      },
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 1610612736,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "measured": [
+          {
+            "schema_version": 1,
+            "binding_sha256": "e4169abac5e8a046c9bfb10581fe5d472b6dc82dfd02965cb506f51c2b041adb",
+            "profile": {
+              "id": "qwen3.5-0.8b:NVIDIA L4:EU-RO-1",
+              "model": "qwen3.5-0.8b",
+              "workload": "text",
+              "gpu": "NVIDIA L4",
+              "usd_per_hour": 0.5941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 15.585723928000002,
+                "weights_s": 4.819752434,
+                "engine_s": 4.989131200000003,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  25.394607562000004
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.21,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.5,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 42.0
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 282.23999999999995
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          },
+          {
+            "schema_version": 1,
+            "binding_sha256": "e4169abac5e8a046c9bfb10581fe5d472b6dc82dfd02965cb506f51c2b041adb",
+            "profile": {
+              "id": "qwen3.5-0.8b:NVIDIA L4:EUR-IS-1",
+              "model": "qwen3.5-0.8b",
+              "workload": "text",
+              "gpu": "NVIDIA L4",
+              "usd_per_hour": 0.5941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 15.585723928000002,
+                "weights_s": 4.819752434,
+                "engine_s": 4.989131200000003,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  25.394607562000004
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.21,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.5,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 42.0
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 282.23999999999995
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          }
+        ],
+        "single_output_tps": 40.0,
+        "aggregate_output_tps": 160.0,
+        "input_work_per_token": 0.05,
+        "startup_s": 35.2,
+        "kv_tokens": 1024
+      }
+    },
+    {
+      "id": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/a55317d51ef2f3a9a7baf54d56d705cae698cfd3e66e3b8ea46f509074aba0f1",
+        "id": "a55317d51ef2f3a9a7baf54d56d705cae698cfd3e66e3b8ea46f509074aba0f1",
+        "content_id": "c2c4e50a19a6903ba025367249f5af6878d7d93e63719bda5b3df9871e1b8708"
+      },
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 8589934592,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "measured": [
+          {
+            "schema_version": 1,
+            "binding_sha256": "e4f878a3ec95ac62a11988b0988bc4c2f387c3c0832de659833d36077d614753",
+            "profile": {
+              "id": "qwen3.5-2b:NVIDIA L4:EU-RO-1",
+              "model": "qwen3.5-2b",
+              "workload": "text",
+              "gpu": "NVIDIA L4",
+              "usd_per_hour": 0.5941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 6.513202440000001,
+                "weights_s": 7.371301968,
+                "engine_s": 9.922422161999997,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  23.80692657,
+                  54.086178385
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.21,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.77175,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 26.460000000000004
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 142.884
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          },
+          {
+            "schema_version": 1,
+            "binding_sha256": "e4f878a3ec95ac62a11988b0988bc4c2f387c3c0832de659833d36077d614753",
+            "profile": {
+              "id": "qwen3.5-2b:NVIDIA L4:EUR-IS-1",
+              "model": "qwen3.5-2b",
+              "workload": "text",
+              "gpu": "NVIDIA L4",
+              "usd_per_hour": 0.5941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 9.507995579999998,
+                "weights_s": 7.371301968,
+                "engine_s": 6.9276290220000005,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  23.80692657,
+                  54.086178385
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.21,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.77175,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 26.460000000000004
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 142.884
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          },
+          {
+            "schema_version": 1,
+            "binding_sha256": "e4f878a3ec95ac62a11988b0988bc4c2f387c3c0832de659833d36077d614753",
+            "profile": {
+              "id": "qwen3.5-2b:NVIDIA L4:EUR-IS-2",
+              "model": "qwen3.5-2b",
+              "workload": "text",
+              "gpu": "NVIDIA L4",
+              "usd_per_hour": 0.5941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 6.513202440000001,
+                "weights_s": 41.066354921999995,
+                "engine_s": 6.506621023000001,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  23.80692657,
+                  54.086178385
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.21,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.77175,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 26.460000000000004
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 142.884
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          }
+        ],
+        "single_output_tps": 40.0,
+        "aggregate_output_tps": 160.0,
+        "input_work_per_token": 0.05,
+        "startup_s": 59.71,
+        "kv_tokens": 1024
+      }
+    },
+    {
+      "id": "qwen3.5-4b",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/f4b49971ac0292d408a44e691c77660ea312d5001d5aa7e60f2b9c27ffda2cb3",
+        "id": "f4b49971ac0292d408a44e691c77660ea312d5001d5aa7e60f2b9c27ffda2cb3",
+        "content_id": "80d478b1b0fc4f8165bd9bbfcdf912d59baee439dbfd472c11c5ae80cddc38a5"
+      },
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 12884901888,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "measured": [
+          {
+            "schema_version": 1,
+            "binding_sha256": "adfc0f908f54bb1dad274101c45d01ddbfe1d83cb8ed1949bccec8981d8b9618",
+            "profile": {
+              "id": "qwen3.5-4b:NVIDIA GeForce RTX 4090:EUR-IS-1",
+              "model": "qwen3.5-4b",
+              "workload": "text",
+              "gpu": "NVIDIA GeForce RTX 4090",
+              "usd_per_hour": 0.8941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 10.796813486999998,
+                "weights_s": 21.082678914,
+                "engine_s": 11.393908105999998,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  34.264682373,
+                  43.273400507
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.135,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.36000000000000004,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 43.092
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 201.6
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          },
+          {
+            "schema_version": 1,
+            "binding_sha256": "adfc0f908f54bb1dad274101c45d01ddbfe1d83cb8ed1949bccec8981d8b9618",
+            "profile": {
+              "id": "qwen3.5-4b:NVIDIA GeForce RTX 4090:EUR-IS-2",
+              "model": "qwen3.5-4b",
+              "workload": "text",
+              "gpu": "NVIDIA GeForce RTX 4090",
+              "usd_per_hour": 0.8941095890410959,
+              "startup": {
+                "allocation_s": 0.0,
+                "container_s": 9.314053956999995,
+                "weights_s": 14.574172508,
+                "engine_s": 10.376455908,
+                "jitter": 0.0,
+                "restore_samples_s": [
+                  34.264682373,
+                  43.273400507
+                ],
+                "build_samples_s": []
+              },
+              "network_s": 0.135,
+              "network_bytes_per_s": 100000000.0,
+              "max_in_flight": 8,
+              "kv_tokens": 1024,
+              "input_work_per_token": 0.36000000000000004,
+              "image_work_per_megapixel": 0.0,
+              "adapter_load_s": 0.0,
+              "multi_adapter_factor": 1.0,
+              "adapter_cache_slots": 0,
+              "minimum_bill_s": 1.0,
+              "curve": [
+                {
+                  "in_flight": 1,
+                  "work_units_per_s": 43.092
+                },
+                {
+                  "in_flight": 8,
+                  "work_units_per_s": 201.6
+                }
+              ],
+              "evidence": "empirical startup/quoted rental; effective serving parameters fitted only on hot-single and two hot policy workloads; region-specific serving variation unmeasured",
+              "source": "native-cloud-observations-2026-10-11; model/runtime/controller hashes retained in dataset provenance; deployment-bound calibration schema 1",
+              "host": {
+                "volume_bandwidth_bytes_per_s": [
+                  50000000.0,
+                  200000000.0
+                ],
+                "container_image_bytes": 0,
+                "model_bytes": 0,
+                "image_cache_probability": 0.0,
+                "model_cache_probability": 0.0,
+                "probe_duration_s": 1.0,
+                "measurement_noise": 0.0
+              }
+            }
+          }
+        ],
+        "single_output_tps": 25.0,
+        "aggregate_output_tps": 100.0,
+        "input_work_per_token": 0.05,
+        "startup_s": 172.17,
+        "kv_tokens": 1024
+      }
+    }
+  ],
+  "limits": {
+    "max_instances": 3,
+    "max_usd_per_hour": 2.8,
+    "max_run_usd": 1.0,
+    "max_experiment_usd": 3.0,
+    "experiment_timeout_s": 3600,
+    "run_timeout_s": 1200,
+    "startup_timeout_s": 600,
+    "request_timeout_s": 120,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100
+  },
+  "scheduling": {
+    "learning_rate": 0.25,
+    "heuristics": {
+      "history_limit": 128,
+      "minimum_samples": 4,
+      "capacity_safety_fraction": 0.9,
+      "maximum_capacity_multiplier": 2.0,
+      "minimum_scale_gain_s": 1.0,
+      "maximum_pending_allocations": 2
+    },
+    "allow_queue_overtaking": true,
+    "plan_interval_s": 2.0,
+    "reactive_drain_s": 30.0,
+    "minimum_plan_window_s": 5.0,
+    "warm_batch_capacity_fraction": 0.65,
+    "reserve_warm_slots": 1,
+    "aging_s": 60.0,
+    "replan_output_floor": 32.0,
+    "classes": {
+      "batch": {
+        "priority": 10,
+        "weight": 1.0,
+        "can_use_reserved_warm_slots": false,
+        "plan_ahead": true
+      },
+      "latency": {
+        "priority": 0,
+        "weight": 4.0,
+        "can_use_reserved_warm_slots": true,
+        "plan_ahead": false
+      },
+      "standard": {
+        "priority": 5,
+        "weight": 1.0,
+        "can_use_reserved_warm_slots": true,
+        "plan_ahead": false
+      }
+    },
+    "minimum_hydration_bytes_per_s": 5000000.0,
+    "maximum_startup_s": 600.0,
+    "retry_cooldown_s": 60.0,
+    "probe": {
+      "minimum_window_s": 2.0,
+      "maximum_window_s": 30.0,
+      "minimum_received_bytes": 8388608,
+      "reprobe_interval_s": 2.0,
+      "maximum_age_s": 10.0
+    }
+  }
+}

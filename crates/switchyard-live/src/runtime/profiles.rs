@@ -93,7 +93,21 @@ pub(super) async fn prepare<P: Provider>(
                     .checked_add(bytes)
                     .ok_or_else(|| Error::Config("artifact size overflow".into()))?;
             }
-            profiles.push(profile(model, &manifest, offer, artifact_bytes));
+            let mut prepared = profile(model, &manifest, offer, artifact_bytes);
+            if let Some(measured) = model
+                .prior
+                .measured
+                .iter()
+                .find(|m| m.profile.id == prepared.id)
+            {
+                measured
+                    .apply(
+                        &mut prepared,
+                        &crate::calibration::binding(config, model, &offer.gpu)?,
+                    )
+                    .map_err(Error::Config)?;
+            }
+            profiles.push(prepared);
             profile_offerings.push(offer.clone());
         }
         if profiles.len() == first_profile {
@@ -108,6 +122,24 @@ pub(super) async fn prepare<P: Provider>(
             "no available GPU has the configured serving caches".into(),
         ));
     }
+    let bindings = profiles
+        .iter()
+        .map(|p| {
+            let model = config
+                .models
+                .iter()
+                .find(|m| m.id == p.model)
+                .expect("prepared model");
+            Ok((
+                p.id.clone(),
+                crate::calibration::binding(config, model, &p.gpu)?,
+            ))
+        })
+        .collect::<Result<BTreeMap<_, _>>>()?;
+    std::fs::write(
+        out.join("profile-bindings.json"),
+        serde_json::to_vec_pretty(&bindings)?,
+    )?;
     Ok(Prepared {
         offerings,
         manifests,

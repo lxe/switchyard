@@ -10,7 +10,7 @@ use std::{path::Path, time::Duration};
 use switchyard_agent::{export::ExportPhase, runtime::CacheTicket};
 use switchyard_provider::Provider;
 
-impl<P: Provider> LiveRuntime<P> {
+impl<P: Provider + 'static> LiveRuntime<P> {
     fn cache_event(&self, mut event: serde_json::Value) {
         if let Some(fields) = event.as_object_mut() {
             fields.insert("at_s".into(), serde_json::json!(self.now()));
@@ -19,58 +19,6 @@ impl<P: Provider> LiveRuntime<P> {
         if super::telemetry::append(&self.out, "native-cache-registry.ndjson", &event).is_err() {
             eprintln!("native cache registry telemetry write failed");
         }
-    }
-
-    pub(super) async fn lookup_native_cache(
-        &self,
-        model: &ModelConfig,
-        gpu: &str,
-    ) -> (Option<CacheBinding>, Option<CacheTicket>) {
-        let Some(config) = &self.config.bootstrap.native_cache_registry else {
-            return (None, None);
-        };
-        let binding = match config.binding(&self.config, model, gpu) {
-            Ok(binding) => binding,
-            Err(error) => {
-                self.cache_event(serde_json::json!({"phase":"binding_failed","model":model.id,"error":error.to_string()}));
-                return (None, None);
-            }
-        };
-        let began = self.now();
-        let lookup = tokio::time::timeout(
-            Duration::from_secs(config.lookup_timeout_s),
-            native_cache_registry::lookup(&self.storage, config, &binding),
-        )
-        .await;
-        let ticket = match lookup {
-            Ok(Ok(Some((artifact, manifest)))) => match artifact.ticket(&self.storage, manifest) {
-                Ok(artifact) => {
-                    self.cache_event(serde_json::json!({"phase":"hit","binding":binding.identity,"model":model.id,"gpu":gpu,"artifact":artifact.manifest.id,"elapsed_s":self.now()-began}));
-                    Some(CacheTicket {
-                        name: config.name.clone(),
-                        artifact,
-                        compatibility: binding.compatibility.clone(),
-                    })
-                }
-                Err(error) => {
-                    self.cache_event(serde_json::json!({"phase":"lookup_failed","binding":binding.identity,"error":error.to_string()}));
-                    None
-                }
-            },
-            Ok(Ok(None)) => {
-                self.cache_event(serde_json::json!({"phase":"miss","binding":binding.identity,"model":model.id,"gpu":gpu,"elapsed_s":self.now()-began}));
-                None
-            }
-            Ok(Err(error)) => {
-                self.cache_event(serde_json::json!({"phase":"lookup_failed","binding":binding.identity,"error":error.to_string(),"elapsed_s":self.now()-began}));
-                None
-            }
-            Err(_) => {
-                self.cache_event(serde_json::json!({"phase":"lookup_timeout","binding":binding.identity,"elapsed_s":self.now()-began}));
-                None
-            }
-        };
-        (Some(binding), ticket)
     }
 
     pub(super) async fn collect_native_cache(&mut self, id: usize) -> Option<CollectedCache> {
@@ -176,4 +124,80 @@ async fn collect(
         manifest,
         binding,
     })
+}
+
+pub(super) async fn lookup(
+    storage: &switchyard_provider::storage::Storage,
+    execution: &crate::config::ExecutionConfig,
+    model: &ModelConfig,
+    gpu: &str,
+    epoch: std::time::Instant,
+    out: &Path,
+) -> (Option<CacheBinding>, Option<CacheTicket>) {
+    let event = |mut value: serde_json::Value| {
+        if let Some(fields) = value.as_object_mut() {
+            fields.insert(
+                "at_s".into(),
+                serde_json::json!(epoch.elapsed().as_secs_f64()),
+            );
+        }
+        let _ = super::telemetry::append(out, "native-cache-registry.ndjson", &value);
+    };
+    let Some(config) = &execution.bootstrap.native_cache_registry else {
+        return (None, None);
+    };
+    let binding = match config.binding(execution, model, gpu) {
+        Ok(binding) => binding,
+        Err(error) => {
+            event(
+                serde_json::json!({"phase":"binding_failed","model":model.id,"error":error.to_string()}),
+            );
+            return (None, None);
+        }
+    };
+    let began = epoch.elapsed().as_secs_f64();
+    let lookup = tokio::time::timeout(
+        Duration::from_secs(config.lookup_timeout_s),
+        native_cache_registry::lookup(storage, config, &binding),
+    )
+    .await;
+    let ticket = match lookup {
+        Ok(Ok(Some((artifact, manifest)))) => match artifact.ticket(storage, manifest) {
+            Ok(artifact) => {
+                event(
+                    serde_json::json!({"phase":"hit","binding":binding.identity,"model":model.id,"gpu":gpu,"artifact":artifact.manifest.id,"elapsed_s":epoch.elapsed().as_secs_f64()-began}),
+                );
+                Some(CacheTicket {
+                    name: config.name.clone(),
+                    artifact,
+                    compatibility: binding.compatibility.clone(),
+                })
+            }
+            Err(error) => {
+                event(
+                    serde_json::json!({"phase":"lookup_failed","binding":binding.identity,"error":error.to_string()}),
+                );
+                None
+            }
+        },
+        Ok(Ok(None)) => {
+            event(
+                serde_json::json!({"phase":"miss","binding":binding.identity,"model":model.id,"gpu":gpu,"elapsed_s":epoch.elapsed().as_secs_f64()-began}),
+            );
+            None
+        }
+        Ok(Err(error)) => {
+            event(
+                serde_json::json!({"phase":"lookup_failed","binding":binding.identity,"error":error.to_string(),"elapsed_s":epoch.elapsed().as_secs_f64()-began}),
+            );
+            None
+        }
+        Err(_) => {
+            event(
+                serde_json::json!({"phase":"lookup_timeout","binding":binding.identity,"elapsed_s":epoch.elapsed().as_secs_f64()-began}),
+            );
+            None
+        }
+    };
+    (Some(binding), ticket)
 }
