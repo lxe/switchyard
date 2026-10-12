@@ -34,7 +34,7 @@ The [three-model local receipt](receipts/native-fleet-local-rtx5090.json) record
 
 [`native-gauntlet.json`](../configs/runpod/native-gauntlet.json) specifies 1,470 calls for each model: cold and hot single calls, a 1,000-call burst, three alternate policies, staggered arrivals, mixed prompt lengths and output budgets, shared system prompts, output underestimation, and dependent calls. `prompt_variants` cycles complete user prompts; an empty list retains the ordinary fixed prompt. Request identifiers remain appended independently. These workloads use the generic `standard` service class.
 
-The [token planning receipt](receipts/native-gauntlet-plan.json) records all requests checked against the three pinned local tokenizers. Maximum input plus hard output allowance is 87 tokens, below the configured 128-token context bound. This corpus exercises the current small-model bounds; it does not establish long-context serving capacity. Desired output throughput is a measured objective, and a missed target must remain visible in the final receipt.
+The [token planning receipt](receipts/native-gauntlet-plan.json) records all requests checked against the three pinned local tokenizers. The shared-prefix case has distinct user questions after 47 identical input tokens, crossing the configured 32-token cache checkpoint. Maximum input plus hard output allowance is 105 tokens, below the configured 128-token context bound. This corpus exercises the current small-model bounds; it does not establish long-context serving capacity. Desired output throughput is a measured objective, and a missed target must remain visible in the final receipt.
 
 Run the opt-in real-endpoint contract test with an owned endpoint and local pinned assets:
 

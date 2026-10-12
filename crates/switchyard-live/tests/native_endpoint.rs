@@ -112,7 +112,25 @@ fn native_gauntlet_fits_all_three_pinned_model_contexts() {
         )
         .unwrap();
         let mut maximum = 0;
+        let mut shared_prefix_tokens = 0;
         for case in &plan.cases {
+            if case.name == "shared-system-prefix" {
+                let first = planner.input_ids(&case.request("m", 0).messages).unwrap();
+                let second = planner.input_ids(&case.request("m", 1).messages).unwrap();
+                shared_prefix_tokens = first
+                    .iter()
+                    .zip(&second)
+                    .take_while(|(a, b)| a == b)
+                    .count();
+                assert_ne!(
+                    first, second,
+                    "Shared-prefix requests need distinct suffixes"
+                );
+                assert!(
+                    shared_prefix_tokens >= 32,
+                    "Shared system prompt must cross a cache checkpoint"
+                );
+            }
             for request in case.requests(model["id"].as_str().unwrap()) {
                 let total = planner.input_tokens(&request.messages).unwrap() + request.max_output;
                 assert!(
@@ -124,7 +142,7 @@ fn native_gauntlet_fits_all_three_pinned_model_contexts() {
                 maximum = maximum.max(total);
             }
         }
-        counts.push(serde_json::json!({"model":model["id"],"revision":model["source_revision"],"maximum_input_plus_output_tokens":maximum,"calls":1470}));
+        counts.push(serde_json::json!({"model":model["id"],"revision":model["source_revision"],"maximum_input_plus_output_tokens":maximum,"shared_prefix_tokens":shared_prefix_tokens,"calls":1470}));
     }
     if let Ok(path) = std::env::var("SWITCHYARD_NATIVE_PLAN_RECEIPT") {
         std::fs::write(path, serde_json::to_vec_pretty(&counts).unwrap()).unwrap();

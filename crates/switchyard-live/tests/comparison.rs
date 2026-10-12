@@ -74,6 +74,20 @@ fn native_gauntlet_cycles_input_and_output_work_without_changing_service_classes
         [8, 16, 32]
     );
     assert!(requests.iter().all(|r| r.class == "standard"));
+    let shared = plan
+        .cases
+        .iter()
+        .find(|c| c.name == "shared-system-prefix")
+        .unwrap();
+    assert_eq!(
+        shared.request("m", 0).messages[0].content,
+        shared.request("m", 1).messages[0].content
+    );
+    assert_ne!(shared.prompt_variants[0], shared.prompt_variants[1]);
+    assert_ne!(
+        shared.request("m", 0).messages[1].content,
+        shared.request("m", 1).messages[1].content
+    );
     let deps = plan
         .cases
         .iter()

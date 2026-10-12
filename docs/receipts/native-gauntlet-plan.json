@@ -1,26 +1,29 @@
 {
   "schema_version": 1,
-  "workloads_sha256": "90278a460080d422047ed25824127d8fb191679a9a01b8797f0b3d3369d099f3",
+  "workloads_sha256": "2f212a0d22dd1c8b94cacc50f2d75c71a6bca2c82e1304e11fb737189b0b412c",
   "gpu_allocation": false,
   "scope": "Every planned input was tokenized with local pinned model assets; no inference or cloud execution in this preflight.",
   "models": [
     {
       "calls": 1470,
-      "maximum_input_plus_output_tokens": 87,
+      "maximum_input_plus_output_tokens": 105,
       "model": "qwen3.5-0.8b",
-      "revision": "2fc06364715b967f1860aea9cf38778875588b17"
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "shared_prefix_tokens": 47
     },
     {
       "calls": 1470,
-      "maximum_input_plus_output_tokens": 87,
+      "maximum_input_plus_output_tokens": 105,
       "model": "qwen3.5-2b",
-      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "shared_prefix_tokens": 47
     },
     {
       "calls": 1470,
-      "maximum_input_plus_output_tokens": 87,
+      "maximum_input_plus_output_tokens": 105,
       "model": "qwen3.5-4b",
-      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "shared_prefix_tokens": 47
     }
   ]
 }

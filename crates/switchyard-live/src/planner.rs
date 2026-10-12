@@ -68,6 +68,11 @@ impl Planner {
         })
     }
     pub fn input_tokens(&self, messages: &[Message]) -> Result<u64> {
+        Ok(self.input_ids(messages)?.len() as u64)
+    }
+    /// Token IDs for the same pinned chat rendering used by request planning.
+    /// This allows offline workloads to check shared prefixes without acquiring a GPU.
+    pub fn input_ids(&self, messages: &[Message]) -> Result<Vec<u32>> {
         if messages.is_empty()
             || messages
                 .iter()
@@ -97,7 +102,8 @@ impl Planner {
             .tokenizer
             .encode(rendered, false)
             .map_err(|_| Error::Config("prompt tokenization".into()))?
-            .len() as u64)
+            .get_ids()
+            .to_vec())
     }
     pub fn output_tokens(&self, text: &str) -> u64 {
         self.tokenizer

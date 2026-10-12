@@ -117,7 +117,12 @@
       "desired_output_tps": 200,
       "completion_budget_s": 180,
       "serial_dependencies": false,
-      "system_prompt": "Answer briefly. Explain technical ideas using plain language."
+      "system_prompt": "You explain GPU inference to engineers. Answer briefly in plain language. Focus on batching, latency, memory, and cost. State concrete mechanisms and avoid speculation. Keep each answer to one short sentence.",
+      "prompt_variants": [
+        "Name one benefit of batching.",
+        "Explain one cause of inference latency.",
+        "Describe one way to reduce GPU memory use."
+      ]
     },
     {
       "name": "output-underestimate",
