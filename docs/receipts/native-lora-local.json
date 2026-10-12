@@ -1,0 +1,602 @@
+{
+  "format": "switchyard-native-lora-local-v1",
+  "implementation_commit": "16730cad264b21f40c6793d6b129ba61ad55a8a2",
+  "binary_sha256": "ced28a8a347c111313261ca23381ad39bd778b45e0a454d728841f3efaaabfbd",
+  "build": {
+    "cuda_target": "compute_120",
+    "cuda_root_version": "Build cuda_13.4.r13.4/compiler.38855100_0"
+  },
+  "hardware": "NVIDIA GeForce RTX 5090, 615.71.09, 12.0",
+  "models": [
+    {
+      "model": "qwen3.5-0.8b",
+      "adapter_kind": "trained Pocket Model PEFT",
+      "adapter_model_sha256": "085e6d6f88919fd2df5d67003311018288e218b5dfce009c791ee0c3df498bbb",
+      "adapter_config_sha256": "f367776b3d8db2e8193a126857f959343031e3d3e138ac98fd89b6f791dac1e1",
+      "adapter_revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568",
+      "adapter_rank": 16,
+      "source_config": "examples/native-qwen35-0.8b-lora.json",
+      "configuration": {
+        "model": "qwen3.5-0.8b",
+        "model_root": "MODEL_ROOT",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 128,
+        "max_weight_bytes": 2147483648,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "lora": {
+          "root": "ADAPTER_ROOT",
+          "base_model_aliases": [
+            "Qwen/Qwen3.5-0.8B",
+            "/work/model"
+          ],
+          "max_loaded": 4,
+          "max_rank": 64,
+          "max_upload_bytes": 134217728,
+          "max_resident_bytes": 536870912,
+          "transfer_timeout_s": 120
+        }
+      },
+      "useful_inference_sequences": 27,
+      "passed_checks": {
+        "base_unchanged": true,
+        "adapter_repeat_equal": true,
+        "duplicate_rejected": true,
+        "stale_id_rejected": true,
+        "unloaded": true,
+        "upload_staging_clean": true,
+        "transport_revision_equal": true
+      },
+      "adapter_changed_greedy_generation": true,
+      "local_load_ack_s": 0.0487222639931133,
+      "remote_local_http_load_ack_s": 0.06456202000845224,
+      "multipart_revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568",
+      "remote_revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568",
+      "sse_prompt_tokens": 25,
+      "sse_completion_tokens": 16,
+      "sse_ttft_s": 0.003600614989409223,
+      "owned_engine_returncode": 0,
+      "engine_events": [
+        {
+          "event": "adapter_received",
+          "elapsed_s": 1.5306234189999999,
+          "details": {
+            "bytes": 40894464,
+            "elapsed_s": 0.044133551,
+            "name": "qwen3.5-0.8b+pocket",
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 1.5343963139999999,
+          "details": {
+            "construction_s": 0.003634281,
+            "cpu_tensor_bytes": 40894464,
+            "device_tensor_bytes": 40894464,
+            "elapsed_s": 0.00363989,
+            "id": 1,
+            "name": "qwen3.5-0.8b+pocket",
+            "rank": 16,
+            "resident_adapter_bytes": 40894464,
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568",
+            "validation_s": 1.578e-06
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 2.804752047,
+          "details": {
+            "bytes": 40894464,
+            "elapsed_s": 0.056775229,
+            "name": "qwen3.5-0.8b+pocket-upload",
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 2.8092083150000002,
+          "details": {
+            "construction_s": 0.004350528,
+            "cpu_tensor_bytes": 40894464,
+            "device_tensor_bytes": 40894464,
+            "elapsed_s": 0.00435734,
+            "id": 2,
+            "name": "qwen3.5-0.8b+pocket-upload",
+            "rank": 16,
+            "resident_adapter_bytes": 81788928,
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568",
+            "validation_s": 1.314e-06
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 2.999435224,
+          "details": {
+            "bytes": 40894464,
+            "elapsed_s": 0.037268076,
+            "name": "qwen3.5-0.8b+pocket",
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568"
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 3.000583296,
+          "details": {
+            "device_tensor_bytes": 40894464,
+            "elapsed_s": 0.000434467,
+            "id": 2,
+            "name": "qwen3.5-0.8b+pocket-upload",
+            "resident_adapter_bytes": 40894464
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 3.001504631,
+          "details": {
+            "device_tensor_bytes": 40894464,
+            "elapsed_s": 0.00060386,
+            "id": 1,
+            "name": "qwen3.5-0.8b+pocket",
+            "resident_adapter_bytes": 0
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 3.062347799,
+          "details": {
+            "bytes": 40894464,
+            "elapsed_s": 0.060393686,
+            "name": "qwen3.5-0.8b+pocket",
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 3.065966603,
+          "details": {
+            "construction_s": 0.003548808,
+            "cpu_tensor_bytes": 40894464,
+            "device_tensor_bytes": 40894464,
+            "elapsed_s": 0.003553901,
+            "id": 3,
+            "name": "qwen3.5-0.8b+pocket",
+            "rank": 16,
+            "resident_adapter_bytes": 40894464,
+            "revision": "ad469d6b8a2bb189c4ac08f0e5ad9d72d6b67b474ecfa8b97bb14a6650a23568",
+            "validation_s": 1.058e-06
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 3.218004539,
+          "details": {
+            "device_tensor_bytes": 40894464,
+            "elapsed_s": 0.000352675,
+            "id": 3,
+            "name": "qwen3.5-0.8b+pocket",
+            "resident_adapter_bytes": 0
+          }
+        }
+      ],
+      "independent_reference": {
+        "reference": "Transformers Qwen3_5ForCausalLM eager + PEFT unmerged F32 LoRA",
+        "torch_version": "2.13.0+cu129",
+        "dtype": "f32",
+        "tf32": false,
+        "loaded_adapter_tensors": 300,
+        "explicit_key_mapping": "base_model.model.model.language_model -> base_model.model.model; every source tensor checked against installed state",
+        "generated_tokens": 128,
+        "exact_match": true,
+        "scope": "Text-only reference with explicit VLM adapter-key remapping; image/vision adapters and full VLM class are outside this reference",
+        "receipt_sha256": "c84be106962d81a23bcb1288134c851eb6a40efd7532fa11e6f16df3cb885435",
+        "comparison": "Final binary output compared against retained independent reference from the same model, adapter bytes and token requests.",
+        "request_sha256": "542e01ed5899a8e0d228a98abf9c364e29cb4f31888b99b974c55e426311e632",
+        "base_tokens": 64,
+        "adapter_tokens": 64
+      }
+    },
+    {
+      "model": "qwen3.5-2b",
+      "adapter_kind": "trained Pocket Model PEFT",
+      "adapter_model_sha256": "820eadefe5016b64a1790747f87bc7cdaf6ca42671b9945eb5c3bc7f842a3e7c",
+      "adapter_config_sha256": "5975d41049c178cb1dfb5541cb05f37b74b8ddcac4d735a72a9abd7d95bacf56",
+      "adapter_revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51",
+      "adapter_rank": 16,
+      "source_config": "examples/native-qwen35-2b-lora.json",
+      "configuration": {
+        "model": "qwen3.5-2b",
+        "model_root": "MODEL_ROOT",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 128,
+        "max_weight_bytes": 8589934592,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "lora": {
+          "root": "ADAPTER_ROOT",
+          "base_model_aliases": [
+            "Qwen/Qwen3.5-2B",
+            "/work/model"
+          ],
+          "max_loaded": 4,
+          "max_rank": 64,
+          "max_upload_bytes": 134217728,
+          "max_resident_bytes": 536870912,
+          "transfer_timeout_s": 120
+        }
+      },
+      "useful_inference_sequences": 27,
+      "passed_checks": {
+        "base_unchanged": true,
+        "adapter_repeat_equal": true,
+        "duplicate_rejected": true,
+        "stale_id_rejected": true,
+        "unloaded": true,
+        "upload_staging_clean": true,
+        "transport_revision_equal": true
+      },
+      "adapter_changed_greedy_generation": true,
+      "local_load_ack_s": 0.0756641650077654,
+      "remote_local_http_load_ack_s": 0.09427909700025339,
+      "multipart_revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51",
+      "remote_revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51",
+      "sse_prompt_tokens": 25,
+      "sse_completion_tokens": 16,
+      "sse_ttft_s": 0.0030552550015272573,
+      "owned_engine_returncode": 0,
+      "engine_events": [
+        {
+          "event": "adapter_received",
+          "elapsed_s": 3.384628527,
+          "details": {
+            "bytes": 62521344,
+            "elapsed_s": 0.068954627,
+            "name": "qwen3.5-2b+pocket",
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 3.390786008,
+          "details": {
+            "construction_s": 0.006080842,
+            "cpu_tensor_bytes": 62521344,
+            "device_tensor_bytes": 62521344,
+            "elapsed_s": 0.006085846,
+            "id": 1,
+            "name": "qwen3.5-2b+pocket",
+            "rank": 16,
+            "resident_adapter_bytes": 62521344,
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51",
+            "validation_s": 1.072e-06
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 5.336350127,
+          "details": {
+            "bytes": 62521344,
+            "elapsed_s": 0.080724656,
+            "name": "qwen3.5-2b+pocket-upload",
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 5.341586575,
+          "details": {
+            "construction_s": 0.005165706,
+            "cpu_tensor_bytes": 62521344,
+            "device_tensor_bytes": 62521344,
+            "elapsed_s": 0.005171034,
+            "id": 2,
+            "name": "qwen3.5-2b+pocket-upload",
+            "rank": 16,
+            "resident_adapter_bytes": 125042688,
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51",
+            "validation_s": 1.016e-06
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 5.569085237,
+          "details": {
+            "bytes": 62521344,
+            "elapsed_s": 0.056613123,
+            "name": "qwen3.5-2b+pocket",
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51"
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 5.570765493,
+          "details": {
+            "device_tensor_bytes": 62521344,
+            "elapsed_s": 0.000392254,
+            "id": 2,
+            "name": "qwen3.5-2b+pocket-upload",
+            "resident_adapter_bytes": 62521344
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 5.571778163,
+          "details": {
+            "device_tensor_bytes": 62521344,
+            "elapsed_s": 0.000580312,
+            "id": 1,
+            "name": "qwen3.5-2b+pocket",
+            "resident_adapter_bytes": 0
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 5.661252923,
+          "details": {
+            "bytes": 62521344,
+            "elapsed_s": 0.088661086,
+            "name": "qwen3.5-2b+pocket",
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 5.6662896069999995,
+          "details": {
+            "construction_s": 0.004981215,
+            "cpu_tensor_bytes": 62521344,
+            "device_tensor_bytes": 62521344,
+            "elapsed_s": 0.004986168,
+            "id": 3,
+            "name": "qwen3.5-2b+pocket",
+            "rank": 16,
+            "resident_adapter_bytes": 62521344,
+            "revision": "ea32b0683a34afa303f5d7a91d7846e88433f1ccea3c6d26bcf2b830f19eaa51",
+            "validation_s": 1.322e-06
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 5.839633969,
+          "details": {
+            "device_tensor_bytes": 62521344,
+            "elapsed_s": 0.000338333,
+            "id": 3,
+            "name": "qwen3.5-2b+pocket",
+            "resident_adapter_bytes": 0
+          }
+        }
+      ],
+      "independent_reference": {
+        "reference": "Transformers Qwen3_5ForCausalLM eager + PEFT unmerged F32 LoRA",
+        "torch_version": "2.13.0+cu129",
+        "dtype": "f32",
+        "tf32": false,
+        "loaded_adapter_tensors": 300,
+        "explicit_key_mapping": "base_model.model.model.language_model -> base_model.model.model; every source tensor checked against installed state",
+        "generated_tokens": 128,
+        "exact_match": true,
+        "scope": "Text-only reference with explicit VLM adapter-key remapping; image/vision adapters and full VLM class are outside this reference",
+        "receipt_sha256": "622106422983fbc9d2caabcc0e7166140da5c7cd050eca657581cfec1722344b",
+        "comparison": "Final binary output compared against retained independent reference from the same model, adapter bytes and token requests.",
+        "request_sha256": "542e01ed5899a8e0d228a98abf9c364e29cb4f31888b99b974c55e426311e632",
+        "base_tokens": 64,
+        "adapter_tokens": 64
+      }
+    },
+    {
+      "model": "qwen3.5-4b",
+      "adapter_kind": "synthetic rank-two language projection fixture",
+      "adapter_model_sha256": "4ed2396396def61dc5206da08fad7b92ca6e4dc1b7365cb2b3aa672b09e2bcbf",
+      "adapter_config_sha256": "215c4148d91d0c7acb8cb3bdce9f387c49386086189160cc3d812d67f7a8a550",
+      "adapter_revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af",
+      "adapter_rank": 2,
+      "source_config": "examples/native-qwen35-4b-lora.json",
+      "configuration": {
+        "model": "qwen3.5-4b",
+        "model_root": "MODEL_ROOT",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 128,
+        "max_weight_bytes": 12884901888,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "lora": {
+          "root": "ADAPTER_ROOT",
+          "base_model_aliases": [
+            "Qwen/Qwen3.5-4B",
+            "/work/model"
+          ],
+          "max_loaded": 4,
+          "max_rank": 64,
+          "max_upload_bytes": 134217728,
+          "max_resident_bytes": 536870912,
+          "transfer_timeout_s": 120
+        }
+      },
+      "useful_inference_sequences": 27,
+      "passed_checks": {
+        "base_unchanged": true,
+        "adapter_repeat_equal": true,
+        "duplicate_rejected": true,
+        "stale_id_rejected": true,
+        "unloaded": true,
+        "upload_staging_clean": true,
+        "transport_revision_equal": true
+      },
+      "adapter_changed_greedy_generation": false,
+      "local_load_ack_s": 0.001640942005906254,
+      "remote_local_http_load_ack_s": 0.006079206999856979,
+      "multipart_revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af",
+      "remote_revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af",
+      "sse_prompt_tokens": 25,
+      "sse_completion_tokens": 16,
+      "sse_ttft_s": 0.003078168010688387,
+      "owned_engine_returncode": 0,
+      "engine_events": [
+        {
+          "event": "adapter_received",
+          "elapsed_s": 4.802618056,
+          "details": {
+            "bytes": 94208,
+            "elapsed_s": 0.000525384,
+            "name": "qwen3.5-4b+pocket",
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 4.803180555,
+          "details": {
+            "construction_s": 0.000442104,
+            "cpu_tensor_bytes": 94208,
+            "device_tensor_bytes": 94208,
+            "elapsed_s": 0.000446818,
+            "id": 1,
+            "name": "qwen3.5-4b+pocket",
+            "rank": 2,
+            "resident_adapter_bytes": 94208,
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af",
+            "validation_s": 6.19e-07
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 7.82173879,
+          "details": {
+            "bytes": 94208,
+            "elapsed_s": 0.000474041,
+            "name": "qwen3.5-4b+pocket-upload",
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 7.822232822,
+          "details": {
+            "construction_s": 0.000372762,
+            "cpu_tensor_bytes": 94208,
+            "device_tensor_bytes": 94208,
+            "elapsed_s": 0.000377236,
+            "id": 2,
+            "name": "qwen3.5-4b+pocket-upload",
+            "rank": 2,
+            "resident_adapter_bytes": 188416,
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af",
+            "validation_s": 6.85e-07
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 8.105731615,
+          "details": {
+            "bytes": 94208,
+            "elapsed_s": 0.00016108,
+            "name": "qwen3.5-4b+pocket",
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af"
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 8.10638473,
+          "details": {
+            "device_tensor_bytes": 94208,
+            "elapsed_s": 0.000153179,
+            "id": 2,
+            "name": "qwen3.5-4b+pocket-upload",
+            "resident_adapter_bytes": 94208
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 8.106994467,
+          "details": {
+            "device_tensor_bytes": 94208,
+            "elapsed_s": 0.000400912,
+            "id": 1,
+            "name": "qwen3.5-4b+pocket",
+            "resident_adapter_bytes": 0
+          }
+        },
+        {
+          "event": "adapter_received",
+          "elapsed_s": 8.112791342,
+          "details": {
+            "bytes": 94208,
+            "elapsed_s": 0.005385463,
+            "name": "qwen3.5-4b+pocket",
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af"
+          }
+        },
+        {
+          "event": "adapter_loaded",
+          "elapsed_s": 8.113095557,
+          "details": {
+            "construction_s": 0.000244583,
+            "cpu_tensor_bytes": 94208,
+            "device_tensor_bytes": 94208,
+            "elapsed_s": 0.000248114,
+            "id": 3,
+            "name": "qwen3.5-4b+pocket",
+            "rank": 2,
+            "resident_adapter_bytes": 94208,
+            "revision": "7cb8bfd20c85e8ae16488199fe8529da44e646a6637b3d4a483c74ffa75f54af",
+            "validation_s": 4.62e-07
+          }
+        },
+        {
+          "event": "adapter_unloaded",
+          "elapsed_s": 8.39559773,
+          "details": {
+            "device_tensor_bytes": 94208,
+            "elapsed_s": 0.000123678,
+            "id": 3,
+            "name": "qwen3.5-4b+pocket",
+            "resident_adapter_bytes": 0
+          }
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Local GPU gates; updated RunPod runtime publication and cloud adapter acceptance remain pending.",
+    "Independent real-adapter reference covers F32 text inference for 0.8B and 2B; BF16 has separate scalar tests, not a real-adapter token parity claim.",
+    "4B uses a synthetic fixture; no trained 4B adapter accuracy gate.",
+    "Packed GGUF bases and vision/projector adapters are unsupported.",
+    "Different adapter identities execute in separate batches; no fused multi-adapter kernels.",
+    "Remote-load latency uses local HTTP with warm source files, not R2/cloud network throughput.",
+    "Automatic adapter placement across cloud replicas and Pocket Model application thread persistence remain separate integrations."
+  ]
+}
