@@ -1,8 +1,8 @@
 // Adapted from Candle PR #3396, commit e9e4929f3e31b6183cc17e7be0596929c6725257.
 // Copyright Candle contributors, Apache-2.0 OR MIT; see THIRD_PARTY.md.
+use super::projection::{Embedding, Linear, ModelWeights, linear_b, linear_no_bias};
 use candle_core::{D, DType, Device, Module, Result, Tensor};
 use candle_nn::{Activation, Conv1d, Conv1dConfig, VarBuilder, conv1d_no_bias};
-use candle_nn::{Linear, linear_b, linear_no_bias};
 use std::sync::Arc;
 mod paged;
 mod paged_cuda;
@@ -119,8 +119,8 @@ pub struct Qwen3_5RmsNorm {
 }
 
 impl Qwen3_5RmsNorm {
-    pub fn new(dim: usize, eps: f64, vb: VarBuilder) -> Result<Self> {
-        let weight = (vb.get(dim, "weight")?.to_dtype(DType::F32)? + 1.0)?;
+    pub(crate) fn new(dim: usize, eps: f64, vb: ModelWeights) -> Result<Self> {
+        let weight = vb.norm_weight(dim)?;
         Ok(Self { weight, eps })
     }
 
@@ -192,7 +192,7 @@ pub struct Qwen3_5GatedDeltaNet {
 }
 
 impl Qwen3_5GatedDeltaNet {
-    pub fn new(cfg: &Config, vb: VarBuilder) -> Result<Self> {
+    pub(crate) fn new(cfg: &Config, vb: ModelWeights) -> Result<Self> {
         let hidden_size = cfg.text_config.hidden_size;
         let num_v_heads = cfg.text_config.linear_num_value_heads;
         let num_k_heads = cfg.text_config.linear_num_key_heads;
@@ -216,14 +216,12 @@ impl Qwen3_5GatedDeltaNet {
             conv_dim,
             conv_kernel_size,
             conv1d_cfg,
-            vb.pp("conv1d"),
+            vb.pp("conv1d").builder(),
         )?;
 
         let dt_bias = vb.get(num_v_heads, "dt_bias")?;
-        let a_log = vb.clone().set_dtype(DType::F32).get(num_v_heads, "A_log")?;
-
         let dt_bias_f32 = dt_bias.to_dtype(DType::F32)?;
-        let neg_a_f32 = (&a_log.to_dtype(DType::F32)?.exp()? * -1.0)?;
+        let neg_a_f32 = vb.negative_a(num_v_heads)?;
 
         let in_proj_qkv = linear_no_bias(hidden_size, conv_dim, vb.pp("in_proj_qkv"))?;
         let in_proj_z = linear_no_bias(hidden_size, value_dim, vb.pp("in_proj_z"))?;
@@ -566,10 +564,10 @@ pub struct Qwen3_5Attention {
 }
 
 impl Qwen3_5Attention {
-    pub fn new(
+    pub(crate) fn new(
         cfg: &Config,
         rotary_emb: Arc<Qwen3_5TextRotaryEmbedding>,
-        vb: VarBuilder,
+        vb: ModelWeights,
     ) -> Result<Self> {
         let head_dim = cfg.head_dim();
         let num_heads = cfg.text_config.num_attention_heads;
@@ -777,7 +775,7 @@ pub struct Qwen3_5MLP {
 }
 
 impl Qwen3_5MLP {
-    pub fn new(cfg: &Config, vb: VarBuilder) -> Result<Self> {
+    pub(crate) fn new(cfg: &Config, vb: ModelWeights) -> Result<Self> {
         let hidden_sz = cfg.text_config.hidden_size;
         let intermediate_sz = cfg.text_config.intermediate_size;
         let gate_proj = linear_no_bias(hidden_sz, intermediate_sz, vb.pp("gate_proj"))?;
@@ -821,7 +819,7 @@ impl Qwen3_5DecoderLayer {
         cfg: &Config,
         layer_idx: usize,
         rotary_emb: Arc<Qwen3_5TextRotaryEmbedding>,
-        vb: VarBuilder,
+        vb: ModelWeights,
     ) -> Result<Self> {
         let layer_type = cfg
             .text_config
@@ -902,7 +900,7 @@ impl Qwen3_5DecoderLayer {
 
 #[derive(Debug, Clone)]
 pub struct Model {
-    embed_tokens: candle_nn::Embedding,
+    embed_tokens: Embedding,
     layers: Vec<Qwen3_5DecoderLayer>,
     norm: Qwen3_5RmsNorm,
     device: Device,
@@ -913,13 +911,11 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(cfg: &Config, vb: VarBuilder) -> Result<Self> {
+    pub(crate) fn new(cfg: &Config, vb: ModelWeights) -> Result<Self> {
         let vb_m = vb.pp("model").pp("language_model");
-        let embed_tokens = candle_nn::embedding(
-            cfg.text_config.vocab_size,
-            cfg.text_config.hidden_size,
-            vb_m.pp("embed_tokens"),
-        )?;
+        let embed_tokens = vb_m
+            .pp("embed_tokens")
+            .embedding(cfg.text_config.vocab_size, cfg.text_config.hidden_size)?;
         let rotary_emb = Arc::new(Qwen3_5TextRotaryEmbedding::new(
             vb.dtype(),
             cfg,
@@ -1115,6 +1111,10 @@ pub struct ModelForCausalLM {
 
 impl ModelForCausalLM {
     pub fn new(cfg: &Config, vb: VarBuilder) -> Result<Self> {
+        Self::new_with_weights(cfg, ModelWeights::dense(vb))
+    }
+
+    pub(crate) fn new_with_weights(cfg: &Config, vb: ModelWeights) -> Result<Self> {
         cfg.validate()?;
         let base_model = Model::new(cfg, vb.clone())?;
         let lm_head = if vb.contains_tensor("lm_head.weight") {
@@ -1124,7 +1124,7 @@ impl ModelForCausalLM {
                 vb.pp("lm_head"),
             )?
         } else {
-            Linear::new(base_model.embed_tokens.embeddings().clone(), None)
+            base_model.embed_tokens.tied_output()
         };
         Ok(Self {
             base_model,
@@ -1276,7 +1276,11 @@ mod tests {
     #[test]
     fn residual_norm_uses_sum_before_bf16_rounding() -> Result<()> {
         let dev = Device::Cpu;
-        let norm = Qwen3_5RmsNorm::new(2, 1e-6, VarBuilder::zeros(DType::BF16, &dev))?;
+        let norm = Qwen3_5RmsNorm::new(
+            2,
+            1e-6,
+            ModelWeights::dense(VarBuilder::zeros(DType::BF16, &dev)),
+        )?;
         let input = Tensor::new(&[[0.25f32, 1.]], &dev)?.to_dtype(DType::BF16)?;
         let residual = Tensor::new(&[[-0.00390625f32, 0.00390625]], &dev)?.to_dtype(DType::BF16)?;
         let (normalized, retained) = norm.add(&input, &residual)?;

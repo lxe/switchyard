@@ -225,6 +225,7 @@ fn mixed_session_rejects_stale_duplicate_unknown_and_late_rows() {
 fn config() -> Config {
     Config {
         model: "tiny".into(),
+        weights: Default::default(),
         model_root: "unused".into(),
         device: DeviceConfig::Cpu,
         dtype: Precision::F32,

@@ -1,13 +1,15 @@
 //! Model adapters share immutable weights; each batch owns its sequence state.
+mod gguf;
 mod mixed;
 mod prefix;
+mod projection;
 pub mod qwen35;
 pub mod vision;
 mod vision_session;
 use crate::weights::Weights;
 use crate::{
     Error, Result,
-    config::{Config, DeviceConfig, Precision},
+    config::{Config, DeviceConfig, Precision, WeightFormat},
     telemetry::Telemetry,
 };
 use candle_core::{DType, Device, Tensor};
@@ -217,9 +219,32 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
         Precision::Bf16 => DType::BF16,
         Precision::F32 => DType::F32,
     };
-    let vb = Weights::read(&config.model_root, config.max_weight_bytes, telemetry)?
-        .builder(dtype, &device);
-    let mut weights = qwen35::ModelForCausalLM::new(&model_config, vb.clone())?;
+    let mut dense_vision_builder = None;
+    let mut weights = match &config.weights {
+        WeightFormat::Safetensors => {
+            let vb = Weights::read(&config.model_root, config.max_weight_bytes, telemetry)?
+                .builder(dtype, &device);
+            if config.vision.as_ref().is_some_and(|v| v.mmproj.is_none()) {
+                dense_vision_builder = Some(vb.clone());
+            }
+            qwen35::ModelForCausalLM::new(&model_config, vb)?
+        }
+        WeightFormat::Gguf { file } => {
+            let source = gguf::Source::open(
+                &config.model_root.join(file),
+                config.max_weight_bytes,
+                &model_config,
+                telemetry,
+            )?;
+            let weights =
+                qwen35::ModelForCausalLM::new_with_weights(&model_config, source.builder(&device))?;
+            telemetry.event(
+                "weights_read_finished",
+                serde_json::json!({"format":"gguf","projection_storage":"packed"}),
+            );
+            weights
+        }
+    };
     let vision = if let Some(bounds) = &config.vision {
         let vision_config: vision::VisionConfig =
             serde_json::from_value(raw["vision_config"].clone())?;
@@ -228,17 +253,22 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
             "vision_loading_started",
             serde_json::json!({"mmproj":bounds.mmproj.is_some()}),
         );
-        let vision_model = match &bounds.mmproj {
+        let model = match &bounds.mmproj {
             Some(path) => vision::VisionModel::from_gguf(
                 &vision_config,
                 &config.model_root.join(path),
                 &device,
                 dtype,
             )?,
-            None => vision::VisionModel::new(&vision_config, vb.pp("model.visual"))?,
+            None => vision::VisionModel::new(
+                &vision_config,
+                dense_vision_builder
+                    .ok_or_else(|| Error::Config("Original HF vision tensors unavailable".into()))?
+                    .pp("model.visual"),
+            )?,
         };
         telemetry.event("vision_loaded", serde_json::json!({"layers":vision_config.depth,"hidden":vision_config.out_hidden_size}));
-        Some((std::sync::Arc::new(vision_model), bounds.max_pixels))
+        Some((std::sync::Arc::new(model), bounds.max_pixels))
     } else {
         None
     };

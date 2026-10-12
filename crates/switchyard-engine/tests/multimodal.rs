@@ -77,6 +77,7 @@ fn engine() -> (Engine, Calls) {
         Config {
             model: "mock".into(),
             model_root: "unused".into(),
+            weights: Default::default(),
             device: DeviceConfig::Cpu,
             dtype: Precision::F32,
             max_context: 128,

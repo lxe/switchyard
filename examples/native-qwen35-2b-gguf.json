@@ -1,0 +1,24 @@
+{
+  "model": "qwen3.5-2b",
+  "model_root": "data/gguf-qwen35-2b",
+  "device": {
+    "kind": "cuda",
+    "ordinal": 0
+  },
+  "dtype": "f32",
+  "max_context": 128,
+  "max_weight_bytes": 2000000000,
+  "max_batch_size": 8,
+  "queue_capacity": 64,
+  "batch_wait_ms": 2,
+  "cache": {
+    "page_tokens": 16,
+    "checkpoint_tokens": 32,
+    "max_bytes": 268435456,
+    "max_entries": 16
+  },
+  "weights": {
+    "kind": "gguf",
+    "file": "Qwen3.5-2B-Q4_K_M.gguf"
+  }
+}

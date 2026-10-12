@@ -36,6 +36,7 @@ fn engine() -> Engine {
     Engine::new(
         Config {
             model: "counter".into(),
+            weights: Default::default(),
             model_root: "unused".into(),
             device: DeviceConfig::Cpu,
             dtype: Precision::F32,
