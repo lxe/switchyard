@@ -2,6 +2,7 @@
 mod mixed;
 mod prefix;
 pub mod qwen35;
+pub mod vision;
 use crate::weights::Weights;
 use crate::{
     Error, Result,

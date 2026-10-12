@@ -13,11 +13,20 @@ pub use state::SequenceState;
 enum Positions<'a> {
     Shared(usize),
     Rows(&'a Tensor),
+    Multimodal(&'a Tensor),
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub struct Config {
     pub text_config: TextConfig,
+    #[serde(default)]
+    pub vision_config: Option<super::vision::VisionConfig>,
+    #[serde(default)]
+    pub image_token_id: Option<u32>,
+    #[serde(default)]
+    pub vision_start_token_id: Option<u32>,
+    #[serde(default)]
+    pub vision_end_token_id: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
@@ -48,6 +57,8 @@ pub struct TextConfig {
 pub struct RopeParameters {
     pub rope_theta: f64,
     pub partial_rotary_factor: f64,
+    #[serde(default)]
+    pub mrope_section: Option<[usize; 3]>,
 }
 
 impl Config {
@@ -436,6 +447,7 @@ impl Qwen3_5GatedDeltaNet {
 pub struct Qwen3_5TextRotaryEmbedding {
     sin: Tensor,
     cos: Tensor,
+    mrope_section: Option<[usize; 3]>,
 }
 
 impl Qwen3_5TextRotaryEmbedding {
@@ -456,6 +468,7 @@ impl Qwen3_5TextRotaryEmbedding {
         Ok(Self {
             sin: freqs.sin()?.to_dtype(dtype)?,
             cos: freqs.cos()?.to_dtype(dtype)?,
+            mrope_section: cfg.text_config.rope_parameters.mrope_section,
         })
     }
 
@@ -483,6 +496,38 @@ impl Qwen3_5TextRotaryEmbedding {
                     self.cos.index_select(ids, 0)?.unsqueeze(1)?.contiguous()?,
                     self.sin.index_select(ids, 0)?.unsqueeze(1)?.contiguous()?,
                 )
+            }
+            Positions::Multimodal(ids) => {
+                let (axes, batch, length) = ids.dims3()?;
+                if axes != 3 || batch != 1 || length != seq_len {
+                    candle_core::bail!("Image positions require [3,1,sequence] and batch one");
+                }
+                let section = self.mrope_section.ok_or_else(|| {
+                    candle_core::Error::Msg("Image model lacks MRoPE sections".into())
+                })?;
+                let width = self.cos.dim(1)?;
+                if section.iter().sum::<usize>() != width {
+                    candle_core::bail!("MRoPE sections do not cover rotary frequencies");
+                }
+                let select = |table: &Tensor| -> Result<Tensor> {
+                    let indices = ids.flatten_all()?;
+                    let tables = table
+                        .index_select(&indices, 0)?
+                        .reshape((3, seq_len, width))?;
+                    let mut cols = Vec::with_capacity(width);
+                    for j in 0..width {
+                        let axis = if j % 3 == 1 && j < section[1] * 3 {
+                            1
+                        } else if j % 3 == 2 && j < section[2] * 3 {
+                            2
+                        } else {
+                            0
+                        };
+                        cols.push(tables.narrow(0, axis, 1)?.squeeze(0)?.narrow(1, j, 1)?);
+                    }
+                    Tensor::cat(&cols, 1)
+                };
+                (select(&self.cos)?, select(&self.sin)?)
             }
         };
         let rotary_dim = cos.dim(D::Minus1)? * 2;
@@ -989,10 +1034,21 @@ impl Model {
         input_ids: &Tensor,
         attention_mask: Option<&Tensor>,
         positions: Positions<'_>,
+        captured: Option<&mut super::LayerTrace>,
+        prefill: bool,
+    ) -> Result<Tensor> {
+        let xs = self.embed_tokens.forward(input_ids)?;
+        self.forward_embeddings(xs, attention_mask, positions, captured, prefill)
+    }
+
+    fn forward_embeddings(
+        &mut self,
+        mut xs: Tensor,
+        attention_mask: Option<&Tensor>,
+        positions: Positions<'_>,
         mut captured: Option<&mut super::LayerTrace>,
         prefill: bool,
     ) -> Result<Tensor> {
-        let mut xs = self.embed_tokens.forward(input_ids)?;
         if let Some(captured) = captured.as_mut() {
             captured.push(("embedding".into(), xs.clone()));
         }
@@ -1093,6 +1149,94 @@ impl ModelForCausalLM {
             .apply(&self.lm_head)
     }
 
+    /// Image spans replace only their already expanded placeholder embeddings.
+    /// Images use request-owned state and bypass text-prefix lookup entirely.
+    pub fn prefill_images(
+        &mut self,
+        input_ids: &Tensor,
+        images: &[ImageSpan],
+    ) -> Result<(Tensor, i64)> {
+        let (batch, length) = input_ids.dims2()?;
+        if batch != 1
+            || length == 0
+            || !self.base_model.state_positions.is_empty()
+            || length > self.base_model.max_positions
+        {
+            candle_core::bail!("Image prefill requires one bounded empty sequence");
+        }
+        let (position_ids, delta) = image_positions(length, images, input_ids.device())?;
+        let base = self.base_model.embed_tokens.forward(input_ids)?;
+        let mut chunks = Vec::new();
+        let mut cursor = 0;
+        for image in images {
+            let count = image.embeddings.dim(0)?;
+            if image.embeddings.dim(1)? != base.dim(2)? {
+                candle_core::bail!("Image projector hidden width mismatch");
+            }
+            if image.offset > cursor {
+                chunks.push(base.narrow(1, cursor, image.offset - cursor)?);
+            }
+            chunks.push(image.embeddings.to_dtype(base.dtype())?.unsqueeze(0)?);
+            cursor = image.offset + count;
+        }
+        if cursor < length {
+            chunks.push(base.narrow(1, cursor, length - cursor)?);
+        }
+        let embeddings = Tensor::cat(&chunks, 1)?;
+        let mask = if length > 1 {
+            Some(
+                self.base_model
+                    .prepare_causal_attention_mask(1, length, 0)?,
+            )
+        } else {
+            None
+        };
+        let hidden = self.base_model.forward_embeddings(
+            embeddings,
+            mask.as_ref(),
+            Positions::Multimodal(&position_ids),
+            None,
+            true,
+        )?;
+        self.base_model.state_positions = vec![length];
+        Ok((
+            hidden.narrow(1, length - 1, 1)?.apply(&self.lm_head)?,
+            delta,
+        ))
+    }
+
+    /// Physical sequence length remains independent of image rotary coordinates.
+    pub fn forward_with_rope_offset(
+        &mut self,
+        input_ids: &Tensor,
+        offset: usize,
+        delta: i64,
+    ) -> Result<Tensor> {
+        let (batch, length) = input_ids.dims2()?;
+        if batch != 1
+            || length != 1
+            || self.base_model.state_positions != vec![offset]
+            || offset >= self.base_model.max_positions
+        {
+            candle_core::bail!("Image decode position does not match owned state");
+        }
+        let rotary = (offset as i64)
+            .checked_add(delta)
+            .filter(|&x| x >= 0 && x < (self.base_model.max_positions as i64))
+            .ok_or_else(|| {
+                candle_core::Error::Msg("Image rotary position exceeds prepared bound".into())
+            })? as usize;
+        let output = self.base_model.forward_with_positions(
+            input_ids,
+            None,
+            Positions::Shared(rotary),
+            None,
+            false,
+        )?;
+        self.base_model.state_positions = vec![offset + 1];
+        output.apply(&self.lm_head)
+    }
+
     pub fn clear_kv_cache(&mut self) {
         self.base_model.clear_kv_cache();
     }
@@ -1151,5 +1295,113 @@ mod tests {
             [[173. / 512., 1.375]]
         );
         Ok(())
+    }
+}
+
+/// A contiguous image-token region after the vision start marker.
+#[derive(Clone)]
+pub struct ImageSpan {
+    pub offset: usize,
+    pub grid: [usize; 3],
+    pub embeddings: Tensor,
+}
+
+/// Released Qwen3.5 spatial positions: each merged image token has [t,h,w]
+/// coordinates starting at the previous text position. Following text starts
+/// after max(grid_h,grid_w)/2 rather than after the image token count.
+pub fn image_positions(
+    length: usize,
+    images: &[ImageSpan],
+    device: &Device,
+) -> Result<(Tensor, i64)> {
+    if images.is_empty() || images.len() > 4 {
+        candle_core::bail!("Image spans outside 1..=4");
+    }
+    let mut positions = [Vec::<u32>::new(), Vec::new(), Vec::new()];
+    let mut cursor = 0;
+    let mut current = 0usize;
+    for image in images {
+        let [t, h, w] = image.grid;
+        let count = image.embeddings.dim(0)?;
+        if t != 1
+            || h == 0
+            || w == 0
+            || !h.is_multiple_of(2)
+            || !w.is_multiple_of(2)
+            || h.checked_mul(w).is_none_or(|n| n / 4 != count)
+            || image.offset < cursor
+            || image
+                .offset
+                .checked_add(count)
+                .is_none_or(|end| end > length)
+        {
+            candle_core::bail!("Invalid image span or projector token count");
+        }
+        for _ in cursor..image.offset {
+            for axis in &mut positions {
+                axis.push(current as u32);
+            }
+            current += 1;
+        }
+        for y in 0..h / 2 {
+            for x in 0..w / 2 {
+                positions[0].push(current as u32);
+                positions[1].push((current + y) as u32);
+                positions[2].push((current + x) as u32);
+            }
+        }
+        current += h.max(w) / 2;
+        cursor = image.offset + count;
+    }
+    for _ in cursor..length {
+        for axis in &mut positions {
+            axis.push(current as u32);
+        }
+        current += 1;
+    }
+    let maximum = positions
+        .iter()
+        .flat_map(|x| x.iter())
+        .copied()
+        .max()
+        .unwrap_or(0) as i64;
+    Ok((
+        Tensor::from_vec(
+            positions.into_iter().flatten().collect::<Vec<_>>(),
+            (3, 1, length),
+            device,
+        )?,
+        maximum + 1 - length as i64,
+    ))
+}
+
+#[cfg(test)]
+mod vision_position_tests {
+    use super::*;
+    #[test]
+    fn spatial_positions_and_decode_delta() {
+        let image = ImageSpan {
+            offset: 2,
+            grid: [1, 4, 6],
+            embeddings: Tensor::zeros((6, 4), DType::F32, &Device::Cpu).unwrap(),
+        };
+        let (p, delta) = image_positions(10, &[image], &Device::Cpu).unwrap();
+        let axes = p.squeeze(1).unwrap().to_vec2::<u32>().unwrap();
+        assert_eq!(axes[0], vec![0, 1, 2, 2, 2, 2, 2, 2, 5, 6]);
+        assert_eq!(axes[1], vec![0, 1, 2, 2, 2, 3, 3, 3, 5, 6]);
+        assert_eq!(axes[2], vec![0, 1, 2, 3, 4, 2, 3, 4, 5, 6]);
+        assert_eq!(delta, -3);
+    }
+    #[test]
+    fn invalid_or_overlapping_spans_fail() {
+        let mut image = ImageSpan {
+            offset: 2,
+            grid: [1, 4, 4],
+            embeddings: Tensor::zeros((4, 4), DType::F32, &Device::Cpu).unwrap(),
+        };
+        assert!(image_positions(5, &[image.clone()], &Device::Cpu).is_err());
+        assert!(image_positions(12, &[image.clone(), image.clone()], &Device::Cpu).is_err());
+        image.grid = [1, 3, 4];
+        assert!(image_positions(12, &[image], &Device::Cpu).is_err());
     }
 }

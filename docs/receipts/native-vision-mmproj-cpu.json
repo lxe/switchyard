@@ -1,0 +1,49 @@
+{
+  "scope": "Released Qwen3.5 0.8B mmproj image encoder/projector CPU validation; not complete serving admission",
+  "model": "Qwen/Qwen3.5-0.8B",
+  "mmproj": {
+    "repo": "unsloth/Qwen3.5-0.8B-GGUF",
+    "revision": "6ab461498e2023f6e3c1baea90a8f0fe38ab64d0",
+    "file": "mmproj-F32.gguf",
+    "bytes": 402381664,
+    "sha256": "2b167b9d9a96bf18c31ece6de70aedca4034d936bd9aba21bd485b9a6dc78da5"
+  },
+  "references": {
+    "candle": "c68b24997319b8d76e5a4e775dab197c7f26322a",
+    "transformers_source": "55c3cc9f03cd4fbf2d27d382dcc8fcc544631f8e",
+    "llama_cpp_source": "f2cc7282ce0042641df55e0e563b75e824e2b647"
+  },
+  "device": "CPU F32, no GPU",
+  "fixture": {
+    "dimensions": [
+      256,
+      256
+    ],
+    "grid": [
+      1,
+      16,
+      16
+    ],
+    "merged_embedding_shape": [
+      64,
+      1024
+    ],
+    "description": "RGB coordinates and blue=255, original size preserves pixels"
+  },
+  "against_official_HF": {
+    "pixels_max_abs": 5.9138983e-08,
+    "pixels_mean_abs": 9.934108e-09,
+    "embedding_max_abs": 6.389618e-05,
+    "embedding_mean_abs": 1.3805018e-06
+  },
+  "tests": {
+    "command": "cargo test -p switchyard-engine --lib -j 2",
+    "passed": 11
+  },
+  "limits": [
+    "Static images only",
+    "Initial image prefill batch one",
+    "Text prefix cache must be bypassed for image requests",
+    "Resized-image parity and GPU generation validation pending"
+  ]
+}

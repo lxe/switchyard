@@ -2892,6 +2892,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "switchyard-engine-kernels",
+ "switchyard-quantized",
  "thiserror 2.0.21",
  "tokenizers 0.22.2",
  "tokio",
