@@ -861,6 +861,49 @@ mod tests {
         assert!(resize_grid(40_000, 1, 65_536).is_err());
     }
     #[test]
+    fn complete_tiny_encoder_matches_official_transformers_golden() {
+        let fixture: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../tests/fixtures/vision/tiny-vision.json"
+        ))
+        .unwrap();
+        let config: VisionConfig = serde_json::from_value(fixture["config"].clone()).unwrap();
+        let data = candle_core::safetensors::BufferedSafetensors::new(
+            include_bytes!("../../tests/fixtures/vision/tiny-vision.safetensors").to_vec(),
+        )
+        .unwrap();
+        let tensors = data
+            .tensors()
+            .into_iter()
+            .map(|(name, _)| {
+                let value = data.load(&name, &Device::Cpu).unwrap();
+                (name, value)
+            })
+            .collect();
+        let model = VisionModel::new(
+            &config,
+            VarBuilder::from_tensors(tensors, DType::F32, &Device::Cpu),
+        )
+        .unwrap();
+        let input = PreparedImage {
+            pixels: Tensor::from_vec(
+                (0..4 * 1536)
+                    .map(|i| (i % 17) as f32 / 17. - 0.5)
+                    .collect::<Vec<_>>(),
+                (4, 1536),
+                &Device::Cpu,
+            )
+            .unwrap(),
+            grid: [1, 2, 2],
+        };
+        let actual = model.forward(&input).unwrap().to_vec2::<f32>().unwrap();
+        let expected: Vec<Vec<f32>> = serde_json::from_value(fixture["embedding"].clone()).unwrap();
+        assert_eq!(actual.len(), expected.len());
+        for (a, b) in actual.iter().flatten().zip(expected.iter().flatten()) {
+            assert!((a - b).abs() < 1e-7, "actual {a} expected {b}");
+        }
+    }
+
+    #[test]
     fn fixed_point_resize_matches_independent_pillow_fixtures() {
         for (source, expected) in [
             (

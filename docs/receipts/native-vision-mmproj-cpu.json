@@ -45,5 +45,13 @@
     "Initial image prefill batch one",
     "Text prefix cache must be bypassed for image requests",
     "Resized-image parity and GPU generation validation pending"
-  ]
+  ],
+  "additional_projector": {
+    "file": "mmproj-F16.gguf",
+    "bytes": 204987232,
+    "sha256": "56e4c6cfe73b0c82e3e82bc518d7591997e61d81f723fc41a586f4fa69ea2453",
+    "output_dtype": "F32",
+    "embedding_max_abs_to_released_F32_projector": 6.723403930664062e-05,
+    "embedding_mean_abs_to_released_F32_projector": 5.122331003803993e-07
+  }
 }
