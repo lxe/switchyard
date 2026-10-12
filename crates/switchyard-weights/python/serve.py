@@ -1,4 +1,4 @@
-"""Agent-owned entrypoint; a spawned worker must not consume the stdin gate."""
+"""Agent-owned entrypoint; waits for SWITCHYARD_READY_FILE before serving."""
 
 if __name__ == "__main__":
     import os

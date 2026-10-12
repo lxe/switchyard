@@ -107,6 +107,10 @@ async fn serve_at(
         // CUDA/compiler writes are private; immutable seeds are shared by artifact identity.
         // Runtime/components use the publication gate; weight replicas share a model gate.
         roots.cache_seeds = Some(roots.caches.join(".host-seeds"));
+        // Endpoints share one runtime root, so each engine gets its own ready file.
+        roots.ready = roots
+            .runtime
+            .with_file_name(format!("engine-ready-{}", endpoint.id));
         roots.caches = roots.caches.join("endpoints").join(&endpoint.id);
         let state = Arc::new(RwLock::new(State::new(&endpoint.ticket)));
         let admission = admission::Admission::default();

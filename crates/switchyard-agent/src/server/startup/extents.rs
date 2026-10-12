@@ -1,5 +1,5 @@
-//! Metadata gate and live tensor bridge for an extent-backed model.
-use super::{Stdio, engine};
+//! Metadata readiness and live tensor bridge for an extent-backed model.
+use super::{Stdio, clear_ready, engine, publish_ready};
 use crate::{
     Error, Phase, Result, State, Ticket,
     runtime::RootPaths,
@@ -15,7 +15,6 @@ use std::{
 use switchyard_artifacts::{Entry, extents::ExtentOptions};
 use switchyard_weights::{DeliveryBridge, WeightReception, write_vllm_bundle};
 use tokio::{
-    io::AsyncWriteExt,
     process::Command,
     sync::{RwLock, Semaphore, watch},
 };
@@ -71,6 +70,7 @@ pub(super) async fn prepare(
     state: Arc<RwLock<State>>,
     epoch: Instant,
 ) -> Result<engine::Process> {
+    clear_ready(&roots.ready)?;
     crate::hydrate::preflight(ticket, &roots.models, &state).await?;
     crate::runtime::preflight(ticket, roots, &state).await?;
     let (artifact, loader) = ticket
@@ -224,6 +224,7 @@ pub(super) async fn prepare(
                 .env("SWITCHYARD_RUNTIME_ROOT", &roots.runtime)
                 .env("SWITCHYARD_COMPONENTS_ROOT", roots.components())
                 .env("SWITCHYARD_MODEL_CONTENT_ID", &artifact.manifest.content_id)
+                .env(crate::runtime::READY_FILE, &roots.ready)
                 .env(
                     "SWITCHYARD_RUNTIME_ARTIFACT_ID",
                     &runtime.artifact.manifest.id,
@@ -245,17 +246,10 @@ pub(super) async fn prepare(
             command
                 .env("PYTHONPATH", python_path)
                 .env("VLLM_PLUGINS", "switchyard_extents");
-            command.stdin(Stdio::piped());
+            command.stdin(Stdio::null());
             let mut process = owner.spawn(&mut command)?;
             process.retain(owner.clone());
             milestone(&state, epoch, StartupEvent::EngineSpawned).await;
-            // Child::wait closes any stdin it owns. Retain the gate pipe separately
-            // while watching child exit so polling wait cannot close it prematurely.
-            let mut stdin = process
-                .child
-                .stdin
-                .take()
-                .ok_or_else(|| Error::Transfer("metadata gate stdin unavailable".into()))?;
             tokio::select! {
                 ready = async {
                     tokio::try_join!(
@@ -269,8 +263,7 @@ pub(super) async fn prepare(
                     return Err(Error::Transfer("engine exited before metadata readiness".into()));
                 }
             }
-            stdin.write_all(b"switchyard-metadata-ready-v1\n").await?;
-            stdin.shutdown().await?;
+            publish_ready(&roots.ready)?;
             milestone(&state, epoch, StartupEvent::EngineGateReleased).await;
             Ok::<_, Error>(process)
         };

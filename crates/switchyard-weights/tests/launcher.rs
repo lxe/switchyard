@@ -1,12 +1,12 @@
-//! Spawned Python workers must import the launcher without consuming its gate.
+//! The launcher waits for the agent's ready file; spawned workers do not wait again.
 use std::{
     fs,
-    io::Write,
     process::{Command, Stdio},
+    time::Duration,
 };
 
 #[test]
-fn spawned_worker_does_not_repeat_metadata_gate() {
+fn launcher_waits_for_ready_file_and_spawned_worker_does_not_repeat_it() {
     let root = std::env::temp_dir().join(format!("switchyard-loader-spawn-{}", std::process::id()));
     fs::create_dir(&root).unwrap();
     switchyard_weights::write_vllm_bundle(&root.join("plugin")).unwrap();
@@ -21,21 +21,23 @@ fn spawned_worker_does_not_repeat_metadata_gate() {
     )
     .unwrap();
     fs::write(package.join("main.py"), "import multiprocessing\nfrom worker import child\np = multiprocessing.get_context('spawn').Process(target=child)\np.start()\np.join(10)\nassert p.exitcode == 0, p.exitcode\n").unwrap();
+    let ready = root.join("engine-ready");
     let mut process = Command::new("python3")
         .arg(root.join("plugin/serve.py"))
         .env("PYTHONPATH", root.join("plugin"))
         .env("PYTHONDONTWRITEBYTECODE", "1")
-        .stdin(Stdio::piped())
+        .env("SWITCHYARD_READY_FILE", &ready)
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    process
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(b"switchyard-metadata-ready-v1\n")
-        .unwrap();
+    std::thread::sleep(Duration::from_millis(300));
+    assert!(
+        process.try_wait().unwrap().is_none(),
+        "launcher proceeded before its ready file existed"
+    );
+    fs::write(&ready, b"").unwrap();
     let output = process.wait_with_output().unwrap();
     fs::remove_dir_all(root).unwrap();
     assert!(

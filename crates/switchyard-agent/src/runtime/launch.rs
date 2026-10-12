@@ -14,6 +14,7 @@ pub(crate) async fn command_staged_with_limit(
             let mut command = Command::new("vllm");
             command.args(&ticket.engine_args);
             child_environment(&mut command);
+            command.env(READY_FILE, &roots.ready);
             sender
                 .send(command)
                 .map_err(|_| Error::Transfer("boot readiness receiver cancelled".into()))?;
@@ -130,6 +131,7 @@ fn prepare_command(ticket: &Ticket, roots: &RootPaths) -> Result<Command> {
             "SWITCHYARD_RUNTIME_ARTIFACT_ID",
             &runtime.artifact.manifest.id,
         )
-        .env("SWITCHYARD_CACHE_ROOT", cache_root);
+        .env("SWITCHYARD_CACHE_ROOT", cache_root)
+        .env(READY_FILE, &roots.ready);
     Ok(command)
 }

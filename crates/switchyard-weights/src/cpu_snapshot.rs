@@ -18,12 +18,25 @@ use std::{
 use switchyard_artifacts::{Manifest, Metadata, PackOptions};
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-pub const GATE: &[u8] = b"switchyard-metadata-ready-v1\n";
+/// Names a file whose existence means the model and runtime dependencies are published.
+pub const READY_FILE: &str = "SWITCHYARD_READY_FILE";
 pub const PAYLOAD: &str = include_str!("../python/switchyard_cpu_snapshot.py");
 fn payload_sha() -> String {
     sha(format!("{PAYLOAD}{}", crate::loader::CPU_TREE).as_bytes())
 }
 const LIMIT: usize = 65536;
+
+/// Wait until the file named by [`READY_FILE`] exists. Standalone use, without
+/// the variable, proceeds at once. The owner cancels by killing this process.
+pub fn wait_ready() {
+    let Some(path) = std::env::var_os(READY_FILE).filter(|path| !path.is_empty()) else {
+        return;
+    };
+    let path = PathBuf::from(path);
+    while !path.exists() {
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
 
 fn sha(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
@@ -303,21 +316,22 @@ pub fn prepare(options: Prepare) -> Result<Value> {
         .env("TRANSFORMERS_OFFLINE", "1")
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .env("VLLM_NO_USAGE_STATS", "1")
-        .stdin(Stdio::piped())
+        .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     {
         let environment: BTreeMap<String, String> =
             serde_json::from_value(serving["environment"].clone())?;
         command.envs(environment);
+        // The bake has every prerequisite on disk, so its launcher proceeds at once.
+        let ready = staging.join("ready");
+        fs::write(&ready, b"")?;
+        command.env(READY_FILE, ready);
         let log = fs::File::create(staging.join("preparation.log"))?;
         command.stdout(log.try_clone()?).stderr(log);
     }
     emit("cpu_prepare_started", start, json!({"gpu_snapshot":false}));
     let mut child = OwnedChild(command.spawn()?);
-    if let Some(mut input) = child.0.stdin.take() {
-        input.write_all(GATE)?;
-    }
     drop(external);
     let prepared = receive(&mut control)?;
     if let Some(error) = prepared.get("error").and_then(Value::as_str) {
@@ -374,6 +388,7 @@ pub fn prepare(options: Prepare) -> Result<Value> {
             .args(["--log-file", "dump.log", "-v4"]),
     )?;
     child.0.wait()?;
+    fs::remove_file(staging.join("ready"))?;
     emit(
         "cpu_checkpoint_complete",
         start,
@@ -491,11 +506,7 @@ pub fn restore(options: Restore) -> Result<Value> {
         &HostProfile::inspect(&options.criu)?,
     )?;
     emit("cpu_restore_waiting_for_prerequisites", start, json!({}));
-    let mut gate = vec![0; GATE.len()];
-    std::io::stdin().read_exact(&mut gate)?;
-    if gate != GATE {
-        return Err("CPU restore hydration prerequisite gate cancelled".into());
-    }
+    wait_ready();
     let work = fresh(&options.work, "cpu-restore")?;
     checked(
         criu(&options.criu)
@@ -563,9 +574,8 @@ pub fn restore(options: Restore) -> Result<Value> {
         &mut ancillary,
         rustix::net::SendFlags::empty(),
     )?;
-    let mut writer = fs::File::from(output);
-    writer.write_all(GATE)?;
-    drop(writer);
+    // The restored process is past its readiness wait; its fresh stdin is empty.
+    drop(output);
     let mut environment = fresh_environment();
     environment.insert(
         "SWITCHYARD_RUNTIME_ROOT".into(),

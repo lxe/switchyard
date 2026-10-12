@@ -1,25 +1,50 @@
 use super::*;
+const WAIT_READY: &str = "while [ ! -e \"$SWITCHYARD_READY_FILE\" ]; do sleep 0.01; done";
+
+struct Scratch(std::path::PathBuf);
+impl Scratch {
+    fn new(prefix: &str) -> Self {
+        let mut random = [0_u8; 8];
+        getrandom::fill(&mut random).unwrap();
+        let path = std::env::temp_dir().join(format!("{prefix}-{:x}", u64::from_le_bytes(random)));
+        std::fs::create_dir(&path).unwrap();
+        Self(path)
+    }
+}
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
 #[tokio::test]
-async fn cooperative_engine_waits_for_current_model_gate_and_observes_eof() {
+async fn cooperative_engine_waits_for_published_ready_file() {
+    let scratch = Scratch::new("switchyard-ready");
+    let ready = scratch.0.join("engine-ready");
+    std::fs::write(&ready, b"").unwrap();
+    clear_ready(&ready).unwrap();
+    clear_ready(&ready).unwrap();
     let mut command = Command::new("sh");
     command
-        .args([
-            "-c",
-            "read line; test \"$line\" = switchyard-model-ready-v1 && ! read extra",
-        ])
-        .stdin(Stdio::piped());
+        .args(["-c", WAIT_READY])
+        .env(crate::runtime::READY_FILE, &ready)
+        .stdin(Stdio::null());
     let mut process = engine::Process::spawn(&mut command).unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(30)).await;
     assert!(process.child.try_wait().unwrap().is_none());
-    release(&mut process).await.unwrap();
+    publish_ready(&ready).unwrap();
     assert!(process.child.wait().await.unwrap().success());
+    let entries = std::fs::read_dir(&scratch.0).unwrap().count();
+    assert_eq!(entries, 1, "ready publication left a temporary file");
 }
 #[tokio::test]
-async fn cancellation_before_gate_kills_waiting_engine_group() {
+async fn cancellation_before_ready_kills_waiting_engine_group() {
+    let scratch = Scratch::new("switchyard-ready-cancel");
     let mut command = Command::new("sh");
     command
-        .args(["-c", "read line; sleep 60"])
-        .stdin(Stdio::piped());
+        .args(["-c", &format!("{WAIT_READY}; sleep 60")])
+        .env(crate::runtime::READY_FILE, scratch.0.join("engine-ready"))
+        .stdin(Stdio::null());
     let process = engine::Process::spawn(&mut command).unwrap();
     let pid = process.child.id().unwrap();
     drop(process);
@@ -49,7 +74,7 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
         extract::{Path as RoutePath, State as AxumState},
         routing::get,
     };
-    use std::{collections::BTreeMap, fs, path::PathBuf};
+    use std::{collections::BTreeMap, fs};
     use switchyard_artifacts::{ArtifactTicket, Metadata, PackOptions, pack};
     #[derive(Clone)]
     struct Source {
@@ -67,23 +92,11 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
         }
         Body::from(source.bodies[&name].clone())
     }
-    struct Scratch(PathBuf);
-    impl Drop for Scratch {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
-        }
-    }
-    let mut random = [0_u8; 8];
-    getrandom::fill(&mut random).unwrap();
-    let scratch = Scratch(std::env::temp_dir().join(format!(
-        "switchyard-overlap-{:x}",
-        u64::from_le_bytes(random)
-    )));
-    fs::create_dir(&scratch.0).unwrap();
+    let scratch = Scratch::new("switchyard-overlap");
     let source_dir = scratch.0.join("source");
     fs::create_dir(&source_dir).unwrap();
     let executable = source_dir.join("engine");
-    fs::write(&executable, "#!/bin/sh\ntouch \"$IMPORTED\"\nread line\ntest \"$line\" = switchyard-model-ready-v1 || exit 1\ntest -f \"$MODEL/config.json\" || exit 2\ntouch \"$RELEASED\"\nsleep 60\n").unwrap();
+    fs::write(&executable, "#!/bin/sh\ntouch \"$IMPORTED\"\nwhile [ ! -e \"$SWITCHYARD_READY_FILE\" ]; do sleep 0.01; done\ntest -f \"$MODEL/config.json\" || exit 2\ntouch \"$RELEASED\"\nsleep 60\n").unwrap();
     use std::os::unix::fs::PermissionsExt;
     fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
     let packed = scratch.0.join("packed");
@@ -131,6 +144,9 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
         axum::serve(listener, app).await.unwrap();
     });
     let roots = RootPaths::under(&scratch.0);
+    // A previous engine's ready file must not release this one.
+    let ready = roots.ready.clone();
+    fs::write(&ready, b"").unwrap();
     let imported = scratch.0.join("imported");
     let released = scratch.0.join("released");
     let ticket = Ticket {
@@ -207,7 +223,7 @@ async fn runtime_imports_while_current_model_stream_is_pending_and_gate_follows_
     })
     .await
     .unwrap();
-    assert!(!released.exists());
+    assert!(!released.exists() && !ready.exists());
     assert!(
         observed
             .read()

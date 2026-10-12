@@ -17,7 +17,8 @@ pub struct StartupPolicy {
     pub model_root: Option<String>,
     #[serde(default)]
     pub require_model_ram: bool,
-    /// A cooperative program waits for the agent's fixed model-ready line on stdin.
+    /// Start a cooperative program early; it waits for the agent's ready file
+    /// (`SWITCHYARD_READY_FILE`) before using the model or runtime dependencies.
     #[serde(default)]
     pub early_launch: bool,
 }

@@ -50,6 +50,7 @@ fn fixture(engine_url: String, stop_succeeds: bool) -> Fixture {
         caches: temp.0.join("cache"),
         chunks: temp.0.join("artifacts"),
         models: temp.0.join("models"),
+        ready: temp.0.join("engine-ready"),
     };
     fs::create_dir(&roots.runtime).unwrap();
     fs::write(roots.runtime.join("engine"), "runtime").unwrap();

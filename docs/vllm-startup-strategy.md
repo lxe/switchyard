@@ -1,10 +1,10 @@
 # vLLM prepared startup
 
-The prepared launcher imports the pinned vLLM serving stack while model metadata and compiler caches arrive. The agent starts it after the boot runtime is atomically complete. The launcher consumes `switchyard-metadata-ready-v1\n` only in the original API process; the agent releases that gate after model metadata, supplemental runtime components, and compiler caches are complete. Spawned workers import the launcher without consuming the gate.
+The prepared launcher imports the pinned vLLM serving stack while model metadata and compiler caches arrive. The agent starts it after the boot runtime is atomically complete. The launcher waits for the file named by `SWITCHYARD_READY_FILE` only in the original API process; the agent creates that file after model metadata, supplemental runtime components, and compiler caches are complete. Spawned workers import the launcher without waiting again. Without the variable, the launcher proceeds at once.
 
 ## Agent protocol
 
-The generic agent supplies `SWITCHYARD_RUNTIME_ROOT`, `SWITCHYARD_COMPONENTS_ROOT`, `SWITCHYARD_CACHE_ROOT`, and `SWITCHYARD_RUNTIME_ARTIFACT_ID` from the selected ticket. Supplemental compiler and cubin files live at `/opt/switchyard/components/build`, a sibling of the immutable boot runtime. `FLASHINFER_CUBIN_DIR`, `CUDA_HOME`, and compiler paths can point into this component before it exists, because their import consumers wait for the gate. The supplied artifact ID identifies the immutable boot tree and is the guarded-fork runtime pin. The runtime launch fingerprint additionally binds every supplemental component ID and its compatibility labels, so compiler caches belong to the complete configured runtime. `VLLM_ENGINE_STARTUP_POLICY` is a JSON configuration included in the launch fingerprint. The Rust live configuration validates its schema, selected fork artifact, and required native flags before provisioning. This policy requires extent-backed vLLM 0.31.0 models; ordinary archive CLI launches do not consume it. No file polling or second agent readiness pipe is required.
+The generic agent supplies `SWITCHYARD_RUNTIME_ROOT`, `SWITCHYARD_COMPONENTS_ROOT`, `SWITCHYARD_CACHE_ROOT`, and `SWITCHYARD_RUNTIME_ARTIFACT_ID` from the selected ticket. Supplemental compiler and cubin files live at `/opt/switchyard/components/build`, a sibling of the immutable boot runtime. `FLASHINFER_CUBIN_DIR`, `CUDA_HOME`, and compiler paths can point into this component before it exists, because their import consumers wait for the ready file. The supplied artifact ID identifies the immutable boot tree and is the guarded-fork runtime pin. The runtime launch fingerprint additionally binds every supplemental component ID and its compatibility labels, so compiler caches belong to the complete configured runtime. `VLLM_ENGINE_STARTUP_POLICY` is a JSON configuration included in the launch fingerprint. The Rust live configuration validates its schema, selected fork artifact, and required native flags before provisioning. This policy requires extent-backed vLLM 0.31.0 models; ordinary archive CLI launches do not consume it. The launcher checks for the ready file every 5 ms and stops waiting as soon as its import preparation fails.
 
 ```json
 {
@@ -24,7 +24,7 @@ The default strategy retains the native launch. Prepared spawn is available by s
 
 ## Import and cache boundaries
 
-Preparation runs in an owned thread. Cache-dependent FlashInfer imports wait for the combined gate, preventing workspace creation or provider discovery against an incomplete cache. After the gate, the launcher creates any configured checked cache aliases and invalidates Python import caches before releasing blocked imports. It joins preparation and refreshes the pinned native FlashInfer provider inventory before constructing an engine. Required-cache policy checks the strict native flags and sampling-provider presence; native AOT loading still decides binary compatibility during execution.
+Preparation runs in an owned thread. Cache-dependent FlashInfer imports wait for the ready file, preventing workspace creation or provider discovery against an incomplete cache. Once the file exists, the launcher creates any configured checked cache aliases and invalidates Python import caches before releasing blocked imports. It joins preparation and refreshes the pinned native FlashInfer provider inventory before constructing an engine. Required-cache policy checks the strict native flags and sampling-provider presence; native AOT loading still decides binary compatibility during execution.
 
 Required cache policy uses FlashInfer's native architecture resolver to check the sampling provider against the declared GPU target. The engine configuration checks Torch AOT files when native compilation is enabled. Eager mode uses `CompilationMode.NONE` and does not require a Torch AOT directory.
 
@@ -38,7 +38,7 @@ After native `EngineArgs.create_model_config()` returns, tokenizer preparation u
 
 Memory-plan policy `native` retains the existing fingerprint and free-memory checks. `required` fails if the native loader declines the plan; it never lowers the recorded free-memory baseline or invents a KV capacity. Native profiling remains the fallback under `native` policy.
 
-Structured `SWITCHYARD_ENGINE_STARTUP` records identify import preparation, combined-gate release, provider discovery, tokenizer preparation, native process-method selection, worker start, and memory-plan decisions. They contain process IDs and monotonic times, without request text, environment values, credentials, or raw exception messages. Native span durations can be nested and must not be summed.
+Structured `SWITCHYARD_ENGINE_STARTUP` records identify import preparation, ready-file release, provider discovery, tokenizer preparation, native process-method selection, worker start, and memory-plan decisions. They contain process IDs and monotonic times, without request text, environment values, credentials, or raw exception messages. Native span durations can be nested and must not be summed.
 
 ## Compatibility and acceptance
 

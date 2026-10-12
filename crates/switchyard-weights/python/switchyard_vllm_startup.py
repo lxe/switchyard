@@ -1,4 +1,8 @@
-"""Prepared vLLM process with one agent-owned prerequisite gate.
+"""Prepared vLLM process that waits for the agent's ready file.
+
+The agent creates the file named by SWITCHYARD_READY_FILE once the model and
+runtime dependencies are published. This launcher may start early, import
+weight-independent modules, and then wait for that file.
 
 This adapter does not construct a model or change native CUDA/NUMA guards.
 Runtime and cache compatibility belong to the selected, fingerprinted ticket.
@@ -10,14 +14,15 @@ import importlib.metadata
 import json
 import os
 import re
-import selectors
+import select
 import sys
 import threading
 import time
 from dataclasses import dataclass, fields
 from pathlib import Path
 
-GATE = "switchyard-metadata-ready-v1\n"
+READY_FILE = "SWITCHYARD_READY_FILE"
+READY_POLL_S = 0.005
 NVML_PATCH = "5b935fc5f4eacaff29876d2c9304df0b54ebe69828c6c3da8916ba36e54135f5"
 NVML_RESULT = "3f19edd2c7aba0cb6a3251715199c3fe82ad1b20b7946b24b192d23bec82b828"
 NVML_TARGET = "venv/lib/python3.12/site-packages/vllm/third_party/flash_linear_attention/ops/utils.py"
@@ -205,7 +210,7 @@ def configure(policy):
 
 
 class PrerequisiteImports(importlib.abc.MetaPathFinder):
-    """Pause cache/cubin consumers until the agent opens the combined gate."""
+    """Pause cache/cubin consumers until the agent's ready file exists."""
 
     def __init__(self, policy):
         self.policy = policy
@@ -266,26 +271,25 @@ class Preparation:
         os.close(self.write_fd)
 
 
-def wait_gate(preparation):
-    """Notice a failed import immediately while retaining one bounded gate."""
-    if preparation is None:
-        return sys.stdin.readline(len(GATE) + 1) == GATE
-    with selectors.DefaultSelector() as selector:
-        selector.register(sys.stdin.fileno(), selectors.EVENT_READ, "gate")
-        selector.register(preparation.read_fd, selectors.EVENT_READ, "preparation")
-        token = bytearray()
-        while True:
-            for key, _ in selector.select():
-                if key.data == "preparation":
-                    result = os.read(key.fd, 1)
-                    selector.unregister(key.fd)
-                    if result == b"E":
-                        preparation.join()
-                else:
-                    part = os.read(key.fd, len(GATE) + 1 - len(token))
-                    token.extend(part)
-                    if not part or b"\n" in token or len(token) > len(GATE):
-                        return bytes(token) == GATE.encode()
+def wait_ready(preparation):
+    """Wait for the agent's ready file and raise a failed import immediately.
+
+    Without SWITCHYARD_READY_FILE the launcher runs standalone and proceeds.
+    The agent kills the process group instead of cancelling this wait.
+    """
+    path = os.environ.get(READY_FILE)
+    if not path:
+        return
+    descriptor = None if preparation is None else preparation.read_fd
+    while not os.path.exists(path):
+        if descriptor is None:
+            time.sleep(READY_POLL_S)
+            continue
+        readable, _, _ = select.select([descriptor], [], [], READY_POLL_S)
+        if readable:
+            if os.read(descriptor, 1) == b"E":
+                preparation.join()
+            descriptor = None
 
 
 def cache_aliases(policy):
@@ -381,10 +385,7 @@ def main():
         # Preserve the legacy launcher and its native CLI defaults.
         import vllm
 
-        if not wait_gate(None):
-            raise RuntimeError("metadata readiness gate cancelled")
-        if not os.environ.get("SWITCHYARD_CPU_TREE_BAKE"):
-            sys.stdin.close()
+        wait_ready(None)
         import runpy
 
         sys.argv = ["vllm", *sys.argv[1:]]
@@ -398,11 +399,7 @@ def main():
         if preparation is not None:
             preparation.thread.start()
         record(policy, "waiting_for_prerequisites")
-        if not wait_gate(preparation):
-            finder.release(cancelled=True)
-            raise RuntimeError("metadata and cache readiness gate cancelled")
-        if not os.environ.get("SWITCHYARD_CPU_TREE_BAKE"):
-            sys.stdin.close()
+        wait_ready(preparation)
         cache_aliases(policy)
         importlib.invalidate_caches()
         os.environ["SWITCHYARD_STARTUP_GATE_RELEASED"] = "1"

@@ -93,7 +93,7 @@ async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
     let source = scratch.0.join("model-source");
     fs::create_dir_all(&runtime).unwrap();
     fs::create_dir(&source).unwrap();
-    fs::write(runtime.join("engine"),"#!/bin/sh\nprintf '%s' \"$PYTHONPATH\" > \"$METADATA.environment\"\nprintf '%s' \"$$\" > \"$IMPORTED\"\nread gate\ntest \"$gate\" = switchyard-metadata-ready-v1 || exit 1\ntest -f \"$3/config.json\" || exit 2\ntouch \"$METADATA\"\nsleep 60\n").unwrap();
+    fs::write(runtime.join("engine"),"#!/bin/sh\nprintf '%s' \"$PYTHONPATH\" > \"$METADATA.environment\"\nprintf '%s' \"$$\" > \"$IMPORTED\"\nwhile [ ! -e \"$SWITCHYARD_READY_FILE\" ]; do sleep 0.01; done\ntest -f \"$3/config.json\" || exit 2\ntouch \"$METADATA\"\nsleep 60\n").unwrap();
     fs::set_permissions(runtime.join("engine"), fs::Permissions::from_mode(0o755)).unwrap();
     fs::write(source.join("config.json"), b"{}").unwrap();
     let header = br#"{"a":{"dtype":"F32","shape":[1],"data_offsets":[0,4]}}"#;
@@ -253,6 +253,9 @@ async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
     let observed = state.clone();
     let model_root = roots.models.clone();
     let boot_root = roots.runtime.clone();
+    // A previous engine's ready file must not release this one.
+    let ready = roots.ready.clone();
+    fs::write(&ready, b"").unwrap();
     let expected_python_suffix = format!(
         "{}/providers:{}/{}/compiled/sampling-provider",
         roots.runtime.display(),
@@ -289,7 +292,7 @@ async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
         );
     }
     assert!(
-        !metadata_ready.exists(),
+        !metadata_ready.exists() && !ready.exists(),
         "engine gate released before its dependency was published"
     );
     assert!(!pending.is_finished());
@@ -309,6 +312,10 @@ async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
         drop(replacement);
         assert!(!reclaimed.exists());
         assert!(!metadata_ready.exists());
+        assert!(
+            !ready.exists(),
+            "cancelled startup published its ready file"
+        );
         server.abort();
         return;
     }
@@ -321,7 +328,7 @@ async fn gated_fixture(cancel_before_dependencies: bool, early_launch: bool) {
             Err(error) => panic!("startup task failed before metadata gate: {error}"),
         },
     }
-    assert!(imported.exists());
+    assert!(imported.exists() && ready.exists());
     let environment =
         fs::read_to_string(format!("{}.environment", metadata_ready.display())).unwrap();
     assert!(environment.ends_with(&expected_python_suffix));

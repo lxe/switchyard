@@ -1,4 +1,4 @@
-"""CPU acceptance for the prerequisite gate and pinned native adapters."""
+"""CPU acceptance for the ready-file wait and pinned native adapters."""
 
 import ast
 import json
@@ -146,52 +146,64 @@ class GateTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
             self.assertEqual(bool(errors), cancelled)
 
-    def test_bounded_gate_and_early_preparation_failure(self):
-        for token, expected in [
-            (startup.GATE.encode(), True),
-            (b"", False),
-            (b"wrong\n", False),
-            (b"x" * 1024, False),
-        ]:
-            read_fd, write_fd = os.pipe()
+    def test_standalone_launcher_does_not_wait(self):
+        with patch.dict(os.environ, {}, clear=True):
+            startup.wait_ready(None)
+
+    def test_ready_file_releases_wait(self):
+        for prepared in [False, True]:
+            with tempfile.TemporaryDirectory() as directory:
+                ready = Path(directory) / "engine-ready"
+                preparation = (
+                    startup.Preparation(startup.Policy(telemetry=False))
+                    if prepared
+                    else None
+                )
+                waiter = threading.Thread(target=startup.wait_ready, args=(preparation,))
+                try:
+                    with (
+                        patch.dict(os.environ, {startup.READY_FILE: str(ready)}),
+                        patch.object(startup, "PREPARE_MODULES", ()),
+                    ):
+                        if preparation is not None:
+                            preparation.thread.start()
+                        waiter.start()
+                        waiter.join(0.1)
+                        self.assertTrue(waiter.is_alive())
+                        ready.touch()
+                        waiter.join(2)
+                        self.assertFalse(waiter.is_alive())
+                finally:
+                    if preparation is not None:
+                        preparation.thread.join(1)
+                        preparation.close()
+
+    def test_early_preparation_failure_interrupts_wait(self):
+        with tempfile.TemporaryDirectory() as directory:
             preparation = startup.Preparation(startup.Policy(telemetry=False))
             try:
-                os.write(write_fd, token)
-                os.close(write_fd)
-                write_fd = None
                 with (
-                    os.fdopen(os.dup(read_fd), "r") as stdin,
-                    patch.object(sys, "stdin", stdin),
+                    patch.dict(
+                        os.environ,
+                        {startup.READY_FILE: str(Path(directory) / "engine-ready")},
+                    ),
+                    patch.object(
+                        startup.importlib,
+                        "import_module",
+                        side_effect=ImportError("missing"),
+                    ),
                 ):
-                    self.assertEqual(startup.wait_gate(preparation), expected)
+                    preparation.thread.start()
+                    with self.assertRaises(ImportError):
+                        startup.wait_ready(preparation)
             finally:
-                os.close(read_fd)
-                if write_fd is not None:
-                    os.close(write_fd)
+                preparation.thread.join(1)
                 preparation.close()
-        read_fd, write_fd = os.pipe()
-        preparation = startup.Preparation(startup.Policy(telemetry=False))
-        try:
-            with patch.object(
-                startup.importlib, "import_module", side_effect=ImportError("missing")
-            ):
-                preparation.thread.start()
-                with (
-                    os.fdopen(os.dup(read_fd), "r") as stdin,
-                    patch.object(sys, "stdin", stdin),
-                    self.assertRaises(ImportError),
-                ):
-                    startup.wait_gate(preparation)
-        finally:
-            preparation.thread.join(1)
-            preparation.close()
-            os.close(read_fd)
-            os.close(write_fd)
 
-    def test_prepared_launcher_imports_early_and_dispatches_after_gate(self):
+    def test_prepared_launcher_imports_early_and_dispatches_after_ready_file(self):
         self.launcher("prepared")
 
-    def test_explicit_native_strategy_does_not_block_main_import_on_its_gate(self):
+    def test_explicit_native_strategy_does_not_block_main_import_on_ready_file(self):
         self.launcher("native")
 
     def launcher(self, strategy):
@@ -232,16 +244,18 @@ class GateTests(unittest.TestCase):
                 "import switchyard_vllm_startup as s\ns.importlib.metadata.version = lambda _: '0.31.0'\ns.main()\n"
             )
             late = root / "supplement"
+            ready = root / "engine-ready"
             environment = {
                 **os.environ,
                 "PYTHONPATH": os.pathsep.join([str(root), str(PYTHON), str(late)]),
                 "VLLM_ENGINE_STARTUP_POLICY": json.dumps({"strategy": strategy}),
                 "PYTHONDONTWRITEBYTECODE": "1",
+                startup.READY_FILE: str(ready),
             }
             process = subprocess.Popen(
                 [sys.executable, str(launcher), "serve"],
                 env=environment,
-                stdin=subprocess.PIPE,
+                stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -264,7 +278,11 @@ class GateTests(unittest.TestCase):
                 (late / "flashinfer_cubin.py").write_text(
                     "print('late cubin imported', flush=True)\n"
                 )
-                stdout, stderr = process.communicate(startup.GATE, timeout=10)
+                # Publish like the agent: atomically rename a complete file.
+                pending = root / ".engine-ready.tmp"
+                pending.touch()
+                pending.rename(ready)
+                stdout, stderr = process.communicate(timeout=10)
                 self.assertEqual(process.returncode, 0, stderr)
                 self.assertIn("late cubin imported", stdout)
                 self.assertIn("native engine dispatched", stdout)

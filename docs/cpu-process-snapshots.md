@@ -28,7 +28,7 @@ The selected proof uses language-only Qwen3.5 0.8B, BF16 final weights, eager ex
 
 `serve.py` selects this adapter when `VLLM_CPU_SNAPSHOT_ROOT` identifies an installed snapshot component. It executes `switchyard-cpu-snapshot`, using `VLLM_CPU_SNAPSHOT_PROGRAM` when explicitly supplied. Writable CRIU work files go under `SWITCHYARD_CACHE_ROOT/cpu-restore`.
 
-The Rust owner consumes the agent's metadata gate, restores the tree, and remaps its external Unix control socket. It sends fresh standard-stream descriptors, environment and native arguments in bounded frames. The API process checks the launch arguments, model content identity and serving policy against its prepared configuration, then forwards fresh streams and environment to the existing worker. Native internal engine channels remain those preserved by CRIU.
+The Rust owner waits for the agent's ready file (`SWITCHYARD_READY_FILE`), restores the tree, and remaps its external Unix control socket. It sends fresh standard-stream descriptors, environment and native arguments in bounded frames. The API process checks the launch arguments, model content identity and serving policy against its prepared configuration, then forwards fresh streams and environment to the existing worker. Native internal engine channels remain those preserved by CRIU.
 
 Preparation logs and transient standard streams are detached before checkpointing. Restored streams belong to the current agent; preparation configuration does not include agent credentials. Parent-death signals and owned process-group cleanup connect cancellation from the Rust restorer to the API process and its worker. Restore enters the current launch cgroup instead of the bake container's cgroup.
 

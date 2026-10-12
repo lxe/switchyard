@@ -1,18 +1,40 @@
-//! Overlap dependency hydration and optionally release a cooperative engine's stdin gate.
+//! Overlap dependency hydration and publish the engine's ready file.
+//!
+//! The agent creates the file named by `SWITCHYARD_READY_FILE` once the model
+//! and runtime dependencies are published. An early-launched engine may do
+//! weight-independent preparation and then wait for that file.
 use super::engine;
 use crate::{
     Error, Phase, Result, State, Ticket,
     runtime::RootPaths,
     startup::{StartupEvent, milestone},
 };
-use std::{process::Stdio, sync::Arc, time::Instant};
+use std::{path::Path, process::Stdio, sync::Arc, time::Instant};
 use tokio::{
-    io::AsyncWriteExt,
     process::Command,
     sync::{RwLock, Semaphore, oneshot},
 };
 
-const MODEL_READY: &[u8] = b"switchyard-model-ready-v1\n";
+/// Remove a ready file left by an earlier engine before any new engine can observe it.
+pub(super) fn clear_ready(path: &Path) -> Result<()> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
+/// Create the ready file atomically: a waiter sees either no file or the published one.
+pub(super) fn publish_ready(path: &Path) -> Result<()> {
+    let (Some(parent), Some(name)) = (path.parent(), path.file_name()) else {
+        return Err(Error::Manifest("invalid engine ready file path".into()));
+    };
+    std::fs::create_dir_all(parent)?;
+    let temporary = parent.join(format!(".{}.tmp", name.to_string_lossy()));
+    std::fs::write(&temporary, b"")?;
+    std::fs::rename(&temporary, path)?;
+    Ok(())
+}
 
 pub(super) async fn prepare(
     ticket: &Ticket,
@@ -44,6 +66,7 @@ pub(super) async fn prepare_with_resources(
     if ticket.source.extent().is_some() {
         return extents::prepare(ticket, roots, state, epoch).await;
     }
+    clear_ready(&roots.ready)?;
     // This runs before either branch can transfer, including on a tiny Docker /dev/shm.
     crate::hydrate::preflight(ticket, &roots.models, &state).await?;
     crate::runtime::preflight(ticket, roots, &state).await?;
@@ -76,13 +99,9 @@ pub(super) async fn prepare_with_resources(
                     .await
                     .map_err(|_| Error::Transfer("boot runtime readiness cancelled".into()))?;
                 milestone(&state, epoch, StartupEvent::RuntimeBootReady).await;
-                command.stdin(Stdio::piped());
+                command.stdin(Stdio::null());
                 let mut process = engine::Process::spawn(&mut command)?;
                 milestone(&state, epoch, StartupEvent::EngineSpawned).await;
-                // Retain stdin outside Child while monitoring exit: Child::wait closes its pipe.
-                let mut stdin = process.child.stdin.take().ok_or_else(|| {
-                    Error::Transfer("engine model gate stdin is unavailable".into())
-                })?;
                 tokio::select! {
                     ready = async {
                         tokio::try_join!(
@@ -96,8 +115,7 @@ pub(super) async fn prepare_with_resources(
                         return Err(Error::Transfer("cooperative engine exited before readiness".into()));
                     }
                 }
-                stdin.write_all(MODEL_READY).await?;
-                stdin.shutdown().await?;
+                publish_ready(&roots.ready)?;
                 milestone(&state, epoch, StartupEvent::ModelGateReleased).await;
                 milestone(&state, epoch, StartupEvent::EngineGateReleased).await;
                 Ok::<_, Error>(process)
@@ -117,6 +135,7 @@ pub(super) async fn prepare_with_resources(
                 let mut command = Command::new("vllm");
                 command.args(&ticket.engine_args);
                 crate::runtime::child_environment(&mut command);
+                command.env(crate::runtime::READY_FILE, &roots.ready);
                 command
             });
             Ok(Launch::Prepared(command))
@@ -139,6 +158,8 @@ pub(super) async fn prepare_with_resources(
     match launch {
         Launch::Running(process) => Ok(process),
         Launch::Prepared(mut command) => {
+            // Everything is published already, so a launch script that always waits proceeds.
+            publish_ready(&roots.ready)?;
             let process = engine::Process::spawn(&mut command)?;
             milestone(&state, epoch, StartupEvent::EngineSpawned).await;
             Ok(process)
@@ -150,29 +171,6 @@ enum Launch {
     Prepared(Command),
     Running(engine::Process),
 }
-#[cfg(test)]
-async fn release(process: &mut engine::Process) -> Result<()> {
-    if process.child.try_wait()?.is_some() {
-        return Err(Error::Transfer(
-            "cooperative engine exited before model readiness".into(),
-        ));
-    }
-    let mut stdin = process
-        .child
-        .stdin
-        .take()
-        .ok_or_else(|| Error::Transfer("engine model gate stdin is unavailable".into()))?;
-    stdin
-        .write_all(MODEL_READY)
-        .await
-        .map_err(|_| Error::Transfer("engine model gate delivery failed".into()))?;
-    stdin
-        .shutdown()
-        .await
-        .map_err(|_| Error::Transfer("engine model gate shutdown failed".into()))?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests;
 

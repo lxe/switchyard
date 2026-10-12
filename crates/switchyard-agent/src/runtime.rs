@@ -127,6 +127,8 @@ pub(crate) struct RootPaths {
     pub(crate) caches: PathBuf,
     pub(crate) chunks: PathBuf,
     pub(crate) models: PathBuf,
+    /// Created once the model and runtime dependencies are published; see [`READY_FILE`].
+    pub(crate) ready: PathBuf,
 }
 impl RootPaths {
     pub(crate) fn components(&self) -> PathBuf {
@@ -142,6 +144,7 @@ impl RootPaths {
             caches: "/opt/switchyard/cache".into(),
             chunks: "/opt/switchyard/artifacts".into(),
             models: "/work/switchyard".into(),
+            ready: "/opt/switchyard/engine-ready".into(),
         }
     }
     pub(crate) fn for_ticket(ticket: &Ticket) -> Result<Self> {
@@ -154,7 +157,13 @@ impl RootPaths {
             .unwrap()
             .to_owned();
         let components = roots.components();
-        for reserved in [&roots.runtime, &roots.caches, &roots.chunks, &components] {
+        for reserved in [
+            &roots.runtime,
+            &roots.caches,
+            &roots.chunks,
+            &components,
+            &roots.ready,
+        ] {
             if roots.models.starts_with(reserved) || reserved.starts_with(&roots.models) {
                 return Err(Error::Manifest(
                     "model root overlaps runtime storage".into(),
@@ -171,6 +180,7 @@ impl RootPaths {
             caches: root.join("cache"),
             chunks: root.join("chunks"),
             models: root.join("models"),
+            ready: root.join("engine-ready"),
         }
     }
 }
@@ -492,6 +502,10 @@ pub(crate) fn expand(value: &str, roots: &RootPaths, cache_root: &Path) -> Strin
         .replace("{cache_root}", &cache_root.to_string_lossy())
         .replace("{components_root}", &roots.components().to_string_lossy())
 }
+
+/// Names the file the agent creates once the model and runtime dependencies are
+/// published. An engine launch script may start early and wait for it.
+pub(crate) const READY_FILE: &str = "SWITCHYARD_READY_FILE";
 
 /// Preserve only host execution settings; all inherited cloud/storage credentials are removed.
 pub(crate) fn child_environment(command: &mut Command) {
