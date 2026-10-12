@@ -3,6 +3,7 @@ use candle_core::{DType, Tensor};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, time::Instant};
 mod mixed;
+mod multimodal;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -41,6 +42,9 @@ impl Engine {
     }
     pub fn vocab_size(&self) -> usize {
         self.model.vocab_size()
+    }
+    pub fn supports_vision(&self) -> bool {
+        self.model.supports_vision()
     }
     pub fn validate(&self, request: &Generate) -> Result<()> {
         if request.prompt.is_empty()

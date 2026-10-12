@@ -45,6 +45,7 @@ fn engine() -> Engine {
             queue_capacity: 8,
             batch_wait_ms: 0,
             cache: Default::default(),
+            vision: None,
         },
         Box::new(Counter),
         Telemetry::default(),

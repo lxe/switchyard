@@ -16,6 +16,8 @@ pub struct Config {
     pub batch_wait_ms: u64,
     #[serde(default, skip_serializing_if = "CacheConfig::is_default")]
     pub cache: CacheConfig,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vision: Option<crate::multimodal::ServingConfig>,
 }
 /// Explicit GPU state retention bounds. Zero bytes and entries disable prefix
 /// retention; attention still uses bounded, immutable pages for active rows.
@@ -72,6 +74,9 @@ pub enum Precision {
 impl Config {
     pub fn validate(&self) -> Result<()> {
         self.cache.validate()?;
+        if let Some(vision) = &self.vision {
+            vision.validate()?;
+        }
         if self.model.is_empty()
             || self.max_context == 0
             || self.max_weight_bytes == 0

@@ -3,8 +3,9 @@ use crate::{
     Error, Result,
     config::Config,
     engine::{Engine, Generate, Generation},
+    multimodal::{ChatMessage, Geometry, InferenceRequest, prepare_chat},
     telemetry::Telemetry,
-    tokenizer::{Message, Tokenizer},
+    tokenizer::Tokenizer,
 };
 use axum::{
     Json, Router,
@@ -26,7 +27,7 @@ use std::{
 use tokio::sync::{mpsc, oneshot};
 
 struct Job {
-    requests: Vec<Generate>,
+    requests: Vec<InferenceRequest>,
     reply: Reply,
 }
 enum Reply {
@@ -103,6 +104,7 @@ struct App {
     tokenizer: Arc<Tokenizer>,
     tx: mpsc::Sender<Job>,
     vocab_size: usize,
+    vision_geometry: Option<Geometry>,
 }
 struct ApiError(Error, StatusCode);
 impl IntoResponse for ApiError {
@@ -163,7 +165,7 @@ impl ChatTemplateKwargs {
 #[serde(deny_unknown_fields)]
 struct Chat {
     model: String,
-    messages: Vec<Message>,
+    messages: Vec<ChatMessage>,
     max_tokens: usize,
     #[serde(default)]
     temperature: f64,
@@ -178,7 +180,7 @@ struct Chat {
 #[serde(deny_unknown_fields)]
 struct Tokenize {
     model: String,
-    messages: Vec<Message>,
+    messages: Vec<ChatMessage>,
     add_generation_prompt: bool,
     #[serde(default)]
     chat_template_kwargs: ChatTemplateKwargs,
@@ -195,14 +197,29 @@ async fn tokenize(
             StatusCode::BAD_REQUEST,
         ));
     }
-    let tokens = app
-        .tokenizer
-        .chat(&request.messages)
-        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
+    let prepared = app.prepare_chat(&request.messages, 0)?;
+    let tokens = prepared.generation.prompt;
     Ok(Json(json!({"count":tokens.len(), "tokens":tokens})))
 }
 
 impl App {
+    fn prepare_chat(
+        &self,
+        messages: &[ChatMessage],
+        max_tokens: usize,
+    ) -> std::result::Result<InferenceRequest, ApiError> {
+        prepare_chat(
+            &self.tokenizer,
+            messages,
+            self.config
+                .vision
+                .as_ref()
+                .zip(self.vision_geometry.as_ref()),
+            self.config.max_context,
+            max_tokens,
+        )
+        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))
+    }
     fn check(
         &self,
         model: &str,
@@ -219,7 +236,7 @@ impl App {
     }
     async fn submit(
         &self,
-        requests: Vec<Generate>,
+        requests: Vec<InferenceRequest>,
     ) -> std::result::Result<Vec<Generation>, ApiError> {
         self.validate(&requests)?;
         if requests.is_empty() || requests.len() > self.config.max_batch_size {
@@ -251,15 +268,19 @@ impl App {
     }
     fn stream(
         &self,
-        requests: Vec<Generate>,
+        requests: Vec<InferenceRequest>,
         chat: bool,
         include_usage: bool,
     ) -> std::result::Result<Response, ApiError> {
         self.validate(&requests)?;
         // One event per token, optional usage, and DONE: the buffer cannot grow
         // beyond the admitted output budget, and GPU execution never waits on it.
-        let capacity =
-            requests.iter().map(|r| r.max_tokens).sum::<usize>() + 1 + usize::from(include_usage);
+        let capacity = requests
+            .iter()
+            .map(|r| r.generation.max_tokens)
+            .sum::<usize>()
+            + 1
+            + usize::from(include_usage);
         let (tx, rx) = mpsc::channel(capacity);
         self.tx
             .try_send(Job {
@@ -289,10 +310,11 @@ impl App {
         });
         Ok(Sse::new(stream).into_response())
     }
-    fn validate(&self, requests: &[Generate]) -> std::result::Result<(), ApiError> {
+    fn validate(&self, requests: &[InferenceRequest]) -> std::result::Result<(), ApiError> {
         if requests.is_empty()
             || requests.len() > self.config.max_batch_size
-            || requests.iter().any(|r| {
+            || requests.iter().any(|request| {
+                let r = &request.generation;
                 r.prompt.is_empty()
                     || r.prompt
                         .iter()
@@ -326,12 +348,15 @@ async fn completions(
         Prompt::Tokens(x) => vec![x],
         Prompt::Batch(x) => x,
     };
-    let requests: Vec<Generate> = prompts
+    let requests: Vec<InferenceRequest> = prompts
         .into_iter()
-        .map(|prompt| Generate {
-            prompt,
-            max_tokens: request.max_tokens,
-            ignore_eos: request.ignore_eos,
+        .map(|prompt| {
+            Generate {
+                prompt,
+                max_tokens: request.max_tokens,
+                ignore_eos: request.ignore_eos,
+            }
+            .into()
         })
         .collect();
     app.validate(&requests)?;
@@ -361,15 +386,7 @@ async fn chat(
 ) -> std::result::Result<Response, ApiError> {
     app.check(&request.model, request.temperature, request.stream)?;
     request.chat_template_kwargs.validate()?;
-    let prompt = app
-        .tokenizer
-        .chat(&request.messages)
-        .map_err(|e| ApiError(e, StatusCode::BAD_REQUEST))?;
-    let requests = vec![Generate {
-        prompt,
-        max_tokens: request.max_tokens,
-        ignore_eos: false,
-    }];
+    let requests = vec![app.prepare_chat(&request.messages, request.max_tokens)?];
     app.validate(&requests)?;
     if request.stream {
         return app.stream(requests, true, request.stream_options.include_usage);
@@ -388,7 +405,10 @@ async fn generate(
     State(app): State<App>,
     Json(requests): Json<Vec<Generate>>,
 ) -> std::result::Result<Json<Vec<Generation>>, ApiError> {
-    Ok(Json(app.submit(requests).await?))
+    Ok(Json(
+        app.submit(requests.into_iter().map(Into::into).collect())
+            .await?,
+    ))
 }
 fn run_owner(
     mut rx: mpsc::Receiver<Job>,
@@ -445,7 +465,7 @@ fn run_owner(
             .collect();
         let mut first_token = vec![true; size];
         let mut stream_errors = vec![None; jobs.len()];
-        let generated = engine.generate_observed(&requests, |i, token, elapsed, finished| {
+        let generated = engine.generate_requests_observed(&requests, |i, token, elapsed, finished| {
             let (job_index, row) = destinations[i];
             let reply = &jobs[job_index].reply;
             if reply.closed() || stream_errors[job_index].is_some() {
@@ -460,7 +480,7 @@ fn run_owner(
                     }
                 };
                 let reason = finished.then_some(
-                    if token == engine.eos_token() && !requests[i].ignore_eos {
+                    if token == engine.eos_token() && !requests[i].generation.ignore_eos {
                         "stop"
                     } else {
                         "length"
@@ -511,6 +531,19 @@ pub async fn serve(
     bind: SocketAddr,
     telemetry: Telemetry,
 ) -> Result<()> {
+    if config.vision.is_some() && !engine.supports_vision() {
+        return Err(Error::Config(
+            "Configured vision model was not loaded".into(),
+        ));
+    }
+    let vision_geometry = config
+        .vision
+        .as_ref()
+        .map(|_| Geometry::load(&config.model_root))
+        .transpose()?;
+    let body_limit = config.vision.as_ref().map_or(1024 * 1024, |vision| {
+        1024 * 1024 + vision.max_images * vision.max_encoded_bytes.div_ceil(3) * 4
+    });
     let vocab_size = engine.vocab_size();
     let tokenizer = Arc::new(tokenizer);
     let (tx, rx) = mpsc::channel::<Job>(config.queue_capacity);
@@ -537,6 +570,7 @@ pub async fn serve(
         tokenizer,
         tx,
         vocab_size,
+        vision_geometry,
     };
     let router =
         Router::new()
@@ -557,7 +591,7 @@ pub async fn serve(
             .route("/v1/chat/completions", post(chat))
             .route("/generate", post(generate))
             .route("/tokenize", post(tokenize))
-            .layer(DefaultBodyLimit::max(1024 * 1024))
+            .layer(DefaultBodyLimit::max(body_limit))
             .with_state(app);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     telemetry.event(

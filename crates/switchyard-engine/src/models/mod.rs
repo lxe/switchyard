@@ -17,6 +17,15 @@ pub type LayerTrace = Vec<(String, Tensor)>;
 /// A new session must have empty state and may share immutable weight storage.
 pub trait ModelSession: Send {
     fn forward(&mut self, tokens: &Tensor, position: usize) -> Result<Tensor>;
+    fn prefill_images(
+        &mut self,
+        _: &Tensor,
+        _: &[crate::multimodal::ImageInput],
+    ) -> Result<Tensor> {
+        Err(Error::Config(
+            "Image prefill unsupported by this adapter".into(),
+        ))
+    }
 }
 /// Independently prefilled rows join one decode cohort. No new prefill is allowed
 /// after decoding starts. Row IDs stay stable through completion/cancellation.
@@ -29,6 +38,12 @@ pub trait MixedModelSession: Send {
 }
 pub trait ModelFactory: Send {
     fn session(&self) -> Box<dyn ModelSession>;
+    fn vision_session(&self) -> Result<Option<Box<dyn ModelSession>>> {
+        Ok(None)
+    }
+    fn supports_vision(&self) -> bool {
+        false
+    }
     /// Offline reference path bypassing prefix lookup and checkpoint retention.
     fn uncached_session(&self) -> Box<dyn ModelSession> {
         self.session()
