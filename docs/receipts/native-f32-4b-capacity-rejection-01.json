@@ -1,0 +1,30 @@
+{
+  "format": "switchyard-native-f32-4b-32gb-capacity-rejection-v1",
+  "configuration": "configs/runpod/native/qwen3.5-4b-sm89-f32-prefix-32g.json",
+  "model": "qwen3.5-4b",
+  "minimum_host_ram_gb": 32,
+  "host_weight_buffer_cap_bytes": 12884901888,
+  "minimum_gpu_memory_bytes": 21474836480,
+  "max_hourly_usd": 1,
+  "pod_timeout_s": 600,
+  "requested_data_centers": [
+    "EU-RO-1",
+    "EUR-IS-2",
+    "EUR-IS-1"
+  ],
+  "minimum_reported_cuda": "13.0",
+  "shared_runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+  "cache_family_id": "32c5d2718bf5640a6037481f114c7ea00ea444d8b893bbacb5e1b833b10c6f3e",
+  "covered_drivers": [
+    "580.126.20",
+    "580.159.04"
+  ],
+  "allocation_rejection": {
+    "http_status": 400,
+    "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+  },
+  "owned_pod_created": false,
+  "engine_started": false,
+  "cloud_host_memory_measured": false,
+  "scope": "Direct bounded32GB serving allocation rejected before container startup. The local32GiB memory experiment does not replace missing fresh cloud hydration/serving evidence."
+}

@@ -415,5 +415,14 @@
       "receipt": "docs/receipts/native-f32-4b-local-host-memory-01.json",
       "scope": "local frozen Ubuntu engine under explicit32GiB cgroup; cloud32GiB rollout pending"
     }
-  ]
+  ],
+  "serving_allocation_rejections": [
+    "docs/receipts/native-f32-4b-capacity-rejection-01.json"
+  ],
+  "allocation_ownership": {
+    "active_worker_pods": 0,
+    "active_worker_controllers": 0,
+    "tmux_pane": "session0 %3 returned to root; worker has not changed it",
+    "next_work": "Exact173/595 components and fresh2B/4B serving with cgroup current/peak/OOM evidence when provider capacity returns"
+  }
 }

@@ -229,6 +229,32 @@
       "owned_pod_created": false,
       "generation_started": false,
       "artifact_published": false
+    },
+    {
+      "attempt": "launch-4b-sm89-f32-prefix-32g-01",
+      "kind": "direct_serving_launch",
+      "model": "qwen3.5-4b",
+      "requested_driver": null,
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EU-RO-1",
+          "EUR-IS-2",
+          "EUR-IS-1"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 32,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": null,
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
     }
   ],
   "scope": "Provider rejected these direct bounded requests before a pod identity was returned. They establish no exact driver coverage or serving performance.",
