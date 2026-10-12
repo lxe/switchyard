@@ -22,6 +22,8 @@ switchyard artifacts publish-extents \
 
 The [L4 raw-range fleet configuration](../configs/runpod/native-fleet-f32-l4-raw-ranges-candidate.json) pins the published 0.8B, 2B and 4B files, frozen native runtime, static agent binary and concurrency budget. It retains F32 inference, fixed context and batch limits, and a fixed GPU admission floor. Its optional GPU cache registry is independent of model transport. A missing cache does not initiate a bake job.
 
+The [RTX 4090 raw-range candidate](../configs/runpod/native-fleet-f32-4090-raw-ranges-candidate.json) retains those model files, runtime, twenty-worker budget and fixed memory/request limits. It changes the provider GPU selector and the runtime GPU identity check to NVIDIA GeForce RTX 4090. Both GPUs use compute capability 8.9; the existing SM89 executable is reused. GPU cache lookup remains keyed by the actual GPU and driver. Rental quotes are discovered rather than copied from L4 pricing. Measurements on this candidate are separate hardware results, not an L4 observer A/B comparison.
+
 ## Fresh serving measurements
 
 Two fresh NVIDIA L4 pods in EUR-IS-1 served the unchanged native SM89 executable through the actual agent. Neither pod received a GPU cache seed. Runtime hydration overlapped weight hydration. The first useful request asked for the word Paris; subsequent requests exercised hot single inference, equal-length batches and mixed-length batches. Both pods completed eighteen requests and were deleted.
