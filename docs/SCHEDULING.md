@@ -67,3 +67,5 @@ This is a fragment of `scheduling`, not a complete deployment. Validation reject
 Scheduler regressions cover late capacity, an empty fleet, pending-slot reservations, failure-aware placement, output-history bounds and separation, and measured-profile invalidation. Live HTTP tests delay provider creation while serving hot requests and verify that cleanup accounts for the eventual paid resource. Existing ambiguity, ownership, cache preparation, and token-admission tests remain applicable.
 
 The `scheduler_feedback` example exports a deterministic analytical late-capacity fixture for replaying two executable versions against identical inputs. Cloud-observation replay measures controller changes against recorded workloads, while fuzzing and software benchmarks check invariants and controller overhead. These simulations do not establish new real-cloud latency or repair the known mixed-length service-model accuracy gap.
+
+The [scheduler feedback validation report](scheduler-feedback-validation.md) records the executable identities, replay results, late-capacity comparison, fuzz coverage, and measured simulator overhead.

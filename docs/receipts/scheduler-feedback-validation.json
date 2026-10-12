@@ -1,0 +1,390 @@
+{
+  "format": "scheduler-feedback-validation-v1",
+  "scope": "Offline recorded-cloud replay, analytical simulation, and live HTTP mock-provider tests; no new cloud allocation.",
+  "baseline_build_identity": {
+    "calibrated_input_sha256": "342acfffea41ee90f1967fad9f50e647e22bfe527c4cd50cbb0693510729899b",
+    "fit": false,
+    "format": "empirical-replay-v1",
+    "input_sha256": "da484ebe40e9cb801636811a059a03837260e56cf25d002d0229224eaa32a3f2",
+    "max_relative_error": 0.2,
+    "seed": 7,
+    "seeds": 3,
+    "simulator_sha256": "80d28f68853c33efd6572098f864a8b7b2925b628f7a8d4c9b42c73d8cd9a7b6",
+    "source_commit": "4b6169233d94515edb58b40723bfeee97e8bea21",
+    "source_dirty": false
+  },
+  "current_build_identity": {
+    "calibrated_input_sha256": "19f1bbee2eecd654d455ff6ab7eeaff8ee908f25fea28902aa63f4d7c650bda0",
+    "fit": false,
+    "format": "empirical-replay-v1",
+    "input_sha256": "da484ebe40e9cb801636811a059a03837260e56cf25d002d0229224eaa32a3f2",
+    "max_relative_error": null,
+    "seed": 7,
+    "seeds": 3,
+    "simulator_sha256": "92227cb32322c5da3c41a228055acb96806bfc4e8878c6ecaaf0834a6e367e22",
+    "source_commit": "8ce989588afe4614e7b63891b749401cfbc80e58",
+    "source_dirty": false
+  },
+  "same_replay_input": true,
+  "relative_error_limit": 0.2,
+  "before": {
+    "comparisons": 99,
+    "completed_calls": 13230,
+    "launched": 18,
+    "capacity_rejections": 165,
+    "invalid_decisions": 0,
+    "held_out_replays": 72,
+    "failed_held_out_replays": 30
+  },
+  "after": {
+    "comparisons": 99,
+    "completed_calls": 13230,
+    "launched": 15,
+    "capacity_rejections": 114,
+    "invalid_decisions": 0,
+    "held_out_replays": 72,
+    "failed_held_out_replays": 30
+  },
+  "comparison_sha256": {
+    "before": "01a50f88bf7c7fe123b652802e5e29e0f111866b2f70350f3f6f695e3cc2926d",
+    "after": "46ef94de1c906681605baa04677d85ad9a80c6423187b7a7f3381da7ffa25861"
+  },
+  "tests": {
+    "passed": 140,
+    "ignored": 2,
+    "failed": 0
+  },
+  "clippy": "passed; all targets with warnings denied",
+  "fuzz": {
+    "cases": 1000,
+    "failures": [],
+    "first_seed": 42,
+    "policies": 5,
+    "simulations": 5000
+  },
+  "late_capacity": {
+    "before": {
+      "scenario": "late-capacity",
+      "policy": "adaptive",
+      "seed": 7,
+      "completed": 32,
+      "rejected": 0,
+      "unfinished": 0,
+      "cost_usd": 0.1259722222222231,
+      "idle_cost_usd": 0.12312777777777865,
+      "classes": [
+        {
+          "name": "batch",
+          "arrived": 32,
+          "completed": 32,
+          "latency_p95_s": 10.363999999999988,
+          "slo_fraction": 1.0
+        }
+      ],
+      "queue_p95_s": 7.799999999999988,
+      "first_token_p95_s": 7.883999999999988,
+      "batch_elapsed_s": 10.363999999999988,
+      "batch_output_tps": 98.80355075260529,
+      "launched": 7,
+      "peak_nodes": 8,
+      "failed_launches": 0,
+      "capacity_rejections": 0,
+      "attempts": 32,
+      "output_tokens": 1024,
+      "wasted_output_tokens": 0.0,
+      "incomplete_output_tokens": 2.2737367544323206e-12,
+      "target_jobs_met": 0,
+      "target_jobs_total": 1,
+      "max_active_per_node": 8,
+      "max_reserved_kv_tokens": 512,
+      "profiles_used": [
+        "analytical-late-capacity"
+      ],
+      "jobs": [
+        {
+          "name": "benchmark-burst",
+          "requests": 32,
+          "completed": 32,
+          "completion_s": 10.363999999999988,
+          "elapsed_s": 10.363999999999988,
+          "output_tps": 98.80355075260529,
+          "desired_output_tps": 2000.0,
+          "target_met": false
+        }
+      ],
+      "invalid_decisions": 0
+    },
+    "after": {
+      "scenario": "late-capacity",
+      "policy": "adaptive",
+      "seed": 7,
+      "completed": 32,
+      "rejected": 0,
+      "unfinished": 0,
+      "cost_usd": 0.027777777777777776,
+      "idle_cost_usd": 0.02493333333333333,
+      "classes": [
+        {
+          "name": "batch",
+          "arrived": 32,
+          "completed": 32,
+          "latency_p95_s": 10.363999999999988,
+          "slo_fraction": 1.0
+        }
+      ],
+      "queue_p95_s": 7.799999999999988,
+      "first_token_p95_s": 7.883999999999988,
+      "batch_elapsed_s": 10.363999999999988,
+      "batch_output_tps": 98.80355075260529,
+      "launched": 0,
+      "peak_nodes": 1,
+      "failed_launches": 0,
+      "capacity_rejections": 0,
+      "attempts": 32,
+      "output_tokens": 1024,
+      "wasted_output_tokens": 0.0,
+      "incomplete_output_tokens": 2.2737367544323206e-12,
+      "target_jobs_met": 0,
+      "target_jobs_total": 1,
+      "max_active_per_node": 8,
+      "max_reserved_kv_tokens": 512,
+      "profiles_used": [
+        "analytical-late-capacity"
+      ],
+      "jobs": [
+        {
+          "name": "benchmark-burst",
+          "requests": 32,
+          "completed": 32,
+          "completion_s": 10.363999999999988,
+          "elapsed_s": 10.363999999999988,
+          "output_tps": 98.80355075260529,
+          "desired_output_tps": 2000.0,
+          "target_met": false
+        }
+      ],
+      "invalid_decisions": 0
+    }
+  },
+  "software_benchmark": {
+    "before": [
+      {
+        "requests": 100,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 1.33629,
+        "wall_ms_p95": 1.687102,
+        "simulated_requests_per_wall_second": 74834.05548196874,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 1.251,
+        "wall_ms_p95": 1.25166,
+        "simulated_requests_per_wall_second": 79936.05115907274,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 1.281493,
+        "wall_ms_p95": 1.281774,
+        "simulated_requests_per_wall_second": 78033.9806772257,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 1.2774679999999998,
+        "wall_ms_p95": 1.279627,
+        "simulated_requests_per_wall_second": 78279.84732298579,
+        "completed": 100,
+        "simulated_output_tps": 8528.726239318758
+      },
+      {
+        "requests": 100,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 1.307371,
+        "wall_ms_p95": 1.317206,
+        "simulated_requests_per_wall_second": 76489.38212642011,
+        "completed": 100,
+        "simulated_output_tps": 8528.726239318758
+      },
+      {
+        "requests": 1000,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 20.670982000000002,
+        "wall_ms_p95": 20.734954,
+        "simulated_requests_per_wall_second": 48376.99534545577,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 22.442059,
+        "wall_ms_p95": 22.960384,
+        "simulated_requests_per_wall_second": 44559.191293454845,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 22.715909,
+        "wall_ms_p95": 22.726266,
+        "simulated_requests_per_wall_second": 44022.011181678885,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 23.0914,
+        "wall_ms_p95": 23.157651,
+        "simulated_requests_per_wall_second": 43306.16593190538,
+        "completed": 1000,
+        "simulated_output_tps": 10063.415515465716
+      },
+      {
+        "requests": 1000,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 23.043306,
+        "wall_ms_p95": 23.180612,
+        "simulated_requests_per_wall_second": 43396.55082478183,
+        "completed": 1000,
+        "simulated_output_tps": 10063.415515465716
+      }
+    ],
+    "after": [
+      {
+        "requests": 100,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 1.88676,
+        "wall_ms_p95": 1.916902,
+        "simulated_requests_per_wall_second": 53000.91161567979,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 1.9216199999999999,
+        "wall_ms_p95": 1.94952,
+        "simulated_requests_per_wall_second": 52039.42506843185,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 1.4337600000000001,
+        "wall_ms_p95": 1.882943,
+        "simulated_requests_per_wall_second": 69746.68005802923,
+        "completed": 100,
+        "simulated_output_tps": 8537.420367211525
+      },
+      {
+        "requests": 100,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 1.370739,
+        "wall_ms_p95": 1.373723,
+        "simulated_requests_per_wall_second": 72953.3485222205,
+        "completed": 100,
+        "simulated_output_tps": 8528.726239318758
+      },
+      {
+        "requests": 100,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 1.897446,
+        "wall_ms_p95": 1.9024459999999999,
+        "simulated_requests_per_wall_second": 52702.42209791478,
+        "completed": 100,
+        "simulated_output_tps": 8528.726239318758
+      },
+      {
+        "requests": 1000,
+        "policy": "warm_only",
+        "repetitions": 3,
+        "wall_ms_p50": 23.820198,
+        "wall_ms_p95": 24.065373,
+        "simulated_requests_per_wall_second": 41981.179165681155,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "reactive",
+        "repetitions": 3,
+        "wall_ms_p50": 25.966823,
+        "wall_ms_p95": 26.391142,
+        "simulated_requests_per_wall_second": 38510.67956984957,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "cheapest_elastic",
+        "repetitions": 3,
+        "wall_ms_p50": 25.8471,
+        "wall_ms_p95": 25.968835,
+        "simulated_requests_per_wall_second": 38689.059894533624,
+        "completed": 1000,
+        "simulated_output_tps": 10074.796859072385
+      },
+      {
+        "requests": 1000,
+        "policy": "planned_hybrid",
+        "repetitions": 3,
+        "wall_ms_p50": 26.227549999999997,
+        "wall_ms_p95": 26.523353,
+        "simulated_requests_per_wall_second": 38127.84648203893,
+        "completed": 1000,
+        "simulated_output_tps": 10063.415515465716
+      },
+      {
+        "requests": 1000,
+        "policy": "adaptive",
+        "repetitions": 3,
+        "wall_ms_p50": 34.738148,
+        "wall_ms_p95": 35.550542,
+        "simulated_requests_per_wall_second": 28786.796578792855,
+        "completed": 1000,
+        "simulated_output_tps": 10063.415515465716
+      }
+    ]
+  },
+  "limitations": [
+    "The unchanged held-out service-model accuracy gap fails 10 of 24 unique held-out cases at a 20 percent threshold.",
+    "Repeated seeds are repeatability checks, not independent cloud measurements.",
+    "Analytical fixture costs cover the modeled full fleet horizon, not actual cloud spending.",
+    "The software benchmark measures whole simulator execution and includes feedback bookkeeping; it does not isolate policy CPU time.",
+    "Deployment fingerprints establish compatibility, not predictive accuracy."
+  ],
+  "input_comparison": {
+    "observation_dataset_identical": true,
+    "calibrated_inputs_byte_identical": false,
+    "existing_fields_identical": true,
+    "only_difference": "Updated serialization includes the six default scheduling.heuristics fields in each case; baseline has no such policy controls.",
+    "baseline_calibrated_sha256": "342acfffea41ee90f1967fad9f50e647e22bfe527c4cd50cbb0693510729899b",
+    "updated_calibrated_sha256": "19f1bbee2eecd654d455ff6ab7eeaff8ee908f25fea28902aa63f4d7c650bda0"
+  }
+}
