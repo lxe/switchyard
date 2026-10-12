@@ -1,7 +1,7 @@
 //! Runtime PEFT LoRA artifacts. Base tensors are never modified or merged.
 //!
 //! Scaling follows PEFT's Linear adapter: alpha/r, or alpha/sqrt(r) for rsLoRA.
-//! See https://huggingface.co/docs/peft/en/package_reference/lora.
+//! See <https://huggingface.co/docs/peft/en/package_reference/lora>.
 use crate::{Error, Result};
 use candle_core::{DType, Device, Tensor, safetensors::BufferedSafetensors};
 use serde::Deserialize;

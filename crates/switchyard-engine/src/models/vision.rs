@@ -635,7 +635,7 @@ pub fn resize_grid(width: u32, height: u32, max_pixels: usize) -> Result<[usize;
 }
 
 /// Decode a bounded PNG/JPEG, normalize to [-1,1], duplicate the static frame and
-/// flatten patches in [block_h,block_w,inner_h,inner_w,channel,time,patch_h,patch_w].
+/// flatten patches in `[block_h,block_w,inner_h,inner_w,channel,time,patch_h,patch_w]`.
 pub fn prepare_image(encoded: &[u8], max_pixels: usize, device: &Device) -> Result<PreparedImage> {
     if encoded.is_empty() || encoded.len() > 8 << 20 {
         candle_core::bail!("Encoded image exceeds the 8 MiB bound");

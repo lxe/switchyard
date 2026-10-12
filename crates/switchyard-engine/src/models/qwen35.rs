@@ -1373,7 +1373,7 @@ pub struct ImageSpan {
     pub embeddings: Tensor,
 }
 
-/// Released Qwen3.5 spatial positions: each merged image token has [t,h,w]
+/// Released Qwen3.5 spatial positions: each merged image token has `[t,h,w]`
 /// coordinates starting at the previous text position. Following text starts
 /// after max(grid_h,grid_w)/2 rather than after the image token count.
 pub fn image_positions(
