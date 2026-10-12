@@ -7,7 +7,10 @@
       "NVIDIA L4"
     ],
     "data_centers": [
-      "EUR-IS-1"
+      "EU-RO-1",
+      "EUR-IS-2",
+      "EUR-IS-1",
+      "US-GA-2"
     ],
     "min_cuda": "13.0",
     "disk_gb": 30,
