@@ -2,7 +2,7 @@
   "format": "switchyard-native-f32-prefix-candidate-v1",
   "engine_freeze_commit": "5e9850e170f18470836245e5722557ea95219ea3",
   "fleet_input": "configs/runpod/native-fleet-f32-prefix-candidate.json",
-  "state": "compiled shared runtime and fixed F32 preparations published; exact-driver caches and cloud generation/serving acceptance pending",
+  "state": "shared runtime, F32 preparations and two-driver cache families published; all three models passed exact SM89 generation; fresh serving and required 580.173.02 coverage pending",
   "cache": {
     "page_tokens": 16,
     "checkpoint_tokens": 32,
@@ -69,7 +69,12 @@
     "f32_sm89_cloud_gate_passed": true,
     "bf16_cache_enabled_accepted": false,
     "cross_gpu_generation_receipts": [
-      "docs/receipts/native-f32-bake-driver126-01.json"
+      "docs/receipts/native-f32-bake-driver126-01.json",
+      "docs/receipts/native-f32-bake-driver159-01.json"
+    ],
+    "verified_sm89_drivers": [
+      "580.126.20",
+      "580.159.04"
     ]
   },
   "publication": {
@@ -143,7 +148,104 @@
         "native_model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d"
       }
     ],
-    "cache_families": [],
+    "cache_families": [
+      {
+        "model": "qwen3.5-0.8b",
+        "artifact": {
+          "id": "e06a3f430dc8b42d02b59e4d33a316f37f2435d2b7ddde6e4eb41f1d5d6e182b",
+          "prefix": "switchyard/native-engine/cache-families/e06a3f430dc8b42d02b59e4d33a316f37f2435d2b7ddde6e4eb41f1d5d6e182b",
+          "compressed_bytes": 517762
+        },
+        "drivers": [
+          "580.126.20",
+          "580.159.04"
+        ],
+        "compatibility": {
+          "engine_configuration": "1df0504850723eb41db082f25a7bd71723ff073772538f9ab3eceb8f8cbd3be7",
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "model_archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+          "model_repository": "Qwen/Qwen3.5-0.8B",
+          "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+          "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "fc1f1b61c4ef1efd80af335ea5e6ee26b4ef4a21dd9d355955fa6e26c55d7715",
+          "model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+          "native_driver_cache_layout": "native-cuda-driver-family-v1"
+        }
+      },
+      {
+        "model": "qwen3.5-2b",
+        "artifact": {
+          "id": "7b15741d9d04098b057d1031fa16a80d7c51bbf93263d77e399b6759780f3266",
+          "prefix": "switchyard/native-engine/cache-families/7b15741d9d04098b057d1031fa16a80d7c51bbf93263d77e399b6759780f3266",
+          "compressed_bytes": 517909
+        },
+        "drivers": [
+          "580.126.20",
+          "580.159.04"
+        ],
+        "compatibility": {
+          "engine_configuration": "0ac9e0bb8c87300512e6ee50aa7b603fdc0fd742eeb728187c0d4b6fafc39874",
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "model_archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+          "model_repository": "Qwen/Qwen3.5-2B",
+          "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+          "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "4969a4f39b3a7855de3e09996de355b87e3626375df2f83d0b966d534faffb37",
+          "model_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461",
+          "native_driver_cache_layout": "native-cuda-driver-family-v1"
+        }
+      },
+      {
+        "model": "qwen3.5-4b",
+        "artifact": {
+          "id": "32c5d2718bf5640a6037481f114c7ea00ea444d8b893bbacb5e1b833b10c6f3e",
+          "prefix": "switchyard/native-engine/cache-families/32c5d2718bf5640a6037481f114c7ea00ea444d8b893bbacb5e1b833b10c6f3e",
+          "compressed_bytes": 517903
+        },
+        "drivers": [
+          "580.126.20",
+          "580.159.04"
+        ],
+        "compatibility": {
+          "engine_configuration": "cf325308a027e2cf6aca982fd7d9f2fdd496f01b7b324fea5fae9996a850bbd1",
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+          "model_repository": "Qwen/Qwen3.5-4B",
+          "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+          "runtime_launch_configuration": "e0d0d0e53aa4d905a3605986b613d537aa8ab86cff9e0adb66e3be16c2fec5bf",
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "1f7cf76c9c41132553ea5c8c337a7cbb9a01d88ecd100f0cf49bfd37d9ad06cc",
+          "model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+          "native_driver_cache_layout": "native-cuda-driver-family-v1"
+        }
+      }
+    ],
     "cloud_allocations": [
       {
         "receipt": "docs/receipts/native-f32-bake-host-rejection-01.json",
@@ -158,6 +260,11 @@
       {
         "receipt": "docs/receipts/native-f32-bake-driver126-01.json",
         "pod_id": "dyedpq8fj2tvzg",
+        "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-bake-driver159-01.json",
+        "pod_id": "cjsfs8h934kxdz",
         "confirmed_absent": true
       }
     ],
@@ -198,13 +305,40 @@
           "prefix": "switchyard/native-engine/caches/fe8ff6c9e31ed3bceb703901d5b5b21f31f13d59964d1a8de282d7402903da28",
           "compressed_bytes": 513034
         }
+      },
+      {
+        "model": "qwen3.5-0.8b",
+        "driver": "580.159.04",
+        "artifact": {
+          "id": "223ebc79ca6dc91191941d2b3b71c03f4a80cac2a6abfdca21b13594535a8bd8",
+          "prefix": "switchyard/native-engine/caches/223ebc79ca6dc91191941d2b3b71c03f4a80cac2a6abfdca21b13594535a8bd8",
+          "compressed_bytes": 513835
+        }
+      },
+      {
+        "model": "qwen3.5-2b",
+        "driver": "580.159.04",
+        "artifact": {
+          "id": "6d9a6a7dc0d6e7ed8455492153ae2f9ba5a4a423df083b2d131a566f5b6cdcb0",
+          "prefix": "switchyard/native-engine/caches/6d9a6a7dc0d6e7ed8455492153ae2f9ba5a4a423df083b2d131a566f5b6cdcb0",
+          "compressed_bytes": 513904
+        }
+      },
+      {
+        "model": "qwen3.5-4b",
+        "driver": "580.159.04",
+        "artifact": {
+          "id": "5b55a1f35eef56b2efa600c7b5853f8b7e5c724f0a6351097e2faf13338fdbc4",
+          "prefix": "switchyard/native-engine/caches/5b55a1f35eef56b2efa600c7b5853f8b7e5c724f0a6351097e2faf13338fdbc4",
+          "compressed_bytes": 513902
+        }
       }
     ]
   },
   "unresolved": [
-    "Complete required 580.159.04 and 580.173.02 driver bakes, assemble new F32 families and validate fresh cloud serving.",
+    "Complete required 580.173.02 driver bakes and validate fresh F32 cloud serving; two Romania allocations have returned no-capacity errors.",
     "Candidate planning priors are copied assumptions and require matching F32 measurements before performance claims.",
-    "Complete F32 cloud outputs matched the local reference on driver 580.126.20; every added driver requires the same exact comparison before publication."
+    "All complete F32 cloud outputs matched local references on 580.126.20 and 580.159.04; every added driver requires the same exact comparison before publication."
   ],
   "preserved_bf16_fleet": "configs/runpod/native-fleet.json",
   "build_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
@@ -216,8 +350,8 @@
     "matrix_container_fixture_tests": 24,
     "unbound_candidate_validation": "F32 candidate decoded and rejected for missing binary-pinned native runtime; no labels produced, credentials, network or allocation",
     "current_offline_rust_cache_bindings": "three models successfully derived against published shared runtime; no network or provisioning",
-    "exact_cloud_generation_rows": 48,
-    "exact_cloud_generation_token_ids": 1536
+    "exact_cloud_generation_rows": 96,
+    "exact_cloud_generation_token_ids": 3072
   },
   "bake_request_input": "configs/runpod/native/f32-prefix-bake-requests.json",
   "bake_request_input_sha256": "7ac728a57ee9bea132a786dfa38aa15d25328007f0b70c5190a92b9ad41d3b0d",

@@ -1,0 +1,158 @@
+{
+  "format": "switchyard-native-f32-allocation-capacity-rejections-v1",
+  "attempts": [
+    {
+      "attempt": "bake-models-sm89-f32-driver159-03",
+      "kind": "offline_bake",
+      "requested_driver": "580.159.04",
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EU-RO-1",
+          "EUR-IS-2",
+          "EUR-IS-1"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 64,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": [
+        "13.0"
+      ],
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
+    },
+    {
+      "attempt": "bake-models-sm89-f32-driver173-01",
+      "kind": "offline_bake",
+      "requested_driver": "580.173.02",
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EU-RO-1"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 64,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": [
+        "13.0"
+      ],
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
+    },
+    {
+      "attempt": "bake-models-sm89-f32-driver173-02",
+      "kind": "offline_bake",
+      "requested_driver": "580.173.02",
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EU-RO-1"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 64,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": [
+        "13.0"
+      ],
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
+    },
+    {
+      "attempt": "bake-models-sm89-f32-driver595-01",
+      "kind": "offline_bake",
+      "requested_driver": "595.91.07",
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EUR-IS-2"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 64,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": [
+        "13.2"
+      ],
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
+    },
+    {
+      "attempt": "bake-models-sm89-f32-driver595-02",
+      "kind": "offline_bake",
+      "requested_driver": "595.91.07",
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EUR-IS-2"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 64,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": [
+        "13.2"
+      ],
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
+    },
+    {
+      "attempt": "launch-0.8b-sm89-f32-prefix-01",
+      "kind": "direct_serving_launch",
+      "requested_driver": null,
+      "provider": {
+        "gpu_id": "NVIDIA GeForce RTX 4090",
+        "data_centers": [
+          "EU-RO-1",
+          "EUR-IS-2",
+          "EUR-IS-1"
+        ],
+        "min_cuda": "13.0",
+        "min_ram_gb": 64,
+        "min_vcpus": 8,
+        "disk_gb": 30
+      },
+      "allowed_cuda_versions": null,
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      },
+      "owned_pod_created": false,
+      "generation_started": false,
+      "artifact_published": false
+    }
+  ],
+  "scope": "Provider rejected these direct bounded requests before a pod identity was returned. They establish no exact driver coverage or serving performance."
+}
