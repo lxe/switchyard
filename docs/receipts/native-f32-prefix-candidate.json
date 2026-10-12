@@ -2,7 +2,7 @@
   "format": "switchyard-native-f32-prefix-candidate-v1",
   "engine_freeze_commit": "5e9850e170f18470836245e5722557ea95219ea3",
   "fleet_input": "configs/runpod/native-fleet-f32-prefix-candidate.json",
-  "state": "shared runtime, F32 preparations and two-driver cache families published; all three models passed exact SM89 generation; fresh serving and required 580.173.02 coverage pending",
+  "state": "two-driver F32 cache families published; complete exact SM89 bake parity for all models; 0.8B fresh32GB serving passed; 2B/4B serving and additional driver coverage pending",
   "cache": {
     "page_tokens": 16,
     "checkpoint_tokens": 32,
@@ -62,7 +62,22 @@
     "disk_gb": 30,
     "max_active_owned_bake_pods": 1,
     "bake_timeout_s": 600,
-    "max_bake_hourly_usd": 1.0
+    "max_bake_hourly_usd": 1.0,
+    "small_model_profiles": {
+      "models": [
+        "qwen3.5-0.8b",
+        "qwen3.5-2b"
+      ],
+      "minimum_host_ram_gb": 32,
+      "minimum_gpu_memory_bytes": 21474836480,
+      "platform_configuration": "configs/runpod/native/bake-platform-sm89-32g-f32-driver173.json",
+      "model_configurations": [
+        "configs/runpod/native/qwen3.5-0.8b-sm89-f32-prefix-32g.json",
+        "configs/runpod/native/qwen3.5-2b-sm89-f32-prefix-32g.json"
+      ],
+      "engine_configuration_unchanged": true,
+      "fleet_and_4b_minimum_host_ram_gb": 64
+    }
   },
   "quality_acceptance": {
     "f32_reference_and_sequence_gates": "local RTX 5090; see native-paged-prefix-rtx5090.json",
@@ -266,6 +281,26 @@
         "receipt": "docs/receipts/native-f32-bake-driver159-01.json",
         "pod_id": "cjsfs8h934kxdz",
         "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-bake-host-rejection-02.json",
+        "pod_id": "xnq65ighofb6k1",
+        "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-runpod-qwen0.8b-01.json",
+        "pod_id": "4v70eumbghkwdk",
+        "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-serving-driver-rejection-01.json",
+        "pod_id": "l6o6f9vwk5nt1f",
+        "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-serving-driver-rejection-02.json",
+        "pod_id": "ghkwy9de2cifh5",
+        "confirmed_absent": true
       }
     ],
     "runtime_compatibility": {
@@ -360,5 +395,25 @@
     "580.173.02": "configs/runpod/native/bake-platform-sm89-64g.json",
     "discovery": "configs/runpod/native/bake-platform-sm89-64g-discovery.json",
     "595.91.07": "configs/runpod/native/bake-platform-sm89-64g-driver595.json"
-  }
+  },
+  "serving_receipts": [
+    {
+      "model": "qwen3.5-0.8b",
+      "receipt": "docs/receipts/native-f32-runpod-qwen0.8b-01.json",
+      "configuration": "configs/runpod/native/qwen3.5-0.8b-sm89-f32-prefix-32g.json",
+      "minimum_host_ram_gb": 32,
+      "driver": "580.159.04"
+    }
+  ],
+  "serving_pending_models": [
+    "qwen3.5-2b",
+    "qwen3.5-4b"
+  ],
+  "memory_receipts": [
+    {
+      "model": "qwen3.5-4b",
+      "receipt": "docs/receipts/native-f32-4b-local-host-memory-01.json",
+      "scope": "local frozen Ubuntu engine under explicit32GiB cgroup; cloud32GiB rollout pending"
+    }
+  ]
 }

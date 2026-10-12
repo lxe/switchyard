@@ -2,10 +2,12 @@
 
 import argparse
 import datetime
+import hashlib
 import json
 from pathlib import Path
 
 from control import write
+from generation_parity import compare as compare_generation
 
 
 def read(path):
@@ -30,6 +32,16 @@ def main():
     )
     bake_dir = Path(prepared["bake_receipt"]).parent.parent
     bake = read(bake_dir / "tree/bake.json")
+    parity_path = bake_dir / "tree/generation-parity.json"
+    parity = None
+    if parity_path.exists():
+        parity = read(parity_path)
+        if not parity["passed"] or parity != compare_generation(
+            prepared["generation_reference"],
+            bake,
+            read(bake_dir / "tree/generated.json"),
+        ):
+            raise ValueError("retained cloud generation comparison changed")
     cleanup = read(args.launch / "cleanup.json")
     bake_cleanup = read(bake_dir / "cleanup.json")
     if not cleanup["confirmed_absent"] or not bake_cleanup["confirmed_absent"]:
@@ -42,9 +54,13 @@ def main():
     logs = events(args.launch / "container-events.ndjson")
     native = []
     container = []
+    memory_samples = []
     gpu = None
     for record in logs:
         line = record["line"]
+        if line.startswith("native_host_memory="):
+            memory_samples.append(json.loads(line.split("=", 1)[1]))
+            continue
         if line.startswith("native_host_gpu="):
             name, gpu_uuid, driver, capability, memory = [
                 part.strip() for part in line.split("=", 1)[1].split(",")
@@ -115,7 +131,12 @@ def main():
         "engine_source_commit": launch["source_commit"],
         "engine_sha256": launch["engine_sha256"],
         "accuracy": config["numerical_accuracy"],
-        "numerical_parity_measured_in_cloud": False,
+        "numerical_parity_measured_in_cloud": parity is not None,
+        "numerical_parity_scope": (
+            "complete offline bake token IDs against the identical local F32 execution; teacher-forced mathematical gates remain separate"
+            if parity
+            else "no cloud generation comparison recorded"
+        ),
         "image": config["image"],
         "hardware": gpu,
         "pod": launch["pod"],
@@ -149,6 +170,16 @@ def main():
                 "container_disk_gb": config["provider"]["disk_gb"],
             },
         },
+        "host_weight_buffers": {
+            "aggregate_cap_bytes": config["engine"]["max_weight_bytes"],
+            "observed_source_bytes": next(
+                item["details"]["bytes"]
+                for item in native
+                if item["event"] == "weights_read_finished"
+            ),
+            "scope": "aggregate native safetensors file buffers; excludes other process memory and GPU allocations",
+        },
+        "host_memory_samples": memory_samples,
         "timing_s": {
             key: launch[key]
             for key in [
@@ -171,6 +202,26 @@ def main():
             "native_generation_s": bake["elapsed_s"],
             "cache_bytes": bake["cache_bytes"],
             "cache_files": bake["cache_files"],
+            **(
+                {
+                    "generation_comparison": {
+                        "passed": True,
+                        "rows": parity["rows"],
+                        "exact_rows": parity["exact_rows"],
+                        "exact_output_token_ids": sum(
+                            len(ids) for ids in parity["actual_token_ids"]
+                        ),
+                        "local_engine_sha256": parity["local_engine_sha256"],
+                        "cloud_engine_sha256": parity["cloud_engine_sha256"],
+                        "model_artifact_id": parity["model_artifact_id"],
+                        "retained_parity_sha256": hashlib.sha256(
+                            parity_path.read_bytes()
+                        ).hexdigest(),
+                    }
+                }
+                if parity
+                else {}
+            ),
             "controller_events": events(bake_dir / "controller-events.ndjson"),
             "cleanup": bake_cleanup,
         },

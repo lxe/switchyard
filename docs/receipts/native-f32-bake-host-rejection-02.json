@@ -1,0 +1,43 @@
+{
+  "format": "switchyard-native-f32-bake-host-rejection-v1",
+  "allocation": "direct offline RunPod bake platform",
+  "platform_configuration": "configs/runpod/native/bake-platform-sm89-32g-f32-driver173.json",
+  "requested_driver": "580.173.02",
+  "models": [
+    "qwen3.5-0.8b",
+    "qwen3.5-2b"
+  ],
+  "minimum_host_ram_gb": 32,
+  "minimum_gpu_memory_bytes": 21474836480,
+  "owned_pod": {
+    "id": "xnq65ighofb6k1",
+    "name": "switchyard-native-bake-26ceff110efd",
+    "status": "RUNNING",
+    "cost": 0.89,
+    "dataCenterId": "EU-RO-1",
+    "cudaVersion": "13.0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-e79546e7-8df4-3ff3-3d6e-65f7d4c9c796",
+    "driver": "580.126.20",
+    "capability": "8.9",
+    "memory": "24564 MiB"
+  },
+  "status": {
+    "phase": "failed",
+    "hardware": "NVIDIA GeForce RTX 4090, GPU-e79546e7-8df4-3ff3-3d6e-65f7d4c9c796, 580.126.20, 8.9, 24564 MiB",
+    "error": "observed driver differs from explicit bake target",
+    "exit_code": null,
+    "completed": []
+  },
+  "weights_transfer_started": false,
+  "published_cache_components": [],
+  "cleanup": {
+    "pod_id": "xnq65ighofb6k1",
+    "name": "switchyard-native-bake-26ceff110efd",
+    "confirmed_absent": true,
+    "fresh_get_http_status": 404
+  },
+  "scope": "Romania supplied the already covered 580.126.20 driver; no 580.173.02 cache validity established."
+}

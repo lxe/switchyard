@@ -1,0 +1,51 @@
+{
+  "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "provider": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_file": "/home/lxe/many-eval/app/.env",
+    "key_env": "RUNPOD_API_KEY",
+    "user_agent": "Switchyard/0.5",
+    "cloud": "SECURE",
+    "gpu_id": "NVIDIA GeForce RTX 4090",
+    "data_centers": [
+      "EU-RO-1"
+    ],
+    "min_cuda": "13.0",
+    "min_ram_gb": 32,
+    "min_vcpus": 8,
+    "disk_gb": 30,
+    "allowed_cuda_versions": [
+      "13.0"
+    ]
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "env_file": "/home/lxe/.podtrain/env",
+    "prefix": "switchyard/native-engine",
+    "url_lifetime_s": 3600
+  },
+  "limits": {
+    "max_active_owned_pods": 1,
+    "max_hourly_usd": 1.0,
+    "pod_timeout_s": 600,
+    "initial_gpu_admission_bytes": 21474836480,
+    "gpu_allocator_cap_enforced": false,
+    "download_concurrency": 20,
+    "download_piece_bytes": 65536,
+    "receive_channel_pieces": 4
+  },
+  "schema_version": 1,
+  "purpose": "native_offline_driver_cache_bake",
+  "control": "http",
+  "gpu_compute_capability": "8.9",
+  "driver_target": "580.173.02",
+  "models": [
+    "qwen3.5-0.8b",
+    "qwen3.5-2b"
+  ],
+  "excluded_drivers": [
+    "580.159.04"
+  ]
+}

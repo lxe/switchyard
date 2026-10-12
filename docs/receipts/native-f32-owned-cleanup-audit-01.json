@@ -1,0 +1,55 @@
+{
+  "format": "switchyard-native-f32-owned-pod-cleanup-audit-v1",
+  "observed_utc": "2026-10-12T01:36:02.769108+00:00",
+  "pods": [
+    {
+      "pod_id": "zqlew8xhaaggso",
+      "name": "switchyard-native-bake-1247a81dc040",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-bake-host-rejection-01.json"
+    },
+    {
+      "pod_id": "8ie0o7seelcn50",
+      "name": "switchyard-native-bake-04981fde1c3e",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-bake-start-failure-01.json"
+    },
+    {
+      "pod_id": "dyedpq8fj2tvzg",
+      "name": "switchyard-native-bake-70571409472f",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-bake-driver126-01.json"
+    },
+    {
+      "pod_id": "cjsfs8h934kxdz",
+      "name": "switchyard-native-bake-683a1283e479",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-bake-driver159-01.json"
+    },
+    {
+      "pod_id": "xnq65ighofb6k1",
+      "name": "switchyard-native-bake-26ceff110efd",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-bake-host-rejection-02.json"
+    },
+    {
+      "pod_id": "4v70eumbghkwdk",
+      "name": "switchyard-native-launch-ea64caa3dc44",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-runpod-qwen0.8b-01.json"
+    },
+    {
+      "pod_id": "l6o6f9vwk5nt1f",
+      "name": "switchyard-native-launch-64c4deddaab0",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-serving-driver-rejection-01.json"
+    },
+    {
+      "pod_id": "ghkwy9de2cifh5",
+      "name": "switchyard-native-launch-4e02f4e187d6",
+      "get_http_status": 404,
+      "receipt": "docs/receipts/native-f32-serving-driver-rejection-02.json"
+    }
+  ],
+  "allocation_ownership": "root; worker cloud allocations on hold during gauntlet"
+}

@@ -1,0 +1,25 @@
+{
+  "observed_utc": "2026-10-12T01:14:31.009711+00:00",
+  "query": {
+    "cloud": "SECURE",
+    "count": 1,
+    "minCudaVersion": "13.0"
+  },
+  "gpu": {
+    "id": "NVIDIA GeForce RTX 4090",
+    "memory": 24,
+    "price": {
+      "community": 0.34,
+      "secure": 0.89,
+      "serverless": 1.1
+    }
+  },
+  "data_centers": [
+    {
+      "availability": "LOW",
+      "id": "EU-RO-1",
+      "name": "EU-RO-1"
+    }
+  ],
+  "scope": "GPU and minimum-CUDA catalog availability does not establish 64 GB host RAM, eight vCPUs, exact driver or a successful bounded allocation."
+}

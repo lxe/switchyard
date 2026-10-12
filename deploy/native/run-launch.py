@@ -295,9 +295,18 @@ def main():
     selector += (
         '  *) printf "native_bootstrap_error=driver_mismatch\\n" >&2; exit 78;;\nesac\n'
     )
+    memory_monitor = ""
+    if config.get("measure_host_memory", False):
+        memory_monitor = (
+            Path(__file__).with_name("host-memory.sh").read_text()
+            + "\nnative_host_memory_monitor >&2 &\n"
+        )
     bootstrap = (
         r"""set -eu
 printf '{"stage":"container_started","wall_s":%s}\n' "$(date +%s.%N)"
+"""
+        + memory_monitor
+        + r"""
 native_identity="$(nvidia-smi --query-gpu=name,uuid,driver_version,compute_cap,memory.total --format=csv,noheader -i 0)"
 printf 'native_host_gpu=%s\n' "$native_identity"
 IFS=',' read -r native_gpu native_uuid native_driver native_cap native_memory <<< "$native_identity"

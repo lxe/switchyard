@@ -1,0 +1,72 @@
+{
+  "format": "switchyard-native-local-host-memory-v1",
+  "model": "qwen3.5-4b",
+  "build_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+  "engine_sha256": "37774358815f7fa83b495912655676a238cdaa89a090ab0aa302e659ddff94f8",
+  "compiler_target": "compute_120a",
+  "native_model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+  "configuration": {
+    "model": "qwen3.5-4b",
+    "model_root": "/work/switchyard/model",
+    "device": {
+      "kind": "cuda",
+      "ordinal": 0
+    },
+    "dtype": "f32",
+    "max_context": 128,
+    "max_weight_bytes": 12884901888,
+    "max_batch_size": 8,
+    "queue_capacity": 64,
+    "batch_wait_ms": 2,
+    "cache": {
+      "page_tokens": 16,
+      "checkpoint_tokens": 32,
+      "max_bytes": 268435456,
+      "max_entries": 16
+    }
+  },
+  "host_weight_buffer_cap_bytes": 12884901888,
+  "actual_aggregate_weight_buffer_bytes": 8411565456,
+  "cgroup_before": {
+    "current_bytes": 8409088,
+    "peak_bytes": 92504064,
+    "max_bytes": 34359738368,
+    "swap_max_bytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    }
+  },
+  "cgroup_after": {
+    "current_bytes": 6728015872,
+    "peak_bytes": 15555022848,
+    "max_bytes": 34359738368,
+    "swap_max_bytes": 0,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    }
+  },
+  "child_max_rss_bytes": 9023557632,
+  "exit_code": 0,
+  "exact_rows": 16,
+  "exact_output_token_ids": 512,
+  "oom_delta": 0,
+  "oom_kill_delta": 0,
+  "passed": true,
+  "scope": "Local RTX5090 execution of the frozen Ubuntu runtime under a 32 GiB cgroup limit with swap disabled. Existing model files and pagecache; excludes fresh cloud hydration and does not establish cloud 4B at 32 GiB serving acceptance.",
+  "local_generation_reference": "docs/receipts/native-f32-generation-reference-4b.json",
+  "cgroup_properties": {
+    "MemoryMax": 34359738368,
+    "MemorySwapMax": 0,
+    "MemoryAccounting": true
+  }
+}
