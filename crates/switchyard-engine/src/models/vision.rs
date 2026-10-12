@@ -561,7 +561,8 @@ impl VisionModel {
 
 impl VisionConfig {
     pub fn validate(&self) -> Result<()> {
-        if self.depth == 0
+        if self.hidden_act != Activation::GeluPytorchTanh
+            || self.depth == 0
             || self.depth > 128
             || self.hidden_size == 0
             || self.hidden_size > 8192
@@ -781,6 +782,22 @@ impl VisionModel {
             if !matches!(meta.get(key),Some(Value::U32(value)) if *value as usize==want) {
                 candle_core::bail!("mmproj metadata {key} disagrees with model configuration");
             }
+        }
+        // Pixel normalization and normalization epsilon are fixed parts of this
+        // adapter's mathematical contract, not values inferred from a request.
+        for key in ["clip.vision.image_mean", "clip.vision.image_std"] {
+            if !matches!(meta.get(key),Some(Value::Array(values)) if values.len()==3 && values.iter().all(|v| matches!(v,Value::F32(x) if (*x-0.5).abs()<1e-7)))
+            {
+                candle_core::bail!("mmproj {key} disagrees with fixed RGB normalization");
+            }
+        }
+        if !matches!(meta.get("clip.use_gelu"), Some(Value::Bool(true)))
+            || !matches!(meta.get("clip.vision.attention.layer_norm_epsilon"),Some(Value::F32(x)) if (*x-1e-6).abs()<1e-12)
+            || !matches!(meta.get("clip.vision.is_deepstack_layers"),Some(Value::Array(values)) if values.len()==cfg.depth && values.iter().all(|v| matches!(v,Value::Bool(false))))
+        {
+            candle_core::bail!(
+                "mmproj activation, normalization or deepstack contract is unsupported"
+            );
         }
         let mut used = 0u64;
         let mut load = |name: &str| -> Result<Tensor> {
