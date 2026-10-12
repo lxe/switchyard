@@ -22,7 +22,7 @@ impl ServingConfig {
             || self.max_source_pixels == 0
             || self.max_source_pixels > 16 * 1024 * 1024
             || self.max_pixels < 32 * 32
-            || self.max_pixels > 4 * 1024 * 1024
+            || self.max_pixels > 262_144
             || !(1..=4).contains(&self.max_images)
         {
             return Err(Error::Config("Invalid fixed image serving bounds".into()));
@@ -112,42 +112,13 @@ impl Geometry {
     }
     /// Qwen smart resize to multiples of patch_size * spatial_merge_size.
     pub fn grid(&self, width: usize, height: usize, max_pixels: usize) -> Result<[usize; 3]> {
-        let factor = self
-            .patch_size
-            .checked_mul(self.merge_size)
-            .filter(|&n| n > 0)
-            .ok_or_else(|| Error::Config("Invalid image patch geometry".into()))?;
-        let pixels = width
-            .checked_mul(height)
-            .filter(|&n| n > 0)
-            .ok_or_else(|| Error::Config("Invalid image dimensions".into()))?;
-        if max_pixels < factor * factor
-            || width.max(height) as f64 / width.min(height) as f64 > 200.
-        {
-            return Err(Error::Config(
-                "Image dimensions exceed supported aspect/budget bounds".into(),
-            ));
-        }
-        let rounded =
-            |n: usize| (((n as f64 / factor as f64).round_ties_even() as usize).max(1)) * factor;
-        let mut w = rounded(width);
-        let mut h = rounded(height);
-        if w.checked_mul(h).is_none_or(|n| n > max_pixels) {
-            let scale = (pixels as f64 / max_pixels as f64).sqrt();
-            w = ((width as f64 / scale / factor as f64).floor() as usize).max(1) * factor;
-            h = ((height as f64 / scale / factor as f64).floor() as usize).max(1) * factor;
-        } else {
-            let min_pixels = 65_536usize.min(max_pixels);
-            if w * h < min_pixels {
-                let scale = (min_pixels as f64 / pixels as f64).sqrt();
-                w = ((width as f64 * scale / factor as f64).ceil() as usize).max(1) * factor;
-                h = ((height as f64 * scale / factor as f64).ceil() as usize).max(1) * factor;
-            }
-        }
-        if w.checked_mul(h).is_none_or(|n| n > max_pixels) {
-            return Err(Error::Config("Image cannot fit fixed pixel budget".into()));
-        }
-        Ok([1, h / self.patch_size, w / self.patch_size])
+        let width =
+            u32::try_from(width).map_err(|_| Error::Config("Image width overflow".into()))?;
+        let height =
+            u32::try_from(height).map_err(|_| Error::Config("Image height overflow".into()))?;
+        Ok(crate::models::vision::resize_grid(
+            width, height, max_pixels,
+        )?)
     }
     pub fn tokens(&self, grid: [usize; 3]) -> Result<usize> {
         if self.merge_size == 0

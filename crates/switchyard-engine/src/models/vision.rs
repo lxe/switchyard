@@ -596,7 +596,7 @@ pub struct PreparedImage {
 /// to the nearest 32-pixel merge block. No video frames are admitted.
 pub fn resize_grid(width: u32, height: u32, max_pixels: usize) -> Result<[usize; 3]> {
     const FACTOR: usize = 32;
-    if width == 0 || height == 0 || max_pixels < FACTOR * FACTOR || max_pixels > 16_777_216 {
+    if width == 0 || height == 0 || !(FACTOR * FACTOR..=16_777_216).contains(&max_pixels) {
         candle_core::bail!("Invalid image dimensions or fixed pixel budget");
     }
     let w = width as f64;

@@ -3,6 +3,7 @@ mod mixed;
 mod prefix;
 pub mod qwen35;
 pub mod vision;
+mod vision_session;
 use crate::weights::Weights;
 use crate::{
     Error, Result,
@@ -126,8 +127,21 @@ struct QwenFactory {
     vocab: usize,
     eos: u32,
     cache: PrefixCache,
+    vision: Option<(std::sync::Arc<vision::VisionModel>, usize)>,
 }
 impl ModelFactory for QwenFactory {
+    fn supports_vision(&self) -> bool {
+        self.vision.is_some()
+    }
+    fn vision_session(&self) -> Result<Option<Box<dyn ModelSession>>> {
+        Ok(self.vision.as_ref().map(|(vision, max_pixels)| {
+            Box::new(vision_session::QwenVisionSession::new(
+                self.weights.clone(),
+                vision.clone(),
+                *max_pixels,
+            )) as Box<dyn ModelSession>
+        }))
+    }
     fn session(&self) -> Box<dyn ModelSession> {
         Box::new(QwenSession::with_cache(
             self.weights.clone(),
@@ -205,7 +219,29 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
     };
     let vb = Weights::read(&config.model_root, config.max_weight_bytes, telemetry)?
         .builder(dtype, &device);
-    let mut weights = qwen35::ModelForCausalLM::new(&model_config, vb)?;
+    let mut weights = qwen35::ModelForCausalLM::new(&model_config, vb.clone())?;
+    let vision = if let Some(bounds) = &config.vision {
+        let vision_config: vision::VisionConfig =
+            serde_json::from_value(raw["vision_config"].clone())?;
+        vision_config.validate()?;
+        telemetry.event(
+            "vision_loading_started",
+            serde_json::json!({"mmproj":bounds.mmproj.is_some()}),
+        );
+        let vision_model = match &bounds.mmproj {
+            Some(path) => vision::VisionModel::from_gguf(
+                &vision_config,
+                &config.model_root.join(path),
+                &device,
+                dtype,
+            )?,
+            None => vision::VisionModel::new(&vision_config, vb.pp("model.visual"))?,
+        };
+        telemetry.event("vision_loaded", serde_json::json!({"layers":vision_config.depth,"hidden":vision_config.out_hidden_size}));
+        Some((std::sync::Arc::new(vision_model), bounds.max_pixels))
+    } else {
+        None
+    };
     weights
         .base_model
         .set_kv_page_tokens(config.cache.page_tokens)?;
@@ -218,5 +254,6 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
         vocab: model_config.text_config.vocab_size,
         eos,
         cache,
+        vision,
     }))
 }
