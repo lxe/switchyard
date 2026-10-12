@@ -81,7 +81,7 @@
             "model_repository": "Qwen/Qwen3.5-0.8B",
             "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
             "runtime_id": "d2dc52df18a482c5a8046f824e91878bea2131edb9474547649261a0e68bb4f0",
-            "runtime_launch_configuration": "582c52eeebe2a0b1daea7106deb4593b7185fbf6c18293358ea1f2ae5f9ad7fc"
+            "runtime_launch_configuration": "07720e58d786bfb02b76f7234e779e8fd4761400d0c97039551c6cecaf6ec538"
           }
         }
       ]
@@ -206,7 +206,7 @@
       "program": "venv/bin/python",
       "args": [
         "-c",
-        "import sys,time,subprocess\nstarted=time.monotonic()\nsubprocess.run(['nvidia-smi','--query-gpu=name,driver_version,memory.total,compute_cap','--format=csv,noheader,nounits'],check=True)\nimport torch\nfrom sglang.launch_server import run_server\nfrom sglang.srt.server_args import prepare_server_args\nfrom sglang.srt.plugins import load_plugins\nprint('switchyard preimport completed in %.3fs' % (time.monotonic()-started),flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n': raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nload_plugins()\nrun_server(prepare_server_args(sys.argv[1:]))\n"
+        "import sys,time,subprocess\nstarted=time.monotonic()\nsubprocess.run(['nvidia-smi','--query-gpu=name,driver_version,memory.total,compute_cap','--format=csv,noheader,nounits'],check=True)\nimport torch\nfrom sglang.launch_server import run_server\nfrom sglang.srt.server_args import prepare_server_args\nfrom sglang.srt.plugins import load_plugins\nprint('switchyard preimport completed in %.3fs' % (time.monotonic()-started),flush=True)\nimport os\nready=os.environ.get('SWITCHYARD_READY_FILE')\nwhile ready and not os.path.exists(ready): time.sleep(0.005)\nload_plugins()\nrun_server(prepare_server_args(sys.argv[1:]))\n"
       ],
       "environment": {
         "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",

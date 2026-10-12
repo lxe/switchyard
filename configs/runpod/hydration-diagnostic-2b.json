@@ -129,7 +129,7 @@
       "program": "venv/bin/python",
       "args": [
         "-c",
-        "import sys, time\nstarted = time.monotonic()\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n':\n    raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nsys.argv[0] = 'vllm'\nmain()\n"
+        "import sys, time\nstarted = time.monotonic()\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nimport os\nready = os.environ.get('SWITCHYARD_READY_FILE')\nwhile ready and not os.path.exists(ready):\n    time.sleep(0.005)\nsys.argv[0] = 'vllm'\nmain()\n"
       ],
       "environment": {
         "CC": "{runtime_root}/toolchain/bin/gcc",

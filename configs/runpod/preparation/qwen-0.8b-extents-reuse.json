@@ -84,7 +84,7 @@
             "model_repository": "Qwen/Qwen3.5-0.8B",
             "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
             "runtime_id": "cb2c15aea8acc7494f5240a3b162d21be83fa828650d2e5ef02592b9fd29ce14",
-            "runtime_launch_configuration": "fbad7e2562be8ae0a248140137f04d0a9ad24c326ca0c76dcb22e54d27528d84",
+            "runtime_launch_configuration": "2ff23a1d331da8d81303b856127268e567731679c2af867b8c97f1773109c08f",
             "weight_loader": "2cc44ced9e0f841bc0644b3a3ac6d8274c311eb9e15a2f121deeefebbe88fb4a"
           }
         }
@@ -130,7 +130,7 @@
       "program": "venv/bin/python",
       "args": [
         "-c",
-        "import sys, time, subprocess\nstarted = time.monotonic()\nsubprocess.run(['nvidia-smi', '--query-gpu=name,driver_version,memory.total,compute_cap', '--format=csv,noheader,nounits'], check=True)\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nif sys.stdin.readline(64) != 'switchyard-model-ready-v1\\n':\n    raise SystemExit('model hydration gate was not released')\nsys.stdin.close()\nsys.argv[0] = 'vllm'\nmain()\n"
+        "import sys, time, subprocess\nstarted = time.monotonic()\nsubprocess.run(['nvidia-smi', '--query-gpu=name,driver_version,memory.total,compute_cap', '--format=csv,noheader,nounits'], check=True)\nimport torch\nimport vllm.entrypoints.cli.serve\nfrom vllm.entrypoints.cli.main import main\nprint('switchyard preimport completed in %.3fs' % (time.monotonic() - started), flush=True)\nimport os\nready = os.environ.get('SWITCHYARD_READY_FILE')\nwhile ready and not os.path.exists(ready):\n    time.sleep(0.005)\nsys.argv[0] = 'vllm'\nmain()\n"
       ],
       "environment": {
         "PATH": "{runtime_root}/venv/bin:{runtime_root}/toolchain/bin:{runtime_root}/cuda/bin:/usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
