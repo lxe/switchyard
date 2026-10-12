@@ -133,6 +133,14 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(result["models"][0]["model_artifact"], reference)
         self.assertIsNone(result["models"][0]["model_archive_sha256"])
 
+    def test_legacy_observation_with_null_raw_transport_is_supported(self):
+        (self.model / "agent-observations.ndjson").write_text(json.dumps({
+            "pod": "owned", "state": {"phase": "ready", "model_transport": None}
+        }) + "\n")
+        result = self.summarize()
+        self.assertTrue(result["functional_workloads_passed"])
+        self.assertIsNone(result["models"][0]["pods"][0]["raw_model_transport"])
+
     def test_stopped_multimodel_run_reports_unexecuted_models(self):
         fleet = json.loads((self.root / "fleet-source.json").read_text())
         fleet["models"].append({"id": "later", "revision": "revision", "engine": {}, "archive_sha256": "other"})

@@ -117,7 +117,7 @@ def pod_summary(directory, owner, observations):
         )
         if start is not None and finish is not None:
             hydration[role + "_elapsed_s"] = finish - start
-    transfers = state.get("model_transport", {}).get("transfers", [])
+    transfers = (state.get("model_transport") or {}).get("transfers", [])
     return {
         "pod": owner["pod"],
         "allocated_s": owner["allocated_s"],
