@@ -535,7 +535,7 @@ impl VisionModel {
         Ok(cu)
     }
 
-    pub fn forward_patches(&self, xs: &Tensor, grid_thw: &Tensor) -> Result<Tensor> {
+    fn forward_patches(&self, xs: &Tensor, grid_thw: &Tensor) -> Result<Tensor> {
         let dtype = self.pos_embed.embeddings().dtype();
         let xs = self.patch_embed.forward(&xs.to_dtype(dtype)?)?;
         let pos_embeds = self.fast_pos_embed_interpolate(grid_thw)?;
@@ -596,7 +596,7 @@ pub struct PreparedImage {
 /// to the nearest 32-pixel merge block. No video frames are admitted.
 pub fn resize_grid(width: u32, height: u32, max_pixels: usize) -> Result<[usize; 3]> {
     const FACTOR: usize = 32;
-    if width == 0 || height == 0 || !(FACTOR * FACTOR..=16_777_216).contains(&max_pixels) {
+    if width == 0 || height == 0 || !(FACTOR * FACTOR..=262_144).contains(&max_pixels) {
         candle_core::bail!("Invalid image dimensions or fixed pixel budget");
     }
     let w = width as f64;
@@ -618,6 +618,14 @@ pub fn resize_grid(width: u32, height: u32, max_pixels: usize) -> Result<[usize;
             rw = ((w * beta / FACTOR as f64).ceil() as usize).max(1) * FACTOR;
             rh = ((h * beta / FACTOR as f64).ceil() as usize).max(1) * FACTOR;
         }
+    }
+    if rw.checked_mul(rh).is_none_or(|n| n > max_pixels) {
+        // The processor's minimum-resolution ceil may overshoot its maximum.
+        // Our configured maximum is a hard allocation bound; relax the soft
+        // minimum and use the same aspect-preserving maximum-resolution floor.
+        let beta = (h * w / max_pixels as f64).sqrt();
+        rw = ((w / beta / FACTOR as f64).floor() as usize).max(1) * FACTOR;
+        rh = ((h / beta / FACTOR as f64).floor() as usize).max(1) * FACTOR;
     }
     if rw.checked_mul(rh).is_none_or(|n| n > max_pixels) {
         candle_core::bail!("Image aspect ratio cannot fit the fixed merge-block pixel budget");
@@ -653,12 +661,29 @@ pub fn prepare_image(encoded: &[u8], max_pixels: usize, device: &Device) -> Resu
     let resized = if width as usize == grid[2] * 16 && height as usize == grid[1] * 16 {
         source
     } else {
-        image::imageops::resize(
-            &source,
+        use fast_image_resize::{
+            FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer, images::Image,
+        };
+        let source = Image::from_vec_u8(width, height, source.into_raw(), PixelType::U8x3)
+            .map_err(|e| candle_core::Error::Msg(e.to_string()))?;
+        let mut output = Image::new(
             (grid[2] * 16) as u32,
             (grid[1] * 16) as u32,
-            image::imageops::FilterType::CatmullRom,
+            PixelType::U8x3,
+        );
+        Resizer::new()
+            .resize(
+                &source,
+                &mut output,
+                &ResizeOptions::new().resize_alg(ResizeAlg::Convolution(FilterType::CatmullRom)),
+            )
+            .map_err(|e| candle_core::Error::Msg(e.to_string()))?;
+        image::RgbImage::from_raw(
+            (grid[2] * 16) as u32,
+            (grid[1] * 16) as u32,
+            output.into_vec(),
         )
+        .ok_or_else(|| candle_core::Error::Msg("Invalid resized RGB buffer".into()))?
     };
     let mut patches = Vec::with_capacity(grid[1] * grid[2] * 3 * 2 * 16 * 16);
     for bh in 0..grid[1] / 2 {
@@ -697,9 +722,14 @@ impl VisionModel {
             || image.grid[2] == 0
             || !image.grid[1].is_multiple_of(2)
             || !image.grid[2].is_multiple_of(2)
-            || image.grid[1] * image.grid[2] > 65_536
+            || image.grid[1]
+                .checked_mul(image.grid[2])
+                .is_none_or(|n| n > 1024)
         {
             candle_core::bail!("Invalid bounded image patch grid");
+        }
+        if image.pixels.dims2()? != (image.grid[1] * image.grid[2], 3 * 2 * 16 * 16) {
+            candle_core::bail!("Image pixels disagree with bounded patch grid");
         }
         let grid = Tensor::from_vec(
             image.grid.iter().map(|&x| x as u32).collect::<Vec<_>>(),
@@ -830,6 +860,30 @@ mod tests {
         assert!(resize_grid(128, 128, 512).is_err());
         assert!(resize_grid(40_000, 1, 65_536).is_err());
     }
+    #[test]
+    fn fixed_point_resize_matches_independent_pillow_fixtures() {
+        for (source, expected) in [
+            (
+                &include_bytes!("../../tests/fixtures/vision/downsample-source.png")[..],
+                &include_bytes!("../../tests/fixtures/vision/downsample-pillow.png")[..],
+            ),
+            (
+                &include_bytes!("../../tests/fixtures/vision/upsample-source.png")[..],
+                &include_bytes!("../../tests/fixtures/vision/upsample-pillow.png")[..],
+            ),
+        ] {
+            let a = prepare_image(source, 65536, &Device::Cpu).unwrap();
+            let b = prepare_image(expected, 65536, &Device::Cpu).unwrap();
+            assert_eq!(a.grid, b.grid);
+            assert_eq!(
+                a.pixels.to_vec2::<f32>().unwrap(),
+                b.pixels.to_vec2::<f32>().unwrap()
+            );
+        }
+        assert_eq!(resize_grid(320, 192, 65536).unwrap(), [1, 12, 20]);
+        assert!(resize_grid(256, 256, 262145).is_err());
+    }
+
     #[test]
     fn processor_patch_order_normalization_and_temporal_repeat() {
         let image = image::RgbImage::from_fn(32, 32, |x, y| {

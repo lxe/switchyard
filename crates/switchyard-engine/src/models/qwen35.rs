@@ -1397,6 +1397,36 @@ mod vision_position_tests {
         assert_eq!(delta, -3);
     }
     #[test]
+    fn spatial_rotary_matches_text_rotary_when_axes_are_equal() {
+        let table = Tensor::arange(0f32, 64. * 32., &Device::Cpu)
+            .unwrap()
+            .reshape((64, 32))
+            .unwrap();
+        let rope = Qwen3_5TextRotaryEmbedding {
+            cos: table.cos().unwrap(),
+            sin: table.sin().unwrap(),
+            mrope_section: Some([11, 11, 10]),
+        };
+        let query = Tensor::arange(0f32, 2. * 5. * 80., &Device::Cpu)
+            .unwrap()
+            .reshape((1, 2, 5, 80))
+            .unwrap();
+        let axis = Tensor::arange(0u32, 5, &Device::Cpu).unwrap();
+        let positions = Tensor::stack(&[&axis, &axis, &axis], 0)
+            .unwrap()
+            .unsqueeze(1)
+            .unwrap();
+        let (text, _) = rope.apply(&query, &query, 0).unwrap();
+        let (spatial, _) = rope
+            .apply_positions(&query, &query, Positions::Multimodal(&positions))
+            .unwrap();
+        assert_eq!(
+            text.flatten_all().unwrap().to_vec1::<f32>().unwrap(),
+            spatial.flatten_all().unwrap().to_vec1::<f32>().unwrap()
+        );
+    }
+
+    #[test]
     fn invalid_or_overlapping_spans_fail() {
         let mut image = ImageSpan {
             offset: 2,
