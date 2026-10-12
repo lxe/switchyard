@@ -1,0 +1,2923 @@
+{
+  "format": "native-cloud-simulation-comparison-v1",
+  "identity": {
+    "calibrated_input_sha256": "342acfffea41ee90f1967fad9f50e647e22bfe527c4cd50cbb0693510729899b",
+    "fit": false,
+    "format": "empirical-replay-v1",
+    "input_sha256": "da484ebe40e9cb801636811a059a03837260e56cf25d002d0229224eaa32a3f2",
+    "max_relative_error": 0.2,
+    "seed": 7,
+    "seeds": 3,
+    "simulator_sha256": "80d28f68853c33efd6572098f864a8b7b2925b628f7a8d4c9b42c73d8cd9a7b6",
+    "source_commit": "4b6169233d94515edb58b40723bfeee97e8bea21",
+    "source_dirty": false
+  },
+  "comparison_sha256": "01a50f88bf7c7fe123b652802e5e29e0f111866b2f70350f3f6f695e3cc2926d",
+  "completed_calls": 13230,
+  "unique_cases": 33,
+  "seeds_identical": true,
+  "validation": {
+    "relative_error_limit": 0.2,
+    "held_out_cases_per_seed": 24,
+    "failed_cases_per_seed": 10,
+    "exit_status": 1,
+    "passed": false
+  },
+  "fuzz": {
+    "seed": 42,
+    "cases": 1000,
+    "policies": 5,
+    "simulations": 5000,
+    "failures": 0
+  },
+  "http_configuration_check": {
+    "rejection_status": 429,
+    "rejection": {
+      "error": {
+        "code": "capacity_exceeded",
+        "message": "capacity: no instance available in the configured environment",
+        "param": null,
+        "type": "capacity_exceeded"
+      }
+    },
+    "instances_after_rejection": 1,
+    "allocation_at_s": 10.0,
+    "ready_at_s": 16.0,
+    "startup_samples_private": true,
+    "passed": true
+  },
+  "scope": "Held-out serving workloads under recorded in-sample environmental traces. Sequential sampling is repeatable across seeds, not an independent confidence estimate.",
+  "comparisons": [
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 102.348857787,
+        "output_tps": 0.3126561516357687,
+        "ttft_p50_s": 101.619508429,
+        "ttft_p95_s": 101.619508429,
+        "ttft_p99_s": 101.619508429,
+        "rental_usd": 0.006137599917541973
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 101.28559588523723,
+        "output_tps": 0.3159383100856508,
+        "ttft_p50_s": 100.54750064714197,
+        "ttft_p95_s": 100.54750064714197,
+        "ttft_p99_s": 100.54750064714197,
+        "rental_usd": 0.006054240081973791
+      },
+      "throughput_error_fraction": 0.010497661513168222,
+      "ttft_p95_error_fraction": -0.010549232115278584,
+      "launched": 1,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 1.562102711999998,
+        "output_tps": 20.485208657649423,
+        "ttft_p50_s": 0.7747272479999907,
+        "ttft_p95_s": 0.7747272479999907,
+        "ttft_p99_s": 0.7747272479999907,
+        "rental_usd": 0.00025779445072986965
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 1.5152380952380955,
+        "output_tps": 21.118793211816463,
+        "ttft_p50_s": 0.7771428571428571,
+        "ttft_p95_s": 0.7771428571428571,
+        "ttft_p99_s": 0.7771428571428571,
+        "rental_usd": 0.00025006041168369937
+      },
+      "throughput_error_fraction": 0.03092887969830138,
+      "ttft_p95_error_fraction": 0.0031180123702923,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 192.588491152,
+        "output_tps": 134.8003707008138,
+        "ttft_p50_s": 97.336504853,
+        "ttft_p95_s": 182.51597689699997,
+        "ttft_p99_s": 190.211994682,
+        "rental_usd": 0.03178296366316575
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 186.60332957314526,
+        "output_tps": 139.12399129954292,
+        "ttft_p50_s": 93.9693462253242,
+        "ttft_p95_s": 176.97095850877557,
+        "ttft_p99_s": 183.96967412755535,
+        "rental_usd": 0.03079522984622264
+      },
+      "throughput_error_fraction": 0.03207424858144714,
+      "ttft_p95_error_fraction": -0.030381002707251525,
+      "launched": 0,
+      "capacity_rejections": 6,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 21.610902935000013,
+        "output_tps": 121.5127386346756,
+        "ttft_p50_s": 10.818932709000023,
+        "ttft_p95_s": 20.231121140000027,
+        "ttft_p99_s": 20.89734332500001,
+        "rental_usd": 0.0035664568053688714
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 20.280801857492104,
+        "output_tps": 129.4820598540539,
+        "ttft_p50_s": 11.05895367670876,
+        "ttft_p95_s": 18.058710703431515,
+        "ttft_p99_s": 19.45228469433288,
+        "rental_usd": 0.003346949682494036
+      },
+      "throughput_error_fraction": 0.06558424498469928,
+      "ttft_p95_error_fraction": -0.1073796366269254,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 19.66038663800003,
+        "output_tps": 133.5680751529275,
+        "ttft_p50_s": 10.176201314000023,
+        "ttft_p95_s": 18.278582395,
+        "ttft_p99_s": 18.323057534000043,
+        "rental_usd": 0.003244562248828131
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 19.557707881417198,
+        "output_tps": 134.26931294413595,
+        "ttft_p50_s": 9.658953676708766,
+        "ttft_p95_s": 17.358953676708747,
+        "ttft_p99_s": 18.740281995661594,
+        "rental_usd": 0.003227617164448493
+      },
+      "throughput_error_fraction": 0.005250040403783407,
+      "ttft_p95_error_fraction": -0.05031181841228627,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 19.16982914499999,
+        "output_tps": 136.98609310166603,
+        "ttft_p50_s": 9.814923915999998,
+        "ttft_p95_s": 17.124301957,
+        "ttft_p99_s": 18.36225184899996,
+        "rental_usd": 0.0031636053260905295
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 20.957707881417218,
+        "output_tps": 125.29996194519067,
+        "ttft_p50_s": 11.057787495950743,
+        "ttft_p95_s": 18.758953676708767,
+        "ttft_p99_s": 20.140281995661613,
+        "rental_usd": 0.003458659782408922
+      },
+      "throughput_error_fraction": -0.08530888714230533,
+      "ttft_p95_error_fraction": 0.09545800604389365,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 7.274241914000015,
+        "output_tps": 125.3738892357654,
+        "ttft_p50_s": 2.058168445999968,
+        "ttft_p95_s": 3.75575650899998,
+        "ttft_p99_s": 3.854133958999989,
+        "rental_usd": 0.0012004713339513265
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.717313688848559,
+        "output_tps": 135.7685590169795,
+        "ttft_p50_s": 1.8405184089961546,
+        "ttft_p95_s": 3.1562325882734026,
+        "ttft_p99_s": 3.158953676708776,
+        "rental_usd": 0.001108561243094985
+      },
+      "throughput_error_fraction": 0.08290936689111517,
+      "ttft_p95_error_fraction": -0.15962800551365042,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 16.677437192000014,
+        "output_tps": 70.99412136104173,
+        "ttft_p50_s": 8.985673577,
+        "ttft_p95_s": 15.699190568000006,
+        "ttft_p99_s": 15.844213996999995,
+        "rental_usd": 0.002752284786730258
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 13.091738927086626,
+        "output_tps": 90.43871151068561,
+        "ttft_p50_s": 6.84109446262452,
+        "ttft_p95_s": 11.823063783350133,
+        "ttft_p99_s": 12.318998226675316,
+        "rental_usd": 0.0021605354538346533
+      },
+      "throughput_error_fraction": 0.2738901443791113,
+      "ttft_p95_error_fraction": -0.24689978555650283,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 8.539161529000012,
+        "output_tps": 109.02709789927415,
+        "ttft_p50_s": 3.418530626000006,
+        "ttft_p95_s": 6.972915069999999,
+        "ttft_p99_s": 7.817946095000025,
+        "rental_usd": 0.001409221563313294
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 10.02074395367402,
+        "output_tps": 92.90727358208338,
+        "ttft_p50_s": 4.682925170068029,
+        "ttft_p95_s": 9.140408163265297,
+        "ttft_p99_s": 9.16875283446711,
+        "rental_usd": 0.001653727797834255
+      },
+      "throughput_error_fraction": -0.14785153991793165,
+      "ttft_p95_error_fraction": 0.31084461398226937,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 7.79409248799999,
+        "output_tps": 131.38155616918584,
+        "ttft_p50_s": 3.858024854999997,
+        "ttft_p95_s": 6.904672688000005,
+        "ttft_p99_s": 6.904676345999974,
+        "rental_usd": 0.0012862624630432598
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.7228826212132775,
+        "output_tps": 152.31561484784615,
+        "ttft_p50_s": 2.6451700680272117,
+        "ttft_p95_s": 5.845170068027209,
+        "ttft_p99_s": 5.845170068027209,
+        "rental_usd": 0.0011094802864612626
+      },
+      "throughput_error_fraction": 0.15933788036200913,
+      "ttft_p95_error_fraction": -0.153447189729089,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 10.496621925,
+        "output_tps": 24.38879878013707,
+        "ttft_p50_s": 4.776797606999992,
+        "ttft_p95_s": 9.948828950999996,
+        "ttft_p99_s": 9.948828950999996,
+        "rental_usd": 0.0017322621216047315
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 12.915238095238072,
+        "output_tps": 19.821547083548445,
+        "ttft_p50_s": 5.577142857142856,
+        "ttft_p95_s": 12.177142857142835,
+        "ttft_p99_s": 12.177142857142835,
+        "rental_usd": 0.002131407443647166
+      },
+      "throughput_error_fraction": -0.18726841521642812,
+      "ttft_p95_error_fraction": 0.22397750701290953,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 38.929480878,
+        "output_tps": 0.7449367252258585,
+        "ttft_p50_s": 37.004477936,
+        "ttft_p95_s": 37.004477936,
+        "ttft_p99_s": 37.004477936,
+        "rental_usd": 0.006042893400403767
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 37.654229059803605,
+        "output_tps": 0.7701658146802397,
+        "ttft_p50_s": 36.596028001602555,
+        "ttft_p95_s": 36.596028001602555,
+        "ttft_p99_s": 36.596028001602555,
+        "rental_usd": 0.00588403315952695
+      },
+      "throughput_error_fraction": 0.03386742605116155,
+      "ttft_p95_error_fraction": -0.011037851556880973,
+      "launched": 1,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 2.204874468,
+        "output_tps": 13.152676227552018,
+        "ttft_p50_s": 1.2998310600000025,
+        "ttft_p95_s": 1.2998310600000025,
+        "ttft_p99_s": 1.2998310600000025,
+        "rental_usd": 0.000363871362128081
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 2.332660619803477,
+        "output_tps": 12.432155691145162,
+        "ttft_p50_s": 1.2744595616024184,
+        "ttft_p95_s": 1.2744595616024184,
+        "ttft_p99_s": 1.2744595616024184,
+        "rental_usd": 0.0003849600117232755
+      },
+      "throughput_error_fraction": -0.05478128739286692,
+      "ttft_p95_error_fraction": -0.01951907380762552,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 285.43748859299996,
+        "output_tps": 112.05605878072596,
+        "ttft_p50_s": 142.716872198,
+        "ttft_p95_s": 265.814528634,
+        "ttft_p99_s": 278.23637962,
+        "rental_usd": 0.0937107411188278
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 280.40795946361527,
+        "output_tps": 114.06594898797891,
+        "ttft_p50_s": 153.87228577027085,
+        "ttft_p95_s": 265.97228577026675,
+        "ttft_p99_s": 278.67228577026964,
+        "rental_usd": 0.09085188509845507
+      },
+      "throughput_error_fraction": 0.017936470630168788,
+      "ttft_p95_error_fraction": 0.0005934857551896933,
+      "launched": 1,
+      "capacity_rejections": 14,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 30.006032369000025,
+        "output_tps": 106.3452828670778,
+        "ttft_p50_s": 15.314292779000027,
+        "ttft_p95_s": 25.50070339199999,
+        "ttft_p99_s": 27.666473343000007,
+        "rental_usd": 0.009903817435687828
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 27.843937157709174,
+        "output_tps": 114.60304560831496,
+        "ttft_p50_s": 15.187806052462108,
+        "ttft_p95_s": 23.129075893732015,
+        "ttft_p99_s": 26.405155017172646,
+        "rental_usd": 0.009190194478918166
+      },
+      "throughput_error_fraction": 0.07765048452180645,
+      "ttft_p95_error_fraction": -0.09300243455292279,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 31.024177568000027,
+        "output_tps": 102.85526483355888,
+        "ttft_p50_s": 13.542919829000027,
+        "ttft_p95_s": 26.55321332699998,
+        "ttft_p99_s": 27.531376154999975,
+        "rental_usd": 0.01023986736595396
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 30.743937157709215,
+        "output_tps": 103.7928220979283,
+        "ttft_p50_s": 14.92907589373195,
+        "ttft_p95_s": 26.22907589373206,
+        "ttft_p99_s": 29.305155017172687,
+        "rental_usd": 0.010147371039039944
+      },
+      "throughput_error_fraction": 0.009115306502652798,
+      "ttft_p95_error_fraction": -0.012207088809787492,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 29.345460834999983,
+        "output_tps": 108.73913406717172,
+        "ttft_p50_s": 14.272516214000008,
+        "ttft_p95_s": 24.073885203999964,
+        "ttft_p99_s": 26.367591522999987,
+        "rental_usd": 0.009685788628525873
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 28.34393715770918,
+        "output_tps": 112.58139552895847,
+        "ttft_p50_s": 15.229075893731949,
+        "ttft_p95_s": 22.929075893732012,
+        "ttft_p99_s": 26.905155017172653,
+        "rental_usd": 0.009355224920318471
+      },
+      "throughput_error_fraction": 0.03533467039946503,
+      "ttft_p95_error_fraction": -0.04755399058219889,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 11.957984151999996,
+        "output_tps": 84.8805272776883,
+        "ttft_p50_s": 2.909290519000024,
+        "ttft_p95_s": 5.772507082999994,
+        "ttft_p99_s": 5.872469650999994,
+        "rental_usd": 0.003946862678486346
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 9.064749587077626,
+        "output_tps": 111.97220510613406,
+        "ttft_p50_s": 2.67433666470704,
+        "ttft_p95_s": 5.518753192209231,
+        "ttft_p99_s": 5.629075893731975,
+        "rental_usd": 0.0029919192510772957
+      },
+      "throughput_error_fraction": 0.3191742405159055,
+      "ttft_p95_error_fraction": -0.043959043642937456,
+      "launched": 0,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 15.553150498999967,
+        "output_tps": 76.12605562301532,
+        "ttft_p50_s": 6.548981272999981,
+        "ttft_p95_s": 13.684332887999972,
+        "ttft_p99_s": 13.927790931000004,
+        "rental_usd": 0.005133486480886629
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 15.318696104951671,
+        "output_tps": 77.2911736017323,
+        "ttft_p50_s": 7.390810774213985,
+        "ttft_p95_s": 13.025654949440504,
+        "ttft_p99_s": 13.999428742238857,
+        "rental_usd": 0.0050561023597545975
+      },
+      "throughput_error_fraction": 0.015305114250063978,
+      "ttft_p95_error_fraction": -0.048133726645679165,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 10.706253233999972,
+        "output_tps": 69.49209809807884,
+        "ttft_p50_s": 3.947759251999969,
+        "ttft_p95_s": 8.373540031999994,
+        "ttft_p99_s": 8.374853329000018,
+        "rental_usd": 0.0035337153227727736
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 12.372249768438953,
+        "output_tps": 60.134576485669584,
+        "ttft_p50_s": 5.130310461633212,
+        "ttft_p95_s": 11.173689388641268,
+        "ttft_p99_s": 11.255553070828107,
+        "rental_usd": 0.004083595680800589
+      },
+      "throughput_error_fraction": -0.13465590863586197,
+      "ttft_p95_error_fraction": 0.33440448674519163,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 10.712550694000017,
+        "output_tps": 95.58881252935694,
+        "ttft_p50_s": 2.96499387099999,
+        "ttft_p95_s": 7.732795103000001,
+        "ttft_p99_s": 7.733426704999999,
+        "rental_usd": 0.0035357938602233463
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.7108304479264245,
+        "output_tps": 152.58916283846884,
+        "ttft_p50_s": 1.6858660171887687,
+        "ttft_p95_s": 4.98586601718877,
+        "ttft_p99_s": 4.98586601718877,
+        "rental_usd": 0.002214982621967801
+      },
+      "throughput_error_fraction": 0.596307756115352,
+      "ttft_p95_error_fraction": -0.35523107094167505,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 19.91088033799997,
+        "output_tps": 12.555949096980624,
+        "ttft_p50_s": 8.35998062699997,
+        "ttft_p95_s": 18.377327115000018,
+        "ttft_p99_s": 18.377327115000018,
+        "rental_usd": 0.006571802639708774
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 22.746039304610754,
+        "output_tps": 10.99092447049995,
+        "ttft_p50_s": 9.674459561602406,
+        "ttft_p95_s": 21.57445956160244,
+        "ttft_p99_s": 21.57445956160244,
+        "rental_usd": 0.007507577813097172
+      },
+      "throughput_error_fraction": -0.12464407225551921,
+      "ttft_p95_error_fraction": 0.17397156978246553,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 55.695143461,
+        "output_tps": 0.5745563798108843,
+        "ttft_p50_s": 54.693936953000005,
+        "ttft_p95_s": 54.693936953000005,
+        "ttft_p99_s": 54.693936953000005,
+        "rental_usd": 0.013745811418978729
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 56.341741679480265,
+        "output_tps": 0.5679625628551422,
+        "ttft_p50_s": 55.622350609212,
+        "ttft_p95_s": 55.622350609212,
+        "ttft_p99_s": 55.622350609212,
+        "rental_usd": 0.013496520089115971
+      },
+      "throughput_error_fraction": -0.011476361915800815,
+      "ttft_p95_error_fraction": 0.016974708860505006,
+      "launched": 1,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 1.2124118139999993,
+        "output_tps": 26.39367220814628,
+        "ttft_p50_s": 0.5235522549999985,
+        "ttft_p95_s": 0.5235522549999985,
+        "ttft_p99_s": 0.5235522549999985,
+        "rental_usd": 0.00030111905966426905
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 1.246515362480275,
+        "output_tps": 25.67156487853263,
+        "ttft_p50_s": 0.5271242922120115,
+        "ttft_p95_s": 0.5271242922120115,
+        "ttft_p99_s": 0.5271242922120115,
+        "rental_usd": 0.0003095892606890698
+      },
+      "throughput_error_fraction": -0.02735910804373687,
+      "ttft_p95_error_fraction": 0.006822694731804857,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 199.868058659,
+        "output_tps": 160.10562275283826,
+        "ttft_p50_s": 131.17754326200003,
+        "ttft_p95_s": 190.21940889899997,
+        "ttft_p99_s": 197.847771688,
+        "rental_usd": 0.08234872344125727
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 172.5684126984073,
+        "output_tps": 185.43370423140794,
+        "ttft_p50_s": 112.43825396825191,
+        "ttft_p95_s": 165.63825396824888,
+        "ttft_p99_s": 171.23825396824856,
+        "rental_usd": 0.07019674883428481
+      },
+      "throughput_error_fraction": 0.15819607733370922,
+      "ttft_p95_error_fraction": -0.129225272400057,
+      "launched": 1,
+      "capacity_rejections": 6,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 16.869753405999973,
+        "output_tps": 189.68860557628977,
+        "ttft_p50_s": 9.641872251999985,
+        "ttft_p95_s": 14.871613314,
+        "ttft_p99_s": 15.805031276999957,
+        "rental_usd": 0.008379671193728636
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 12.961225508092953,
+        "output_tps": 246.89023410648392,
+        "ttft_p50_s": 6.423968253968249,
+        "ttft_p95_s": 10.223968253968236,
+        "ttft_p99_s": 12.018058902275744,
+        "rental_usd": 0.006438197784727756
+      },
+      "throughput_error_fraction": 0.30155542741437125,
+      "ttft_p95_error_fraction": -0.31251787966114697,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 13.972237687000018,
+        "output_tps": 229.0255914396109,
+        "ttft_p50_s": 6.324566491999974,
+        "ttft_p95_s": 11.207803447000003,
+        "ttft_p99_s": 13.07974743799997,
+        "rental_usd": 0.006940395211492978
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 12.961225508092953,
+        "output_tps": 246.89023410648392,
+        "ttft_p50_s": 6.423968253968249,
+        "ttft_p95_s": 10.223968253968236,
+        "ttft_p99_s": 12.018058902275744,
+        "rental_usd": 0.006438197784727756
+      },
+      "throughput_error_fraction": 0.07800282297964745,
+      "ttft_p95_error_fraction": -0.08778126755025406,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 7,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 14.075602072000038,
+        "output_tps": 227.3437387353835,
+        "ttft_p50_s": 6.296452643999999,
+        "ttft_p95_s": 11.173428459000036,
+        "ttft_p99_s": 13.079809194000006,
+        "rental_usd": 0.00699173918467226
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 14.06122550809295,
+        "output_tps": 227.57618090672378,
+        "ttft_p50_s": 7.5239682539682455,
+        "ttft_p95_s": 11.323968253968232,
+        "ttft_p99_s": 13.11805890227574,
+        "rental_usd": 0.006984598089141756
+      },
+      "throughput_error_fraction": 0.0010224260964177834,
+      "ttft_p95_error_fraction": 0.013473017303559987,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.562538168000003,
+        "output_tps": 184.0886244863605,
+        "ttft_p50_s": 1.1140032620000395,
+        "ttft_p95_s": 1.6133925629999908,
+        "ttft_p99_s": 1.6681212370000251,
+        "rental_usd": 0.002763065813428389
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 5.125479900011743,
+        "output_tps": 199.78617026625233,
+        "ttft_p50_s": 0.719340914822229,
+        "ttft_p95_s": 1.0168205480600765,
+        "ttft_p99_s": 1.0168205480600778,
+        "rental_usd": 0.0025459670705766093
+      },
+      "throughput_error_fraction": 0.0852716772896247,
+      "ttft_p95_error_fraction": -0.3697624673753487,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 16.124269047999974,
+        "output_tps": 73.42968518296098,
+        "ttft_p50_s": 8.124573608999981,
+        "ttft_p95_s": 14.46198278999998,
+        "ttft_p99_s": 15.196815673000003,
+        "rental_usd": 0.010130085818178395
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 6.855844621671153,
+        "output_tps": 172.6993631473802,
+        "ttft_p50_s": 2.8784178412954873,
+        "ttft_p95_s": 5.481862489786082,
+        "ttft_p99_s": 5.883004109909263,
+        "rental_usd": 0.005108230347676669
+      },
+      "throughput_error_fraction": 1.351901178890718,
+      "ttft_p95_error_fraction": -0.6209466869524543,
+      "launched": 1,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.768425097999966,
+        "output_tps": 148.74077160115792,
+        "ttft_p50_s": 2.2272720849999814,
+        "ttft_p95_s": 4.752230720999989,
+        "ttft_p99_s": 4.752949125999976,
+        "rental_usd": 0.004298003295138159
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 5.772909059679457,
+        "output_tps": 148.62524095393263,
+        "ttft_p50_s": 2.4525396825396824,
+        "ttft_p95_s": 4.752539682539685,
+        "ttft_p99_s": 4.752539682539685,
+        "rental_usd": 0.0028675629705120107
+      },
+      "throughput_error_fraction": -0.0007767248077418243,
+      "ttft_p95_error_fraction": 6.501400244096622e-05,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.058677222999961,
+        "output_tps": 202.4244589760037,
+        "ttft_p50_s": 1.3787798519999797,
+        "ttft_p95_s": 3.4722822609999753,
+        "ttft_p99_s": 4.232089827999971,
+        "rental_usd": 0.003769176260190993
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 3.824500973070832,
+        "output_tps": 267.7473498399434,
+        "ttft_p50_s": 0.7096825396825398,
+        "ttft_p95_s": 2.6096825396825407,
+        "ttft_p99_s": 2.6096825396825407,
+        "rental_usd": 0.001899734996288685
+      },
+      "throughput_error_fraction": 0.3227025587440664,
+      "ttft_p95_error_fraction": -0.24842442419096888,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 7,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 9.910372395000024,
+        "output_tps": 25.831521742730573,
+        "ttft_p50_s": 4.355722501999992,
+        "ttft_p95_s": 9.038966895999977,
+        "ttft_p99_s": 9.038966895999977,
+        "rental_usd": 0.00738413222288184
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 10.346515362480257,
+        "output_tps": 24.742629864382852,
+        "ttft_p50_s": 4.427124292212014,
+        "ttft_p95_s": 9.627124292211994,
+        "ttft_p99_s": 9.627124292211994,
+        "rental_usd": 0.005139399221530339
+      },
+      "throughput_error_fraction": -0.04215360942311319,
+      "ttft_p95_error_fraction": 0.06506909506132774,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 102.348857787,
+        "output_tps": 0.3126561516357687,
+        "ttft_p50_s": 101.619508429,
+        "ttft_p95_s": 101.619508429,
+        "ttft_p99_s": 101.619508429,
+        "rental_usd": 0.006137599917541973
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 101.28559588523723,
+        "output_tps": 0.3159383100856508,
+        "ttft_p50_s": 100.54750064714197,
+        "ttft_p95_s": 100.54750064714197,
+        "ttft_p99_s": 100.54750064714197,
+        "rental_usd": 0.006054240081973791
+      },
+      "throughput_error_fraction": 0.010497661513168222,
+      "ttft_p95_error_fraction": -0.010549232115278584,
+      "launched": 1,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 1.562102711999998,
+        "output_tps": 20.485208657649423,
+        "ttft_p50_s": 0.7747272479999907,
+        "ttft_p95_s": 0.7747272479999907,
+        "ttft_p99_s": 0.7747272479999907,
+        "rental_usd": 0.00025779445072986965
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 1.5152380952380955,
+        "output_tps": 21.118793211816463,
+        "ttft_p50_s": 0.7771428571428571,
+        "ttft_p95_s": 0.7771428571428571,
+        "ttft_p99_s": 0.7771428571428571,
+        "rental_usd": 0.00025006041168369937
+      },
+      "throughput_error_fraction": 0.03092887969830138,
+      "ttft_p95_error_fraction": 0.0031180123702923,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 192.588491152,
+        "output_tps": 134.8003707008138,
+        "ttft_p50_s": 97.336504853,
+        "ttft_p95_s": 182.51597689699997,
+        "ttft_p99_s": 190.211994682,
+        "rental_usd": 0.03178296366316575
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 186.60332957314526,
+        "output_tps": 139.12399129954292,
+        "ttft_p50_s": 93.9693462253242,
+        "ttft_p95_s": 176.97095850877557,
+        "ttft_p99_s": 183.96967412755535,
+        "rental_usd": 0.03079522984622264
+      },
+      "throughput_error_fraction": 0.03207424858144714,
+      "ttft_p95_error_fraction": -0.030381002707251525,
+      "launched": 0,
+      "capacity_rejections": 6,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 21.610902935000013,
+        "output_tps": 121.5127386346756,
+        "ttft_p50_s": 10.818932709000023,
+        "ttft_p95_s": 20.231121140000027,
+        "ttft_p99_s": 20.89734332500001,
+        "rental_usd": 0.0035664568053688714
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 20.280801857492104,
+        "output_tps": 129.4820598540539,
+        "ttft_p50_s": 11.05895367670876,
+        "ttft_p95_s": 18.058710703431515,
+        "ttft_p99_s": 19.45228469433288,
+        "rental_usd": 0.003346949682494036
+      },
+      "throughput_error_fraction": 0.06558424498469928,
+      "ttft_p95_error_fraction": -0.1073796366269254,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 19.66038663800003,
+        "output_tps": 133.5680751529275,
+        "ttft_p50_s": 10.176201314000023,
+        "ttft_p95_s": 18.278582395,
+        "ttft_p99_s": 18.323057534000043,
+        "rental_usd": 0.003244562248828131
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 19.557707881417198,
+        "output_tps": 134.26931294413595,
+        "ttft_p50_s": 9.658953676708766,
+        "ttft_p95_s": 17.358953676708747,
+        "ttft_p99_s": 18.740281995661594,
+        "rental_usd": 0.003227617164448493
+      },
+      "throughput_error_fraction": 0.005250040403783407,
+      "ttft_p95_error_fraction": -0.05031181841228627,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 19.16982914499999,
+        "output_tps": 136.98609310166603,
+        "ttft_p50_s": 9.814923915999998,
+        "ttft_p95_s": 17.124301957,
+        "ttft_p99_s": 18.36225184899996,
+        "rental_usd": 0.0031636053260905295
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 20.957707881417218,
+        "output_tps": 125.29996194519067,
+        "ttft_p50_s": 11.057787495950743,
+        "ttft_p95_s": 18.758953676708767,
+        "ttft_p99_s": 20.140281995661613,
+        "rental_usd": 0.003458659782408922
+      },
+      "throughput_error_fraction": -0.08530888714230533,
+      "ttft_p95_error_fraction": 0.09545800604389365,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 7.274241914000015,
+        "output_tps": 125.3738892357654,
+        "ttft_p50_s": 2.058168445999968,
+        "ttft_p95_s": 3.75575650899998,
+        "ttft_p99_s": 3.854133958999989,
+        "rental_usd": 0.0012004713339513265
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.717313688848559,
+        "output_tps": 135.7685590169795,
+        "ttft_p50_s": 1.8405184089961546,
+        "ttft_p95_s": 3.1562325882734026,
+        "ttft_p99_s": 3.158953676708776,
+        "rental_usd": 0.001108561243094985
+      },
+      "throughput_error_fraction": 0.08290936689111517,
+      "ttft_p95_error_fraction": -0.15962800551365042,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 16.677437192000014,
+        "output_tps": 70.99412136104173,
+        "ttft_p50_s": 8.985673577,
+        "ttft_p95_s": 15.699190568000006,
+        "ttft_p99_s": 15.844213996999995,
+        "rental_usd": 0.002752284786730258
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 13.091738927086626,
+        "output_tps": 90.43871151068561,
+        "ttft_p50_s": 6.84109446262452,
+        "ttft_p95_s": 11.823063783350133,
+        "ttft_p99_s": 12.318998226675316,
+        "rental_usd": 0.0021605354538346533
+      },
+      "throughput_error_fraction": 0.2738901443791113,
+      "ttft_p95_error_fraction": -0.24689978555650283,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 8.539161529000012,
+        "output_tps": 109.02709789927415,
+        "ttft_p50_s": 3.418530626000006,
+        "ttft_p95_s": 6.972915069999999,
+        "ttft_p99_s": 7.817946095000025,
+        "rental_usd": 0.001409221563313294
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 10.02074395367402,
+        "output_tps": 92.90727358208338,
+        "ttft_p50_s": 4.682925170068029,
+        "ttft_p95_s": 9.140408163265297,
+        "ttft_p99_s": 9.16875283446711,
+        "rental_usd": 0.001653727797834255
+      },
+      "throughput_error_fraction": -0.14785153991793165,
+      "ttft_p95_error_fraction": 0.31084461398226937,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 7.79409248799999,
+        "output_tps": 131.38155616918584,
+        "ttft_p50_s": 3.858024854999997,
+        "ttft_p95_s": 6.904672688000005,
+        "ttft_p99_s": 6.904676345999974,
+        "rental_usd": 0.0012862624630432598
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.7228826212132775,
+        "output_tps": 152.31561484784615,
+        "ttft_p50_s": 2.6451700680272117,
+        "ttft_p95_s": 5.845170068027209,
+        "ttft_p99_s": 5.845170068027209,
+        "rental_usd": 0.0011094802864612626
+      },
+      "throughput_error_fraction": 0.15933788036200913,
+      "ttft_p95_error_fraction": -0.153447189729089,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 10.496621925,
+        "output_tps": 24.38879878013707,
+        "ttft_p50_s": 4.776797606999992,
+        "ttft_p95_s": 9.948828950999996,
+        "ttft_p99_s": 9.948828950999996,
+        "rental_usd": 0.0017322621216047315
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 12.915238095238072,
+        "output_tps": 19.821547083548445,
+        "ttft_p50_s": 5.577142857142856,
+        "ttft_p95_s": 12.177142857142835,
+        "ttft_p99_s": 12.177142857142835,
+        "rental_usd": 0.002131407443647166
+      },
+      "throughput_error_fraction": -0.18726841521642812,
+      "ttft_p95_error_fraction": 0.22397750701290953,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 38.929480878,
+        "output_tps": 0.7449367252258585,
+        "ttft_p50_s": 37.004477936,
+        "ttft_p95_s": 37.004477936,
+        "ttft_p99_s": 37.004477936,
+        "rental_usd": 0.006042893400403767
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 37.654229059803605,
+        "output_tps": 0.7701658146802397,
+        "ttft_p50_s": 36.596028001602555,
+        "ttft_p95_s": 36.596028001602555,
+        "ttft_p99_s": 36.596028001602555,
+        "rental_usd": 0.00588403315952695
+      },
+      "throughput_error_fraction": 0.03386742605116155,
+      "ttft_p95_error_fraction": -0.011037851556880973,
+      "launched": 1,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 2.204874468,
+        "output_tps": 13.152676227552018,
+        "ttft_p50_s": 1.2998310600000025,
+        "ttft_p95_s": 1.2998310600000025,
+        "ttft_p99_s": 1.2998310600000025,
+        "rental_usd": 0.000363871362128081
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 2.332660619803477,
+        "output_tps": 12.432155691145162,
+        "ttft_p50_s": 1.2744595616024184,
+        "ttft_p95_s": 1.2744595616024184,
+        "ttft_p99_s": 1.2744595616024184,
+        "rental_usd": 0.0003849600117232755
+      },
+      "throughput_error_fraction": -0.05478128739286692,
+      "ttft_p95_error_fraction": -0.01951907380762552,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 285.43748859299996,
+        "output_tps": 112.05605878072596,
+        "ttft_p50_s": 142.716872198,
+        "ttft_p95_s": 265.814528634,
+        "ttft_p99_s": 278.23637962,
+        "rental_usd": 0.0937107411188278
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 280.40795946361527,
+        "output_tps": 114.06594898797891,
+        "ttft_p50_s": 153.87228577027085,
+        "ttft_p95_s": 265.97228577026675,
+        "ttft_p99_s": 278.67228577026964,
+        "rental_usd": 0.09085188509845507
+      },
+      "throughput_error_fraction": 0.017936470630168788,
+      "ttft_p95_error_fraction": 0.0005934857551896933,
+      "launched": 1,
+      "capacity_rejections": 14,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 30.006032369000025,
+        "output_tps": 106.3452828670778,
+        "ttft_p50_s": 15.314292779000027,
+        "ttft_p95_s": 25.50070339199999,
+        "ttft_p99_s": 27.666473343000007,
+        "rental_usd": 0.009903817435687828
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 27.843937157709174,
+        "output_tps": 114.60304560831496,
+        "ttft_p50_s": 15.187806052462108,
+        "ttft_p95_s": 23.129075893732015,
+        "ttft_p99_s": 26.405155017172646,
+        "rental_usd": 0.009190194478918166
+      },
+      "throughput_error_fraction": 0.07765048452180645,
+      "ttft_p95_error_fraction": -0.09300243455292279,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 31.024177568000027,
+        "output_tps": 102.85526483355888,
+        "ttft_p50_s": 13.542919829000027,
+        "ttft_p95_s": 26.55321332699998,
+        "ttft_p99_s": 27.531376154999975,
+        "rental_usd": 0.01023986736595396
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 30.743937157709215,
+        "output_tps": 103.7928220979283,
+        "ttft_p50_s": 14.92907589373195,
+        "ttft_p95_s": 26.22907589373206,
+        "ttft_p99_s": 29.305155017172687,
+        "rental_usd": 0.010147371039039944
+      },
+      "throughput_error_fraction": 0.009115306502652798,
+      "ttft_p95_error_fraction": -0.012207088809787492,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 29.345460834999983,
+        "output_tps": 108.73913406717172,
+        "ttft_p50_s": 14.272516214000008,
+        "ttft_p95_s": 24.073885203999964,
+        "ttft_p99_s": 26.367591522999987,
+        "rental_usd": 0.009685788628525873
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 28.34393715770918,
+        "output_tps": 112.58139552895847,
+        "ttft_p50_s": 15.229075893731949,
+        "ttft_p95_s": 22.929075893732012,
+        "ttft_p99_s": 26.905155017172653,
+        "rental_usd": 0.009355224920318471
+      },
+      "throughput_error_fraction": 0.03533467039946503,
+      "ttft_p95_error_fraction": -0.04755399058219889,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 11.957984151999996,
+        "output_tps": 84.8805272776883,
+        "ttft_p50_s": 2.909290519000024,
+        "ttft_p95_s": 5.772507082999994,
+        "ttft_p99_s": 5.872469650999994,
+        "rental_usd": 0.003946862678486346
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 9.064749587077626,
+        "output_tps": 111.97220510613406,
+        "ttft_p50_s": 2.67433666470704,
+        "ttft_p95_s": 5.518753192209231,
+        "ttft_p99_s": 5.629075893731975,
+        "rental_usd": 0.0029919192510772957
+      },
+      "throughput_error_fraction": 0.3191742405159055,
+      "ttft_p95_error_fraction": -0.043959043642937456,
+      "launched": 0,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 15.553150498999967,
+        "output_tps": 76.12605562301532,
+        "ttft_p50_s": 6.548981272999981,
+        "ttft_p95_s": 13.684332887999972,
+        "ttft_p99_s": 13.927790931000004,
+        "rental_usd": 0.005133486480886629
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 15.318696104951671,
+        "output_tps": 77.2911736017323,
+        "ttft_p50_s": 7.390810774213985,
+        "ttft_p95_s": 13.025654949440504,
+        "ttft_p99_s": 13.999428742238857,
+        "rental_usd": 0.0050561023597545975
+      },
+      "throughput_error_fraction": 0.015305114250063978,
+      "ttft_p95_error_fraction": -0.048133726645679165,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 10.706253233999972,
+        "output_tps": 69.49209809807884,
+        "ttft_p50_s": 3.947759251999969,
+        "ttft_p95_s": 8.373540031999994,
+        "ttft_p99_s": 8.374853329000018,
+        "rental_usd": 0.0035337153227727736
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 12.372249768438953,
+        "output_tps": 60.134576485669584,
+        "ttft_p50_s": 5.130310461633212,
+        "ttft_p95_s": 11.173689388641268,
+        "ttft_p99_s": 11.255553070828107,
+        "rental_usd": 0.004083595680800589
+      },
+      "throughput_error_fraction": -0.13465590863586197,
+      "ttft_p95_error_fraction": 0.33440448674519163,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 10.712550694000017,
+        "output_tps": 95.58881252935694,
+        "ttft_p50_s": 2.96499387099999,
+        "ttft_p95_s": 7.732795103000001,
+        "ttft_p99_s": 7.733426704999999,
+        "rental_usd": 0.0035357938602233463
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.7108304479264245,
+        "output_tps": 152.58916283846884,
+        "ttft_p50_s": 1.6858660171887687,
+        "ttft_p95_s": 4.98586601718877,
+        "ttft_p99_s": 4.98586601718877,
+        "rental_usd": 0.002214982621967801
+      },
+      "throughput_error_fraction": 0.596307756115352,
+      "ttft_p95_error_fraction": -0.35523107094167505,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 19.91088033799997,
+        "output_tps": 12.555949096980624,
+        "ttft_p50_s": 8.35998062699997,
+        "ttft_p95_s": 18.377327115000018,
+        "ttft_p99_s": 18.377327115000018,
+        "rental_usd": 0.006571802639708774
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 22.746039304610754,
+        "output_tps": 10.99092447049995,
+        "ttft_p50_s": 9.674459561602406,
+        "ttft_p95_s": 21.57445956160244,
+        "ttft_p99_s": 21.57445956160244,
+        "rental_usd": 0.007507577813097172
+      },
+      "throughput_error_fraction": -0.12464407225551921,
+      "ttft_p95_error_fraction": 0.17397156978246553,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 55.695143461,
+        "output_tps": 0.5745563798108843,
+        "ttft_p50_s": 54.693936953000005,
+        "ttft_p95_s": 54.693936953000005,
+        "ttft_p99_s": 54.693936953000005,
+        "rental_usd": 0.013745811418978729
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 56.341741679480265,
+        "output_tps": 0.5679625628551422,
+        "ttft_p50_s": 55.622350609212,
+        "ttft_p95_s": 55.622350609212,
+        "ttft_p99_s": 55.622350609212,
+        "rental_usd": 0.013496520089115971
+      },
+      "throughput_error_fraction": -0.011476361915800815,
+      "ttft_p95_error_fraction": 0.016974708860505006,
+      "launched": 1,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 1.2124118139999993,
+        "output_tps": 26.39367220814628,
+        "ttft_p50_s": 0.5235522549999985,
+        "ttft_p95_s": 0.5235522549999985,
+        "ttft_p99_s": 0.5235522549999985,
+        "rental_usd": 0.00030111905966426905
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 1.246515362480275,
+        "output_tps": 25.67156487853263,
+        "ttft_p50_s": 0.5271242922120115,
+        "ttft_p95_s": 0.5271242922120115,
+        "ttft_p99_s": 0.5271242922120115,
+        "rental_usd": 0.0003095892606890698
+      },
+      "throughput_error_fraction": -0.02735910804373687,
+      "ttft_p95_error_fraction": 0.006822694731804857,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 199.868058659,
+        "output_tps": 160.10562275283826,
+        "ttft_p50_s": 131.17754326200003,
+        "ttft_p95_s": 190.21940889899997,
+        "ttft_p99_s": 197.847771688,
+        "rental_usd": 0.08234872344125727
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 172.5684126984073,
+        "output_tps": 185.43370423140794,
+        "ttft_p50_s": 112.43825396825191,
+        "ttft_p95_s": 165.63825396824888,
+        "ttft_p99_s": 171.23825396824856,
+        "rental_usd": 0.07019674883428481
+      },
+      "throughput_error_fraction": 0.15819607733370922,
+      "ttft_p95_error_fraction": -0.129225272400057,
+      "launched": 1,
+      "capacity_rejections": 6,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 16.869753405999973,
+        "output_tps": 189.68860557628977,
+        "ttft_p50_s": 9.641872251999985,
+        "ttft_p95_s": 14.871613314,
+        "ttft_p99_s": 15.805031276999957,
+        "rental_usd": 0.008379671193728636
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 12.961225508092953,
+        "output_tps": 246.89023410648392,
+        "ttft_p50_s": 6.423968253968249,
+        "ttft_p95_s": 10.223968253968236,
+        "ttft_p99_s": 12.018058902275744,
+        "rental_usd": 0.006438197784727756
+      },
+      "throughput_error_fraction": 0.30155542741437125,
+      "ttft_p95_error_fraction": -0.31251787966114697,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 13.972237687000018,
+        "output_tps": 229.0255914396109,
+        "ttft_p50_s": 6.324566491999974,
+        "ttft_p95_s": 11.207803447000003,
+        "ttft_p99_s": 13.07974743799997,
+        "rental_usd": 0.006940395211492978
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 12.961225508092953,
+        "output_tps": 246.89023410648392,
+        "ttft_p50_s": 6.423968253968249,
+        "ttft_p95_s": 10.223968253968236,
+        "ttft_p99_s": 12.018058902275744,
+        "rental_usd": 0.006438197784727756
+      },
+      "throughput_error_fraction": 0.07800282297964745,
+      "ttft_p95_error_fraction": -0.08778126755025406,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 8,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 14.075602072000038,
+        "output_tps": 227.3437387353835,
+        "ttft_p50_s": 6.296452643999999,
+        "ttft_p95_s": 11.173428459000036,
+        "ttft_p99_s": 13.079809194000006,
+        "rental_usd": 0.00699173918467226
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 14.06122550809295,
+        "output_tps": 227.57618090672378,
+        "ttft_p50_s": 7.5239682539682455,
+        "ttft_p95_s": 11.323968253968232,
+        "ttft_p99_s": 13.11805890227574,
+        "rental_usd": 0.006984598089141756
+      },
+      "throughput_error_fraction": 0.0010224260964177834,
+      "ttft_p95_error_fraction": 0.013473017303559987,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.562538168000003,
+        "output_tps": 184.0886244863605,
+        "ttft_p50_s": 1.1140032620000395,
+        "ttft_p95_s": 1.6133925629999908,
+        "ttft_p99_s": 1.6681212370000251,
+        "rental_usd": 0.002763065813428389
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 5.125479900011743,
+        "output_tps": 199.78617026625233,
+        "ttft_p50_s": 0.719340914822229,
+        "ttft_p95_s": 1.0168205480600765,
+        "ttft_p99_s": 1.0168205480600778,
+        "rental_usd": 0.0025459670705766093
+      },
+      "throughput_error_fraction": 0.0852716772896247,
+      "ttft_p95_error_fraction": -0.3697624673753487,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 16.124269047999974,
+        "output_tps": 73.42968518296098,
+        "ttft_p50_s": 8.124573608999981,
+        "ttft_p95_s": 14.46198278999998,
+        "ttft_p99_s": 15.196815673000003,
+        "rental_usd": 0.010130085818178395
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 6.855844621671153,
+        "output_tps": 172.6993631473802,
+        "ttft_p50_s": 2.8784178412954873,
+        "ttft_p95_s": 5.481862489786082,
+        "ttft_p99_s": 5.883004109909263,
+        "rental_usd": 0.005108230347676669
+      },
+      "throughput_error_fraction": 1.351901178890718,
+      "ttft_p95_error_fraction": -0.6209466869524543,
+      "launched": 1,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.768425097999966,
+        "output_tps": 148.74077160115792,
+        "ttft_p50_s": 2.2272720849999814,
+        "ttft_p95_s": 4.752230720999989,
+        "ttft_p99_s": 4.752949125999976,
+        "rental_usd": 0.004298003295138159
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 5.772909059679457,
+        "output_tps": 148.62524095393263,
+        "ttft_p50_s": 2.4525396825396824,
+        "ttft_p95_s": 4.752539682539685,
+        "ttft_p99_s": 4.752539682539685,
+        "rental_usd": 0.0028675629705120107
+      },
+      "throughput_error_fraction": -0.0007767248077418243,
+      "ttft_p95_error_fraction": 6.501400244096622e-05,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.058677222999961,
+        "output_tps": 202.4244589760037,
+        "ttft_p50_s": 1.3787798519999797,
+        "ttft_p95_s": 3.4722822609999753,
+        "ttft_p99_s": 4.232089827999971,
+        "rental_usd": 0.003769176260190993
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 3.824500973070832,
+        "output_tps": 267.7473498399434,
+        "ttft_p50_s": 0.7096825396825398,
+        "ttft_p95_s": 2.6096825396825407,
+        "ttft_p99_s": 2.6096825396825407,
+        "rental_usd": 0.001899734996288685
+      },
+      "throughput_error_fraction": 0.3227025587440664,
+      "ttft_p95_error_fraction": -0.24842442419096888,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 8,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 9.910372395000024,
+        "output_tps": 25.831521742730573,
+        "ttft_p50_s": 4.355722501999992,
+        "ttft_p95_s": 9.038966895999977,
+        "ttft_p99_s": 9.038966895999977,
+        "rental_usd": 0.00738413222288184
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 10.346515362480257,
+        "output_tps": 24.742629864382852,
+        "ttft_p50_s": 4.427124292212014,
+        "ttft_p95_s": 9.627124292211994,
+        "ttft_p99_s": 9.627124292211994,
+        "rental_usd": 0.005139399221530339
+      },
+      "throughput_error_fraction": -0.04215360942311319,
+      "ttft_p95_error_fraction": 0.06506909506132774,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 102.348857787,
+        "output_tps": 0.3126561516357687,
+        "ttft_p50_s": 101.619508429,
+        "ttft_p95_s": 101.619508429,
+        "ttft_p99_s": 101.619508429,
+        "rental_usd": 0.006137599917541973
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 101.28559588523723,
+        "output_tps": 0.3159383100856508,
+        "ttft_p50_s": 100.54750064714197,
+        "ttft_p95_s": 100.54750064714197,
+        "ttft_p99_s": 100.54750064714197,
+        "rental_usd": 0.006054240081973791
+      },
+      "throughput_error_fraction": 0.010497661513168222,
+      "ttft_p95_error_fraction": -0.010549232115278584,
+      "launched": 1,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 1.562102711999998,
+        "output_tps": 20.485208657649423,
+        "ttft_p50_s": 0.7747272479999907,
+        "ttft_p95_s": 0.7747272479999907,
+        "ttft_p99_s": 0.7747272479999907,
+        "rental_usd": 0.00025779445072986965
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 1.5152380952380955,
+        "output_tps": 21.118793211816463,
+        "ttft_p50_s": 0.7771428571428571,
+        "ttft_p95_s": 0.7771428571428571,
+        "ttft_p99_s": 0.7771428571428571,
+        "rental_usd": 0.00025006041168369937
+      },
+      "throughput_error_fraction": 0.03092887969830138,
+      "ttft_p95_error_fraction": 0.0031180123702923,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 192.588491152,
+        "output_tps": 134.8003707008138,
+        "ttft_p50_s": 97.336504853,
+        "ttft_p95_s": 182.51597689699997,
+        "ttft_p99_s": 190.211994682,
+        "rental_usd": 0.03178296366316575
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 186.60332957314526,
+        "output_tps": 139.12399129954292,
+        "ttft_p50_s": 93.9693462253242,
+        "ttft_p95_s": 176.97095850877557,
+        "ttft_p99_s": 183.96967412755535,
+        "rental_usd": 0.03079522984622264
+      },
+      "throughput_error_fraction": 0.03207424858144714,
+      "ttft_p95_error_fraction": -0.030381002707251525,
+      "launched": 0,
+      "capacity_rejections": 6,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 21.610902935000013,
+        "output_tps": 121.5127386346756,
+        "ttft_p50_s": 10.818932709000023,
+        "ttft_p95_s": 20.231121140000027,
+        "ttft_p99_s": 20.89734332500001,
+        "rental_usd": 0.0035664568053688714
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 20.280801857492104,
+        "output_tps": 129.4820598540539,
+        "ttft_p50_s": 11.05895367670876,
+        "ttft_p95_s": 18.058710703431515,
+        "ttft_p99_s": 19.45228469433288,
+        "rental_usd": 0.003346949682494036
+      },
+      "throughput_error_fraction": 0.06558424498469928,
+      "ttft_p95_error_fraction": -0.1073796366269254,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 19.66038663800003,
+        "output_tps": 133.5680751529275,
+        "ttft_p50_s": 10.176201314000023,
+        "ttft_p95_s": 18.278582395,
+        "ttft_p99_s": 18.323057534000043,
+        "rental_usd": 0.003244562248828131
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 19.557707881417198,
+        "output_tps": 134.26931294413595,
+        "ttft_p50_s": 9.658953676708766,
+        "ttft_p95_s": 17.358953676708747,
+        "ttft_p99_s": 18.740281995661594,
+        "rental_usd": 0.003227617164448493
+      },
+      "throughput_error_fraction": 0.005250040403783407,
+      "ttft_p95_error_fraction": -0.05031181841228627,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 19.16982914499999,
+        "output_tps": 136.98609310166603,
+        "ttft_p50_s": 9.814923915999998,
+        "ttft_p95_s": 17.124301957,
+        "ttft_p99_s": 18.36225184899996,
+        "rental_usd": 0.0031636053260905295
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 20.957707881417218,
+        "output_tps": 125.29996194519067,
+        "ttft_p50_s": 11.057787495950743,
+        "ttft_p95_s": 18.758953676708767,
+        "ttft_p99_s": 20.140281995661613,
+        "rental_usd": 0.003458659782408922
+      },
+      "throughput_error_fraction": -0.08530888714230533,
+      "ttft_p95_error_fraction": 0.09545800604389365,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 7.274241914000015,
+        "output_tps": 125.3738892357654,
+        "ttft_p50_s": 2.058168445999968,
+        "ttft_p95_s": 3.75575650899998,
+        "ttft_p99_s": 3.854133958999989,
+        "rental_usd": 0.0012004713339513265
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.717313688848559,
+        "output_tps": 135.7685590169795,
+        "ttft_p50_s": 1.8405184089961546,
+        "ttft_p95_s": 3.1562325882734026,
+        "ttft_p99_s": 3.158953676708776,
+        "rental_usd": 0.001108561243094985
+      },
+      "throughput_error_fraction": 0.08290936689111517,
+      "ttft_p95_error_fraction": -0.15962800551365042,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 16.677437192000014,
+        "output_tps": 70.99412136104173,
+        "ttft_p50_s": 8.985673577,
+        "ttft_p95_s": 15.699190568000006,
+        "ttft_p99_s": 15.844213996999995,
+        "rental_usd": 0.002752284786730258
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 13.091738927086626,
+        "output_tps": 90.43871151068561,
+        "ttft_p50_s": 6.84109446262452,
+        "ttft_p95_s": 11.823063783350133,
+        "ttft_p99_s": 12.318998226675316,
+        "rental_usd": 0.0021605354538346533
+      },
+      "throughput_error_fraction": 0.2738901443791113,
+      "ttft_p95_error_fraction": -0.24689978555650283,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 8.539161529000012,
+        "output_tps": 109.02709789927415,
+        "ttft_p50_s": 3.418530626000006,
+        "ttft_p95_s": 6.972915069999999,
+        "ttft_p99_s": 7.817946095000025,
+        "rental_usd": 0.001409221563313294
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 10.02074395367402,
+        "output_tps": 92.90727358208338,
+        "ttft_p50_s": 4.682925170068029,
+        "ttft_p95_s": 9.140408163265297,
+        "ttft_p99_s": 9.16875283446711,
+        "rental_usd": 0.001653727797834255
+      },
+      "throughput_error_fraction": -0.14785153991793165,
+      "ttft_p95_error_fraction": 0.31084461398226937,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 7.79409248799999,
+        "output_tps": 131.38155616918584,
+        "ttft_p50_s": 3.858024854999997,
+        "ttft_p95_s": 6.904672688000005,
+        "ttft_p99_s": 6.904676345999974,
+        "rental_usd": 0.0012862624630432598
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.7228826212132775,
+        "output_tps": 152.31561484784615,
+        "ttft_p50_s": 2.6451700680272117,
+        "ttft_p95_s": 5.845170068027209,
+        "ttft_p99_s": 5.845170068027209,
+        "rental_usd": 0.0011094802864612626
+      },
+      "throughput_error_fraction": 0.15933788036200913,
+      "ttft_p95_error_fraction": -0.153447189729089,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-0.8b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 10.496621925,
+        "output_tps": 24.38879878013707,
+        "ttft_p50_s": 4.776797606999992,
+        "ttft_p95_s": 9.948828950999996,
+        "ttft_p99_s": 9.948828950999996,
+        "rental_usd": 0.0017322621216047315
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 12.915238095238072,
+        "output_tps": 19.821547083548445,
+        "ttft_p50_s": 5.577142857142856,
+        "ttft_p95_s": 12.177142857142835,
+        "ttft_p99_s": 12.177142857142835,
+        "rental_usd": 0.002131407443647166
+      },
+      "throughput_error_fraction": -0.18726841521642812,
+      "ttft_p95_error_fraction": 0.22397750701290953,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 38.929480878,
+        "output_tps": 0.7449367252258585,
+        "ttft_p50_s": 37.004477936,
+        "ttft_p95_s": 37.004477936,
+        "ttft_p99_s": 37.004477936,
+        "rental_usd": 0.006042893400403767
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 37.654229059803605,
+        "output_tps": 0.7701658146802397,
+        "ttft_p50_s": 36.596028001602555,
+        "ttft_p95_s": 36.596028001602555,
+        "ttft_p99_s": 36.596028001602555,
+        "rental_usd": 0.00588403315952695
+      },
+      "throughput_error_fraction": 0.03386742605116155,
+      "ttft_p95_error_fraction": -0.011037851556880973,
+      "launched": 1,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 2.204874468,
+        "output_tps": 13.152676227552018,
+        "ttft_p50_s": 1.2998310600000025,
+        "ttft_p95_s": 1.2998310600000025,
+        "ttft_p99_s": 1.2998310600000025,
+        "rental_usd": 0.000363871362128081
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 2.332660619803477,
+        "output_tps": 12.432155691145162,
+        "ttft_p50_s": 1.2744595616024184,
+        "ttft_p95_s": 1.2744595616024184,
+        "ttft_p99_s": 1.2744595616024184,
+        "rental_usd": 0.0003849600117232755
+      },
+      "throughput_error_fraction": -0.05478128739286692,
+      "ttft_p95_error_fraction": -0.01951907380762552,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 285.43748859299996,
+        "output_tps": 112.05605878072596,
+        "ttft_p50_s": 142.716872198,
+        "ttft_p95_s": 265.814528634,
+        "ttft_p99_s": 278.23637962,
+        "rental_usd": 0.0937107411188278
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 280.40795946361527,
+        "output_tps": 114.06594898797891,
+        "ttft_p50_s": 153.87228577027085,
+        "ttft_p95_s": 265.97228577026675,
+        "ttft_p99_s": 278.67228577026964,
+        "rental_usd": 0.09085188509845507
+      },
+      "throughput_error_fraction": 0.017936470630168788,
+      "ttft_p95_error_fraction": 0.0005934857551896933,
+      "launched": 1,
+      "capacity_rejections": 14,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 30.006032369000025,
+        "output_tps": 106.3452828670778,
+        "ttft_p50_s": 15.314292779000027,
+        "ttft_p95_s": 25.50070339199999,
+        "ttft_p99_s": 27.666473343000007,
+        "rental_usd": 0.009903817435687828
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 27.843937157709174,
+        "output_tps": 114.60304560831496,
+        "ttft_p50_s": 15.187806052462108,
+        "ttft_p95_s": 23.129075893732015,
+        "ttft_p99_s": 26.405155017172646,
+        "rental_usd": 0.009190194478918166
+      },
+      "throughput_error_fraction": 0.07765048452180645,
+      "ttft_p95_error_fraction": -0.09300243455292279,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 31.024177568000027,
+        "output_tps": 102.85526483355888,
+        "ttft_p50_s": 13.542919829000027,
+        "ttft_p95_s": 26.55321332699998,
+        "ttft_p99_s": 27.531376154999975,
+        "rental_usd": 0.01023986736595396
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 30.743937157709215,
+        "output_tps": 103.7928220979283,
+        "ttft_p50_s": 14.92907589373195,
+        "ttft_p95_s": 26.22907589373206,
+        "ttft_p99_s": 29.305155017172687,
+        "rental_usd": 0.010147371039039944
+      },
+      "throughput_error_fraction": 0.009115306502652798,
+      "ttft_p95_error_fraction": -0.012207088809787492,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 29.345460834999983,
+        "output_tps": 108.73913406717172,
+        "ttft_p50_s": 14.272516214000008,
+        "ttft_p95_s": 24.073885203999964,
+        "ttft_p99_s": 26.367591522999987,
+        "rental_usd": 0.009685788628525873
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 28.34393715770918,
+        "output_tps": 112.58139552895847,
+        "ttft_p50_s": 15.229075893731949,
+        "ttft_p95_s": 22.929075893732012,
+        "ttft_p99_s": 26.905155017172653,
+        "rental_usd": 0.009355224920318471
+      },
+      "throughput_error_fraction": 0.03533467039946503,
+      "ttft_p95_error_fraction": -0.04755399058219889,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 11.957984151999996,
+        "output_tps": 84.8805272776883,
+        "ttft_p50_s": 2.909290519000024,
+        "ttft_p95_s": 5.772507082999994,
+        "ttft_p99_s": 5.872469650999994,
+        "rental_usd": 0.003946862678486346
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 9.064749587077626,
+        "output_tps": 111.97220510613406,
+        "ttft_p50_s": 2.67433666470704,
+        "ttft_p95_s": 5.518753192209231,
+        "ttft_p99_s": 5.629075893731975,
+        "rental_usd": 0.0029919192510772957
+      },
+      "throughput_error_fraction": 0.3191742405159055,
+      "ttft_p95_error_fraction": -0.043959043642937456,
+      "launched": 0,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 15.553150498999967,
+        "output_tps": 76.12605562301532,
+        "ttft_p50_s": 6.548981272999981,
+        "ttft_p95_s": 13.684332887999972,
+        "ttft_p99_s": 13.927790931000004,
+        "rental_usd": 0.005133486480886629
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 15.318696104951671,
+        "output_tps": 77.2911736017323,
+        "ttft_p50_s": 7.390810774213985,
+        "ttft_p95_s": 13.025654949440504,
+        "ttft_p99_s": 13.999428742238857,
+        "rental_usd": 0.0050561023597545975
+      },
+      "throughput_error_fraction": 0.015305114250063978,
+      "ttft_p95_error_fraction": -0.048133726645679165,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 10.706253233999972,
+        "output_tps": 69.49209809807884,
+        "ttft_p50_s": 3.947759251999969,
+        "ttft_p95_s": 8.373540031999994,
+        "ttft_p99_s": 8.374853329000018,
+        "rental_usd": 0.0035337153227727736
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 12.372249768438953,
+        "output_tps": 60.134576485669584,
+        "ttft_p50_s": 5.130310461633212,
+        "ttft_p95_s": 11.173689388641268,
+        "ttft_p99_s": 11.255553070828107,
+        "rental_usd": 0.004083595680800589
+      },
+      "throughput_error_fraction": -0.13465590863586197,
+      "ttft_p95_error_fraction": 0.33440448674519163,
+      "launched": 0,
+      "capacity_rejections": 3,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 10.712550694000017,
+        "output_tps": 95.58881252935694,
+        "ttft_p50_s": 2.96499387099999,
+        "ttft_p95_s": 7.732795103000001,
+        "ttft_p99_s": 7.733426704999999,
+        "rental_usd": 0.0035357938602233463
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 6.7108304479264245,
+        "output_tps": 152.58916283846884,
+        "ttft_p50_s": 1.6858660171887687,
+        "ttft_p95_s": 4.98586601718877,
+        "ttft_p99_s": 4.98586601718877,
+        "rental_usd": 0.002214982621967801
+      },
+      "throughput_error_fraction": 0.596307756115352,
+      "ttft_p95_error_fraction": -0.35523107094167505,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-2b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 19.91088033799997,
+        "output_tps": 12.555949096980624,
+        "ttft_p50_s": 8.35998062699997,
+        "ttft_p95_s": 18.377327115000018,
+        "ttft_p99_s": 18.377327115000018,
+        "rental_usd": 0.006571802639708774
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 22.746039304610754,
+        "output_tps": 10.99092447049995,
+        "ttft_p50_s": 9.674459561602406,
+        "ttft_p95_s": 21.57445956160244,
+        "ttft_p99_s": 21.57445956160244,
+        "rental_usd": 0.007507577813097172
+      },
+      "throughput_error_fraction": -0.12464407225551921,
+      "ttft_p95_error_fraction": 0.17397156978246553,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "cold-single",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 55.695143461,
+        "output_tps": 0.5745563798108843,
+        "ttft_p50_s": 54.693936953000005,
+        "ttft_p95_s": 54.693936953000005,
+        "ttft_p99_s": 54.693936953000005,
+        "rental_usd": 0.013745811418978729
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 56.341741679480265,
+        "output_tps": 0.5679625628551422,
+        "ttft_p50_s": 55.622350609212,
+        "ttft_p95_s": 55.622350609212,
+        "ttft_p99_s": 55.622350609212,
+        "rental_usd": 0.013496520089115971
+      },
+      "throughput_error_fraction": -0.011476361915800815,
+      "ttft_p95_error_fraction": 0.016974708860505006,
+      "launched": 1,
+      "capacity_rejections": 1,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-single",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 1,
+        "elapsed_s": 1.2124118139999993,
+        "output_tps": 26.39367220814628,
+        "ttft_p50_s": 0.5235522549999985,
+        "ttft_p95_s": 0.5235522549999985,
+        "ttft_p99_s": 0.5235522549999985,
+        "rental_usd": 0.00030111905966426905
+      },
+      "simulated": {
+        "completed": 1,
+        "elapsed_s": 1.246515362480275,
+        "output_tps": 25.67156487853263,
+        "ttft_p50_s": 0.5271242922120115,
+        "ttft_p95_s": 0.5271242922120115,
+        "ttft_p99_s": 0.5271242922120115,
+        "rental_usd": 0.0003095892606890698
+      },
+      "throughput_error_fraction": -0.02735910804373687,
+      "ttft_p95_error_fraction": 0.006822694731804857,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "burst-1000",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 1000,
+        "elapsed_s": 199.868058659,
+        "output_tps": 160.10562275283826,
+        "ttft_p50_s": 131.17754326200003,
+        "ttft_p95_s": 190.21940889899997,
+        "ttft_p99_s": 197.847771688,
+        "rental_usd": 0.08234872344125727
+      },
+      "simulated": {
+        "completed": 1000,
+        "elapsed_s": 172.5684126984073,
+        "output_tps": 185.43370423140794,
+        "ttft_p50_s": 112.43825396825191,
+        "ttft_p95_s": 165.63825396824888,
+        "ttft_p99_s": 171.23825396824856,
+        "rental_usd": 0.07019674883428481
+      },
+      "throughput_error_fraction": 0.15819607733370922,
+      "ttft_p95_error_fraction": -0.129225272400057,
+      "launched": 1,
+      "capacity_rejections": 6,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-cheapest_elastic",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 16.869753405999973,
+        "output_tps": 189.68860557628977,
+        "ttft_p50_s": 9.641872251999985,
+        "ttft_p95_s": 14.871613314,
+        "ttft_p99_s": 15.805031276999957,
+        "rental_usd": 0.008379671193728636
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 12.961225508092953,
+        "output_tps": 246.89023410648392,
+        "ttft_p50_s": 6.423968253968249,
+        "ttft_p95_s": 10.223968253968236,
+        "ttft_p99_s": 12.018058902275744,
+        "rental_usd": 0.006438197784727756
+      },
+      "throughput_error_fraction": 0.30155542741437125,
+      "ttft_p95_error_fraction": -0.31251787966114697,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-reactive",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 13.972237687000018,
+        "output_tps": 229.0255914396109,
+        "ttft_p50_s": 6.324566491999974,
+        "ttft_p95_s": 11.207803447000003,
+        "ttft_p99_s": 13.07974743799997,
+        "rental_usd": 0.006940395211492978
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 12.961225508092953,
+        "output_tps": 246.89023410648392,
+        "ttft_p50_s": 6.423968253968249,
+        "ttft_p95_s": 10.223968253968236,
+        "ttft_p99_s": 12.018058902275744,
+        "rental_usd": 0.006438197784727756
+      },
+      "throughput_error_fraction": 0.07800282297964745,
+      "ttft_p95_error_fraction": -0.08778126755025406,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "hot-planned_hybrid",
+      "training": true,
+      "seed": 9,
+      "measured": {
+        "completed": 100,
+        "elapsed_s": 14.075602072000038,
+        "output_tps": 227.3437387353835,
+        "ttft_p50_s": 6.296452643999999,
+        "ttft_p95_s": 11.173428459000036,
+        "ttft_p99_s": 13.079809194000006,
+        "rental_usd": 0.00699173918467226
+      },
+      "simulated": {
+        "completed": 100,
+        "elapsed_s": 14.06122550809295,
+        "output_tps": 227.57618090672378,
+        "ttft_p50_s": 7.5239682539682455,
+        "ttft_p95_s": 11.323968253968232,
+        "ttft_p99_s": 13.11805890227574,
+        "rental_usd": 0.006984598089141756
+      },
+      "throughput_error_fraction": 0.0010224260964177834,
+      "ttft_p95_error_fraction": 0.013473017303559987,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "staggered",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.562538168000003,
+        "output_tps": 184.0886244863605,
+        "ttft_p50_s": 1.1140032620000395,
+        "ttft_p95_s": 1.6133925629999908,
+        "ttft_p99_s": 1.6681212370000251,
+        "rental_usd": 0.002763065813428389
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 5.125479900011743,
+        "output_tps": 199.78617026625233,
+        "ttft_p50_s": 0.719340914822229,
+        "ttft_p95_s": 1.0168205480600765,
+        "ttft_p99_s": 1.0168205480600778,
+        "rental_usd": 0.0025459670705766093
+      },
+      "throughput_error_fraction": 0.0852716772896247,
+      "ttft_p95_error_fraction": -0.3697624673753487,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "mixed-length-burst",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 64,
+        "elapsed_s": 16.124269047999974,
+        "output_tps": 73.42968518296098,
+        "ttft_p50_s": 8.124573608999981,
+        "ttft_p95_s": 14.46198278999998,
+        "ttft_p99_s": 15.196815673000003,
+        "rental_usd": 0.010130085818178395
+      },
+      "simulated": {
+        "completed": 64,
+        "elapsed_s": 6.855844621671153,
+        "output_tps": 172.6993631473802,
+        "ttft_p50_s": 2.8784178412954873,
+        "ttft_p95_s": 5.481862489786082,
+        "ttft_p99_s": 5.883004109909263,
+        "rental_usd": 0.005108230347676669
+      },
+      "throughput_error_fraction": 1.351901178890718,
+      "ttft_p95_error_fraction": -0.6209466869524543,
+      "launched": 1,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "shared-system-prefix",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.768425097999966,
+        "output_tps": 148.74077160115792,
+        "ttft_p50_s": 2.2272720849999814,
+        "ttft_p95_s": 4.752230720999989,
+        "ttft_p99_s": 4.752949125999976,
+        "rental_usd": 0.004298003295138159
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 5.772909059679457,
+        "output_tps": 148.62524095393263,
+        "ttft_p50_s": 2.4525396825396824,
+        "ttft_p95_s": 4.752539682539685,
+        "ttft_p99_s": 4.752539682539685,
+        "rental_usd": 0.0028675629705120107
+      },
+      "throughput_error_fraction": -0.0007767248077418243,
+      "ttft_p95_error_fraction": 6.501400244096622e-05,
+      "launched": 0,
+      "capacity_rejections": 2,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "output-underestimate",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 32,
+        "elapsed_s": 5.058677222999961,
+        "output_tps": 202.4244589760037,
+        "ttft_p50_s": 1.3787798519999797,
+        "ttft_p95_s": 3.4722822609999753,
+        "ttft_p99_s": 4.232089827999971,
+        "rental_usd": 0.003769176260190993
+      },
+      "simulated": {
+        "completed": 32,
+        "elapsed_s": 3.824500973070832,
+        "output_tps": 267.7473498399434,
+        "ttft_p50_s": 0.7096825396825398,
+        "ttft_p95_s": 2.6096825396825407,
+        "ttft_p99_s": 2.6096825396825407,
+        "rental_usd": 0.001899734996288685
+      },
+      "throughput_error_fraction": 0.3227025587440664,
+      "ttft_p95_error_fraction": -0.24842442419096888,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    },
+    {
+      "model": "qwen3.5-4b",
+      "workload": "dependencies",
+      "training": false,
+      "seed": 9,
+      "measured": {
+        "completed": 8,
+        "elapsed_s": 9.910372395000024,
+        "output_tps": 25.831521742730573,
+        "ttft_p50_s": 4.355722501999992,
+        "ttft_p95_s": 9.038966895999977,
+        "ttft_p99_s": 9.038966895999977,
+        "rental_usd": 0.00738413222288184
+      },
+      "simulated": {
+        "completed": 8,
+        "elapsed_s": 10.346515362480257,
+        "output_tps": 24.742629864382852,
+        "ttft_p50_s": 4.427124292212014,
+        "ttft_p95_s": 9.627124292211994,
+        "ttft_p99_s": 9.627124292211994,
+        "rental_usd": 0.005139399221530339
+      },
+      "throughput_error_fraction": -0.04215360942311319,
+      "ttft_p95_error_fraction": 0.06506909506132774,
+      "launched": 0,
+      "capacity_rejections": 0,
+      "invalid_decisions": 0
+    }
+  ]
+}
