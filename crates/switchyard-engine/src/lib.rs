@@ -2,6 +2,7 @@
 pub mod config;
 pub mod engine;
 pub mod models;
+pub mod multimodal;
 pub mod probe;
 pub mod sampling;
 pub mod server;

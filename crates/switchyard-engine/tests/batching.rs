@@ -36,6 +36,7 @@ fn engine() -> Engine {
     Engine::new(
         Config {
             model: "counter".into(),
+            weights: Default::default(),
             model_root: "unused".into(),
             device: DeviceConfig::Cpu,
             dtype: Precision::F32,
@@ -45,6 +46,7 @@ fn engine() -> Engine {
             queue_capacity: 8,
             batch_wait_ms: 0,
             cache: Default::default(),
+            vision: None,
         },
         Box::new(Counter),
         Telemetry::default(),

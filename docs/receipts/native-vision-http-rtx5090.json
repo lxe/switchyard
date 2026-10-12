@@ -1,0 +1,1200 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-12T01:17:58.350498+00:00",
+  "source_commit": "5e7fa49469ce876202e2533559f9019e1c789469",
+  "binary_sha256": "8807f1b2b918365193974174e2236f873e730dc031768285fbc8ce16022d719a",
+  "probe_binary_sha256": "edebfea959a78d27fc1ecb6aae1d0ebd1ca5e53b72957a6a86b375af6dbb5ae1",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "driver": "615.71.09",
+    "cuda_compute_cap": 120
+  },
+  "scope": "Actual local OpenAI-style image HTTP/SSE requests; excludes network hydration, cloud allocation and independent 2B/4B full-generation reference",
+  "measurement_conditions": "Fresh private CUDA driver-cache directory per case; source filesystem cache uncontrolled. Initial first-use timings include driver compilation, not a baked-cache rollout.",
+  "question": "What colors appear in this image? Answer briefly.",
+  "cases": [
+    {
+      "model": "0.8B",
+      "weights": "original HF F32",
+      "configuration": {
+        "model": "qwen3.5-0.8b",
+        "model_root": "LOCAL_MODEL_BUNDLE",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 512,
+        "max_weight_bytes": 4294967296,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "vision": {
+          "mmproj": "mmproj-F32.gguf",
+          "max_pixels": 65536,
+          "max_images": 2,
+          "max_encoded_bytes": 8388608,
+          "max_source_pixels": 16777216
+        }
+      },
+      "image_sha256": "a8595fae1241095a8863d3bacc433b076aac07f6e75303633ff05420338fb659",
+      "passed": true,
+      "launch_to_observed_listener_s": 3.322371907008346,
+      "launch_to_first_content_s": 12.370372014003806,
+      "first_image": {
+        "token_ids": [
+          6105,
+          11,
+          55945,
+          11,
+          24142,
+          11,
+          17676,
+          248046,
+          198,
+          248044
+        ],
+        "content": " blue, cyan, purple, pink\n",
+        "request_to_first_content_s": 9.041181280001183,
+        "elapsed_s": 9.147057428999688,
+        "usage": {
+          "completion_tokens": 10,
+          "prompt_tokens": 88,
+          "total_tokens": 98
+        }
+      },
+      "burst": {
+        "concurrent_calls": 8,
+        "elapsed_s": 0.9397887980012456,
+        "output_tokens_per_s": 85.1255092315901,
+        "all_token_ids_match_first": true,
+        "all_usage_matches_token_plan": true,
+        "token_ids_per_call": [
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046,
+            198,
+            248044
+          ]
+        ]
+      },
+      "text_after_image": {
+        "token_ids": [
+          760,
+          6511,
+          314,
+          9338,
+          369,
+          2972,
+          57590,
+          159034,
+          248046,
+          198,
+          248044
+        ],
+        "content": "The capital of France is **Paris**.\n",
+        "request_to_first_content_s": 0.020910619001369923,
+        "elapsed_s": 0.08152264601085335,
+        "usage": {
+          "completion_tokens": 11,
+          "prompt_tokens": 18,
+          "total_tokens": 29
+        }
+      },
+      "owned_process_returncode": -15,
+      "detailed_receipt_sha256": "bf0aba79dc6cca16317167207158718d9b81858d390fc37c5a29944839786e93",
+      "projector": {
+        "file": "mmproj-F32.gguf",
+        "sha256": "2b167b9d9a96bf18c31ece6de70aedca4034d936bd9aba21bd485b9a6dc78da5"
+      },
+      "independent_reference": {
+        "exact_token_match": true,
+        "token_ids": [
+          6105,
+          11,
+          55945,
+          11,
+          24142,
+          11,
+          17676,
+          248046,
+          198,
+          248044
+        ],
+        "scope": "Official Transformers F32 eager conditional generation, truncated at existing dense EOS"
+      },
+      "phase_events": [
+        {
+          "details": {
+            "kind": "cuda",
+            "ordinal": 0
+          },
+          "elapsed_s": 0.095313771,
+          "event": "device_initialized"
+        },
+        {
+          "details": {
+            "bytes": 1746942600,
+            "tensors": 488
+          },
+          "elapsed_s": 0.60041012,
+          "event": "weights_read_finished"
+        },
+        {
+          "details": {
+            "hidden": 1024,
+            "layers": 12
+          },
+          "elapsed_s": 3.216297128,
+          "event": "vision_loaded"
+        },
+        {
+          "details": {
+            "layers": 24,
+            "vocab": 248320
+          },
+          "elapsed_s": 3.216332071,
+          "event": "model_loaded"
+        },
+        {
+          "details": {
+            "address": "127.0.0.1:18191"
+          },
+          "elapsed_s": 3.216703524,
+          "event": "http_listening"
+        }
+      ]
+    },
+    {
+      "model": "0.8B",
+      "weights": "Q4_K_M",
+      "configuration": {
+        "model": "qwen3.5-0.8b",
+        "model_root": "LOCAL_MODEL_BUNDLE",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 512,
+        "max_weight_bytes": 800000000,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "vision": {
+          "mmproj": "mmproj-F16.gguf",
+          "max_pixels": 65536,
+          "max_images": 2,
+          "max_encoded_bytes": 8388608,
+          "max_source_pixels": 16777216
+        },
+        "weights": {
+          "kind": "gguf",
+          "file": "Qwen3.5-0.8B-Q4_K_M.gguf"
+        }
+      },
+      "image_sha256": "a8595fae1241095a8863d3bacc433b076aac07f6e75303633ff05420338fb659",
+      "passed": true,
+      "launch_to_observed_listener_s": 4.265388939005788,
+      "launch_to_first_content_s": 15.512865230004536,
+      "first_image": {
+        "token_ids": [
+          11855,
+          11,
+          55945,
+          11,
+          24142,
+          11,
+          17676,
+          248046
+        ],
+        "content": "blue, cyan, purple, pink",
+        "request_to_first_content_s": 11.240617274001124,
+        "elapsed_s": 11.334546022000723,
+        "usage": {
+          "completion_tokens": 8,
+          "prompt_tokens": 88,
+          "total_tokens": 96
+        }
+      },
+      "burst": {
+        "concurrent_calls": 8,
+        "elapsed_s": 0.8239207290025661,
+        "output_tokens_per_s": 77.67737568331124,
+        "all_token_ids_match_first": true,
+        "all_usage_matches_token_plan": true,
+        "token_ids_per_call": [
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            11855,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ]
+        ]
+      },
+      "text_after_image": {
+        "token_ids": [
+          760,
+          6511,
+          314,
+          9338,
+          369,
+          2972,
+          57590,
+          159034,
+          248046
+        ],
+        "content": "The capital of France is **Paris**.",
+        "request_to_first_content_s": 0.020580202995915897,
+        "elapsed_s": 0.06627289499738254,
+        "usage": {
+          "completion_tokens": 9,
+          "prompt_tokens": 18,
+          "total_tokens": 27
+        }
+      },
+      "owned_process_returncode": -15,
+      "detailed_receipt_sha256": "165027715ec7aa33a593d4cea03961283a3fd48b4df2e0b42173bf97bc8776fc",
+      "language_artifact": {
+        "source_repository": "unsloth/Qwen3.5-0.8B-GGUF",
+        "source_revision": "6ab461498e2023f6e3c1baea90a8f0fe38ab64d0",
+        "artifact_bytes": 532517120,
+        "artifact_sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517"
+      },
+      "projector": {
+        "file": "mmproj-F16.gguf",
+        "sha256": "56e4c6cfe73b0c82e3e82bc518d7591997e61d81f723fc41a586f4fa69ea2453"
+      },
+      "phase_events": [
+        {
+          "details": {
+            "kind": "cuda",
+            "ordinal": 0
+          },
+          "elapsed_s": 0.069854512,
+          "event": "device_initialized"
+        },
+        {
+          "details": {
+            "format": "gguf",
+            "projection_storage": "packed"
+          },
+          "elapsed_s": 3.862768745,
+          "event": "weights_read_finished"
+        },
+        {
+          "details": {
+            "hidden": 1024,
+            "layers": 12
+          },
+          "elapsed_s": 4.161013494,
+          "event": "vision_loaded"
+        },
+        {
+          "details": {
+            "layers": 24,
+            "vocab": 248320
+          },
+          "elapsed_s": 4.1610493139999996,
+          "event": "model_loaded"
+        },
+        {
+          "details": {
+            "address": "127.0.0.1:18191"
+          },
+          "elapsed_s": 4.161432717,
+          "event": "http_listening"
+        }
+      ]
+    },
+    {
+      "model": "0.8B",
+      "weights": "Q8_0",
+      "configuration": {
+        "model": "qwen3.5-0.8b",
+        "model_root": "LOCAL_MODEL_BUNDLE",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 512,
+        "max_weight_bytes": 1400000000,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "vision": {
+          "mmproj": "mmproj-F16.gguf",
+          "max_pixels": 65536,
+          "max_images": 2,
+          "max_encoded_bytes": 8388608,
+          "max_source_pixels": 16777216
+        },
+        "weights": {
+          "kind": "gguf",
+          "file": "Qwen3.5-0.8B-Q8_0.gguf"
+        }
+      },
+      "image_sha256": "a8595fae1241095a8863d3bacc433b076aac07f6e75303633ff05420338fb659",
+      "passed": true,
+      "launch_to_observed_listener_s": 4.044551027007401,
+      "launch_to_first_content_s": 14.830909547003102,
+      "first_image": {
+        "token_ids": [
+          6105,
+          11,
+          55945,
+          11,
+          24142,
+          11,
+          17676,
+          248046
+        ],
+        "content": " blue, cyan, purple, pink",
+        "request_to_first_content_s": 10.77933124199626,
+        "elapsed_s": 10.871106644990505,
+        "usage": {
+          "completion_tokens": 8,
+          "prompt_tokens": 88,
+          "total_tokens": 96
+        }
+      },
+      "burst": {
+        "concurrent_calls": 8,
+        "elapsed_s": 0.8218400659970939,
+        "output_tokens_per_s": 77.8740324887328,
+        "all_token_ids_match_first": true,
+        "all_usage_matches_token_plan": true,
+        "token_ids_per_call": [
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            248046
+          ]
+        ]
+      },
+      "text_after_image": {
+        "token_ids": [
+          760,
+          6511,
+          314,
+          9338,
+          369,
+          2972,
+          57590,
+          159034,
+          248046
+        ],
+        "content": "The capital of France is **Paris**.",
+        "request_to_first_content_s": 0.020988210002542473,
+        "elapsed_s": 0.0667171929962933,
+        "usage": {
+          "completion_tokens": 9,
+          "prompt_tokens": 18,
+          "total_tokens": 27
+        }
+      },
+      "owned_process_returncode": -15,
+      "detailed_receipt_sha256": "ee73ac445a496fa0931324ce202d6d0814113592fefbeac6e8fef4c8cf7eb476",
+      "language_artifact": {
+        "source_repository": "unsloth/Qwen3.5-0.8B-GGUF",
+        "source_revision": "6ab461498e2023f6e3c1baea90a8f0fe38ab64d0",
+        "artifact_bytes": 811843840,
+        "artifact_sha256": "0ad885ffd4bb022fc4f0d33a3308fa108ef8613159d3b3a67e23abca056b7a6c"
+      },
+      "projector": {
+        "file": "mmproj-F16.gguf",
+        "sha256": "56e4c6cfe73b0c82e3e82bc518d7591997e61d81f723fc41a586f4fa69ea2453"
+      },
+      "phase_events": [
+        {
+          "details": {
+            "kind": "cuda",
+            "ordinal": 0
+          },
+          "elapsed_s": 0.075502461,
+          "event": "device_initialized"
+        },
+        {
+          "details": {
+            "format": "gguf",
+            "projection_storage": "packed"
+          },
+          "elapsed_s": 3.708081558,
+          "event": "weights_read_finished"
+        },
+        {
+          "details": {
+            "hidden": 1024,
+            "layers": 12
+          },
+          "elapsed_s": 3.938255809,
+          "event": "vision_loaded"
+        },
+        {
+          "details": {
+            "layers": 24,
+            "vocab": 248320
+          },
+          "elapsed_s": 3.93829107,
+          "event": "model_loaded"
+        },
+        {
+          "details": {
+            "address": "127.0.0.1:18191"
+          },
+          "elapsed_s": 3.938665957,
+          "event": "http_listening"
+        }
+      ]
+    },
+    {
+      "model": "2B",
+      "weights": "Q4_K_M",
+      "configuration": {
+        "model": "qwen3.5-2b",
+        "model_root": "LOCAL_MODEL_BUNDLE",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 512,
+        "max_weight_bytes": 2000000000,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "weights": {
+          "kind": "gguf",
+          "file": "Qwen3.5-2B-Q4_K_M.gguf"
+        },
+        "vision": {
+          "mmproj": "mmproj-F16.gguf",
+          "max_encoded_bytes": 8388608,
+          "max_source_pixels": 16777216,
+          "max_pixels": 65536,
+          "max_images": 2
+        }
+      },
+      "image_sha256": "a8595fae1241095a8863d3bacc433b076aac07f6e75303633ff05420338fb659",
+      "passed": true,
+      "launch_to_observed_listener_s": 4.400575797990314,
+      "launch_to_first_content_s": 15.230522483994719,
+      "first_image": {
+        "token_ids": [
+          6105,
+          11,
+          55945,
+          11,
+          24142,
+          11,
+          17676,
+          11,
+          4022,
+          248046
+        ],
+        "content": " blue, cyan, purple, pink, white",
+        "request_to_first_content_s": 10.82277237100061,
+        "elapsed_s": 10.926481590999174,
+        "usage": {
+          "completion_tokens": 10,
+          "prompt_tokens": 88,
+          "total_tokens": 98
+        }
+      },
+      "burst": {
+        "concurrent_calls": 8,
+        "elapsed_s": 0.9622362149966648,
+        "output_tokens_per_s": 83.13966856909173,
+        "all_token_ids_match_first": true,
+        "all_usage_matches_token_plan": true,
+        "token_ids_per_call": [
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ],
+          [
+            6105,
+            11,
+            55945,
+            11,
+            24142,
+            11,
+            17676,
+            11,
+            4022,
+            248046
+          ]
+        ]
+      },
+      "text_after_image": {
+        "token_ids": [
+          760,
+          6511,
+          314,
+          9338,
+          369,
+          2972,
+          57590,
+          159034,
+          271,
+          46162,
+          303,
+          279,
+          9897,
+          81183,
+          919,
+          314
+        ],
+        "content": "The capital of France is **Paris**.\n\nLocated in the north-central part of",
+        "request_to_first_content_s": 0.02109991299221292,
+        "elapsed_s": 0.10889863899501506,
+        "usage": {
+          "completion_tokens": 16,
+          "prompt_tokens": 18,
+          "total_tokens": 34
+        }
+      },
+      "owned_process_returncode": -15,
+      "detailed_receipt_sha256": "d49f59e7db7f2c54fdd1e068bd7662b7dc71ad205173c659cc607c9cc1b255c2",
+      "language_artifact": {
+        "source_repository": "unsloth/Qwen3.5-2B-GGUF",
+        "source_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+        "artifact_bytes": 1280835840,
+        "artifact_sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"
+      },
+      "projector": {
+        "repo": "unsloth/Qwen3.5-2B-GGUF",
+        "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+        "file": "mmproj-F16.gguf",
+        "bytes": 668227264,
+        "sha256": "7035e9cb8d7c6a9681d07eef9a364783e86ea4cd73faab2eabb4f43a101830c7"
+      },
+      "phase_events": [
+        {
+          "details": {
+            "kind": "cuda",
+            "ordinal": 0
+          },
+          "elapsed_s": 0.068976365,
+          "event": "device_initialized"
+        },
+        {
+          "details": {
+            "format": "gguf",
+            "projection_storage": "packed"
+          },
+          "elapsed_s": 3.745780505,
+          "event": "weights_read_finished"
+        },
+        {
+          "details": {
+            "hidden": 2048,
+            "layers": 24
+          },
+          "elapsed_s": 4.28832387,
+          "event": "vision_loaded"
+        },
+        {
+          "details": {
+            "layers": 24,
+            "vocab": 248320
+          },
+          "elapsed_s": 4.28835713,
+          "event": "model_loaded"
+        },
+        {
+          "details": {
+            "address": "127.0.0.1:18191"
+          },
+          "elapsed_s": 4.288705191,
+          "event": "http_listening"
+        }
+      ]
+    },
+    {
+      "model": "4B",
+      "weights": "Q4_K_M",
+      "configuration": {
+        "model": "qwen3.5-4b",
+        "model_root": "LOCAL_MODEL_BUNDLE",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 512,
+        "max_weight_bytes": 4000000000,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        },
+        "weights": {
+          "kind": "gguf",
+          "file": "Qwen3.5-4B-Q4_K_M.gguf"
+        },
+        "vision": {
+          "mmproj": "mmproj-F16.gguf",
+          "max_encoded_bytes": 8388608,
+          "max_source_pixels": 16777216,
+          "max_pixels": 65536,
+          "max_images": 2
+        }
+      },
+      "image_sha256": "a8595fae1241095a8863d3bacc433b076aac07f6e75303633ff05420338fb659",
+      "passed": true,
+      "launch_to_observed_listener_s": 4.727966547987307,
+      "launch_to_first_content_s": 15.566131957995822,
+      "first_image": {
+        "token_ids": [
+          6105,
+          248046
+        ],
+        "content": " blue",
+        "request_to_first_content_s": 10.8316771480022,
+        "elapsed_s": 10.891736233999836,
+        "usage": {
+          "completion_tokens": 2,
+          "prompt_tokens": 88,
+          "total_tokens": 90
+        }
+      },
+      "burst": {
+        "concurrent_calls": 8,
+        "elapsed_s": 0.7769850729964674,
+        "output_tokens_per_s": 20.59241619442636,
+        "all_token_ids_match_first": true,
+        "all_usage_matches_token_plan": true,
+        "token_ids_per_call": [
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ],
+          [
+            6105,
+            248046
+          ]
+        ]
+      },
+      "text_after_image": {
+        "token_ids": [
+          760,
+          6511,
+          314,
+          9338,
+          369,
+          2972,
+          57590,
+          159034,
+          248046
+        ],
+        "content": "The capital of France is **Paris**.",
+        "request_to_first_content_s": 0.027123241990921088,
+        "elapsed_s": 0.09290244198928121,
+        "usage": {
+          "completion_tokens": 9,
+          "prompt_tokens": 18,
+          "total_tokens": 27
+        }
+      },
+      "owned_process_returncode": -15,
+      "detailed_receipt_sha256": "f3c2e7efba4b56338508ce3362dfc6980a81b2c1df797da90966d58b3dc596d8",
+      "language_artifact": {
+        "source_repository": "unsloth/Qwen3.5-4B-GGUF",
+        "source_revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+        "artifact_bytes": 2740937888,
+        "artifact_sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4"
+      },
+      "projector": {
+        "repo": "unsloth/Qwen3.5-4B-GGUF",
+        "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+        "file": "mmproj-F16.gguf",
+        "bytes": 672423616,
+        "sha256": "cd88edcf8d031894960bb0c9c5b9b7e1fea6ebee02b9f7ce925a00d12891f864"
+      },
+      "phase_events": [
+        {
+          "details": {
+            "kind": "cuda",
+            "ordinal": 0
+          },
+          "elapsed_s": 0.070655265,
+          "event": "device_initialized"
+        },
+        {
+          "details": {
+            "format": "gguf",
+            "projection_storage": "packed"
+          },
+          "elapsed_s": 4.058038247,
+          "event": "weights_read_finished"
+        },
+        {
+          "details": {
+            "hidden": 2560,
+            "layers": 24
+          },
+          "elapsed_s": 4.610382617,
+          "event": "vision_loaded"
+        },
+        {
+          "details": {
+            "layers": 32,
+            "vocab": 248320
+          },
+          "elapsed_s": 4.610415618,
+          "event": "model_loaded"
+        },
+        {
+          "details": {
+            "address": "127.0.0.1:18191"
+          },
+          "elapsed_s": 4.610791234,
+          "event": "http_listening"
+        }
+      ]
+    }
+  ],
+  "dense_text_regression": [
+    {
+      "model": "0.8b",
+      "reference": "Previously accepted independent native trace, already gated against pinned Transformers",
+      "comparison": {
+        "positions": 52,
+        "argmax_matches": 52,
+        "mean_abs_expected_logprob_error": 2.6400731818818294e-06,
+        "max_abs_expected_logprob_error": 2.633632050219603e-05,
+        "mismatches": [],
+        "contract": {
+          "require_argmax": true,
+          "max_logprob_error": 0.0001
+        },
+        "passed": true
+      },
+      "candidate_sha256": "c078594437eb44015975add5495dbcbb602768f256c7ad07776050d40403d673",
+      "reference_sha256": "29370665eb2e5cd23e4b01ee7c29f05780040175f9a19ef663a9698604a9eba3"
+    },
+    {
+      "model": "2b",
+      "reference": "Previously accepted independent native trace, already gated against pinned Transformers",
+      "comparison": {
+        "positions": 52,
+        "argmax_matches": 52,
+        "mean_abs_expected_logprob_error": 1.2541707405260966e-06,
+        "max_abs_expected_logprob_error": 6.8214991841841766e-06,
+        "mismatches": [],
+        "contract": {
+          "require_argmax": true,
+          "max_logprob_error": 0.0001
+        },
+        "passed": true
+      },
+      "candidate_sha256": "65119a29e1ec850640c927baf4ea38b2a4f829cdae06b31e7498315935066579",
+      "reference_sha256": "6522271550749c970c135462e289a3d64b9e7807ce9710cb2f569a45661b7736"
+    },
+    {
+      "model": "4b",
+      "reference": "Previously accepted independent native trace, already gated against pinned Transformers",
+      "comparison": {
+        "positions": 52,
+        "argmax_matches": 52,
+        "mean_abs_expected_logprob_error": 3.782130966292549e-06,
+        "max_abs_expected_logprob_error": 7.343308827856276e-05,
+        "mismatches": [],
+        "contract": {
+          "require_argmax": true,
+          "max_logprob_error": 0.0001
+        },
+        "passed": true
+      },
+      "candidate_sha256": "b82c5f7b130a6b4fc82f5b2d9dd3887fb4e0a5c8125a3acac4a9c4dadf3f3813",
+      "reference_sha256": "08b2afeeac42074bc0ca8a9e86a1ab7735226f7145df5bb1cd95a0103264f2f6"
+    }
+  ],
+  "checks": [
+    "engine and quantized CPU test suites passed",
+    "strict clippy engine and quantized all targets passed",
+    "six checked image profiles validate",
+    "released tokenizer image expansion and unchanged string chat rendering passed"
+  ],
+  "limitations": [
+    "Image requests execute independent model sequences, not tensor-batched image prefill.",
+    "Images bypass the text prefix cache.",
+    "Vision weights are expanded once to dense tensors; language projections remain packed.",
+    "Only the dense 0.8B HTTP generation has an independent full-generation reference in this receipt.",
+    "Packed CUDA kernels additionally quantize activations to Q8_1; exact quantized numerical parity remains unproven.",
+    "Accepted cloud fleet artifacts remain pinned to their separately validated dense build; these local features need their own offline cache bake before cloud acceptance."
+  ]
+}

@@ -225,6 +225,7 @@ fn mixed_session_rejects_stale_duplicate_unknown_and_late_rows() {
 fn config() -> Config {
     Config {
         model: "tiny".into(),
+        weights: Default::default(),
         model_root: "unused".into(),
         device: DeviceConfig::Cpu,
         dtype: Precision::F32,
@@ -234,6 +235,7 @@ fn config() -> Config {
         queue_capacity: 6,
         batch_wait_ms: 0,
         cache: Default::default(),
+        vision: None,
     }
 }
 fn engine(weights: switchyard_engine::models::qwen35::ModelForCausalLM, eos: u32) -> Engine {

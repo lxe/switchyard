@@ -41,6 +41,12 @@ impl Tokenizer {
         {
             return Err(Error::Config("Expected nonempty text chat messages".into()));
         }
+        self.render_chat(messages)
+    }
+    pub fn chat_parts(&self, messages: &[crate::multimodal::ChatMessage]) -> Result<Vec<u32>> {
+        self.render_chat(messages)
+    }
+    fn render_chat(&self, messages: &(impl Serialize + ?Sized)) -> Result<Vec<u32>> {
         let mut env = minijinja::Environment::new();
         env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
         env.add_function(

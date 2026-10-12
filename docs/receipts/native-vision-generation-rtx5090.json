@@ -1,0 +1,279 @@
+{
+  "scope": "Actual Qwen3.5 0.8B image encoder/mmproj plus native text prefill and autoregressive decode, independent official full-model oracle",
+  "device": "NVIDIA RTX5090",
+  "precision": "F32; TF32 disabled in HF oracle",
+  "model": "Qwen/Qwen3.5-0.8B original HF safetensors",
+  "mmproj": {
+    "repo": "unsloth/Qwen3.5-0.8B-GGUF",
+    "revision": "6ab461498e2023f6e3c1baea90a8f0fe38ab64d0",
+    "file": "mmproj-F32.gguf",
+    "bytes": 402381664,
+    "sha256": "2b167b9d9a96bf18c31ece6de70aedca4034d936bd9aba21bd485b9a6dc78da5"
+  },
+  "prompt": {
+    "prompt": [
+      248045,
+      846,
+      198,
+      248053,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248056,
+      248054,
+      3710,
+      7736,
+      4833,
+      303,
+      411,
+      2099,
+      30,
+      21134,
+      25899,
+      13,
+      248046,
+      198,
+      248045,
+      74455,
+      198,
+      248068,
+      271,
+      248069,
+      271
+    ],
+    "image_offset": 4,
+    "max_tokens": 16,
+    "text": "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>What colors appear in this image? Answer briefly.<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+  },
+  "native": {
+    "argmax_logits": [
+      18.815515518188477,
+      21.28644371032715,
+      20.779273986816406,
+      23.15532684326172,
+      20.45242691040039,
+      22.203670501708984,
+      21.455888748168945,
+      22.086788177490234,
+      37.066558837890625,
+      32.303382873535156,
+      28.274932861328125,
+      19.99285125732422,
+      31.745527267456055,
+      26.71157455444336,
+      28.839204788208008,
+      19.03375816345215
+    ],
+    "grid": [
+      1,
+      16,
+      16
+    ],
+    "prompt_tokens": 88,
+    "rope_delta": -56,
+    "timings_s": [
+      0.076616341,
+      0.083908746,
+      0.092088158,
+      0.100240096,
+      0.108338346,
+      0.114267825,
+      0.120154692,
+      0.126115952,
+      0.131972506,
+      0.138019417,
+      0.144846723,
+      0.150714465,
+      0.156646853,
+      0.162549882,
+      0.168462781,
+      0.174489342
+    ],
+    "token_ids": [
+      6105,
+      11,
+      55945,
+      11,
+      24142,
+      11,
+      17676,
+      248046,
+      198,
+      248044,
+      248045,
+      248046,
+      198,
+      248044,
+      248045,
+      248046
+    ]
+  },
+  "reference": {
+    "token_ids": [
+      6105,
+      11,
+      55945,
+      11,
+      24142,
+      11,
+      17676,
+      248046,
+      198,
+      248044,
+      248045,
+      248046,
+      198,
+      248044,
+      248045,
+      248046
+    ],
+    "argmax_logits": [
+      18.815494537353516,
+      21.286441802978516,
+      20.779273986816406,
+      23.15532875061035,
+      20.4523983001709,
+      22.203670501708984,
+      21.455896377563477,
+      22.086793899536133,
+      37.06654739379883,
+      32.303382873535156,
+      28.27493667602539,
+      19.992870330810547,
+      31.745519638061523,
+      26.7115478515625,
+      28.839210510253906,
+      19.033775329589844
+    ],
+    "response": " blue, cyan, purple, pink<|im_end|>\n<|endoftext|><|im_start|><|im_end|>\n<|endoftext|><|im_start|><|im_end|>",
+    "rope_delta": [
+      [
+        -56
+      ]
+    ],
+    "reference": "Official Transformers Qwen3_5ForConditionalGeneration F32 eager; TF32 disabled"
+  },
+  "match": {
+    "complete_token_ids": true,
+    "tokens": 16,
+    "argmax_logits_max_abs": 2.86102294921875e-05,
+    "rope_delta": -56
+  },
+  "native_binary_sha256": "e02c3f732420901210f0b85c4b714b4e6d981277d54094f3e4c2a4dc5102f133",
+  "resize": {
+    "backend": "fast_image_resize 5.5.0 fixed-point CatmullRom",
+    "max_processed_pixels": 262144,
+    "fixtures": [
+      {
+        "source": [
+          512,
+          256
+        ],
+        "grid": [
+          1,
+          10,
+          22
+        ],
+        "pixels_max_abs_to_HF": 5.9138983e-08
+      },
+      {
+        "source": [
+          64,
+          64
+        ],
+        "grid": [
+          1,
+          16,
+          16
+        ],
+        "pixels_max_abs_to_HF": 0.0
+      },
+      {
+        "source": [
+          320,
+          192
+        ],
+        "grid": [
+          1,
+          12,
+          20
+        ],
+        "pixels_max_abs_to_HF": 5.9138983e-08,
+        "reference_soft_min_pixels": 61440
+      }
+    ],
+    "previous_float_resize_512x256": {
+      "one_byte_differing_pixels_fraction": 0.036872632575757576,
+      "max_normalized_abs": 0.007843193
+    },
+    "geometry_note": "Soft minimum resolution is relaxed when its ceil would exceed the configured hard pixel budget."
+  },
+  "limits": [
+    "Single-row vision prefill; multiple rows require independent sessions",
+    "No video or deepstack",
+    "Image requests must bypass text-token prefix cache",
+    "This receipt predates HTTP integration",
+    "Dense F32 text model; GGUF text combination not yet tested here"
+  ],
+  "controlled_termination": "Offline oracle deliberately generated 16 tokens including tokens after EOS for complete sequence equality; HTTP serving must stop at EOS."
+}

@@ -218,6 +218,7 @@ fn fused_projection_matches_independent_calls_for_batch_and_prefill() {
         (GgmlDType::Q4_0, 0.08),
         (GgmlDType::Q8_0, 0.006),
         (GgmlDType::Q4K, 0.1),
+        (GgmlDType::Q5K, 0.06),
         (GgmlDType::Q6K, 0.02),
     ] {
         let tensors = [
@@ -308,6 +309,7 @@ fn cuda_grouped_projection_matches_separate_calls() {
         GgmlDType::Q4_0,
         GgmlDType::Q8_0,
         GgmlDType::Q4K,
+        GgmlDType::Q5K,
         GgmlDType::Q6K,
     ] {
         let tensors = [

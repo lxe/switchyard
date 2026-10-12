@@ -38,6 +38,7 @@ pub enum Encoding {
     Q4_0,
     Q8_0,
     Q4K,
+    Q5K,
     Q6K,
 }
 impl Encoding {
@@ -48,6 +49,7 @@ impl Encoding {
             2 => Self::Q4_0,
             8 => Self::Q8_0,
             12 => Self::Q4K,
+            13 => Self::Q5K,
             14 => Self::Q6K,
             30 => Self::Bf16,
             _ => return Err(Error::Invalid(format!("unsupported GGML type {code}"))),
@@ -61,6 +63,7 @@ impl Encoding {
             Self::Q4_0 => GgmlDType::Q4_0,
             Self::Q8_0 => GgmlDType::Q8_0,
             Self::Q4K => GgmlDType::Q4K,
+            Self::Q5K => GgmlDType::Q5K,
             Self::Q6K => GgmlDType::Q6K,
         }
     }

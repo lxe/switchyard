@@ -1,0 +1,141 @@
+{
+  "scope": "Qwen3.5 2B/4B actual released encoder/projector math, not full image generation or serving admission",
+  "models": [
+    {
+      "model": "Qwen/Qwen3.5-2B",
+      "vision_config": {
+        "deepstack_visual_indexes": [],
+        "depth": 24,
+        "hidden_act": "gelu_pytorch_tanh",
+        "hidden_size": 1024,
+        "in_channels": 3,
+        "initializer_range": 0.02,
+        "intermediate_size": 4096,
+        "model_type": "qwen3_5",
+        "num_heads": 16,
+        "num_position_embeddings": 2304,
+        "out_hidden_size": 2048,
+        "patch_size": 16,
+        "spatial_merge_size": 2,
+        "temporal_patch_size": 2
+      },
+      "projector": {
+        "repo": "unsloth/Qwen3.5-2B-GGUF",
+        "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+        "file": "mmproj-F16.gguf",
+        "bytes": 668227264,
+        "sha256": "7035e9cb8d7c6a9681d07eef9a364783e86ea4cd73faab2eabb4f43a101830c7"
+      },
+      "processor_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "device": "CPU F32 with 2 threads",
+      "image_dimensions": [
+        256,
+        256
+      ],
+      "embedding_shape": [
+        64,
+        2048
+      ],
+      "against_official_HF_F32_vision": {
+        "max_abs": 0.00033164024353027344,
+        "mean_abs": 4.87559691464412e-06,
+        "relative_l2": 6.502817268483341e-05
+      },
+      "native_timings": {
+        "dtype": "f32",
+        "forward_s": 114.153650224,
+        "grid": [
+          1,
+          16,
+          16
+        ],
+        "load_s": 2.813466812,
+        "shape": [
+          64,
+          2048
+        ]
+      },
+      "quality_threshold": {
+        "max_abs": 0.001,
+        "relative_l2": 0.0001
+      },
+      "passed": true,
+      "reference_includes": "Complete vision encoder+merger, selective original HF vision tensors, eager F32, no image resize",
+      "precision_note": "Released mmproj stores F16 parameters; oracle uses F32 conversion of original HF parameters. Absolute differences include F16 weight rounding."
+    },
+    {
+      "model": "Qwen/Qwen3.5-4B",
+      "vision_config": {
+        "deepstack_visual_indexes": [],
+        "depth": 24,
+        "hidden_act": "gelu_pytorch_tanh",
+        "hidden_size": 1024,
+        "in_channels": 3,
+        "initializer_range": 0.02,
+        "intermediate_size": 4096,
+        "model_type": "qwen3_5",
+        "num_heads": 16,
+        "num_position_embeddings": 2304,
+        "out_hidden_size": 2560,
+        "patch_size": 16,
+        "spatial_merge_size": 2,
+        "temporal_patch_size": 2
+      },
+      "projector": {
+        "repo": "unsloth/Qwen3.5-4B-GGUF",
+        "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+        "file": "mmproj-F16.gguf",
+        "bytes": 672423616,
+        "sha256": "cd88edcf8d031894960bb0c9c5b9b7e1fea6ebee02b9f7ce925a00d12891f864"
+      },
+      "processor_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "device": "CPU F32 with 2 threads",
+      "image_dimensions": [
+        256,
+        256
+      ],
+      "embedding_shape": [
+        64,
+        2560
+      ],
+      "against_official_HF_F32_vision": {
+        "max_abs": 0.0006744861602783203,
+        "mean_abs": 2.5058391202037456e-06,
+        "relative_l2": 3.328227103338577e-05
+      },
+      "native_timings": {
+        "dtype": "f32",
+        "forward_s": 0.769471745,
+        "grid": [
+          1,
+          16,
+          16
+        ],
+        "load_s": 0.581616813,
+        "shape": [
+          64,
+          2560
+        ]
+      },
+      "quality_threshold": {
+        "max_abs": 0.001,
+        "relative_l2": 0.0001
+      },
+      "passed": true,
+      "reference_includes": "Complete vision encoder+merger, selective original HF vision tensors, eager F32, no image resize",
+      "precision_note": "Released mmproj stores F16 parameters; oracle uses F32 conversion of original HF parameters. Absolute differences include F16 weight rounding."
+    }
+  ],
+  "reference_runtime_image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "cpu_memory_limit_bytes": 8589934592,
+  "original_HF_read": "safetensors selective model.visual tensors only; no complete text weight buffers",
+  "native_builds": {
+    "2B": "CPU debug",
+    "4B": "optimized release with CUDA feature, Device::Cpu; no GPU initialized"
+  },
+  "limitations": [
+    "Only 0.8B currently has full image+text autoregressive generation proof",
+    "2B/4B image HTTP and text generation gates remain pending",
+    "One synthetic coordinate image per actual pretrained encoder"
+  ]
+}
