@@ -26,6 +26,11 @@ pub struct ExtentReference {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ExtentArtifact {
+    Files {
+        prefix: String,
+        id: String,
+        content_id: String,
+    },
     Extents {
         prefix: String,
         id: String,
@@ -37,6 +42,14 @@ impl ModelArtifact {
     pub fn validate(&self) -> Result<()> {
         let digest = |s: &str| s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit());
         match self {
+            Self::Extents(ExtentReference {
+                model_artifact:
+                    ExtentArtifact::Files {
+                        prefix,
+                        id,
+                        content_id,
+                    },
+            }) if valid_key_prefix(prefix) && digest(id) && digest(content_id) => Ok(()),
             Self::Legacy(r) if valid_key_prefix(&r.archive_prefix) && digest(&r.archive_sha256) => {
                 Ok(())
             }
@@ -56,6 +69,12 @@ impl ModelArtifact {
     }
     pub fn cache_labels(&self) -> Result<BTreeMap<String, String>> {
         Ok(match self {
+            Self::Extents(ExtentReference {
+                model_artifact: ExtentArtifact::Files { content_id, .. },
+            }) => BTreeMap::from([
+                ("model_content_id".into(), content_id.clone()),
+                ("weight_loader".into(), "published-files-v1".into()),
+            ]),
             Self::Legacy(r) => {
                 BTreeMap::from([("model_archive_sha256".into(), r.archive_sha256.clone())])
             }
@@ -89,7 +108,12 @@ impl ModelArtifact {
             }
             Self::Extents(ExtentReference {
                 model_artifact:
-                    ExtentArtifact::Extents {
+                    ExtentArtifact::Files {
+                        prefix,
+                        id,
+                        content_id,
+                    }
+                    | ExtentArtifact::Extents {
                         prefix,
                         id,
                         content_id,
@@ -144,10 +168,38 @@ impl ModelArtifact {
                     },
                 }))
             }
+            (
+                Self::Extents(ExtentReference {
+                    model_artifact: ExtentArtifact::Files { prefix, .. },
+                }),
+                ModelManifest::Extents(manifest),
+            ) => {
+                let urls = manifest
+                    .extents
+                    .iter()
+                    .map(|e| e.object.clone())
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .map(|name| Ok((name.clone(), storage.presign(&format!("{prefix}/{name}"))?)))
+                    .collect::<switchyard_provider::Result<_>>()?;
+                Ok(ModelSource::Extents(ExtentSource {
+                    model_source: ExtentModel::Files {
+                        artifact: ExtentTicket { manifest, urls },
+                    },
+                }))
+            }
             _ => Err(Error::Config(
                 "model reference and manifest types differ".into(),
             )),
         }
+    }
+    pub(crate) fn vllm_extents(&self) -> bool {
+        matches!(
+            self,
+            Self::Extents(ExtentReference {
+                model_artifact: ExtentArtifact::Extents { .. }
+            })
+        )
     }
 }
 #[derive(Clone)]
@@ -166,6 +218,13 @@ impl ModelManifest {
 
 /// Engine arguments are hashed with a fixed model path so cache identity is stable.
 pub fn engine_arguments_identity(model: &ModelConfig) -> Result<String> {
+    if model.engine.kind != crate::config::EngineKind::Vllm {
+        use sha2::{Digest, Sha256};
+        return Ok(format!("{:x}",Sha256::digest(serde_json::to_vec(&(
+            "switchyard-engine-arguments-v1", model.engine.kind,
+            model.engine.args(model, "{model_root}")
+        ))?)));
+    }
     switchyard_agent::model::engine_arguments_identity(&model.engine.args(model, "{model_root}"))
         .map_err(Into::into)
 }

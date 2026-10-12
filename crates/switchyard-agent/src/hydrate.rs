@@ -18,7 +18,7 @@ use tokio::{io::AsyncWriteExt, sync::RwLock};
 
 pub(crate) mod diagnostics;
 mod streaming;
-pub use diagnostics::{ModelDiagnostics, ModelSnapshot};
+pub use diagnostics::{HostSnapshot, ModelDiagnostics, ModelSnapshot};
 
 fn relative(path: &str) -> bool {
     !path.is_empty()
@@ -141,6 +141,36 @@ pub(crate) async fn preflight(ticket: &Ticket, root: &Path, state: &RwLock<State
             "early launch requires a hydrated cooperative runtime".into(),
         ));
     }
+    if let Some(artifact) = ticket.source.files() {
+        if ticket.startup.mode == HydrationMode::Verified {
+            artifact.manifest.validate()?;
+        } else {
+            artifact.manifest.validate_structure()?;
+        }
+        if !(1..=64).contains(&ticket.concurrency) || ticket.lifetime_s == 0 {
+            return Err(Error::Manifest("invalid file range transfer bounds".into()));
+        }
+        let reused = ticket.startup.mode == HydrationMode::TrustedStreaming
+            && switchyard_artifacts::extents::ExtentHydration::trusted_publication_reusable(
+                &artifact.manifest,
+                &root.join("model"),
+            )?;
+        let required = if reused {
+            0
+        } else {
+            artifact.manifest.total_bytes()?
+        };
+        let observation = crate::startup::observe(root, required)?;
+        crate::startup::check_capacity(
+            &observation,
+            ticket.startup.require_model_ram,
+            ticket.concurrency as u64 * (64 << 10) + (64 << 20),
+        )?;
+        let mut state = state.write().await;
+        state.model_storage = Some(observation);
+        state.model_cached = reused;
+        return Ok(());
+    }
     if let Some((artifact, loader)) = ticket.source.extent() {
         if ticket.runtime.is_none() {
             return Err(Error::Manifest(
@@ -243,8 +273,14 @@ pub(crate) async fn hydrate_with_limit(
     state: Arc<RwLock<State>>,
     limit: Arc<tokio::sync::Semaphore>,
 ) -> Result<()> {
-    if let Some((artifact, _)) = ticket.source.extent() {
-        let hydration = switchyard_artifacts::extents::ExtentHydration::prepare(
+    if let Some(artifact) = ticket
+        .source
+        .files()
+        .or_else(|| ticket.source.extent().map(|(a, _)| a))
+    {
+        let diagnostic = crate::transport::TransportDiagnostics::default();
+        state.write().await.model_transport = Some(diagnostic.clone());
+        let hydration = Arc::new(switchyard_artifacts::extents::ExtentHydration::prepare(
             artifact.clone(),
             &root.join("model"),
             switchyard_artifacts::extents::ExtentOptions {
@@ -253,11 +289,31 @@ pub(crate) async fn hydrate_with_limit(
                 concurrency: ticket.concurrency,
                 download_limit: Some(limit),
                 request_timeout: Duration::from_secs(ticket.lifetime_s),
+                observer: Some(diagnostic.observer()),
                 ..Default::default()
             },
-        )?;
+        )?);
+        let owner = hydration.clone();
+        state
+            .read()
+            .await
+            .model_allocation
+            .register(move || owner.allocated_output_bytes().map_err(Into::into));
         let started = Instant::now();
-        let report = hydration.run().await?;
+        let work = hydration.run();
+        tokio::pin!(work);
+        let mut tick = tokio::time::interval(Duration::from_millis(100));
+        let report = loop {
+            tokio::select! {
+                report = &mut work => break report?,
+                _ = tick.tick() => {
+                    let mut st = state.write().await;
+                    st.phase = Phase::Hydrating;
+                    st.bytes_downloaded = hydration.progress().received_bytes;
+                    st.volume_bytes_per_s = Some(st.bytes_downloaded as f64 / started.elapsed().as_secs_f64().max(0.001));
+                }
+            }
+        };
         let mut st = state.write().await;
         st.bytes_downloaded = report.downloaded_bytes;
         st.hydration_seconds = started.elapsed().as_secs_f64();

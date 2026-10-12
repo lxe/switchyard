@@ -26,11 +26,15 @@ pub(super) fn check(
     let model_bytes = match &ticket.source {
         crate::model::ModelSource::Legacy(s) => s.manifest.files.values().map(|f| f.size).sum(),
         crate::model::ModelSource::Extents(_) => {
-            let (a, _) = ticket.source.extent().unwrap();
-            a.manifest
-                .total_bytes()?
-                .checked_add(crate::model::metadata_bytes(&a.manifest)?)
-                .ok_or_else(|| Error::Manifest("model capacity overflow".into()))?
+            if let Some(a) = ticket.source.files() {
+                a.manifest.total_bytes()?
+            } else {
+                let (a, _) = ticket.source.extent().unwrap();
+                a.manifest
+                    .total_bytes()?
+                    .checked_add(crate::model::metadata_bytes(&a.manifest)?)
+                    .ok_or_else(|| Error::Manifest("model capacity overflow".into()))?
+            }
         }
     };
     let model_output_required_bytes = model_required.unwrap_or(model_bytes);

@@ -26,6 +26,17 @@ pub struct StorageSettings {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Preserve whole raw objects and describe parallel HTTP byte ranges within each file.
+    PackFileRanges {
+        #[arg(long)]
+        source: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+        #[arg(long)]
+        metadata: PathBuf,
+        #[arg(long, default_value_t = 134217728)]
+        range_bytes: u64,
+    },
     /// Build a fixed-prefix serving runtime in Docker and export its filesystem tree.
     BuildRuntime {
         #[arg(long, default_value = ".")]
@@ -219,6 +230,24 @@ fn storage(settings: &StorageSettings) -> Result<Storage> {
 
 pub async fn run(command: Command) -> Result<()> {
     match command {
+        Command::PackFileRanges {
+            source,
+            out,
+            metadata,
+            range_bytes,
+        } => {
+            let metadata: Metadata = read(&metadata)?;
+            let result = tokio::task::spawn_blocking(move || {
+                switchyard_artifacts::extents::pack_file_ranges(
+                    &source,
+                    &out,
+                    metadata,
+                    range_bytes,
+                )
+            })
+            .await??;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
         Command::BuildRuntime {
             context,
             dockerfile,

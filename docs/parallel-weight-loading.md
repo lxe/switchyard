@@ -4,6 +4,8 @@ Switchyard's raw extent path downloads independent byte intervals into private, 
 
 The implementation is split between `switchyard-artifacts::extents`, which owns generic format validation, HTTP and filesystem operations, and `switchyard-weights`, which owns safetensors parsing and the local vLLM completion bridge. Agent and live fleet model sources select either this extent representation or the existing legacy representation. Runtime and compiler-cache manifests retain artifact-v1.
 
+The engine-independent `model_source.kind = "files"` path publishes complete raw files before ordinary engine startup. Its one-object-per-file HTTP range packaging and current serving measurements are documented in [Raw model file hydration](raw-model-hydration.md).
+
 ## Extent manifest
 
 `switchyard-extents-v1` contains `format`, `id`, `content_id`, caller-defined `metadata`, filesystem `entries` and sorted `extents`. Entries reuse artifact-v1's canonical relative-path and permission rules. This initial layout accepts regular files and explicit directories; it rejects links and special files.

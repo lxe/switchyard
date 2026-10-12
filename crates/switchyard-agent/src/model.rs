@@ -24,6 +24,8 @@ pub struct ExtentSource {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ExtentModel {
+    /// Raw file ranges are published before the ordinary engine starts.
+    Files { artifact: ExtentTicket },
     Extents {
         artifact: ExtentTicket,
         loader: switchyard_weights::VllmLoaderConfig,
@@ -34,7 +36,8 @@ impl ModelSource {
         match self {
             Self::Legacy(source) => source.manifest.total_size,
             Self::Extents(ExtentSource {
-                model_source: ExtentModel::Extents { artifact, .. },
+                model_source:
+                    ExtentModel::Extents { artifact, .. } | ExtentModel::Files { artifact },
             }) => artifact
                 .manifest
                 .extents
@@ -47,6 +50,14 @@ impl ModelSource {
             Self::Extents(ExtentSource {
                 model_source: ExtentModel::Extents { artifact, loader },
             }) => Some((artifact, loader)),
+            _ => None,
+        }
+    }
+    pub fn files(&self) -> Option<&ExtentTicket> {
+        match self {
+            Self::Extents(ExtentSource {
+                model_source: ExtentModel::Files { artifact },
+            }) => Some(artifact),
             _ => None,
         }
     }

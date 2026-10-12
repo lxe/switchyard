@@ -731,3 +731,23 @@ fn native_adapter_bounds_validate_and_pass_through_without_enabling_existing_fle
         assert!(invalid.validate().is_err(), "{field}");
     }
 }
+
+#[test]
+fn native_file_ranges_use_generic_publication_without_a_vllm_loader() {
+    let mut fleet: DeploymentConfig = serde_json::from_str(include_str!(
+        "../../../configs/runpod/native-fleet-f32-l4-opportunistic-candidate.json"
+    )).unwrap();
+    let model = &mut fleet.models[1];
+    model.artifact = serde_json::from_value(serde_json::json!({"model_artifact": {
+        "kind":"files", "prefix":"switchyard/native-engine/raw-models/test",
+        "id":"b".repeat(64), "content_id":"c".repeat(64)
+    }})).unwrap();
+    let labels = model.artifact.cache_labels().unwrap();
+    assert_eq!(labels["weight_loader"], "published-files-v1");
+    assert_eq!(labels["model_content_id"], "c".repeat(64));
+    assert!(!labels.contains_key("model_archive_sha256"));
+    fleet.validate().unwrap();
+    let serialized = serde_json::to_value(&fleet).unwrap();
+    assert_eq!(serialized["models"][1]["model_artifact"]["kind"], "files");
+    assert!(serialized["models"][1]["model_artifact"].get("loader").is_none());
+}

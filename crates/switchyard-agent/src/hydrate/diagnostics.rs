@@ -580,7 +580,8 @@ fn numbers(path: &str, keys: &[&str]) -> BTreeMap<String, u64> {
         .collect()
 }
 impl HostSnapshot {
-    pub(crate) fn capture() -> Self {
+    /// Sample bounded process/thread/socket counters without reading capabilities.
+    pub fn capture() -> Self {
         let mut s = Self {
             process: numbers(
                 "/proc/self/status",

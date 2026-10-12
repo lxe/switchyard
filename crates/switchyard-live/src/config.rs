@@ -418,15 +418,13 @@ impl ExecutionConfig {
         for m in &self.models {
             m.artifact.validate()?;
             m.engine.validate_native(self.bootstrap.runtime.as_ref())?;
-            if m.engine.kind == EngineKind::Native
-                && matches!(m.artifact, crate::model::ModelArtifact::Extents(_))
-            {
+            if m.engine.kind == EngineKind::Native && m.artifact.vllm_extents() {
                 return Err(Error::Config(
                     "native serving does not consume vLLM tensor extents".into(),
                 ));
             }
             if m.engine.kind == EngineKind::Sglang {
-                if matches!(m.artifact, crate::model::ModelArtifact::Extents(_)) {
+                if m.artifact.vllm_extents() {
                     return Err(Error::Config(
                         "the extent weight loader requires vLLM".into(),
                     ));

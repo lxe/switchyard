@@ -571,3 +571,38 @@ async fn intentional_extent_cancellation_does_not_publish_a_transport_failure() 
     assert!(events.lock().unwrap().iter().all(|p| p.failure.is_none()));
     server.abort();
 }
+
+#[tokio::test]
+async fn whole_file_ranges_reconstruct_with_twenty_workers_and_preserve_content_identity() {
+    let mut fixture = Fixture::new(20 * 4096, 4096);
+    let original_id = fixture.manifest.content_id.clone();
+    fs::remove_dir_all(fixture.root.join("objects")).unwrap();
+    fixture.manifest = pack_file_ranges(
+        &fixture.root.join("source"),
+        &fixture.root.join("objects"),
+        fixture.manifest.metadata.clone(),
+        4096,
+    )
+    .unwrap();
+    assert_eq!(fixture.manifest.content_id, original_id);
+    assert_eq!(fixture.manifest.extents.len(), 20);
+    let object = &fixture.manifest.extents[0].object;
+    assert!(
+        fixture.manifest.extents.iter().all(|e| &e.object == object
+            && e.object_offset == e.offset
+            && e.object_size == 20 * 4096)
+    );
+    let (ticket, state, _, server) = fixture.server(false, Fault::None).await;
+    let destination = fixture.root.join("ranges-ready");
+    let hydration = ExtentHydration::prepare(ticket, &destination, fixture.options()).unwrap();
+    let report = hydration.run().await.unwrap();
+    assert_eq!(report.downloaded_bytes, 20 * 4096);
+    assert_eq!(report.copy_buffer_bound, 20 * 64 * 1024);
+    assert_eq!(state.requested.load(Ordering::Relaxed), 20);
+    assert_eq!(
+        fs::read(destination.join("nested/large")).unwrap(),
+        fs::read(fixture.root.join("source/nested/large")).unwrap()
+    );
+    assert!(destination.join("empty").is_file());
+    server.abort();
+}

@@ -1,0 +1,260 @@
+{
+  "format": "switchyard-native-raw-range-rollout-v1",
+  "models": [
+    {
+      "model": "qwen3.5-2b",
+      "pod": {
+        "id": "v074jp78uaj5pt",
+        "name": "switchyard-raw-serve-693940065078",
+        "cost": 0.59,
+        "dataCenterId": "EUR-IS-1",
+        "cudaVersion": "13.0"
+      },
+      "agent_sha256": "66ec5c78c203133157caf6bcfbb2cdae59309a2097962316de9d27dcc14b32bf",
+      "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+      "runtime_id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/a55317d51ef2f3a9a7baf54d56d705cae698cfd3e66e3b8ea46f509074aba0f1",
+        "id": "a55317d51ef2f3a9a7baf54d56d705cae698cfd3e66e3b8ea46f509074aba0f1",
+        "content_id": "c2c4e50a19a6903ba025367249f5af6878d7d93e63719bda5b3df9871e1b8708",
+        "bytes": 3776527078,
+        "ranges": 34,
+        "range_bytes": 134217728,
+        "shared_concurrency": 20
+      },
+      "phases": {
+        "launch_to_container_s": 3.7579784393310547,
+        "agent_download_s": 1.132439374923706,
+        "runtime_hydration_s": 6.692317631,
+        "model_hydration_s": 6.397967693,
+        "model_MB_per_s": 590.2697949118888,
+        "engine_to_http_s": 6.483704175,
+        "cuda_initialization_s": 0.251626967,
+        "weights_read_s": 2.373779623,
+        "construct_cast_transfer_s": 3.7441852289999997,
+        "publish_http_s": 0.11350054499999995,
+        "http_to_first_batch_s": 4.77185047,
+        "first_prefill_s": 9.39184934,
+        "request_to_first_token_engine_s": 9.931489164,
+        "request_to_first_content_client_s": 10.178810457000509,
+        "launch_to_first_content_s": 33.8277783520025,
+        "launch_to_engine_http_host_clock_estimate_s": 19.034860934262085,
+        "sum_range_storage_write_worker_s": 4.1322967209999995,
+        "sum_range_body_wait_worker_s": 73.165988984
+      },
+      "startup_milestones_agent_monotonic": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.767555901
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.796783243
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 7.196219073
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 7.459873532
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 7.460711733
+        },
+        {
+          "event": "engine_health_polling_started",
+          "elapsed_s": 7.488017296
+        },
+        {
+          "event": "engine_health_ready",
+          "elapsed_s": 14.186602594
+        }
+      ],
+      "engine_first_milestones_monotonic": {
+        "process_started": 4.829e-06,
+        "device_initialization_started": 0.00048469,
+        "device_initialized": 0.252111657,
+        "weights_read_started": 0.252238778,
+        "tokenizer_loaded": 0.588255289,
+        "weights_read_finished": 2.626018401,
+        "model_loaded": 6.37020363,
+        "http_listening": 6.483704175,
+        "queue_batch": 11.255277458,
+        "batch_started": 11.255554645,
+        "prefix_prefill": 20.647403985,
+        "batch_finished": 21.400222831,
+        "mixed_batch_started": 27.34563988,
+        "mixed_decode_step": 27.778227399,
+        "mixed_batch_finished": 29.212616693
+      },
+      "engine_bounds": {
+        "model": "qwen3.5-2b",
+        "model_root": "/work/switchyard/model",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 128,
+        "max_weight_bytes": 8589934592,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        }
+      },
+      "cache_policy": "opportunistic, no seed attached",
+      "functional_requests": 18,
+      "cleanup": {
+        "pod_id": "v074jp78uaj5pt",
+        "name": "switchyard-raw-serve-693940065078",
+        "confirmed_absent": true
+      },
+      "telemetry_sha256": {
+        "receipt.json": "3208e02ce78a8ff4e4b541ea8a9741a57ab44a002d002b41357cdbd85ecead88",
+        "agent-state-final.json": "8043c5f716add3cc6fb1066484360dcec408b7cc00aae681f14e250948d6d391",
+        "container-events.ndjson": "1cb76a35717ef22154b80b8f613edb625879b95076437bf84566db6f2687816b"
+      }
+    },
+    {
+      "model": "qwen3.5-4b",
+      "pod": {
+        "id": "s21uogwy165d5b",
+        "name": "switchyard-raw-serve-ddc03808b347",
+        "cost": 0.59,
+        "dataCenterId": "EUR-IS-1",
+        "cudaVersion": "13.0"
+      },
+      "agent_sha256": "66ec5c78c203133157caf6bcfbb2cdae59309a2097962316de9d27dcc14b32bf",
+      "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+      "runtime_id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/f4b49971ac0292d408a44e691c77660ea312d5001d5aa7e60f2b9c27ffda2cb3",
+        "id": "f4b49971ac0292d408a44e691c77660ea312d5001d5aa7e60f2b9c27ffda2cb3",
+        "content_id": "80d478b1b0fc4f8165bd9bbfcdf912d59baee439dbfd472c11c5ae80cddc38a5",
+        "bytes": 8424396060,
+        "ranges": 68,
+        "range_bytes": 134217728,
+        "shared_concurrency": 20
+      },
+      "phases": {
+        "launch_to_container_s": 3.6840145587921143,
+        "agent_download_s": 0.8419091701507568,
+        "runtime_hydration_s": 8.867637744,
+        "model_hydration_s": 16.354479047,
+        "model_MB_per_s": 515.1124677092871,
+        "engine_to_http_s": 10.25946345,
+        "cuda_initialization_s": 0.290444683,
+        "weights_read_s": 5.116824534,
+        "construct_cast_transfer_s": 4.737774562,
+        "publish_http_s": 0.11375348600000024,
+        "http_to_first_batch_s": 1.2483699470000005,
+        "first_prefill_s": 9.456185528,
+        "request_to_first_token_engine_s": 9.996120051,
+        "request_to_first_content_client_s": 10.884592696005711,
+        "launch_to_first_content_s": 43.53895802400075,
+        "launch_to_engine_http_host_clock_estimate_s": 32.204188009783934,
+        "sum_range_storage_write_worker_s": 7.5722583670000025,
+        "sum_range_body_wait_worker_s": 189.78566600699997
+      },
+      "startup_milestones_agent_monotonic": [
+        {
+          "event": "runtime_hydration_started",
+          "elapsed_s": 0.804959283
+        },
+        {
+          "event": "model_hydration_started",
+          "elapsed_s": 0.834257319
+        },
+        {
+          "event": "runtime_hydration_finished",
+          "elapsed_s": 9.672597027
+        },
+        {
+          "event": "model_hydration_finished",
+          "elapsed_s": 17.190125493
+        },
+        {
+          "event": "engine_spawned",
+          "elapsed_s": 17.191499831
+        },
+        {
+          "event": "engine_health_polling_started",
+          "elapsed_s": 17.216264712
+        },
+        {
+          "event": "engine_health_ready",
+          "elapsed_s": 27.758854172
+        }
+      ],
+      "engine_first_milestones_monotonic": {
+        "process_started": 6.983e-06,
+        "device_initialization_started": 0.00054245,
+        "device_initialized": 0.290987133,
+        "weights_read_started": 0.291110868,
+        "tokenizer_loaded": 0.589872349,
+        "weights_read_finished": 5.407935402,
+        "model_loaded": 10.145709964,
+        "http_listening": 10.25946345,
+        "queue_batch": 11.507537335,
+        "batch_started": 11.507833397,
+        "prefix_prefill": 20.964018925,
+        "batch_finished": 21.828909614,
+        "mixed_batch_started": 31.185071069,
+        "mixed_decode_step": 31.460448411,
+        "mixed_batch_finished": 34.117316454
+      },
+      "engine_bounds": {
+        "model": "qwen3.5-4b",
+        "model_root": "/work/switchyard/model",
+        "device": {
+          "kind": "cuda",
+          "ordinal": 0
+        },
+        "dtype": "f32",
+        "max_context": 128,
+        "max_weight_bytes": 17179869184,
+        "max_batch_size": 8,
+        "queue_capacity": 64,
+        "batch_wait_ms": 2,
+        "cache": {
+          "page_tokens": 16,
+          "checkpoint_tokens": 32,
+          "max_bytes": 268435456,
+          "max_entries": 16
+        }
+      },
+      "cache_policy": "opportunistic, no seed attached",
+      "functional_requests": 18,
+      "cleanup": {
+        "pod_id": "s21uogwy165d5b",
+        "name": "switchyard-raw-serve-ddc03808b347",
+        "confirmed_absent": true
+      },
+      "telemetry_sha256": {
+        "receipt.json": "fa00b8a0fe85d3b4a996dc154dbd8f6648bc1924e1ef606b822ea12f309261a7",
+        "agent-state-final.json": "8658dab7ae9bfbfc44f6f746663c82f54fc5560e86970acc53d117ac151bf612",
+        "container-events.ndjson": "b2d3800b032c4a0883dc1e15ebe9643d00e27cd86bdd14d491caf26df428f72a"
+      }
+    }
+  ],
+  "shared_active_worker_limit": 20,
+  "range_bytes": 134217728,
+  "copy_buffer_bytes_per_worker": 65536,
+  "inference_readiness_probe": false,
+  "serve_time_content_hashing": false,
+  "whole_artifact_compressed_spool": false,
+  "scope": "Fresh L4 EUR-IS-1 pods, same frozen SM89 F32 executable as previous receipts; raw safetensors remain unchanged. Runtime and model hydration overlap. First request: Reply with exactly the word Paris.; max_tokens4. Then one hot32-token request and two eight-request32-token bursts. No GPU cache seed attached.",
+  "comparison_limit": "Previous scheduler smokes used a different initial prompt and controller, and the 2B pod was in EUR-IS-2. Observed totals are historical comparisons, not controlled A/B. The new4B host-buffer byte cap is16GiB versus previous12GiB; same checkpoint, math dtype, context, batching and prefix limits.",
+  "timing_limits": "Launch-to-content and agent/engine durations use monotonic clocks. Container and engine cumulative host timestamps compared with controller wall clock are estimates; clock skew was not measured. HTTP-to-first-batch combines proxy discovery, controller polling and request transport; those components remain unattributed.",
+  "provider_limit": "A separate EUR-IS-2 isolation pod had a145-second body-await outlier despite20 connections. Raw ranges remove TAR/decompression serialization; provider/R2 route reliability is not established.",
+  "detailed_evidence": "results/native-raw-serving-01/{2b,4b}/; live output in tmux session0"
+}
