@@ -14,6 +14,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ["config", "runtime", "tool", "output"]:
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument(
+        "--cache-policy", choices=["strict", "opportunistic"], default="strict"
+    )
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
     build = json.loads((args.runtime / "build.json").read_text())
@@ -49,6 +52,7 @@ def main():
             "compatibility": compatibility,
             "attributes": {
                 "native_driver_cache_layout": "native-cuda-driver-family-v1",
+                "native_driver_cache_policy": "strict default; explicit opportunistic cold JIT",
                 "model_configuration": "inline --config-json",
                 "serving_python": "false",
                 "torch": "false",
@@ -69,6 +73,7 @@ def main():
             "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
             "NATIVE_ENGINE_EXPECTED_GPU": config["provider"]["gpu_id"],
             "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": build["gpu_compute_capability"],
+            "NATIVE_ENGINE_CACHE_POLICY": args.cache_policy,
             "CUDA_CACHE_DISABLE": "0",
             "CUDA_CACHE_MAXSIZE": "536870912",
         },
