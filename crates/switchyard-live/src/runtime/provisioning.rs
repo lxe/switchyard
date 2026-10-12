@@ -30,26 +30,35 @@ pub(super) struct LaunchOutcome {
     token: String,
     allocated_s: f64,
     provider_elapsed_s: f64,
-    binding: Option<crate::native_cache_registry::CacheBinding>,
+    endpoints: Vec<LaunchedEndpoint>,
+    plan: Option<switchyard_core::topology::HostPlan>,
     result: switchyard_provider::Result<Pod>,
+}
+struct LaunchedEndpoint {
+    profile: usize,
+    id: Option<String>,
+    binding: Option<crate::native_cache_registry::CacheBinding>,
+}
+struct LaunchModel {
+    profile: usize,
+    id: Option<String>,
+    port: u16,
+    model: crate::config::ModelConfig,
 }
 impl<P: Provider> LaunchContext<P> {
     fn now(&self) -> f64 {
         self.epoch.elapsed().as_secs_f64()
     }
-    async fn run(
-        self,
-        intent: usize,
-        profile: usize,
-        offering: Offering,
-        model: crate::config::ModelConfig,
-        name: String,
-        ticket_key: String,
-    ) -> Result<LaunchOutcome> {
+    async fn prepare_ticket(
+        &self,
+        model: &crate::config::ModelConfig,
+        gpu: &str,
+        endpoint_id: Option<&str>,
+        port: u16,
+    ) -> Result<(Ticket, Option<crate::native_cache_registry::CacheBinding>)> {
         let manifest = self.manifests[&model.id].clone();
         let source = model.artifact.ticket(&self.storage, manifest)?;
-        let (native_cache_binding, learned_cache) =
-            self.lookup_native_cache(&model, &offering.gpu).await;
+        let (native_cache_binding, learned_cache) = self.lookup_native_cache(model, gpu).await;
         let learned_export = self
             .config
             .bootstrap
@@ -64,12 +73,12 @@ impl<P: Provider> LaunchContext<P> {
                     shutdown_timeout_s: 5,
                 },
             );
-        let ticket = Ticket {
+        let mut ticket = Ticket {
             source,
             model: model.id.clone(),
             revision: model.revision.clone(),
             engine_args: model.engine.args(
-                &model,
+                model,
                 &self
                     .config
                     .bootstrap
@@ -83,14 +92,14 @@ impl<P: Provider> LaunchContext<P> {
             startup: self.config.bootstrap.startup.clone(),
             runtime: if let Some(runtime) = &self.config.bootstrap.runtime {
                 let mut caches = vec![];
-                for cache in model.caches.iter().filter(|c| c.gpu == offering.gpu) {
+                for cache in model.caches.iter().filter(|c| c.gpu == gpu) {
                     caches.push(switchyard_agent::runtime::CacheTicket {
                         name: cache.name.clone(),
                         artifact: cache.artifact.ticket(
                             &self.storage,
                             self.cache_manifests[&cache.artifact.id].clone(),
                         )?,
-                        compatibility: cache.requirements(runtime, &model)?,
+                        compatibility: cache.requirements(runtime, model)?,
                     });
                 }
                 if let Some(cache) = learned_cache {
@@ -127,7 +136,78 @@ impl<P: Provider> LaunchContext<P> {
                 None
             },
         };
-        self.storage.put_json(&ticket_key, &ticket).await?;
+        if let Some(endpoint_id) = endpoint_id {
+            let mut startup = self.config.bootstrap.startup.clone();
+            let base = startup.model_root.as_deref().unwrap_or("/work/switchyard");
+            startup.model_root = Some(format!(
+                "{base}/models/{}",
+                ticket.source.artifact_identity()
+            ));
+            ticket.startup = startup;
+            ticket.engine_args = model
+                .engine
+                .args(model, &ticket.startup.model_directory().to_string_lossy());
+            *ticket.engine_args.last_mut().expect("native bind") = format!("127.0.0.1:{port}");
+            if let Some(native) = &model.engine.native
+                && let Some(lora) = &native.lora
+            {
+                // Uploaded adapter files belong to the endpoint, not a sibling registry.
+                let mut config: serde_json::Value = serde_json::from_str(&ticket.engine_args[1])?;
+                config["lora"]["root"] = serde_json::json!(lora.root.join(endpoint_id));
+                ticket.engine_args[1] = serde_json::to_string(&config)?;
+            }
+        }
+        Ok((ticket, native_cache_binding))
+    }
+    async fn run(
+        self,
+        intent: usize,
+        profile: usize,
+        offering: Offering,
+        models: Vec<LaunchModel>,
+        ownership: (String, String),
+        plan: Option<switchyard_core::topology::HostPlan>,
+    ) -> Result<LaunchOutcome> {
+        let (name, ticket_key) = ownership;
+        let mut tickets = vec![];
+        let mut endpoints = vec![];
+        for model in models {
+            let (ticket, binding) = self
+                .prepare_ticket(&model.model, &offering.gpu, model.id.as_deref(), model.port)
+                .await?;
+            endpoints.push(LaunchedEndpoint {
+                profile: model.profile,
+                id: model.id.clone(),
+                binding,
+            });
+            tickets.push((model.id, model.port, ticket));
+        }
+        if let Some(plan) = &plan {
+            let ticket = switchyard_agent::host::HostTicket {
+                schema_version: 1,
+                storage_root: None,
+                plan: plan.clone(),
+                endpoints: tickets
+                    .into_iter()
+                    .map(
+                        |(id, port, ticket)| switchyard_agent::host::HostedEndpoint {
+                            id: id.expect("host endpoint ID"),
+                            port,
+                            ticket,
+                        },
+                    )
+                    .collect(),
+            };
+            ticket
+                .validate()
+                .map_err(|e| Error::Config(e.to_string()))?;
+            self.storage.put_json(&ticket_key, &ticket).await?;
+        } else {
+            self.storage
+                .put_json(&ticket_key, &tickets.pop().expect("single endpoint").2)
+                .await?;
+        }
+
         let token = nonce()?;
         let allocated = self.now();
         let provider_started = self.now();
@@ -151,7 +231,8 @@ impl<P: Provider> LaunchContext<P> {
             token,
             allocated_s: allocated,
             provider_elapsed_s: self.now() - provider_started,
-            binding: native_cache_binding,
+            endpoints,
+            plan,
             result: launched,
         })
     }
@@ -191,7 +272,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         };
         let h = &self.scheduling.heuristics;
         let count = self
-            .nodes
+            .hosts
             .iter()
             .filter(|n| n.owned.ended_s.is_none())
             .count()
@@ -202,7 +283,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             .map(|a| self.profiles[a.profile].usd_per_hour)
             .sum();
         let owned_rate: f64 = self
-            .nodes
+            .hosts
             .iter()
             .filter(|n| n.owned.ended_s.is_none())
             .map(|n| rental_rate(&n.owned))
@@ -223,13 +304,74 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             return Ok(false);
         }
         self.limits()?;
-        let model = self
-            .config
-            .models
-            .iter()
-            .find(|m| m.id == p.model)
-            .ok_or_else(|| Error::Config("profile model missing".into()))?
-            .clone();
+        let plan = self.config.topology.plan_for(&p.id).cloned();
+        let deployments: Vec<_> = plan.as_ref().map_or_else(
+            || vec![(profile, None)],
+            |plan| {
+                plan.endpoints
+                    .iter()
+                    .map(|e| {
+                        (
+                            self.profiles
+                                .iter()
+                                .position(|p| p.id == e.profile)
+                                .expect("validated profile"),
+                            Some(e.id.clone()),
+                        )
+                    })
+                    .collect()
+            },
+        );
+        let models: Vec<_> = deployments
+            .into_iter()
+            .enumerate()
+            .map(|(i, (profile, id))| {
+                Ok(LaunchModel {
+                    profile,
+                    id,
+                    port: 8100 + i as u16,
+                    model: self
+                        .config
+                        .models
+                        .iter()
+                        .find(|m| m.id == self.profiles[profile].model)
+                        .ok_or_else(|| Error::Config("profile model missing".into()))?
+                        .clone(),
+                })
+            })
+            .collect::<Result<_>>()?;
+        let mut additions = BTreeMap::<&str, usize>::new();
+        for model in &models {
+            *additions.entry(&model.model.id).or_default() += 1;
+        }
+        for pending in self.inflight.values() {
+            let p = &self.profiles[pending.profile];
+            if let Some(plan) = self.config.topology.plan_for(&p.id) {
+                for endpoint in &plan.endpoints {
+                    let p = self
+                        .profiles
+                        .iter()
+                        .find(|p| p.id == endpoint.profile)
+                        .expect("validated topology");
+                    *additions.entry(&p.model).or_default() += 1;
+                }
+            } else {
+                *additions.entry(&p.model).or_default() += 1;
+            }
+        }
+        if additions.iter().any(|(model, count)| {
+            self.nodes
+                .iter()
+                .filter(|n| {
+                    n.observed.ended_s.is_none()
+                        && self.profiles[n.observed.profile].model == **model
+                })
+                .count()
+                + count
+                > self.config.limits.max_endpoints_per_model
+        }) {
+            return Ok(false);
+        }
         let offering = self.profile_offerings[profile].clone();
         let intent = self.pending.len();
         let name = format!("switchyard-{}-{intent}", self.run_id);
@@ -246,7 +388,11 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             PendingAllocation {
                 profile,
                 started_s,
-                expected_ready_s: started_s + p.startup.total(),
+                expected_ready_s: started_s
+                    + models
+                        .iter()
+                        .map(|m| self.profiles[m.profile].startup.total())
+                        .fold(0.0, f64::max),
             },
         );
         let context = LaunchContext {
@@ -265,7 +411,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             (
                 intent,
                 context
-                    .run(intent, profile, offering, model, name, ticket_key)
+                    .run(intent, profile, offering, models, (name, ticket_key), plan)
                     .await,
             )
         });
@@ -294,7 +440,8 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             token,
             allocated_s: allocated,
             provider_elapsed_s,
-            binding: native_cache_binding,
+            endpoints,
+            plan,
             result,
         } = outcome;
         self.controller.observe(SchedulerFeedback::Allocation {
@@ -319,6 +466,15 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                     let at_s = self.now();
                     let retry_at_s = at_s + self.scheduling.retry_cooldown_s;
                     self.provisioning_cooldowns.insert(profile, retry_at_s);
+                    if let Some(plan) = &plan {
+                        for endpoint in &plan.endpoints {
+                            if let Some(index) =
+                                self.profiles.iter().position(|p| p.id == endpoint.profile)
+                            {
+                                self.provisioning_cooldowns.insert(index, retry_at_s);
+                            }
+                        }
+                    }
                     self.allocation_rejections.push(AllocationRejection {
                         at_s,
                         profile,
@@ -333,7 +489,6 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             }
         };
         // Persist provider ownership before any fallible endpoint setup.
-        let p = &self.profiles[profile];
         let owned = OwnedPod {
             pod: pod.clone(),
             allocated_s: allocated,
@@ -344,49 +499,71 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         let mut journal = self.pods();
         journal.push(owned.clone());
         self.save("owned-pods.json", &journal)?;
-        let endpoint = Endpoint::new(
-            self.provider.endpoint_url(&pod, 8080),
-            &token,
-            self.config.limits.request_timeout_s,
-        )?;
-        let observed = ObservedNode {
-            profile,
-            warm: false,
-            allocated_s: allocated,
-            ready_s: allocated + p.startup.total(),
-            ended_s: None,
-            active: vec![],
-            adapters: VecDeque::new(),
-            last_used_s: allocated,
-            is_ready: false,
-            host: HostObservation {
-                phase: StartupPhase::Booting,
-                bytes_downloaded: 0,
-                bytes_total: p.host.model_bytes,
-                remaining_bytes_known: false,
-                probe_pending: false,
-                probe_attempted_s: None,
-                probe: None,
-            },
-        };
-        self.nodes.push(Node {
+        let host_id = self.hosts.len();
+        let first_endpoint = self.nodes.len();
+        self.hosts.push(Host {
             owned,
-            endpoint,
-            observed,
             ticket_key,
-            checked_tokenizer: false,
-            bandwidth: BandwidthWindow::default(),
-            native_cache_binding,
-            successful_calls: 0,
-            cache_collection_attempted: false,
-            cache_quiescence_known: true,
+            endpoints: vec![],
+            plan: plan.as_ref().map(|p| p.id.clone()),
         });
+        for launched in endpoints {
+            let profile = launched.profile;
+            let p = &self.profiles[profile];
+            let base = self.provider.endpoint_url(&pod, 8080);
+            let url = launched.id.as_ref().map_or(base.clone(), |id| {
+                format!("{}/endpoints/{id}", base.trim_end_matches('/'))
+            });
+            let endpoint = Endpoint::new(url, &token, self.config.limits.request_timeout_s)?;
+            let placement = plan.as_ref().zip(launched.id.as_ref()).map(|(plan, id)| {
+                plan.placement(
+                    first_endpoint,
+                    plan.endpoints
+                        .iter()
+                        .find(|e| &e.id == id)
+                        .expect("validated endpoint"),
+                )
+            });
+            let observed = ObservedNode {
+                placement,
+                profile,
+                warm: false,
+                allocated_s: allocated,
+                ready_s: allocated + p.startup.total(),
+                ended_s: None,
+                active: vec![],
+                adapters: VecDeque::new(),
+                last_used_s: allocated,
+                is_ready: false,
+                host: HostObservation {
+                    phase: StartupPhase::Booting,
+                    bytes_downloaded: 0,
+                    bytes_total: p.host.model_bytes,
+                    remaining_bytes_known: false,
+                    probe_pending: false,
+                    probe_attempted_s: None,
+                    probe: None,
+                },
+            };
+            self.nodes.push(Node {
+                host: host_id,
+                endpoint,
+                observed,
+                checked_tokenizer: false,
+                bandwidth: BandwidthWindow::default(),
+                native_cache_binding: launched.binding,
+                successful_calls: 0,
+                cache_collection_attempted: false,
+                cache_quiescence_known: true,
+            });
+            self.hosts[host_id].endpoints.push(self.nodes.len() - 1);
+        }
         self.pending[intent].resolved = true;
         self.save("pending-launches.json", &self.pending)?;
         self.journal()?;
         self.launches += 1;
         let actual_rate: f64 = self
-            .nodes
+            .hosts
             .iter()
             .filter(|n| n.owned.ended_s.is_none())
             .map(|n| rental_rate(&n.owned))

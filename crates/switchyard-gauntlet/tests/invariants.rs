@@ -63,6 +63,7 @@ fn request(id: usize) -> Request {
 }
 fn workload(n: usize) -> Scenario {
     Scenario {
+        topology: Default::default(),
         name: "generic-fixture".into(),
         notes: "Known analytical100TPS shared server".into(),
         horizon_s: 20.0,

@@ -45,6 +45,7 @@ impl Drop for Fixture {
 fn fixture(engine_url: String, stop_succeeds: bool) -> Fixture {
     let temp = Temp::new();
     let roots = RootPaths {
+        cache_seeds: None,
         runtime: temp.0.join("runtime"),
         caches: temp.0.join("cache"),
         chunks: temp.0.join("artifacts"),

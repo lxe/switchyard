@@ -31,6 +31,8 @@ pub struct RequestResult {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct NodeResult {
+    pub host: usize,
+    pub endpoint: Option<String>,
     pub id: usize,
     pub profile: String,
     pub warm: bool,
@@ -99,11 +101,23 @@ pub struct ClassResult {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Run {
+    pub hosts: Vec<HostResult>,
     pub summary: Summary,
     pub requests: Vec<RequestResult>,
     pub nodes: Vec<NodeResult>,
     pub timeline: Vec<Timeline>,
     pub controller_diagnostics: serde_json::Value,
+}
+
+/// Rental accounting belongs to the physical allocation, not each endpoint.
+#[derive(Debug, Clone, Serialize)]
+pub struct HostResult {
+    pub id: usize,
+    pub plan: Option<String>,
+    pub endpoints: Vec<usize>,
+    pub allocated_s: f64,
+    pub ended_s: f64,
+    pub usd: f64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -148,6 +162,7 @@ struct Active {
     weight: f64,
 }
 struct Node {
+    placement: Option<switchyard_core::topology::EndpointPlacement>,
     first_use_s: f64,
     first_use_until_s: Option<f64>,
     initialized: bool,
@@ -251,6 +266,7 @@ struct Simulation {
     timeline: Vec<Timeline>,
     launches: usize,
     failed_launches: usize,
+    startup_outcomes: std::collections::BTreeSet<usize>,
     peak_nodes: usize,
     max_active: usize,
     max_kv: u64,
@@ -355,6 +371,7 @@ impl Simulation {
             timeline: vec![],
             launches: 0,
             failed_launches: 0,
+            startup_outcomes: Default::default(),
             peak_nodes: 0,
             max_active: 0,
             max_kv: 0,
@@ -411,7 +428,10 @@ impl Simulation {
                     EventKind::Ready(id) => {
                         if self.nodes[id].ended_s.is_none() {
                             self.nodes[id].last_used_s = self.now;
-                            if self.random.unit() < self.scenario.launch_fail_probability {
+                            let host = self.nodes[id].placement.as_ref().map_or(id, |p| p.host);
+                            if self.startup_outcomes.insert(host)
+                                && self.random.unit() < self.scenario.launch_fail_probability
+                            {
                                 self.fail(id);
                                 self.failed_launches += 1;
                             } else {
@@ -434,10 +454,20 @@ impl Simulation {
                     EventKind::AllocationRejected(intent, elapsed_s) => {
                         if let Some((profile, _)) = self.pending_rejections.remove(&intent) {
                             self.capacity_rejections += 1;
-                            self.provisioning_cooldowns.insert(
-                                profile,
-                                self.now + self.scenario.scheduling.retry_cooldown_s,
-                            );
+                            let retry = self.now + self.scenario.scheduling.retry_cooldown_s;
+                            self.provisioning_cooldowns.insert(profile, retry);
+                            if let Some(plan) =
+                                self.scenario.topology.plan_for(&self.profiles[profile].id)
+                            {
+                                for endpoint in &plan.endpoints {
+                                    let index = self
+                                        .profiles
+                                        .iter()
+                                        .position(|p| p.id == endpoint.profile)
+                                        .expect("validated topology");
+                                    self.provisioning_cooldowns.insert(index, retry);
+                                }
+                            }
                             if let Some(controller) = controller.as_deref_mut() {
                                 controller.observe(
                                     switchyard_core::scheduler::SchedulerFeedback::Allocation {
@@ -530,6 +560,30 @@ impl Simulation {
         });
     }
     fn launch(&mut self, profile: usize, warm: bool) {
+        let host = self.nodes.len();
+        if let Some(plan) = self
+            .scenario
+            .topology
+            .plan_for(&self.profiles[profile].id)
+            .cloned()
+        {
+            for endpoint in &plan.endpoints {
+                let profile = self
+                    .profiles
+                    .iter()
+                    .position(|p| p.id == endpoint.profile)
+                    .expect("validated host plan");
+                self.launch_endpoint(profile, warm);
+                self.nodes.last_mut().unwrap().placement = Some(plan.placement(host, endpoint));
+            }
+            if !warm {
+                self.launches -= plan.endpoints.len() - 1;
+            }
+        } else {
+            self.launch_endpoint(profile, warm);
+        }
+    }
+    fn launch_endpoint(&mut self, profile: usize, warm: bool) {
         let p = &self.profiles[profile];
         let jitter = 1.0 + (self.random.unit() * 2.0 - 1.0) * p.startup.jitter;
         let build = self.random.unit() < self.scenario.build_probability;
@@ -598,6 +652,7 @@ impl Simulation {
         }
         let id = self.nodes.len();
         self.nodes.push(Node {
+            placement: None,
             first_use_s,
             first_use_until_s: None,
             initialized: warm,
@@ -635,6 +690,19 @@ impl Simulation {
             .max(self.nodes.iter().filter(|n| n.ended_s.is_none()).count());
     }
     fn fail(&mut self, id: usize) {
+        let host = self.nodes[id].placement.as_ref().map_or(id, |p| p.host);
+        let siblings: Vec<_> = self
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(i, n)| n.placement.as_ref().map_or(*i, |p| p.host) == host)
+            .map(|(i, _)| i)
+            .collect();
+        for id in siblings {
+            self.fail_endpoint(id);
+        }
+    }
+    fn fail_endpoint(&mut self, id: usize) {
         let n = &mut self.nodes[id];
         if n.ended_s.is_some() {
             return;
@@ -683,6 +751,7 @@ impl Simulation {
             }
         }
         let view = FleetView {
+            topology: &self.scenario.topology,
             now: self.now,
             allow_scale,
             profiles: &self.profiles,
@@ -765,6 +834,7 @@ impl Simulation {
                             + host.bytes_total.saturating_sub(host.bytes_downloaded) as f64 / rate
                     };
                     ObservedNode {
+                        placement: n.placement.clone(),
                         profile: n.profile,
                         warm: n.warm,
                         allocated_s: n.allocated_s,
@@ -797,19 +867,7 @@ impl Simulation {
             let valid = match action {
                 Action::Provision { profile } => {
                     if let Some(p) = self.profiles.get(profile) {
-                        let live = self
-                            .nodes
-                            .iter()
-                            .filter(|n| {
-                                n.ended_s.is_none() && self.profiles[n.profile].model == p.model
-                            })
-                            .count();
-                        let pending = self
-                            .pending_rejections
-                            .values()
-                            .filter(|(profile, _)| self.profiles[*profile].model == p.model)
-                            .count();
-                        if allow_scale && live + pending < self.scenario.max_nodes_per_model {
+                        if allow_scale && self.placement_admitted(profile) {
                             if !self.capacity_available(profile) {
                                 let reality = &self.observations.profiles[&p.id];
                                 let delay = reality.rejection_delay_s;
@@ -840,9 +898,19 @@ impl Simulation {
                     }
                 }
                 Action::Release { node } => {
-                    if let Some(n) = self.nodes.get_mut(node) {
-                        if n.ended_s.is_none() && n.active.is_empty() {
-                            n.ended_s = Some(self.now);
+                    if let Some(n) = self.nodes.get(node) {
+                        let host = n.placement.as_ref().map_or(node, |p| p.host);
+                        let siblings: Vec<_> = self
+                            .nodes
+                            .iter()
+                            .enumerate()
+                            .filter(|(i, n)| n.placement.as_ref().map_or(*i, |p| p.host) == host)
+                            .map(|(i, _)| i)
+                            .collect();
+                        if siblings.iter().all(|i| self.nodes[*i].active.is_empty()) {
+                            for id in siblings {
+                                self.nodes[id].ended_s = Some(self.now);
+                            }
                             true
                         } else {
                             false
@@ -864,6 +932,44 @@ impl Simulation {
         }
     }
 
+    fn placement_admitted(&self, profile: usize) -> bool {
+        let mut additions = std::collections::BTreeMap::<&str, usize>::new();
+        if let Some(plan) = self.scenario.topology.plan_for(&self.profiles[profile].id) {
+            for endpoint in &plan.endpoints {
+                let p = self
+                    .profiles
+                    .iter()
+                    .find(|p| p.id == endpoint.profile)
+                    .expect("validated topology");
+                *additions.entry(&p.model).or_default() += 1;
+            }
+        } else {
+            additions.insert(&self.profiles[profile].model, 1);
+        }
+        for (pending, _) in self.pending_rejections.values() {
+            if let Some(plan) = self.scenario.topology.plan_for(&self.profiles[*pending].id) {
+                for endpoint in &plan.endpoints {
+                    let p = self
+                        .profiles
+                        .iter()
+                        .find(|p| p.id == endpoint.profile)
+                        .expect("validated topology");
+                    *additions.entry(&p.model).or_default() += 1;
+                }
+            } else {
+                *additions.entry(&self.profiles[*pending].model).or_default() += 1;
+            }
+        }
+        additions.into_iter().all(|(model, count)| {
+            count
+                + self
+                    .nodes
+                    .iter()
+                    .filter(|n| n.ended_s.is_none() && self.profiles[n.profile].model == model)
+                    .count()
+                <= self.scenario.max_nodes_per_model
+        })
+    }
     fn capacity_available(&self, profile: usize) -> bool {
         let Some(reality) = self.observations.profiles.get(&self.profiles[profile].id) else {
             return true;

@@ -28,7 +28,9 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         let Some(node) = self.nodes.get(id) else {
             return;
         };
-        if node.owned.ended_s.is_some() || self.state_reads.values().any(|(n, _)| *n == id) {
+        if self.hosts[node.host].owned.ended_s.is_some()
+            || self.state_reads.values().any(|(n, _)| *n == id)
+        {
             return;
         }
         let endpoint = node.endpoint.clone();
@@ -68,7 +70,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                 continue;
             };
             let node = &mut self.nodes[id];
-            if node.owned.ended_s.is_some() {
+            if self.hosts[node.host].owned.ended_s.is_some() {
                 continue;
             }
             let StateObservation {
@@ -112,14 +114,14 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                             }),
                         )?;
                     }
-                    let observation = serde_json::json!({"at_s":finish_s,"start_s":start_s,"finish_s":finish_s,"pod":node.owned.pod.id,"state":state});
+                    let observation = serde_json::json!({"at_s":finish_s,"start_s":start_s,"finish_s":finish_s,"pod":self.hosts[node.host].owned.pod.id,"state":state});
                     telemetry::append(&self.out, "agent-observations.ndjson", &observation)?;
                     self.observations.push(observation);
                     if update_observation(&mut node.observed, &state, finish_s)? {
                         println!(
                             "{} ready after {:.1}s",
                             self.profiles[node.observed.profile].model,
-                            finish_s - node.owned.allocated_s
+                            finish_s - self.hosts[node.host].owned.allocated_s
                         );
                     }
                 }
@@ -128,11 +130,11 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                         &self.out,
                         "agent-observations.ndjson",
                         &serde_json::json!({
-                            "at_s":finish_s,"start_s":start_s,"finish_s":finish_s,"pod":node.owned.pod.id,"status":"fetch_failed",
+                            "at_s":finish_s,"start_s":start_s,"finish_s":finish_s,"pod":self.hosts[node.host].owned.pod.id,"status":"fetch_failed",
                         }),
                     )?;
                     if !node.observed.is_ready
-                        && finish_s - node.owned.allocated_s
+                        && finish_s - self.hosts[node.host].owned.allocated_s
                             >= self.config.limits.startup_timeout_s as f64
                     {
                         return Err(Error::Limit("agent failed to become reachable".into()));

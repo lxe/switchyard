@@ -46,7 +46,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             .sum::<u64>();
         if states[&request].state != RequestStatus::Queued
             || !n.observed.is_ready
-            || n.owned.ended_s.is_some()
+            || self.hosts[n.host].owned.ended_s.is_some()
             || !profile.compatible(r)
             || n.observed.active.len() >= profile.max_in_flight
             || reserved + r.input_tokens + r.max_output > profile.kv_tokens

@@ -8,6 +8,7 @@ publish.workspace = true
 readme = "README.md"
 
 [dependencies]
+switchyard-core.workspace = true
 switchyard-weights.workspace = true
 switchyard-artifacts.workspace = true
 serde.workspace = true

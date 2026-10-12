@@ -11,6 +11,7 @@ const MODELS: [&str; 5] = [
 
 fn base(name: &str, notes: &str, profiles: &[Profile], model_count: usize) -> Scenario {
     Scenario {
+        topology: Default::default(),
         name: name.into(),
         notes: notes.into(),
         horizon_s: 900.0,

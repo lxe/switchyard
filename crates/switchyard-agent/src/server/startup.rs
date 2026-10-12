@@ -20,15 +20,40 @@ pub(super) async fn prepare(
     state: Arc<RwLock<State>>,
     epoch: Instant,
 ) -> Result<engine::Process> {
+    let resources = PreparationResources {
+        limit: Arc::new(Semaphore::new(ticket.concurrency)),
+        runtime_gate: None,
+        model_gate: None,
+    };
+    prepare_with_resources(ticket, roots, state, epoch, resources).await
+}
+
+pub(super) struct PreparationResources {
+    pub(super) limit: Arc<Semaphore>,
+    pub(super) runtime_gate: Option<Arc<tokio::sync::Mutex<()>>>,
+    pub(super) model_gate: Option<Arc<tokio::sync::Mutex<()>>>,
+}
+
+pub(super) async fn prepare_with_resources(
+    ticket: &Ticket,
+    roots: &RootPaths,
+    state: Arc<RwLock<State>>,
+    epoch: Instant,
+    resources: PreparationResources,
+) -> Result<engine::Process> {
     if ticket.source.extent().is_some() {
         return extents::prepare(ticket, roots, state, epoch).await;
     }
     // This runs before either branch can transfer, including on a tiny Docker /dev/shm.
     crate::hydrate::preflight(ticket, &roots.models, &state).await?;
     crate::runtime::preflight(ticket, roots, &state).await?;
-    let limit = Arc::new(Semaphore::new(ticket.concurrency));
+    let limit = resources.limit;
     let (ready, receiver) = oneshot::channel();
     let runtime = async {
+        let _guard = match &resources.runtime_gate {
+            Some(gate) => Some(gate.lock().await),
+            None => None,
+        };
         milestone(&state, epoch, StartupEvent::RuntimeHydrationStarted).await;
         if ticket.startup.early_launch {
             let (boot_tx, boot_rx) = oneshot::channel();
@@ -98,6 +123,10 @@ pub(super) async fn prepare(
         }
     };
     let model = async {
+        let _guard = match &resources.model_gate {
+            Some(gate) => Some(gate.lock().await),
+            None => None,
+        };
         milestone(&state, epoch, StartupEvent::ModelHydrationStarted).await;
         crate::hydrate::hydrate_with_limit(ticket, &roots.models, state.clone(), limit.clone())
             .await?;

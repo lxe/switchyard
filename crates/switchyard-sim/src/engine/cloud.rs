@@ -54,6 +54,7 @@ impl CloudSimulator {
             return Err("invalid cloud queue limits or request completion budget".into());
         }
         let scenario = Scenario {
+            topology: config.topology.clone(),
             name: "cloud".into(),
             notes: "Externally controlled virtual fleet".into(),
             horizon_s: 3600.0,
@@ -108,7 +109,7 @@ impl CloudSimulator {
     }
 
     pub fn offerings(&self) -> serde_json::Value {
-        serde_json::json!({"offerings": self.simulation.profiles})
+        serde_json::json!({"offerings": self.simulation.profiles, "host_plans": self.simulation.scenario.topology.host_plans})
     }
 
     /// Observable provider state. Private readiness, sampled caches, bandwidth,
@@ -118,7 +119,7 @@ impl CloudSimulator {
         let instances: Vec<_> = sim.nodes.iter().enumerate().map(|(id, n)| {
             let host = sim.host_observation(n);
             let ready = n.ended_s.is_none() && n.initialized;
-            serde_json::json!({"id": id, "profile_id": sim.profiles[n.profile].id,
+            serde_json::json!({"id": id, "physical_host": n.placement.as_ref().map_or(id, |p| p.host), "placement":n.placement, "profile_id": sim.profiles[n.profile].id,
                 "endpoint": format!("/v1/instances/{id}/openai/v1"),
                 "status": if n.failed { "failed" } else if n.ended_s.is_some() { "released" } else if ready { "ready" } else { "starting" },
                 "allocated_at_s": n.allocated_s, "ready_at_s": if ready { Some(n.ready_s) } else { None },
@@ -128,7 +129,12 @@ impl CloudSimulator {
         let requests: Vec<_> = (0..sim.states.len())
             .map(|id| self.request(id).expect("existing request"))
             .collect();
-        serde_json::json!({"time_s": sim.now, "instances": instances, "requests": requests})
+        let hosts: Vec<_> = sim.nodes.iter().enumerate().filter(|(id,n)| n.placement.as_ref().is_none_or(|p| p.host == *id)).map(|(id,n)| {
+            serde_json::json!({"id":id, "plan":n.placement.as_ref().map(|p| &p.plan), "gpu":sim.profiles[n.profile].gpu,
+                "endpoints":sim.nodes.iter().enumerate().filter(|(i,n)| n.placement.as_ref().map_or(*i,|p|p.host)==id).map(|(i,_)|i).collect::<Vec<_>>(),
+                "allocated_at_s":n.allocated_s,"released_at_s":n.ended_s})
+        }).collect();
+        serde_json::json!({"time_s": sim.now, "hosts":hosts, "instances": instances, "requests": requests})
     }
 
     pub fn provision(&mut self, profile_id: &str) -> Result<usize, String> {
@@ -138,15 +144,8 @@ impl CloudSimulator {
             .iter()
             .position(|p| p.id == profile_id)
             .ok_or("unknown profile")?;
-        let live = sim
-            .nodes
-            .iter()
-            .filter(|n| {
-                n.ended_s.is_none() && sim.profiles[n.profile].model == sim.profiles[profile].model
-            })
-            .count();
-        if live >= sim.scenario.max_nodes_per_model {
-            return Err("capacity: instance quota reached".into());
+        if !sim.placement_admitted(profile) {
+            return Err("capacity: endpoint quota reached".into());
         }
         let id = sim.nodes.len();
         if !sim.capacity_available(profile) {
@@ -154,23 +153,34 @@ impl CloudSimulator {
             return Err("capacity: no instance available in the configured environment".into());
         }
         sim.launch(profile, false);
-        Ok(id)
+        Ok((id..sim.nodes.len())
+            .find(|index| sim.nodes[*index].profile == profile)
+            .expect("requested endpoint belongs to its host plan"))
     }
 
     pub fn release(&mut self, id: usize) -> Result<(), String> {
         let sim = &mut self.simulation;
-        if sim
-            .states
+        let node = sim.nodes.get(id).ok_or("unknown instance")?;
+        let host = node.placement.as_ref().map_or(id, |p| p.host);
+        let siblings: Vec<_> = sim
+            .nodes
             .iter()
-            .any(|s| s.node == Some(id) && s.result.completed_s.is_some_and(|t| t > sim.now))
-        {
-            return Err("busy: instance has undelivered responses".into());
+            .enumerate()
+            .filter(|(i, n)| n.placement.as_ref().map_or(*i, |p| p.host) == host)
+            .map(|(i, _)| i)
+            .collect();
+        if siblings.iter().any(|i| !sim.nodes[*i].active.is_empty()) {
+            return Err("busy: physical host has active requests".into());
         }
-        let node = sim.nodes.get_mut(id).ok_or("unknown instance")?;
-        if !node.active.is_empty() {
-            return Err("busy: instance has active requests".into());
+        if sim.states.iter().any(|s| {
+            s.node.is_some_and(|i| siblings.contains(&i))
+                && s.result.completed_s.is_some_and(|t| t > sim.now)
+        }) {
+            return Err("busy: physical host has undelivered responses".into());
         }
-        node.ended_s.get_or_insert(sim.now);
+        for id in siblings {
+            sim.nodes[id].ended_s.get_or_insert(sim.now);
+        }
         sim.dispatch_pinned();
         Ok(())
     }

@@ -95,11 +95,16 @@ struct AllocationRejection {
     status: u16,
     retry_at_s: f64,
 }
-struct Node {
+struct Host {
     owned: OwnedPod,
+    ticket_key: String,
+    endpoints: Vec<usize>,
+    plan: Option<String>,
+}
+struct Node {
+    host: usize,
     endpoint: Endpoint,
     observed: ObservedNode,
-    ticket_key: String,
     checked_tokenizer: bool,
     bandwidth: switchyard_core::probe::BandwidthWindow,
     native_cache_binding: Option<crate::native_cache_registry::CacheBinding>,
@@ -118,6 +123,7 @@ pub struct LiveRuntime<P: Provider> {
     profile_offerings: Vec<Offering>,
     pub profiles: Vec<Profile>,
     nodes: Vec<Node>,
+    hosts: Vec<Host>,
     pending: Vec<PendingLaunch>,
     inflight: BTreeMap<usize, switchyard_core::scheduler::PendingAllocation>,
     launch_tasks: JoinSet<(usize, Result<provisioning::LaunchOutcome>)>,
@@ -156,13 +162,13 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         std::fs::create_dir_all(self.out.join("workloads"))?;
         let mut observations = vec![];
         for node in &self.nodes {
-            if node.owned.ended_s.is_none() && node.observed.is_ready {
+            if self.hosts[node.host].owned.ended_s.is_none() && node.observed.is_ready {
                 let value = match node.endpoint.metrics().await {
                     Ok(metrics) => {
-                        serde_json::json!({"pod_id":node.owned.pod.id,"metrics":metrics})
+                        serde_json::json!({"pod_id":self.hosts[node.host].owned.pod.id,"metrics":metrics})
                     }
                     Err(error) => {
-                        serde_json::json!({"pod_id":node.owned.pod.id,"error":error.to_string()})
+                        serde_json::json!({"pod_id":self.hosts[node.host].owned.pod.id,"error":error.to_string()})
                     }
                 };
                 observations.push(value);
@@ -176,7 +182,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
     pub async fn new(
         provider: P,
         storage: Storage,
-        config: ExecutionConfig,
+        mut config: ExecutionConfig,
         policy: Policy,
         out: &Path,
     ) -> Result<Self> {
@@ -192,6 +198,26 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             component_manifests,
             cache_manifests,
         } = profiles::prepare(&provider, &storage, &config, out).await?;
+        std::fs::write(
+            out.join("configured-topology.json"),
+            serde_json::to_vec_pretty(&config.topology)?,
+        )?;
+        let mut plan_admission = vec![];
+        config.topology.host_plans.retain(|plan| {
+            let available = plan.endpoints.iter().all(|endpoint| {
+                profiles.iter().position(|p|p.id==endpoint.profile).is_some_and(|index| {
+                    profile_offerings[index].gpu_memory_gb.checked_mul(1024 * 1024 * 1024)
+                        .is_some_and(|n|n>=plan.gpu_memory_bytes)
+                })
+            });
+            plan_admission.push(serde_json::json!({"plan":plan.id,"admitted":available,"reason":if available {"compatible provider offering"} else {"missing offering or insufficient host memory; individual endpoint profiles remain available"}}));
+            available
+        });
+        config.topology.validate(&profiles).map_err(Error::Config)?;
+        std::fs::write(
+            out.join("host-plan-admission.json"),
+            serde_json::to_vec_pretty(&plan_admission)?,
+        )?;
         let scheduling = config.scheduling.clone();
         if out.join("pending-launches.json").exists() {
             return Err(Error::Config("output directory already contains an ownership journal; recover it or choose a new directory".into()));
@@ -204,6 +230,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             profile_offerings,
             profiles,
             nodes: vec![],
+            hosts: vec![],
             pending: vec![],
             inflight: BTreeMap::new(),
             launch_tasks: JoinSet::new(),
@@ -250,13 +277,21 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         Ok(())
     }
     fn journal(&self) -> Result<()> {
+        let mappings: Vec<_> = self.hosts.iter().map(|host| {
+            let endpoints: Vec<_> = host.endpoints.iter().map(|id| {
+                let node = &self.nodes[*id];
+                serde_json::json!({"node":id,"endpoint":node.observed.placement.as_ref().map(|p| &p.endpoint),"profile":self.profiles[node.observed.profile].id,"model":self.profiles[node.observed.profile].model,"url":node.endpoint.url})
+            }).collect();
+            serde_json::json!({"pod":host.owned.pod.id,"plan":host.plan,"endpoints":endpoints})
+        }).collect();
+        self.save("host-endpoints.json", &mappings)?;
         self.save(
             "owned-pods.json",
-            &self.nodes.iter().map(|n| &n.owned).collect::<Vec<_>>(),
+            &self.hosts.iter().map(|n| &n.owned).collect::<Vec<_>>(),
         )
     }
     pub fn rental_usd(&self) -> f64 {
-        self.nodes
+        self.hosts
             .iter()
             .map(|n| {
                 // The provider's actual pod quote supersedes the catalog GPU price; disk is an explicit separate estimate.
@@ -303,7 +338,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         self.controller = Box::new(BuiltinScheduler::new(policy));
     }
     pub fn pods(&self) -> Vec<OwnedPod> {
-        self.nodes.iter().map(|n| n.owned.clone()).collect()
+        self.hosts.iter().map(|n| n.owned.clone()).collect()
     }
     pub fn model_ids(&self) -> impl Iterator<Item = &str> {
         self.config.models.iter().map(|m| m.id.as_str())

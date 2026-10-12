@@ -192,6 +192,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                 }
                 let nodes = self.nodes.iter().map(|n| n.observed.clone()).collect();
                 let fleet = FleetView {
+                    topology: &self.config.topology,
                     now,
                     allow_scale,
                     profiles: &self.profiles,
@@ -202,7 +203,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                     nodes,
                     jobs: jobs.clone(),
                     scheduling: &self.scheduling,
-                    max_nodes_per_model: self.config.limits.max_instances,
+                    max_nodes_per_model: self.config.limits.max_endpoints_per_model,
                     idle_timeout_s: 30.0,
                     reactive_delay_s: 0.0,
                     build_probability: 0.0,
@@ -212,7 +213,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
                 if states.values().all(|s| matches!(s.state, RequestStatus::Done | RequestStatus::Rejected)) { break; }
                 if !actions.is_empty() {
                     let nodes = fleet.nodes.iter().enumerate().map(|(id, node)| serde_json::json!({
-                        "id": id, "profile": node.profile, "allocated_s": node.allocated_s,
+                        "id": id, "placement": node.placement, "profile": node.profile, "allocated_s": node.allocated_s,
                         "ready_s": node.ready_s, "ended_s": node.ended_s, "is_ready": node.is_ready,
                         "active_requests": node.active.iter().map(|request| request.id).collect::<Vec<_>>(),
                         "host": node.host,

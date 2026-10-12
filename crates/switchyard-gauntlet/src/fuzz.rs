@@ -71,6 +71,7 @@ pub fn case(seed: u64) -> (Vec<Profile>, Scenario) {
     let arrival = rng.next(60) as f64;
     let requests = (rng.next(60) + 1) as usize;
     let mut scenario = Scenario {
+        topology: Default::default(),
         name: format!("fuzz-{seed}"),
         notes: "Generated independent OpenAI-compatible request shapes; no private data".into(),
         horizon_s: 240.0,
@@ -160,6 +161,30 @@ pub fn case(seed: u64) -> (Vec<Profile>, Scenario) {
             volume_bandwidth_bytes_per_s: vec![1_000_000.0, 200_000_000.0],
             ..HostProfile::default()
         });
+    }
+    if seed.is_multiple_of(4) {
+        use switchyard_core::topology::{EndpointPlan, FleetTopology, HostPlan};
+        let endpoints: Vec<_> = profiles
+            .iter()
+            .step_by(2)
+            .enumerate()
+            .map(|(i, p)| EndpointPlan {
+                id: format!("model-{i}"),
+                profile: p.id.clone(),
+                gpu_memory_bytes: 8 << 30,
+                compute_fraction: 1.0 / model_count as f64,
+            })
+            .collect();
+        scenario.topology = FleetTopology {
+            host_plans: vec![HostPlan {
+                id: "shared-synthetic-host".into(),
+                gpu: profiles[0].gpu.clone(),
+                gpu_memory_bytes: 80 << 30,
+                reserved_gpu_memory_bytes: 4 << 30,
+                contention_factor: 0.8,
+                endpoints,
+            }],
+        };
     }
     (profiles, scenario)
 }

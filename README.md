@@ -40,6 +40,10 @@ A run records request timings, per-instance cost, unfinished work, controller di
 
 Install the CLI from this checkout with `cargo install --path . --locked`, then use `switchyard` in place of `cargo run --release --`.
 
+## Shared GPU hosts
+
+[Host plans](docs/SHARED_HOSTS.md) place multiple model endpoints or replicas on one GPU allocation. The scheduler routes independently to each endpoint while hydration, ownership, rent and host release remain shared. The [configuration example](configs/shared-hosts) exercises two models and three endpoints with explicit memory and compute reservations.
+
 ## HTTP experiments
 
 Start a local provider with the same analytical configuration:

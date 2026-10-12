@@ -142,3 +142,7 @@ cargo clippy -p switchyard-agent --all-targets -- -D warnings
 ```
 
 Tests serve synthetic archives over local HTTP and check twenty simultaneous streams, extraction before the final transfer, runtime imports during model hydration, gate ordering, cancellation ownership and permit retention, RAM capacity, trusted receipts, and chunk boundaries, zstd framing, retries, verified and wire-byte accounting, stall deadlines, compatibility rejection, writable-cache reuse, executable symlinks, corrupt data, unsafe archive entries, authentication, readiness inference, request bounds, and streaming proxy behavior. Export tests cover disabled capabilities, idempotent initiation, active response drainage through EOF and disconnect, invalid download names, output checksums, seed preservation, cancellation, descendant shutdown, and packing failures. They do not require a GPU or cloud credentials.
+
+## Multiple endpoints
+
+The versioned [host ticket](../../docs/SHARED_HOSTS.md) launches independent native engine processes from a fixed resident plan. Immutable runtime, model files and cache seeds are shared; each endpoint has its own writable caches and authenticated `/endpoints/{id}` API prefix. All hydration streams share one host-wide permit budget. Standalone model tickets remain supported.

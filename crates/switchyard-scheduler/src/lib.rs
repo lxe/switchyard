@@ -163,6 +163,24 @@ impl Scheduler for BuiltinScheduler {
             world.launch_forecast(pending.profile, pending.started_s, pending.expected_ready_s);
         }
         if self.policy == Policy::Adaptive {
+            let can_cancel: Vec<_> = world
+                .nodes
+                .iter()
+                .map(|node| {
+                    node.placement.as_ref().is_none_or(|placement| {
+                        world
+                            .nodes
+                            .iter()
+                            .filter(|other| {
+                                other
+                                    .placement
+                                    .as_ref()
+                                    .is_some_and(|p| p.host == placement.host)
+                            })
+                            .all(|other| other.active.is_empty() && !other.is_ready)
+                    })
+                })
+                .collect();
             for (id, node) in world.nodes.iter_mut().take(fleet.nodes.len()).enumerate() {
                 if node.ended_s.is_some() || node.is_ready {
                     continue;
@@ -196,7 +214,7 @@ impl Scheduler for BuiltinScheduler {
                 {
                     world.actions.push(Action::ProbeHost { node: id });
                 }
-                if slow || timed_out {
+                if (slow || timed_out) && can_cancel[id] {
                     node.ended_s = Some(fleet.now);
                     world.actions.push(Action::Release { node: id });
                     self.cancellations += 1;
@@ -211,9 +229,14 @@ impl Scheduler for BuiltinScheduler {
                     .map(|(profile, _)| *profile),
             );
         }
+        world.finalize_releases();
         if fleet.allow_scale {
+            let releasable: Vec<_> = (0..world.nodes.len())
+                .map(|id| world.host_idle(id))
+                .collect();
             for (id, node) in world.nodes.iter_mut().enumerate() {
-                if !node.warm
+                if releasable[id]
+                    && !node.warm
                     && node.ended_s.is_none()
                     && node.is_ready
                     && node.active.is_empty()
@@ -223,6 +246,7 @@ impl Scheduler for BuiltinScheduler {
                     world.actions.push(Action::Release { node: id });
                 }
             }
+            world.finalize_releases();
             world.plan();
         }
         world.dispatch();
@@ -259,34 +283,116 @@ struct SchedulerWorld<'a> {
 }
 impl SchedulerWorld<'_> {
     fn launch_forecast(&mut self, profile: usize, started: f64, ready: f64) {
+        let begin = self.nodes.len();
         self.launch(profile, false);
         self.actions.pop();
-        let node = self.nodes.last_mut().expect("forecast node");
-        node.allocated_s = started;
-        node.ready_s = ready;
+        for node in &mut self.nodes[begin..] {
+            node.allocated_s = started;
+            node.ready_s = ready;
+        }
     }
     fn launch(&mut self, profile: usize, warm: bool) {
-        self.nodes.push(ObservedNode {
-            profile,
-            warm,
-            allocated_s: self.now,
-            ready_s: self.now + self.predicted_start(&self.profiles[profile]),
-            ended_s: None,
-            active: vec![],
-            adapters: VecDeque::new(),
-            last_used_s: self.now,
-            is_ready: false,
-            host: HostObservation {
-                phase: StartupPhase::Booting,
-                bytes_downloaded: 0,
-                bytes_total: 0,
-                remaining_bytes_known: false,
-                probe_pending: false,
-                probe_attempted_s: None,
-                probe: None,
-            },
-        });
+        let host = self.nodes.len();
+        let deployments: Vec<_> =
+            if let Some(plan) = self.scenario.topology.plan_for(&self.profiles[profile].id) {
+                plan.endpoints
+                    .iter()
+                    .map(|e| {
+                        (
+                            self.profiles
+                                .iter()
+                                .position(|p| p.id == e.profile)
+                                .expect("validated topology"),
+                            Some(plan.placement(host, e)),
+                        )
+                    })
+                    .collect()
+            } else {
+                vec![(profile, None)]
+            };
+        for (profile, placement) in deployments {
+            self.nodes.push(ObservedNode {
+                placement,
+                profile,
+                warm,
+                allocated_s: self.now,
+                ready_s: self.now + self.predicted_start(&self.profiles[profile]),
+                ended_s: None,
+                active: vec![],
+                adapters: VecDeque::new(),
+                last_used_s: self.now,
+                is_ready: false,
+                host: HostObservation {
+                    phase: StartupPhase::Booting,
+                    bytes_downloaded: 0,
+                    bytes_total: 0,
+                    remaining_bytes_known: false,
+                    probe_pending: false,
+                    probe_attempted_s: None,
+                    probe: None,
+                },
+            });
+        }
         self.actions.push(Action::Provision { profile });
+    }
+    fn placement_fraction(&self, profile: &Profile) -> f64 {
+        self.scenario
+            .topology
+            .plan_for(&profile.id)
+            .map_or(1.0, |p| {
+                p.endpoints
+                    .iter()
+                    .filter(|e| e.profile == profile.id)
+                    .map(|e| e.compute_fraction * p.contention_factor)
+                    .sum()
+            })
+    }
+    fn finalize_releases(&mut self) {
+        let mut released = std::collections::BTreeSet::new();
+        self.actions.retain(|action| {
+            if let Action::Release { node } = action {
+                let host = self.nodes[*node]
+                    .placement
+                    .as_ref()
+                    .map_or(*node, |p| p.host);
+                return released.insert(host);
+            }
+            true
+        });
+        self.actions.retain(|action| match action {
+            Action::ProbeHost { node } => !released.contains(
+                &self.nodes[*node]
+                    .placement
+                    .as_ref()
+                    .map_or(*node, |p| p.host),
+            ),
+            _ => true,
+        });
+        for (id, node) in self.nodes.iter_mut().enumerate() {
+            if released.contains(&node.placement.as_ref().map_or(id, |p| p.host)) {
+                node.ended_s = Some(self.now);
+                node.is_ready = false;
+            }
+        }
+    }
+    fn host_idle(&self, id: usize) -> bool {
+        let n = &self.nodes[id];
+        n.placement.as_ref().is_none_or(|placement| {
+            self.nodes
+                .iter()
+                .filter(|other| {
+                    other
+                        .placement
+                        .as_ref()
+                        .is_some_and(|p| p.host == placement.host)
+                })
+                .all(|other| {
+                    other.active.is_empty()
+                        && !other.warm
+                        && other.is_ready
+                        && self.now - other.last_used_s >= self.scenario.idle_timeout_s
+                })
+        })
     }
 }
 

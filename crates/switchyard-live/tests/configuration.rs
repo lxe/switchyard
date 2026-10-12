@@ -56,6 +56,7 @@ fn storage(endpoint: &str) -> StorageConfig {
 }
 fn config() -> DeploymentConfig {
     DeploymentConfig {
+        topology: Default::default(),
         compute: compute(),
         bootstrap: BootstrapConfig {
             image: "fixture".into(),
@@ -98,6 +99,7 @@ fn config() -> DeploymentConfig {
             },
         }],
         limits: Limits {
+            max_endpoints_per_model: 64,
             max_instances: 2,
             max_usd_per_hour: 2.0,
             max_run_usd: 5.0,
@@ -808,4 +810,34 @@ fn scheduling_heuristics_reject_unbounded_or_invalid_learning_controls() {
     s = Scheduling::default();
     s.heuristics.capacity_safety_fraction = f64::NAN;
     assert!(validate_scheduling(&s).is_err());
+}
+
+#[test]
+fn selecting_a_workload_model_retains_resident_siblings_and_drops_other_plans() {
+    let mut cfg = config();
+    let mut b = cfg.models[0].clone();
+    b.id = "sibling".into();
+    let mut c = b.clone();
+    c.id = "unrelated".into();
+    cfg.models.extend([b, c]);
+    cfg.topology = serde_json::from_value(serde_json::json!({"host_plans":[
+        {"id":"pair","gpu":"mock","gpu_memory_bytes":100,"reserved_gpu_memory_bytes":10,"contention_factor":1,"endpoints":[
+            {"id":"a","profile":"qwen-small:mock:region","gpu_memory_bytes":30,"compute_fraction":0.5},
+            {"id":"b","profile":"sibling:mock:region","gpu_memory_bytes":30,"compute_fraction":0.5}
+        ]},
+        {"id":"other","gpu":"mock","gpu_memory_bytes":100,"reserved_gpu_memory_bytes":10,"contention_factor":1,"endpoints":[
+            {"id":"c","profile":"unrelated:mock:region","gpu_memory_bytes":30,"compute_fraction":1}
+        ]}
+    ]})).unwrap();
+    cfg.restrict_to_model("qwen-small").unwrap();
+    assert_eq!(
+        cfg.models.iter().map(|m| m.id.as_str()).collect::<Vec<_>>(),
+        vec!["qwen-small", "sibling"]
+    );
+    assert_eq!(cfg.topology.host_plans.len(), 1);
+    assert_eq!(cfg.topology.host_plans[0].id, "pair");
+    assert!(cfg.restrict_to_model("missing").is_err());
+    cfg.topology.host_plans.clear();
+    cfg.restrict_to_model("qwen-small").unwrap();
+    assert_eq!(cfg.models.len(), 1);
 }

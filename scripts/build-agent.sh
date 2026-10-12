@@ -7,7 +7,7 @@ docker run --rm --name switchyard-agent-build \
   -v "$project:/source:ro" \
   -v "$project/target/musl:/build" \
   -v "$project/target/cargo-musl:/usr/local/cargo/registry" \
-  -e CARGO_TARGET_DIR=/build -w /source \
+  -e CARGO_TARGET_DIR=/build -e CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-4}" -w /source \
   rust:1.98.1-alpine@sha256:7cc1c22d77d9432f7fe012a70e6d3e555af54c2a6832700ed7d553f1769ae89f \
   sh -c 'apk add --no-cache build-base cmake perl && cargo build --locked --release -p switchyard-agent --target x86_64-unknown-linux-musl'
 cp "$project/target/musl/x86_64-unknown-linux-musl/release/switchyard-agent" \

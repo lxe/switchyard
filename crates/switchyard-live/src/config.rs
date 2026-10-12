@@ -10,6 +10,7 @@ use switchyard_provider::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(from = "DeploymentConfigInput")]
 pub struct DeploymentConfig {
+    pub topology: switchyard_core::topology::FleetTopology,
     pub compute: ComputeConfig,
     pub storage: StorageConfig,
     pub bootstrap: BootstrapConfig,
@@ -22,6 +23,7 @@ pub struct DeploymentConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(from = "ExecutionConfigInput")]
 pub struct ExecutionConfig {
+    pub topology: switchyard_core::topology::FleetTopology,
     pub storage: StorageConfig,
     pub bootstrap: BootstrapConfig,
     pub models: Vec<ModelConfig>,
@@ -35,6 +37,8 @@ pub struct ExecutionConfig {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct DeploymentConfigInput {
+    #[serde(default)]
+    topology: switchyard_core::topology::FleetTopology,
     compute: ComputeConfig,
     storage: StorageConfig,
     bootstrap: BootstrapConfig,
@@ -50,6 +54,7 @@ impl From<DeploymentConfigInput> for DeploymentConfig {
             .scheduling
             .unwrap_or_else(|| legacy_scheduling(&input.limits));
         Self {
+            topology: input.topology,
             compute: input.compute,
             storage: input.storage,
             bootstrap: input.bootstrap,
@@ -63,6 +68,8 @@ impl From<DeploymentConfigInput> for DeploymentConfig {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ExecutionConfigInput {
+    #[serde(default)]
+    topology: switchyard_core::topology::FleetTopology,
     storage: StorageConfig,
     bootstrap: BootstrapConfig,
     models: Vec<ModelConfig>,
@@ -78,6 +85,7 @@ impl From<ExecutionConfigInput> for ExecutionConfig {
             .scheduling
             .unwrap_or_else(|| legacy_scheduling(&input.limits));
         Self {
+            topology: input.topology,
             storage: input.storage,
             bootstrap: input.bootstrap,
             models: input.models,
@@ -97,8 +105,37 @@ fn legacy_scheduling(limits: &Limits) -> Scheduling {
 }
 
 impl DeploymentConfig {
+    /// Restrict a workload's catalog while retaining every member of its host plans.
+    pub fn restrict_to_model(&mut self, model: &str) -> Result<()> {
+        if !self.models.iter().any(|m| m.id == model) {
+            return Err(Error::Config(
+                "selected model is absent from configuration".into(),
+            ));
+        }
+        self.topology.host_plans.retain(|plan| {
+            plan.endpoints
+                .iter()
+                .any(|e| e.profile.starts_with(&format!("{model}:{}:", plan.gpu)))
+        });
+        let mut resident = std::collections::BTreeSet::from([model.to_owned()]);
+        for plan in &self.topology.host_plans {
+            for endpoint in &plan.endpoints {
+                for candidate in &self.models {
+                    if endpoint
+                        .profile
+                        .starts_with(&format!("{}:{}:", candidate.id, plan.gpu))
+                    {
+                        resident.insert(candidate.id.clone());
+                    }
+                }
+            }
+        }
+        self.models.retain(|m| resident.contains(&m.id));
+        Ok(())
+    }
     pub fn execution(&self) -> ExecutionConfig {
         ExecutionConfig {
+            topology: self.topology.clone(),
             storage: self.storage.clone(),
             bootstrap: self.bootstrap.clone(),
             models: self.models.clone(),
@@ -325,6 +362,8 @@ pub struct CapacityPrior {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Limits {
+    #[serde(default = "default_endpoint_limit")]
+    pub max_endpoints_per_model: usize,
     pub max_instances: usize,
     pub max_usd_per_hour: f64,
     pub max_run_usd: f64,
@@ -342,8 +381,45 @@ pub struct Limits {
     pub poll_ms: u64,
 }
 
+fn default_endpoint_limit() -> usize {
+    64
+}
+
 impl ExecutionConfig {
     pub fn validate(&self) -> Result<()> {
+        self.topology.validate_structure().map_err(Error::Config)?;
+        for plan in &self.topology.host_plans {
+            let mut region = None;
+            for endpoint in &plan.endpoints {
+                let model = self
+                    .models
+                    .iter()
+                    .find(|m| {
+                        endpoint
+                            .profile
+                            .starts_with(&format!("{}:{}:", m.id, plan.gpu))
+                    })
+                    .ok_or_else(|| {
+                        Error::Config(
+                            "host endpoint must name a configured model/GPU/region profile".into(),
+                        )
+                    })?;
+                let prefix = format!("{}:{}:", model.id, plan.gpu);
+                let selected_region = &endpoint.profile[prefix.len()..];
+                if selected_region.is_empty()
+                    || region
+                        .replace(selected_region)
+                        .is_some_and(|r| r != selected_region)
+                    || model.engine.kind != EngineKind::Native
+                    || model.engine.native.as_ref().is_none_or(|n| {
+                        n.cuda_ordinal != 0
+                            || n.minimum_gpu_memory_bytes > endpoint.gpu_memory_bytes
+                    })
+                {
+                    return Err(Error::Config("resident endpoints require native engines, fixed memory reservations, and one region".into()));
+                }
+            }
+        }
         validate_scheduling(&self.scheduling).map_err(Error::Config)?;
         for model in &self.models {
             let mut ids = std::collections::BTreeSet::new();
@@ -409,6 +485,8 @@ impl ExecutionConfig {
             || !valid_text(&self.bootstrap.image)
             || !valid_sha256(&self.bootstrap.agent_sha256)
             || !valid_key_prefix(&self.bootstrap.ticket_prefix)
+            || l.max_endpoints_per_model == 0
+            || l.max_endpoints_per_model > 2048
             || l.max_instances == 0
             || l.max_instances > 64
             || l.run_timeout_s == 0

@@ -168,7 +168,13 @@ async fn object_put(
         let mut state = bake.state.lock().unwrap();
         if key.starts_with("tickets/") {
             state.events.push("ticket-put".into());
-            state.tickets.push(serde_json::from_slice(&bytes).unwrap());
+            if let Ok(host) = serde_json::from_slice::<switchyard_agent::host::HostTicket>(&bytes) {
+                state
+                    .tickets
+                    .extend(host.endpoints.into_iter().map(|e| e.ticket));
+            } else {
+                state.tickets.push(serde_json::from_slice(&bytes).unwrap());
+            }
         } else {
             state.events.push(
                 if key.starts_with("registry/") {
@@ -303,7 +309,7 @@ async fn fixture_with_cache_export(
     scheduling: Option<Scheduling>,
     bake: Option<MockBake>,
 ) -> Fixture {
-    fixture_internal(bad_usage, unknown, scheduling, bake, false).await
+    fixture_internal(bad_usage, unknown, scheduling, bake, false, false).await
 }
 async fn fixture_internal(
     bad_usage: bool,
@@ -311,6 +317,7 @@ async fn fixture_internal(
     scheduling: Option<Scheduling>,
     bake: Option<MockBake>,
     registry: bool,
+    shared: bool,
 ) -> Fixture {
     let out = std::env::temp_dir().join(format!(
         "switchyard-live-test-{}",
@@ -409,6 +416,10 @@ async fn fixture_internal(
             state_delay_ms: state_delay_ms.clone(),
             state_reads: state_reads.clone(),
         });
+    let app = app
+        .clone()
+        .nest("/endpoints/replica-0", app.clone())
+        .nest("/endpoints/replica-1", app);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
@@ -530,6 +541,17 @@ async fn fixture_internal(
             })
             .collect();
         state.manifest = Some(manifest);
+    }
+    if shared {
+        config.bootstrap.native_cache_registry = None;
+        config.topology = serde_json::from_value(json!({"host_plans":[{
+            "id":"shared","gpu":"mock","gpu_memory_bytes":4 * 1024 * 1024 * 1024u64,
+            "reserved_gpu_memory_bytes":1024 * 1024 * 1024u64,"contention_factor":0.9,
+            "endpoints":[
+                {"id":"replica-0","profile":"tiny:mock:local","gpu_memory_bytes":1024 * 1024 * 1024u64,"compute_fraction":0.5},
+                {"id":"replica-1","profile":"tiny:mock:local","gpu_memory_bytes":1024 * 1024 * 1024u64,"compute_fraction":0.5}
+            ]
+        }]})).unwrap();
     }
     let provider = MockProvider {
         url,
@@ -1325,7 +1347,7 @@ async fn cache_bake_rejects_missing_standard_class_before_any_paid_allocation() 
 async fn native_registry_learns_real_work_after_cleanup_and_reuses_next_launch() {
     let bake = MockBake::default();
     let (mut runtime, provider, out, server) =
-        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+        fixture_internal(false, false, None, Some(bake.clone()), true, false).await;
     let report = runtime
         .run_workload("real-client", &calls(1), 1.0, 5.0)
         .await
@@ -1373,7 +1395,7 @@ async fn native_registry_learns_real_work_after_cleanup_and_reuses_next_launch()
             .contains("\"phase\":\"miss\"")
     );
     let (mut next, next_provider, next_out, next_server) =
-        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+        fixture_internal(false, false, None, Some(bake.clone()), true, false).await;
     assert_eq!(
         next.run_workload("next-real-client", &calls(1), 1.0, 5.0)
             .await
@@ -1419,7 +1441,7 @@ async fn native_registry_collection_and_publication_failure_do_not_leak_owned_po
             ..Default::default()
         };
         let (mut runtime, provider, out, server) =
-            fixture_internal(false, false, None, Some(bake.clone()), true).await;
+            fixture_internal(false, false, None, Some(bake.clone()), true, false).await;
         assert_eq!(
             runtime
                 .run_workload("real-client", &calls(1), 1.0, 5.0)
@@ -1462,7 +1484,7 @@ async fn native_registry_bad_binding_is_a_visible_cold_jit_miss() {
     use switchyard_live::native_cache_registry::CacheRegistryEntry;
     let bake = MockBake::default();
     let (mut runtime, provider, out, server) =
-        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+        fixture_internal(false, false, None, Some(bake.clone()), true, false).await;
     let config: switchyard_live::config::ExecutionConfig =
         serde_json::from_slice(&std::fs::read(out.join("configuration.json")).unwrap()).unwrap();
     let registry = config.bootstrap.native_cache_registry.as_ref().unwrap();
@@ -1527,7 +1549,7 @@ async fn native_registry_bad_binding_is_a_visible_cold_jit_miss() {
 async fn native_registry_does_not_export_after_canceling_an_active_remote_request() {
     let bake = MockBake::default();
     let (mut runtime, provider, out, server) =
-        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+        fixture_internal(false, false, None, Some(bake.clone()), true, false).await;
     assert_eq!(
         runtime
             .run_workload("completed", &calls(1), 1.0, 5.0)
@@ -1671,6 +1693,60 @@ async fn delayed_expansion_does_not_block_hot_dispatch_and_cleanup_drains_owners
         serde_json::from_slice(&std::fs::read(out.join("pending-launches.json")).unwrap()).unwrap();
     assert_eq!(pending.len(), 2);
     assert!(pending.iter().all(|p| p.resolved));
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+}
+
+#[tokio::test]
+async fn shared_host_launches_two_endpoints_but_journals_and_bills_one_allocation() {
+    let bake = MockBake::default();
+    let (mut runtime, provider, out, server) =
+        fixture_internal(false, false, None, Some(bake.clone()), true, true).await;
+    let report = runtime
+        .run_workload("shared", &calls(32), 1.0, 10.0)
+        .await
+        .unwrap();
+    assert_eq!(report.completed, 32);
+    assert_eq!(report.invalid_actions, 0);
+    assert_eq!(report.launches, 1);
+    assert_eq!(runtime.pods().len(), 1);
+    let journal: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(out.join("host-endpoints.json")).unwrap()).unwrap();
+    assert_eq!(journal.as_array().unwrap().len(), 1);
+    assert_eq!(journal[0]["endpoints"].as_array().unwrap().len(), 2);
+    assert_eq!(journal[0]["endpoints"][0]["endpoint"], "replica-0");
+    assert_ne!(
+        journal[0]["endpoints"][0]["url"],
+        journal[0]["endpoints"][1]["url"]
+    );
+    let objects = bake.state.lock().unwrap().objects.clone();
+    let host: switchyard_agent::host::HostTicket = objects
+        .iter()
+        .find_map(|(key, value)| {
+            key.starts_with("tickets/")
+                .then(|| serde_json::from_slice(value).ok())
+                .flatten()
+        })
+        .expect("published host ticket");
+    host.validate().unwrap();
+    assert_eq!(host.endpoints.len(), 2);
+    assert_eq!(
+        host.endpoints[0].ticket.startup.model_directory(),
+        host.endpoints[1].ticket.startup.model_directory()
+    );
+    assert_ne!(host.endpoints[0].port, host.endpoints[1].port);
+    runtime.cleanup().await.unwrap();
+    let pods = runtime.pods();
+    let duration = pods[0].ended_s.unwrap() - pods[0].allocated_s;
+    assert!((runtime.rental_usd() - duration.max(1.0) * 1.01 / 3600.0).abs() < 1e-9);
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|p| p.status.is_terminated())
+    );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
 }

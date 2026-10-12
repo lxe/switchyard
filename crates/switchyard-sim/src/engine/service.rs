@@ -34,6 +34,7 @@ impl Simulation {
                     .filter_map(|i| self.scenario.requests[n.active[*i].id].adapter.as_deref())
                     .collect();
                 let capacity = p.capacity(ready.len())
+                    * n.placement.as_ref().map_or(1.0, |p| p.capacity_fraction)
                     * self.scenario.capacity_scale
                     * if adapters.len() > 1 {
                         p.multi_adapter_factor

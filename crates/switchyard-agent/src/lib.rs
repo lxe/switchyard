@@ -3,6 +3,7 @@ mod allocation;
 #[doc(hidden)]
 pub use allocation::ModelAllocation;
 pub mod export;
+pub mod host;
 pub mod hydrate;
 pub mod model;
 pub use switchyard_weights as weights;

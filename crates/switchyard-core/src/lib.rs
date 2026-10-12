@@ -4,5 +4,6 @@ pub mod config;
 pub mod probe;
 pub mod scheduler;
 pub mod stats;
+pub mod topology;
 pub use config::*;
 pub use scheduler::{Action, FleetView, Scheduler};

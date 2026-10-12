@@ -246,7 +246,7 @@ fn import(root: &Path, serial: bool) -> Result<Vec<ImportedModel>, Box<dyn Error
                 .collect::<Vec<_>>();
             let mut requests = requests;
             requests.sort_by_key(|r| r.id);
-            let scenario=Scenario{name:name.into(),notes:"Measured token counts/output lengths; output remains private to physics. Each workload resets to its observed warm fleet.".into(),horizon_s:budget,tick_s:n(&config["limits"],"poll_ms")/1000.0,idle_timeout_s:30.0,max_nodes_per_model:count(&config["limits"],"max_instances") as usize,
+            let scenario=Scenario{topology:Default::default(),name:name.into(),notes:"Measured token counts/output lengths; output remains private to physics. Each workload resets to its observed warm fleet.".into(),horizon_s:budget,tick_s:n(&config["limits"],"poll_ms")/1000.0,idle_timeout_s:30.0,max_nodes_per_model:count(&config["limits"],"max_instances") as usize,
                 launch_fail_probability:0.0,reactive_delay_s:0.0,capacity_scale:1.0,startup_scale:1.0,build_probability:0.0,scheduling:serde_json::from_value(config["scheduling"].clone())?,host_reality:None,warm,
                 jobs:vec![Job{id:0,name:name.into(),announced_s:0.0,arrival_s:0.0,completion_budget_s:budget,desired_output_tps:n(spec,"desired_output_tps")}],requests,faults:vec![]};
             let mut observations = Observations::default();

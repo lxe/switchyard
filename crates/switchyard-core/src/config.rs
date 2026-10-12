@@ -253,6 +253,7 @@ pub struct WarmNode {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct CloudConfig {
+    pub topology: crate::topology::FleetTopology,
     pub tick_s: f64,
     pub max_instances_per_model: usize,
     pub instance_queue_limit: usize,
@@ -273,6 +274,7 @@ pub struct CloudConfig {
 impl Default for CloudConfig {
     fn default() -> Self {
         Self {
+            topology: crate::topology::FleetTopology::default(),
             tick_s: 0.25,
             max_instances_per_model: 64,
             instance_queue_limit: 1000,
@@ -304,6 +306,8 @@ pub struct Fault {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Scenario {
+    #[serde(default)]
+    pub topology: crate::topology::FleetTopology,
     pub name: String,
     pub notes: String,
     pub horizon_s: f64,
@@ -468,6 +472,7 @@ impl Default for Scheduling {
 }
 
 pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String> {
+    scenario.topology.validate(profiles)?;
     let finite_nonnegative = |v: f64| v.is_finite() && v >= 0.0;
     if profiles.is_empty() {
         return Err("no hardware profiles".into());
@@ -554,7 +559,24 @@ pub fn validate(profiles: &[Profile], scenario: &Scenario) -> Result<(), String>
             .iter()
             .find(|p| p.id == warm.profile)
             .expect("validated profile");
-        *warm_counts.entry(&p.model).or_insert(0) += warm.copies;
+        if let Some(plan) = scenario.topology.plan_for(&p.id) {
+            for endpoint in &plan.endpoints {
+                let model = &profiles
+                    .iter()
+                    .find(|p| p.id == endpoint.profile)
+                    .expect("validated topology")
+                    .model;
+                let count = warm_counts.entry(model).or_insert(0usize);
+                *count = count
+                    .checked_add(warm.copies)
+                    .ok_or("warm endpoint count overflow")?;
+            }
+        } else {
+            let count = warm_counts.entry(&p.model).or_insert(0usize);
+            *count = count
+                .checked_add(warm.copies)
+                .ok_or("warm endpoint count overflow")?;
+        }
     }
     if warm_counts
         .values()

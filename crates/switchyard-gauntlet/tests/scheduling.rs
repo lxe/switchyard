@@ -63,6 +63,7 @@ fn learned_hydration_time_changes_provisioning_choices() {
     )]);
     let jobs = BTreeMap::from([(0, trace.jobs[0].clone())]);
     let mut fleet = FleetView {
+        topology: &switchyard_core::topology::EMPTY_TOPOLOGY,
         now: 0.0,
         allow_scale: true,
         profiles: &profiles,
@@ -85,6 +86,7 @@ fn learned_hydration_time_changes_provisioning_choices() {
             .any(|a| matches!(a, Action::Provision { profile: 0 }))
     );
     fleet.nodes.push(ObservedNode {
+        placement: None,
         profile: 0,
         warm: false,
         allocated_s: 0.0,
@@ -144,6 +146,7 @@ fn allocation_cooldowns_change_new_placement_and_preserve_existing_host_routing(
     alternative.usd_per_hour = 10.0;
     profiles.push(alternative);
     let mut fleet = FleetView {
+        topology: &switchyard_core::topology::EMPTY_TOPOLOGY,
         now: 0.0,
         allow_scale: true,
         profiles: &profiles,
@@ -204,6 +207,7 @@ fn allocation_cooldowns_change_new_placement_and_preserve_existing_host_routing(
     fleet.now = 0.0;
     fleet.provisioning_cooldowns.insert(0, 10.0);
     fleet.nodes.push(ObservedNode {
+        placement: None,
         profile: 0,
         warm: true,
         allocated_s: 0.0,
@@ -333,6 +337,7 @@ fn measured(at_s: f64, rate: f64) -> HostProbe {
 }
 fn loading_node(probe: Option<HostProbe>, remaining: u64) -> ObservedNode {
     ObservedNode {
+        placement: None,
         profile: 0,
         warm: false,
         allocated_s: 0.0,
@@ -360,6 +365,7 @@ fn probe_fleet<'a>(
     now: f64,
 ) -> FleetView<'a> {
     FleetView {
+        topology: &switchyard_core::topology::EMPTY_TOPOLOGY,
         now,
         allow_scale: false,
         profiles,
@@ -550,6 +556,7 @@ fn probe_attempts_are_throttled_and_pending_refreshes_are_not_duplicated() {
 
 fn planning_fleet<'a>(profiles: &'a [Profile], trace: &'a Scenario) -> FleetView<'a> {
     FleetView {
+        topology: &switchyard_core::topology::EMPTY_TOPOLOGY,
         now: 0.0,
         allow_scale: true,
         profiles,

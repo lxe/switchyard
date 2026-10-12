@@ -122,6 +122,7 @@ pub struct ArtifactState {
 
 /// Production destinations are fixed; tests inject roots without writing under /opt.
 pub(crate) struct RootPaths {
+    pub(crate) cache_seeds: Option<PathBuf>,
     pub(crate) runtime: PathBuf,
     pub(crate) caches: PathBuf,
     pub(crate) chunks: PathBuf,
@@ -136,6 +137,7 @@ impl RootPaths {
     }
     pub(crate) fn production() -> Self {
         Self {
+            cache_seeds: None,
             runtime: "/opt/switchyard/runtime".into(),
             caches: "/opt/switchyard/cache".into(),
             chunks: "/opt/switchyard/artifacts".into(),
@@ -164,6 +166,7 @@ impl RootPaths {
     #[cfg(test)]
     pub(crate) fn under(root: &Path) -> Self {
         Self {
+            cache_seeds: None,
             runtime: root.join("runtime"),
             caches: root.join("cache"),
             chunks: root.join("chunks"),

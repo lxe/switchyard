@@ -64,7 +64,10 @@ pub(crate) async fn command_staged_with_limit(
     let caches = async {
         for (i, cache) in runtime.caches.iter().enumerate() {
             let index = runtime.components.len() + i + 1;
-            let seed = cache_root.join(".seeds").join(&cache.name);
+            let seed = roots.cache_seeds.as_ref().map_or_else(
+                || cache_root.join(".seeds").join(&cache.name),
+                |shared| shared.join(&cache.artifact.manifest.id),
+            );
             hydrate_one(cache.artifact.clone(), &seed, index, &context).await?;
             let destination = cache_root.join(&cache.name);
             let manifest = cache.artifact.manifest.clone();

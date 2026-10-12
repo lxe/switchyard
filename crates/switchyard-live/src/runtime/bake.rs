@@ -32,6 +32,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         plan.validate(&self.config)?;
         if !switchyard_provider::config::valid_key_prefix(namespace)
             || !self.nodes.is_empty()
+            || !self.config.topology.host_plans.is_empty()
             || self.config.models.len() != 1
             || self.config.limits.max_instances != 1
         {
@@ -111,7 +112,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         }
         while !self.nodes[0].observed.is_ready {
             self.limits()?;
-            if self.now() - self.nodes[0].owned.allocated_s
+            if self.now() - self.hosts[self.nodes[0].host].owned.allocated_s
                 > self.config.limits.startup_timeout_s as f64
             {
                 return Err(Error::Limit("cache preparation startup timeout".into()));

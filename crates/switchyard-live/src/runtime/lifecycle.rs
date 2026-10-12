@@ -16,7 +16,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             self.invalid += 1;
             return Ok(());
         };
-        if node.owned.ended_s.is_some()
+        if self.hosts[node.host].owned.ended_s.is_some()
             || !self
                 .scheduling
                 .probe
@@ -30,16 +30,16 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         Ok(())
     }
     /// Confirm cloud termination before touching storage tickets or local receipts.
-    async fn terminate_node(&mut self, id: usize) -> Result<()> {
-        let Some(node) = self.nodes.get(id) else {
+    async fn terminate_host(&mut self, id: usize) -> Result<()> {
+        let Some(host) = self.hosts.get(id) else {
             self.invalid += 1;
             return Ok(());
         };
-        if node.owned.ended_s.is_some() {
+        if host.owned.ended_s.is_some() {
             return Ok(());
         }
-        if let Some(pod) = self.provider.get(&node.owned.pod.id).await? {
-            if pod.name != node.owned.pod.name {
+        if let Some(pod) = self.provider.get(&host.owned.pod.id).await? {
+            if pod.name != host.owned.pod.name {
                 return Err(Error::Config(
                     "ownership changed; refusing pod termination".into(),
                 ));
@@ -57,23 +57,41 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             }
         }
         let now = self.now();
-        self.nodes[id].owned.ended_s = Some(now);
-        self.nodes[id].observed.ended_s = Some(now);
-        self.nodes[id].observed.host.phase = StartupPhase::Ended;
+        let host = &mut self.hosts[id];
+        host.owned.ended_s = Some(now);
+        for endpoint in &host.endpoints {
+            self.nodes[*endpoint].observed.ended_s = Some(now);
+            self.nodes[*endpoint].observed.is_ready = false;
+            self.nodes[*endpoint].observed.host.phase = StartupPhase::Ended;
+        }
         self.releases += 1;
         Ok(())
     }
 
     pub(super) async fn release(&mut self, id: usize) -> Result<()> {
-        if id >= self.nodes.len() {
+        let Some(node) = self.nodes.get(id) else {
+            self.invalid += 1;
+            return Ok(());
+        };
+        let host = node.host;
+        if self.hosts[host].owned.ended_s.is_some() {
+            return Ok(());
+        }
+        let endpoints = self.hosts[host].endpoints.clone();
+        if endpoints
+            .iter()
+            .any(|id| !self.nodes[*id].observed.active.is_empty())
+        {
             self.invalid += 1;
             return Ok(());
         }
-        if let Some(cache) = self.collect_native_cache(id).await {
-            self.collected_native_caches.push((id, cache));
+        for endpoint in endpoints {
+            if let Some(cache) = self.collect_native_cache(endpoint).await {
+                self.collected_native_caches.push((endpoint, cache));
+            }
         }
-        self.terminate_node(id).await?;
-        self.storage.delete(&self.nodes[id].ticket_key).await?;
+        self.terminate_host(host).await?;
+        self.storage.delete(&self.hosts[host].ticket_key).await?;
         self.journal()
     }
 
@@ -99,9 +117,9 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             .into_iter()
             .map(|e| e.to_string())
             .collect::<Vec<_>>();
-        for id in 0..self.nodes.len() {
+        for id in 0..self.hosts.len() {
             for attempt in 0..3 {
-                match self.terminate_node(id).await {
+                match self.terminate_host(id).await {
                     Ok(()) => break,
                     Err(error) if attempt == 2 => failures.push(error.to_string()),
                     Err(_) => tokio::time::sleep(Duration::from_secs(2)).await,
@@ -109,7 +127,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             }
         }
         let confirmed = self
-            .nodes
+            .hosts
             .iter()
             .filter(|n| n.owned.ended_s.is_some())
             .map(|n| n.owned.pod.name.clone())
@@ -127,7 +145,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         // Do not inject object publication into the scheduler's routing loop.
         // Terminal cleanup publishes only after all known and ambiguous owned
         // allocations have been reconciled; no paid host waits for uploads.
-        if self.nodes.iter().all(|node| node.owned.ended_s.is_some())
+        if self.hosts.iter().all(|host| host.owned.ended_s.is_some())
             && self.pending.iter().all(|launch| launch.resolved)
         {
             for (id, cache) in std::mem::take(&mut self.collected_native_caches) {
@@ -136,7 +154,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         }
         // Reconciliation also deletes pending tickets. Keep deletion idempotent for nodes
         // restored from an ownership journal that predates a pending-launch record.
-        for node in self.nodes.iter().filter(|n| n.owned.ended_s.is_some()) {
+        for node in self.hosts.iter().filter(|n| n.owned.ended_s.is_some()) {
             if let Err(error) = self.storage.delete(&node.ticket_key).await {
                 failures.push(error.to_string());
             }
@@ -321,6 +339,7 @@ mod tests {
     }
     fn node() -> ObservedNode {
         ObservedNode {
+            placement: None,
             profile: 0,
             warm: false,
             allocated_s: 0.0,

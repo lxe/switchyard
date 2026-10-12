@@ -101,6 +101,28 @@ impl SchedulerWorld<'_> {
                 .enumerate()
                 .filter(|(i, p)| {
                     !self.avoided_profiles.contains(i)
+                        && self.scenario.topology.plan_for(&p.id).is_none_or(|plan| {
+                            let mut additions = BTreeMap::<&str, usize>::new();
+                            for endpoint in &plan.endpoints {
+                                let ep = self
+                                    .profiles
+                                    .iter()
+                                    .find(|p| p.id == endpoint.profile)
+                                    .expect("validated topology");
+                                *additions.entry(&ep.model).or_default() += 1;
+                            }
+                            additions.iter().all(|(model, count)| {
+                                self.nodes
+                                    .iter()
+                                    .filter(|n| {
+                                        n.ended_s.is_none()
+                                            && self.profiles[n.profile].model == **model
+                                    })
+                                    .count()
+                                    + count
+                                    <= self.scenario.max_nodes_per_model
+                            })
+                        })
                         && ids
                             .iter()
                             .all(|id| p.compatible(&self.scenario.requests[id]))
@@ -186,6 +208,7 @@ impl SchedulerWorld<'_> {
                     1.0
                 };
                 factor
+                    * self.placement_fraction(profile)
                     * profile.capacity(ids.len().min(profile.max_in_flight).min(memory_slots))
                     * work
                     / work_for(profile)
@@ -204,6 +227,13 @@ impl SchedulerWorld<'_> {
                 .map(|p| (p.id.as_str(), calculate_capacity(p)))
                 .collect();
             let capacity_for = |profile: &Profile| capacities[profile.id.as_str()];
+            let node_capacity = |node: &ObservedNode| {
+                let profile = &self.profiles[node.profile];
+                capacity_for(profile)
+                    * node.placement.as_ref().map_or(1.0, |p| {
+                        p.capacity_fraction / self.placement_fraction(profile)
+                    })
+            };
             let live: Vec<_> = self
                 .nodes
                 .iter()
@@ -216,8 +246,7 @@ impl SchedulerWorld<'_> {
             let mut capacity: f64 = live
                 .iter()
                 .map(|n| {
-                    let p = &self.profiles[n.profile];
-                    capacity_for(p)
+                    node_capacity(n)
                         * (end - first_arrival.max(n.ready_s)).max(0.0)
                         * if n.warm && self.policy.plans_ahead() {
                             self.scenario.scheduling.warm_batch_capacity_fraction
@@ -242,12 +271,7 @@ impl SchedulerWorld<'_> {
             } else {
                 let mut low = first_arrival;
                 let mut high = first_arrival
-                    + work
-                        / live
-                            .iter()
-                            .map(|n| capacity_for(&self.profiles[n.profile]))
-                            .sum::<f64>()
-                            .max(1e-8)
+                    + work / live.iter().map(|n| node_capacity(n)).sum::<f64>().max(1e-8)
                     + live
                         .iter()
                         .map(|n| (n.ready_s - first_arrival).max(0.0))
@@ -256,10 +280,7 @@ impl SchedulerWorld<'_> {
                     let mid = (low + high) * 0.5;
                     let served: f64 = live
                         .iter()
-                        .map(|n| {
-                            capacity_for(&self.profiles[n.profile])
-                                * (mid - first_arrival.max(n.ready_s)).max(0.0)
-                        })
+                        .map(|n| node_capacity(n) * (mid - first_arrival.max(n.ready_s)).max(0.0))
                         .sum();
                     if served >= work {
                         high = mid;
@@ -278,6 +299,34 @@ impl SchedulerWorld<'_> {
                     .iter()
                     .copied()
                     .filter(|i| {
+                        let mut additions = BTreeMap::<&str, usize>::new();
+                        for index in chosen.iter().copied().chain(std::iter::once(*i)) {
+                            let profile = &self.profiles[index];
+                            if let Some(plan) = self.scenario.topology.plan_for(&profile.id) {
+                                for endpoint in &plan.endpoints {
+                                    let ep = self
+                                        .profiles
+                                        .iter()
+                                        .find(|p| p.id == endpoint.profile)
+                                        .expect("validated topology");
+                                    *additions.entry(&ep.model).or_default() += 1;
+                                }
+                            } else {
+                                *additions.entry(&profile.model).or_default() += 1;
+                            }
+                        }
+                        if additions.iter().any(|(model, count)| {
+                            self.nodes
+                                .iter()
+                                .filter(|n| {
+                                    n.ended_s.is_none() && self.profiles[n.profile].model == **model
+                                })
+                                .count()
+                                + count
+                                > self.scenario.max_nodes_per_model
+                        }) {
+                            return false;
+                        }
                         let ready =
                             first_arrival.max(self.now + self.predicted_start(&self.profiles[*i]));
                         if live.is_empty() && chosen.is_empty() {
@@ -291,15 +340,11 @@ impl SchedulerWorld<'_> {
                         let existing_at_ready: f64 = live
                             .iter()
                             .map(|n| {
-                                capacity_for(&self.profiles[n.profile])
-                                    * (ready - first_arrival.max(n.ready_s)).max(0.0)
+                                node_capacity(n) * (ready - first_arrival.max(n.ready_s)).max(0.0)
                             })
                             .sum();
                         let remaining = (work - existing_at_ready).max(0.0);
-                        let total_rate: f64 = live
-                            .iter()
-                            .map(|n| capacity_for(&self.profiles[n.profile]))
-                            .sum();
+                        let total_rate: f64 = live.iter().map(|n| node_capacity(n)).sum();
                         let gain = if total_rate > 0.0 {
                             remaining / total_rate
                                 - remaining / (total_rate + capacity_for(&self.profiles[*i]))
@@ -417,6 +462,7 @@ impl SchedulerWorld<'_> {
                         .sum();
                     (work + p.prefill_work(request) + self.output_estimate(id) as f64)
                         / (p.capacity(node.active.len() + 1)
+                            * node.placement.as_ref().map_or(1.0, |p| p.capacity_fraction)
                             * if self.policy == Policy::Adaptive {
                                 self.learning.capacity_factor(
                                     node.profile,

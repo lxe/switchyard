@@ -62,6 +62,7 @@ fn request(id: usize) -> Request {
 
 fn scenario(requests: Vec<Request>) -> Scenario {
     Scenario {
+        topology: Default::default(),
         name: "observability-fixture".into(),
         notes: "Analytical known-input and hidden-state boundary checks".into(),
         horizon_s: 20.0,

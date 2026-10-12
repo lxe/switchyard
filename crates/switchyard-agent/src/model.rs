@@ -32,6 +32,16 @@ pub enum ExtentModel {
     },
 }
 impl ModelSource {
+    pub fn artifact_identity(&self) -> &str {
+        match self {
+            Self::Legacy(source) => &source.manifest.sha256,
+            Self::Extents(source) => match &source.model_source {
+                ExtentModel::Files { artifact } | ExtentModel::Extents { artifact, .. } => {
+                    &artifact.manifest.content_id
+                }
+            },
+        }
+    }
     pub fn transfer_bytes(&self) -> u64 {
         match self {
             Self::Legacy(source) => source.manifest.total_size,

@@ -18,6 +18,7 @@ use tokio::sync::RwLock;
 mod admission;
 mod cache_export;
 mod engine;
+pub mod host;
 mod startup;
 
 #[derive(Clone)]
@@ -109,7 +110,7 @@ pub async fn serve_started(
     tokio::pin!(server);
     let result = tokio::select! {
         result = &mut server => result.map_err(Error::from),
-        _ = tokio::time::sleep(Duration::from_secs(lifetime)) => {
+        _ = async { tokio::select! { _ = tokio::time::sleep(Duration::from_secs(lifetime)) => (), _ = shutdown_requested() => () } } => {
             if let Some(export) = &export { export.cancel().await; }
             engine.abort();
             let _ = shutdown.send(());
@@ -126,6 +127,20 @@ pub async fn serve_started(
     engine.abort();
     let _ = engine.await;
     result
+}
+
+async fn shutdown_requested() {
+    #[cfg(unix)]
+    {
+        let mut terminate =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+                .expect("Unix termination signal registration");
+        tokio::select! { _ = tokio::signal::ctrl_c() => (), _ = terminate.recv() => () }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+    }
 }
 
 async fn authenticate(AxumState(app): AxumState<App>, request: Request, next: Next) -> Response {
@@ -252,7 +267,17 @@ async fn run_engine(
         }
         return Ok(());
     }
-    let mut process = startup::prepare(ticket, &roots, state.clone(), epoch).await?;
+    let process = startup::prepare(ticket, &roots, state.clone(), epoch).await?;
+    monitor_engine(process, state, commands, "http://127.0.0.1:8000", epoch).await
+}
+
+async fn monitor_engine(
+    mut process: engine::Process,
+    state: Arc<RwLock<State>>,
+    mut commands: tokio::sync::mpsc::Receiver<engine::Stop>,
+    engine_url: &str,
+    epoch: std::time::Instant,
+) -> Result<()> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
@@ -270,7 +295,7 @@ async fn run_engine(
             ));
         }
         if client
-            .get("http://127.0.0.1:8000/health")
+            .get(format!("{engine_url}/health"))
             .send()
             .await
             .is_ok_and(|r| r.status().is_success())

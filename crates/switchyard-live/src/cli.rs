@@ -252,7 +252,7 @@ pub async fn run(command: Command) -> Result<()> {
                 }
                 config.limits.max_run_usd = config.limits.max_run_usd.min(remaining_usd);
                 config.limits.run_timeout_s = config.limits.run_timeout_s.min(remaining_seconds);
-                config.models.retain(|m| m.id == model);
+                config.restrict_to_model(&model)?;
                 let out = settings.out.join(&model);
                 let mut runtime = LiveRuntime::new(
                     provider,
@@ -298,7 +298,9 @@ pub async fn run(command: Command) -> Result<()> {
                     "cache preparation GPU is absent from fleet configuration".into(),
                 ));
             }
-            config.models.retain(|model| model.id == plan.model);
+            // Cache preparation owns a standalone host independent of serving residency.
+            config.topology.host_plans.clear();
+            config.restrict_to_model(&plan.model)?;
             config.limits.max_instances = 1;
             config.limits.max_run_usd = config.limits.max_run_usd.min(
                 config

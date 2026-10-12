@@ -1,0 +1,96 @@
+[
+  {
+    "id": "model-a-shared",
+    "model": "model-a",
+    "workload": "text",
+    "gpu": "virtual-24g",
+    "usd_per_hour": 1.2,
+    "startup": {
+      "allocation_s": 0.5,
+      "container_s": 0.5,
+      "weights_s": 0,
+      "engine_s": 1,
+      "jitter": 0
+    },
+    "network_s": 0.03,
+    "network_bytes_per_s": 100000000.0,
+    "max_in_flight": 8,
+    "kv_tokens": 16384,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.75,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 80
+      },
+      {
+        "in_flight": 8,
+        "work_units_per_s": 600
+      }
+    ],
+    "evidence": "assumed: synthetic capacity, rent, startup and network; not measured hardware",
+    "source": "Shared host configuration example",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        1000000000
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 1000000000,
+      "image_cache_probability": 0,
+      "model_cache_probability": 0,
+      "probe_duration_s": 0.1,
+      "measurement_noise": 0
+    }
+  },
+  {
+    "id": "model-b-shared",
+    "model": "model-b",
+    "workload": "text",
+    "gpu": "virtual-24g",
+    "usd_per_hour": 1.2,
+    "startup": {
+      "allocation_s": 0.5,
+      "container_s": 0.5,
+      "weights_s": 0,
+      "engine_s": 1,
+      "jitter": 0
+    },
+    "network_s": 0.03,
+    "network_bytes_per_s": 100000000.0,
+    "max_in_flight": 8,
+    "kv_tokens": 16384,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.75,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 80
+      },
+      {
+        "in_flight": 8,
+        "work_units_per_s": 600
+      }
+    ],
+    "evidence": "assumed: synthetic capacity, rent, startup and network; not measured hardware",
+    "source": "Shared host configuration example",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        1000000000
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 1000000000,
+      "image_cache_probability": 0,
+      "model_cache_probability": 0,
+      "probe_duration_s": 0.1,
+      "measurement_noise": 0
+    }
+  }
+]

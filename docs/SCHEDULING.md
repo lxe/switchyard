@@ -69,3 +69,7 @@ Scheduler regressions cover late capacity, an empty fleet, pending-slot reservat
 The `scheduler_feedback` example exports a deterministic analytical late-capacity fixture for replaying two executable versions against identical inputs. Cloud-observation replay measures controller changes against recorded workloads, while fuzzing and software benchmarks check invariants and controller overhead. These simulations do not establish new real-cloud latency or repair the known mixed-length service-model accuracy gap.
 
 The [scheduler feedback validation report](scheduler-feedback-validation.md) records the executable identities, replay results, late-capacity comparison, fuzz coverage, and measured simulator overhead.
+
+## Resident endpoint plans
+
+[Shared host plans](SHARED_HOSTS.md) map one physical allocation to several endpoint profiles. Provision forecasts all resident endpoints, per-model quotas count replicas, and release requires all siblings to be idle. Endpoint capacity estimates use reserved compute fractions; physical rent and provider ownership are recorded once.

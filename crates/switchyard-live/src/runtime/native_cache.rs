@@ -24,7 +24,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
     pub(super) async fn collect_native_cache(&mut self, id: usize) -> Option<CollectedCache> {
         let config = self.config.bootstrap.native_cache_registry.as_ref()?;
         let node = self.nodes.get_mut(id)?;
-        if node.owned.ended_s.is_some()
+        if self.hosts[node.host].owned.ended_s.is_some()
             || node.cache_collection_attempted
             || !node.cache_quiescence_known
             || node.successful_calls == 0
@@ -38,7 +38,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         node.cache_collection_attempted = true;
         node.observed.is_ready = false;
         let endpoint = node.endpoint.clone();
-        let pod = node.owned.pod.id.clone();
+        let pod = self.hosts[node.host].owned.pod.id.clone();
         let directory = self.out.join(format!("native-cache-{id}"));
         let began = self.now();
         let result = tokio::time::timeout(
@@ -66,7 +66,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
         let Some(config) = &self.config.bootstrap.native_cache_registry else {
             return;
         };
-        if self.nodes[id].owned.ended_s.is_none() {
+        if self.hosts[self.nodes[id].host].owned.ended_s.is_none() {
             return;
         }
         let began = self.now();
@@ -86,7 +86,7 @@ impl<P: Provider + 'static> LiveRuntime<P> {
             ),
             Err(_) => ("publication_timeout", serde_json::Value::Null),
         };
-        self.cache_event(serde_json::json!({"phase":phase,"pod":self.nodes[id].owned.pod.id,"binding":cache.binding.identity,"elapsed_s":self.now()-began,"detail":detail}));
+        self.cache_event(serde_json::json!({"phase":phase,"pod":self.hosts[self.nodes[id].host].owned.pod.id,"binding":cache.binding.identity,"elapsed_s":self.now()-began,"detail":detail}));
     }
 }
 

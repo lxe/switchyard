@@ -93,6 +93,7 @@ pub struct ObservedActive {
 }
 #[derive(Debug, Clone)]
 pub struct ObservedNode {
+    pub placement: Option<crate::topology::EndpointPlacement>,
     pub profile: usize,
     pub warm: bool,
     pub allocated_s: f64,
@@ -159,6 +160,7 @@ pub struct HostObservation {
 /// Snapshot borrows immutable plans and contains only observable runtime state.
 #[derive(Debug, Clone)]
 pub struct FleetView<'a> {
+    pub topology: &'a crate::topology::FleetTopology,
     pub now: f64,
     pub allow_scale: bool,
     pub profiles: &'a [Profile],
