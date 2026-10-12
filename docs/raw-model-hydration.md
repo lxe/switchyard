@@ -56,3 +56,25 @@ The [measurement receipt](receipts/native-raw-range-l4-rollout.json) records art
 First prefill still takes about 9.4 seconds on these unseeded GPU caches. Model construction, casts and GPU copies remain part of engine startup. The 4.8/1.2-second listener-to-first-batch intervals combine proxy discovery, controller polling and request transport; the individual contributions were not measured.
 
 Twenty concurrent ranges remove the single compressed weight stream, but cannot establish consistent provider bandwidth. A separate EUR-IS-2 isolation host had a 145-second body-await outlier on one 128 MiB range, with 0.293 seconds spent writing it. The specific R2, network-route or host-network cause remains unresolved. No retry or stall-recovery mechanism conceals that result.
+
+## Fresh GPU-cache reuse
+
+A fresh RTX 4090 endpoint reused the cache published by useful 4B inference. The launch wrapper selected the exact `595.91.07` driver variant and reported a cache hit. The unchanged cold/hot/shared-prefix smoke completed ten calls; an independent provider read confirmed the pod deleted. The [cache-hit receipt](receipts/native-raw-4b-4090-cache-hit.json) retains binary, model, cache and platform identities.
+
+| Phase | Fresh 4B RTX 4090 with published cache |
+| --- | ---: |
+| Runtime hydration, overlapping weights | 4.658 s |
+| Raw weight hydration | 10.963 s |
+| CUDA initialization | 0.204 s |
+| Read safetensors | 5.200 s |
+| Construct/cast/copy model | 1.615 s |
+| Publish HTTP listener | 0.003 s |
+| Engine process to HTTP listener | 7.022 s |
+| HTTP listener to first batch | 1.325 s |
+| First prefill | 0.124 s |
+| **Scheduler start to first streamed content** | **29.172 s** |
+| Subsequent hot-call TTFT | 0.841 s |
+
+The cold timer includes two rejected allocation attempts before the owned allocation. Runtime and model hydration overlap, and engine rows contain subdivisions. The first useful request and serving limits match the full 4B gauntlet. That unseeded launch recorded 54.694 seconds to first content and 10.062 seconds for first prefill. Host, driver and network conditions differed: the first unseeded host used driver `580.159.04`, while the cached host used `595.91.07`. Unseeded model hydration took 21.083 seconds, versus 10.963 seconds here. The full end-to-end difference cannot be attributed solely to cache reuse; the measured cached prefill shows the first-request kernel delay is absent on this exact platform.
+
+Weight reads, model construction and CUDA transfer remain startup work. Neither the GPU cache nor raw-range hydration contains preloaded GPU weights. Network body-await outliers on other hosts remain unresolved and are retained without stall recovery.

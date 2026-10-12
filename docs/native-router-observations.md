@@ -26,4 +26,10 @@ The 4B expansion host also spent 163.202 seconds hydrating model files. Summed f
 
 `slow_passive_observation_does_not_block_hot_dispatch_or_cleanup` warms an endpoint through a useful completion, then makes its state response take three seconds. Thirty-two subsequent inference calls must complete within a 1.5-second budget while exactly one read remains outstanding. Cleanup must cancel that read without waiting for the server's delay and terminate only the owned mock pod. The complete live HTTP contract suite passes nineteen tests, including uncertain allocation, rejected scaling, failed hosts, export failures and ownership-safe cleanup.
 
-The fresh cloud comparison uses the identical fleet configuration, serving binary, model artifacts and workload budgets. A new CLI SHA identifies the changed observer implementation; cloud results are required before claiming an end-to-end throughput improvement.
+## Cloud rerun
+
+The [RTX 4090 receipt](receipts/native-raw-4b-4090-background-observation.json) records all 1,470 calls completed across eleven workloads after the passive-observation change. The 1,000-call burst completed in 199.868 seconds at 160.106 output tokens/s, below its requested 1,000 tokens/s target. Every completion budget passed, and all three owned pods independently returned HTTP 404 after cleanup. Two CUDA cache artifacts were published after release. Estimated total rental was $0.1594.
+
+The rerun retained the serving binary, model bytes, twenty hydration permits, request bounds and workload budgets. It used the separately checked RTX 4090 configuration and a new controller executable SHA. The unchanged L4 rerun obtained no pod before it was ended; a fresh capacity query returned no eligible offerings. This is therefore a functional cloud gate for the new observation implementation, not a controlled L4 speedup measurement. Expansion-host model hydration took 14.574 seconds here versus 163.202 seconds in the L4 baseline, which also materially changes the burst's available capacity.
+
+The [fresh 4B cache-hit smoke](receipts/native-raw-4b-4090-cache-hit.json) separately confirms exact-driver cache reuse after the gauntlet, ten useful completions, 29.172 seconds to first content, and provider-confirmed cleanup. It is a startup/cache test rather than another throughput comparison.

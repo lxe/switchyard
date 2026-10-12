@@ -1,0 +1,375 @@
+{
+  "format": "switchyard-native-gauntlet-evidence-v1",
+  "controller_identity": {
+    "cli_sha256": "1ee19ec18a13674fb818a9f94918aa17cbe18eb0fd44fa7de4abc864a47e4969",
+    "fleet_sha256": "534c9c152107fdeebe14194e07827808066e60d6fc48db7829ad12e71fbf37c8",
+    "workloads_sha256": "75310de34fcfd4c0509311921af1b0ede73c3df84113a0dc38b16b2f4306dac7",
+    "selected_model": "qwen3.5-4b",
+    "provider_log_api": "https://api.runpod.io/v2",
+    "checkout_commit_at_launch": "33871ea9a2586c73bbb317ffe5a6268af31bb6f6",
+    "compiled_source_commit": "not embedded; CLI SHA identifies the executable"
+  },
+  "runtime": {
+    "hydration": {
+      "retries": 0
+    },
+    "artifact": {
+      "prefix": "switchyard/native-engine/runtime/3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+      "id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46"
+    },
+    "components": [],
+    "compatibility": {
+      "architecture": "x86_64",
+      "cuda_build": "13.0.0",
+      "cuda_compiler_target": "compute_89",
+      "cuda_compiler_version": "13.0.48",
+      "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+      "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+      "gpu_compute_capability": "8.9",
+      "os": "ubuntu24.04"
+    },
+    "program": "bin/launch-engine.sh",
+    "args": [],
+    "environment": {
+      "CUDA_CACHE_DISABLE": "0",
+      "CUDA_CACHE_MAXSIZE": "536870912",
+      "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+      "NATIVE_ENGINE_CACHE_POLICY": "opportunistic",
+      "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+      "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+      "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA GeForce RTX 4090"
+    }
+  },
+  "bootstrap_image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+  "agent_sha256": "66ec5c78c203133157caf6bcfbb2cdae59309a2097962316de9d27dcc14b32bf",
+  "limits": {
+    "max_instances": 3,
+    "max_usd_per_hour": 2.8,
+    "max_run_usd": 1.0,
+    "max_experiment_usd": 3.0,
+    "experiment_timeout_s": 3600,
+    "run_timeout_s": 1200,
+    "startup_timeout_s": 600,
+    "request_timeout_s": 120,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100
+  },
+  "observer": {
+    "returncode": 0,
+    "elapsed_s": 43.06253746700531,
+    "observed_owned_pods": [
+      "vsha8u04o1lqp7"
+    ],
+    "cleanup_authority": "Rust owned-pods and pending-launches journals; inspect per-model outcome.json"
+  },
+  "models": [
+    {
+      "model": "qwen3.5-4b",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 12884901888,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "model_archive_sha256": null,
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/f4b49971ac0292d408a44e691c77660ea312d5001d5aa7e60f2b9c27ffda2cb3",
+        "id": "f4b49971ac0292d408a44e691c77660ea312d5001d5aa7e60f2b9c27ffda2cb3",
+        "content_id": "80d478b1b0fc4f8165bd9bbfcdf912d59baee439dbfd472c11c5ae80cddc38a5"
+      },
+      "executed": true,
+      "functional_workloads_passed": true,
+      "outcome": {
+        "cleanup_error": null,
+        "error": null
+      },
+      "cleanup": [
+        {
+          "pod_id": "vsha8u04o1lqp7",
+          "http_status": 404,
+          "confirmed_absent": true
+        }
+      ],
+      "rental": {
+        "cleanup_failures": [],
+        "estimated_rental_usd": 0.008553334149625951,
+        "pods": [
+          {
+            "allocated_s": 4.542541115,
+            "ended_s": 38.981275825,
+            "pod": {
+              "cost": 0.89,
+              "data_center": "EUR-IS-2",
+              "id": "vsha8u04o1lqp7",
+              "name": "switchyard-2e200cb5dfad3315-2",
+              "status": "running"
+            },
+            "profile": 2,
+            "quoted": {
+              "availability": "LOW",
+              "data_center": "EUR-IS-2",
+              "disk_usd_per_hour": 0.00410958904109589,
+              "gpu": "NVIDIA GeForce RTX 4090",
+              "gpu_memory_gb": 24,
+              "gpu_usd_per_hour": 0.89,
+              "quoted_at_unix_s": 1791782178
+            }
+          }
+        ]
+      },
+      "pods": [
+        {
+          "pod": {
+            "id": "vsha8u04o1lqp7",
+            "name": "switchyard-2e200cb5dfad3315-2",
+            "status": "running",
+            "cost": 0.89,
+            "data_center": "EUR-IS-2"
+          },
+          "allocated_s": 4.542541115,
+          "ended_s": 38.981275825,
+          "quote": {
+            "gpu": "NVIDIA GeForce RTX 4090",
+            "gpu_memory_gb": 24,
+            "data_center": "EUR-IS-2",
+            "availability": "LOW",
+            "gpu_usd_per_hour": 0.89,
+            "disk_usd_per_hour": 0.00410958904109589,
+            "quoted_at_unix_s": 1791782178
+          },
+          "observed_platform": {
+            "policy": "opportunistic",
+            "status": "hit",
+            "observed_gpu": "NVIDIA GeForce RTX 4090",
+            "selected_driver": "595.91.07",
+            "compute_cap": "8.9"
+          },
+          "last_agent_phase": "ready",
+          "inference_verified": false,
+          "agent_clock_milestones": {
+            "runtime_hydration_started": 0.73476985,
+            "model_hydration_started": 0.784156924,
+            "runtime_hydration_finished": 5.393173336,
+            "model_hydration_finished": 11.746662486,
+            "engine_spawned": 11.74762021,
+            "engine_health_polling_started": 11.775007934,
+            "engine_health_ready": 18.976782839
+          },
+          "hydration": {
+            "runtime_elapsed_s": 4.658403486,
+            "model_elapsed_s": 10.962505562
+          },
+          "raw_model_transport": {
+            "observed_ranges": 68,
+            "received_bytes": 8424396060,
+            "written_bytes": 8424396060,
+            "body_wait_worker_seconds": 133.86286399600002,
+            "storage_write_worker_seconds": 8.940986588
+          },
+          "engine_clock_first_phase_events": {
+            "process_started": 1.74e-06,
+            "device_initialization_started": 0.000470712,
+            "device_initialized": 0.204330126,
+            "weights_read_started": 0.204459306,
+            "tokenizer_loaded": 0.617479619,
+            "weights_read_finished": 5.404022825,
+            "model_loaded": 7.019190647,
+            "http_listening": 7.022311381,
+            "batch_started": 8.347584408,
+            "prefix_prefill": 8.471928752,
+            "batch_finished": 9.2261051
+          },
+          "host_memory_samples": [],
+          "captured_prefix_prefill": {
+            "observed_events": 6,
+            "input_tokens": 620,
+            "computed_tokens": 400,
+            "reused_tokens": 220
+          },
+          "captured_finished_batch_sizes": {
+            "1": 3,
+            "7": 1
+          },
+          "evidence_sha256": {
+            "provider_logs": "8650e4a578f26168cf25072eaff35bc1f5799413f7bb3eea74804f44e163a444"
+          }
+        }
+      ],
+      "workloads": [
+        {
+          "name": "cold-single",
+          "policy": "adaptive",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "target_output_tokens_per_s": 200.0,
+          "budget_exceeded": false,
+          "output_tokens": 32,
+          "output_tokens_per_s": 1.0666088543690957,
+          "ttft_p50_s": 29.172338045,
+          "ttft_p95_s": 29.172338045,
+          "response_p95_s": 29.993571365,
+          "elapsed_s": 30.001626059,
+          "estimated_rental_usd": 0.006323156801861949,
+          "invalid_actions": 0,
+          "launches": 1,
+          "probes": 0,
+          "releases": 0,
+          "controller": {
+            "cancelled_slow_starts": 0,
+            "host_beliefs": {},
+            "probed_hosts": {}
+          },
+          "failures": {},
+          "recorded": true,
+          "report_sha256": "068bd9223fb2289980362b72a7ccb7f1f9289d93d95c3794edbf3172fb7010de",
+          "throughput_target_met": false
+        },
+        {
+          "name": "hot-single",
+          "policy": "warm_only",
+          "requests": 1,
+          "completed": 1,
+          "failed": 0,
+          "unfinished": 0,
+          "target_output_tokens_per_s": 200.0,
+          "budget_exceeded": false,
+          "output_tokens": 32,
+          "output_tokens_per_s": 21.08652167010299,
+          "ttft_p50_s": 0.8407224729999996,
+          "ttft_p95_s": 0.8407224729999996,
+          "response_p95_s": 1.5004863099999994,
+          "elapsed_s": 1.5175570680000021,
+          "estimated_rental_usd": 0.000376906170239992,
+          "invalid_actions": 0,
+          "launches": 0,
+          "probes": 0,
+          "releases": 0,
+          "controller": {
+            "cancelled_slow_starts": 0,
+            "host_beliefs": {},
+            "probed_hosts": {}
+          },
+          "failures": {},
+          "recorded": true,
+          "report_sha256": "e8b756abcc1998c32d43958b1adc97e0c58f115fff6bfca6ff8c62549785a151",
+          "throughput_target_met": false
+        },
+        {
+          "name": "shared-system-prefix",
+          "policy": "adaptive",
+          "requests": 8,
+          "completed": 8,
+          "failed": 0,
+          "unfinished": 0,
+          "target_output_tokens_per_s": 200.0,
+          "budget_exceeded": false,
+          "output_tokens": 217,
+          "output_tokens_per_s": 76.62019998858734,
+          "ttft_p50_s": 1.3871135699999968,
+          "ttft_p95_s": 1.8100651580000005,
+          "response_p95_s": 2.8261228189999983,
+          "elapsed_s": 2.832151312999997,
+          "estimated_rental_usd": 0.000703403778046955,
+          "invalid_actions": 0,
+          "launches": 0,
+          "probes": 0,
+          "releases": 0,
+          "controller": {
+            "cancelled_slow_starts": 0,
+            "host_beliefs": {},
+            "probed_hosts": {}
+          },
+          "failures": {},
+          "recorded": true,
+          "report_sha256": "2dbd5ef14844a76d6c78e8e2746ae160702f81029556c35ab60dd39e00dd8ff6",
+          "throughput_target_met": false
+        }
+      ],
+      "cache_registry_events": [
+        {
+          "artifact": "b5079344ab25bf16c6d2f90b96f70521ffe8436b6fe7fe2e74b1be5d118b16a0",
+          "at_s": 0.271297092,
+          "binding": "191cd8deafb00286b8aff6ae361df54086faf80c488b5a38ad8e77fe7f47e5b5",
+          "elapsed_s": 0.26985410400000004,
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "model": "qwen3.5-4b",
+          "phase": "hit"
+        },
+        {
+          "artifact": "b5079344ab25bf16c6d2f90b96f70521ffe8436b6fe7fe2e74b1be5d118b16a0",
+          "at_s": 2.259404457,
+          "binding": "191cd8deafb00286b8aff6ae361df54086faf80c488b5a38ad8e77fe7f47e5b5",
+          "elapsed_s": 0.19402267900000014,
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "model": "qwen3.5-4b",
+          "phase": "hit"
+        },
+        {
+          "artifact": "b5079344ab25bf16c6d2f90b96f70521ffe8436b6fe7fe2e74b1be5d118b16a0",
+          "at_s": 4.284259199,
+          "binding": "191cd8deafb00286b8aff6ae361df54086faf80c488b5a38ad8e77fe7f47e5b5",
+          "elapsed_s": 0.14867920499999965,
+          "gpu": "NVIDIA GeForce RTX 4090",
+          "model": "qwen3.5-4b",
+          "phase": "hit"
+        },
+        {
+          "artifact": "b5079344ab25bf16c6d2f90b96f70521ffe8436b6fe7fe2e74b1be5d118b16a0",
+          "at_s": 37.677740888,
+          "binding": "191cd8deafb00286b8aff6ae361df54086faf80c488b5a38ad8e77fe7f47e5b5",
+          "elapsed_s": 1.927973483999999,
+          "phase": "collected",
+          "pod": "vsha8u04o1lqp7"
+        },
+        {
+          "at_s": 40.280616097,
+          "binding": "191cd8deafb00286b8aff6ae361df54086faf80c488b5a38ad8e77fe7f47e5b5",
+          "detail": {
+            "chunks_created": {
+              "b6229bd097d89ddb0ff115e0f059c0a1c1f605985ea33369f7259fd2842a9dc0.tar.zst": false
+            },
+            "id": "b5079344ab25bf16c6d2f90b96f70521ffe8436b6fe7fe2e74b1be5d118b16a0",
+            "manifest_created": false,
+            "prefix": "switchyard/native-engine/observed-cuda-caches/v1/b5079344ab25bf16c6d2f90b96f70521ffe8436b6fe7fe2e74b1be5d118b16a0"
+          },
+          "elapsed_s": 0.9215286880000022,
+          "phase": "published",
+          "pod": "vsha8u04o1lqp7"
+        }
+      ],
+      "evidence_sha256": {
+        "observations": "3831f52296d4466d928e12d782d706c66d50c983f9be80f8641bc19dba91bf0d"
+      }
+    }
+  ],
+  "functional_workloads_passed": true,
+  "limits_of_evidence": [
+    "F32 serving; these cloud requests do not add a teacher-forced numerical accuracy gate.",
+    "Throughput target misses are recorded independently of functional completion.",
+    "Agent and engine clocks have separate epochs; hydration intervals overlap.",
+    "Engine first phase events include HTTP arrival time, not isolated JIT compilation cost.",
+    "Runtime identity comes from pinned published manifests; no serve-time content hashing is added.",
+    "Detailed transport traces, completion hashes and scheduler decisions remain in ignored local results.",
+    "Prefix and batch counts cover retained provider log events; delivery completeness is not assumed."
+  ]
+}
