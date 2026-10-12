@@ -1,5 +1,6 @@
 """Check selected-fleet credentials and actual observer subprocess ownership."""
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from contextlib import redirect_stdout
 
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT))
@@ -66,6 +68,26 @@ class ObserverTests(unittest.TestCase):
                             '{"pod":"one","state":{"phase":"running"}}\n'
                             '{"pod":"two","status":"starting"}\n')
             self.assertEqual(observer.observation_phases(path), {"one": "running", "two": "starting"})
+
+    def test_cache_phases_wait_for_complete_records_and_omit_private_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = root / "fixture-model"
+            model.mkdir()
+            path = model / "native-cache-registry.ndjson"
+            path.write_text('{"phase":"miss","error":"private-url"}\n{"phase":"collected"')
+            offsets = {}
+            output = io.StringIO()
+            with redirect_stdout(output):
+                observer.emit_cache_phases(root, offsets, 0)
+                observer.emit_cache_phases(root, offsets, 0)
+                with path.open("a") as source:
+                    source.write('}\n{"phase":"published"}\n')
+                observer.emit_cache_phases(root, offsets, 0)
+            self.assertEqual(output.getvalue().count("cache_registry=miss"), 1)
+            self.assertIn("cache_registry=collected", output.getvalue())
+            self.assertIn("cache_registry=published", output.getvalue())
+            self.assertNotIn("private-url", output.getvalue())
 
 
 if __name__ == "__main__":

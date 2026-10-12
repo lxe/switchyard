@@ -13,7 +13,7 @@ Switchyard is a Rust toolkit for developing inference schedulers and routers. It
 | [Artifacts](crates/switchyard-artifacts) | Deterministic archives, integrity checks, bounded transfer, and atomic hydration without cloud or engine dependencies |
 | [Weight loading](crates/switchyard-weights) | Header-first safetensors publication and completion leases for incremental vLLM weight loading through the pod agent |
 | [Artifact tools](crates/switchyard-artifact-tools) | Independent build, pack, publish, verify, and hydrate commands |
-| [Native inference engine](crates/switchyard-engine) | Initial Rust/CUDA Qwen3.5 text engine, bounded request batching, streamed HTTP and token comparisons |
+| [Native inference engine](crates/switchyard-engine) | Rust/CUDA Qwen3.5 text/image serving, packed GGUF weights, bounded batching, prefix caching and token comparisons |
 | [Runtime builder](crates/switchyard-runtime-build) | Locked serving environment assembly inside an isolated Docker build |
 | [Shared contracts](crates/switchyard-core) | Configuration, known request inputs, observable fleet state, and the pluggable `Scheduler` interface |
 
@@ -156,6 +156,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [Native image inference](docs/native-vision.md) | Full mmproj encoder/merger, bounded image requests and rotary positions |
 | [Native prefix caching](docs/native-prefix-cache.md) | Immutable attention pages, hybrid-state reuse, fixed cache limits and numerical/performance receipts |
 | [Native GPU builds](docs/native-gpu-builds.md) | Architecture matrices and separate GPU bake acceptance |
+| [Native CUDA cache lifecycle](docs/native-cache-registry.md) | Optional driver-cache reuse and collection from useful inference without dedicated GPU bake jobs |
 | [Native CPU snapshots](docs/cpu-process-snapshots.md) | API/worker preparation, CRIU restore, fixed-profile GPU continuation and measured cold-start timing |
 | [Contributing](CONTRIBUTING.md) | Development checks and requirements for behavioral evidence |
 

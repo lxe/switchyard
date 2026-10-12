@@ -11,7 +11,10 @@ use switchyard_agent::{export::ExportPhase, runtime::CacheTicket};
 use switchyard_provider::Provider;
 
 impl<P: Provider> LiveRuntime<P> {
-    fn cache_event(&self, event: serde_json::Value) {
+    fn cache_event(&self, mut event: serde_json::Value) {
+        if let Some(fields) = event.as_object_mut() {
+            fields.insert("at_s".into(), serde_json::json!(self.now()));
+        }
         // Optional telemetry never prevents serving or paid-resource cleanup.
         if super::telemetry::append(&self.out, "native-cache-registry.ndjson", &event).is_err() {
             eprintln!("native cache registry telemetry write failed");

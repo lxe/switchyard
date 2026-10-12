@@ -65,6 +65,27 @@ def emit_log(path, offset, key):
         return source.tell()
 
 
+def emit_cache_phases(output, offsets, started):
+    for path in output.glob("*/native-cache-registry.ndjson"):
+        offset = offsets.get(path, 0)
+        with path.open("rb") as source:
+            source.seek(offset)
+            for line in source:
+                if not line.endswith(b"\n"):
+                    break
+                offset += len(line)
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                phase = event.get("phase", "unknown")
+                # Detailed fields stay in the receipt; only phase identifiers
+                # are rendered here, never URLs or provider response bodies.
+                if isinstance(phase, str) and re.fullmatch(r"[a-z_]+", phase):
+                    print(f"elapsed_s={time.monotonic()-started:.1f} model={path.parent.name} cache_registry={phase}", flush=True)
+        offsets[path] = offset
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, required=True)
@@ -101,6 +122,7 @@ def main():
     write(args.out / "observer-source.json", source)
     stopped = threading.Event()
     workers, seen = {}, {}
+    cache_offsets = {}
     offset = 0
     started = time.monotonic()
     log_path = args.out / "driver.log"
@@ -113,6 +135,7 @@ def main():
         try:
             while process.poll() is None:
                 offset = emit_log(log_path, offset, key)
+                emit_cache_phases(args.out, cache_offsets, started)
                 for path in args.out.glob("*/agent-observations.ndjson"):
                     for pod, phase in observation_phases(path).items():
                         identity = (path.parent.name, pod)
@@ -136,6 +159,7 @@ def main():
                         worker.start()
                 time.sleep(1)
             emit_log(log_path, offset, key)
+            emit_cache_phases(args.out, cache_offsets, started)
         except BaseException:
             if process.poll() is None:
                 print("phase=waiting_for_owned_cleanup", flush=True)
