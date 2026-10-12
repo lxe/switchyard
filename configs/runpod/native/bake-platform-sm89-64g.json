@@ -13,7 +13,10 @@
     "min_cuda": "13.0",
     "min_ram_gb": 64,
     "min_vcpus": 8,
-    "disk_gb": 30
+    "disk_gb": 30,
+    "allowed_cuda_versions": [
+      "13.0"
+    ]
   },
   "storage": {
     "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",

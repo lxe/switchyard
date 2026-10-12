@@ -2,6 +2,7 @@
 
 import base64
 import json
+import re
 import secrets
 import threading
 import time
@@ -125,6 +126,7 @@ def consume(
     downloaded = set()
     identity = None
     started = False
+    gate_retries = 0
     while time.monotonic() < deadline:
         request = urllib.request.Request(
             origin + "/status",
@@ -180,14 +182,61 @@ def consume(
                     "User-Agent": "Switchyard/0.5",
                 },
             )
-            with urllib.request.urlopen(request, timeout=10) as response:
-                if response.status != 204:
-                    raise RuntimeError("fixed native bake gate was not released")
+            try:
+                with urllib.request.urlopen(
+                    request, timeout=min(10, max(1, deadline - time.monotonic()))
+                ) as response:
+                    if response.status != 204:
+                        raise RuntimeError("fixed native bake gate was not released")
+            except urllib.error.HTTPError as error:
+                status = error.code
+                body = error.read(65536).decode("utf8", errors="replace")
+                body = re.sub(r"https?://[^\s\"'<>]+", "[url]", body).replace(
+                    token, "[redacted]"
+                )
+                write(
+                    args.output / "gate-rejection.json",
+                    {
+                        "http_status": status,
+                        "body": body,
+                        "server": error.headers.get("Server"),
+                    },
+                )
+                error.close()
+                if status not in [404, 502, 503, 504] or gate_retries >= 10:
+                    raise RuntimeError(
+                        "fixed bake start rejected; inspect retained gate response"
+                    ) from None
+                gate_retries += 1
+                control.event(
+                    "fixed_gate_retry", http_status=status, retries=gate_retries
+                )
+                time.sleep(1)
+                continue
+            except (urllib.error.URLError, TimeoutError):
+                if gate_retries >= 10:
+                    raise RuntimeError(
+                        "fixed bake start control deadline exceeded"
+                    ) from None
+                gate_retries += 1
+                control.event(
+                    "fixed_gate_retry", http_status=None, retries=gate_retries
+                )
+                time.sleep(1)
+                continue
             started = True
             control.event(
                 "offline_bakes_started",
                 driver=driver,
                 models=[c["engine"]["model"] for c in configs],
+            )
+        elif state["phase"] in ["baking", "complete"] and not started:
+            started = True
+            control.event(
+                "offline_bakes_started",
+                driver=driver,
+                models=[c["engine"]["model"] for c in configs],
+                observed_after_uncertain_ack=True,
             )
         for config, prepared in zip(configs, preparations):
             name = config["engine"]["model"]

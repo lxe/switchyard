@@ -164,6 +164,35 @@
       "model_root": "/work/switchyard",
       "require_model_ram": false,
       "early_launch": false
+    },
+    "runtime": {
+      "hydration": {
+        "retries": 0
+      },
+      "artifact": {
+        "id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "prefix": "switchyard/native-engine/runtime/05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "os": "ubuntu24.04",
+        "cuda_build": "13.0.0",
+        "gpu_compute_capability": "8.9",
+        "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+        "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48"
+      },
+      "program": "bin/launch-engine.sh",
+      "args": [],
+      "environment": {
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+        "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+        "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA GeForce RTX 4090",
+        "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+        "CUDA_CACHE_DISABLE": "0",
+        "CUDA_CACHE_MAXSIZE": "536870912"
+      }
     }
   }
 }

@@ -1,0 +1,36 @@
+{
+  "format": "switchyard-native-f32-bake-host-rejection-v1",
+  "allocation": "direct offline RunPod bake platform",
+  "requested_driver": "580.159.04",
+  "owned_pod": {
+    "id": "zqlew8xhaaggso",
+    "name": "switchyard-native-bake-1247a81dc040",
+    "status": "RUNNING",
+    "cost": 0.89,
+    "dataCenterId": "EUR-IS-2",
+    "cudaVersion": "13.2"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-b8c9cc57-4a7d-c8a5-0e4a-9fb56505dd82",
+    "driver": "595.91.07",
+    "capability": "8.9",
+    "memory": "24564 MiB"
+  },
+  "status": {
+    "phase": "failed",
+    "hardware": "NVIDIA GeForce RTX 4090, GPU-b8c9cc57-4a7d-c8a5-0e4a-9fb56505dd82, 595.91.07, 8.9, 24564 MiB",
+    "error": "observed driver differs from explicit bake target",
+    "exit_code": null,
+    "completed": []
+  },
+  "weights_transfer_started": false,
+  "published_cache_components": [],
+  "cleanup": {
+    "pod_id": "zqlew8xhaaggso",
+    "name": "switchyard-native-bake-1247a81dc040",
+    "confirmed_absent": true
+  },
+  "followup_host_filter": "allowed CUDA versions 13.0; exact observed driver guard retained",
+  "scope": "newer eligible host discovered; no cache validity established for driver595.91.07"
+}

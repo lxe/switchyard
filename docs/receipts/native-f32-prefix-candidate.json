@@ -2,7 +2,7 @@
   "format": "switchyard-native-f32-prefix-candidate-v1",
   "engine_freeze_commit": "5e9850e170f18470836245e5722557ea95219ea3",
   "fleet_input": "configs/runpod/native-fleet-f32-prefix-candidate.json",
-  "state": "prepared inputs; unpublished and not runnable without new binary-pinned shared runtime and exact-driver cache families",
+  "state": "compiled shared runtime and fixed F32 preparations published; exact-driver caches and cloud generation/serving acceptance pending",
   "cache": {
     "page_tokens": 16,
     "checkpoint_tokens": 32,
@@ -70,14 +70,101 @@
     "bf16_cache_enabled_accepted": false
   },
   "publication": {
-    "shared_runtime": null,
-    "model_preparations": [],
+    "shared_runtime": {
+      "id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+      "prefix": "switchyard/native-engine/runtime/05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+      "compressed_bytes": 452853014
+    },
+    "model_preparations": [
+      {
+        "model": "qwen3.5-0.8b",
+        "artifact": {
+          "id": "14008481725368311cc4b61e209f08d5a7b2fc6f3290d822e5e0093e7f6d0f19",
+          "prefix": "switchyard/native-engine/preparation/14008481725368311cc4b61e209f08d5a7b2fc6f3290d822e5e0093e7f6d0f19",
+          "compressed_bytes": 6995504
+        },
+        "compatibility": {
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "fc1f1b61c4ef1efd80af335ea5e6ee26b4ef4a21dd9d355955fa6e26c55d7715"
+        },
+        "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "native_model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db"
+      },
+      {
+        "model": "qwen3.5-2b",
+        "artifact": {
+          "id": "1b843190f8ddfd298dd2306fd9a727c964b6a4d818f7a48029758e0711b03eea",
+          "prefix": "switchyard/native-engine/preparation/1b843190f8ddfd298dd2306fd9a727c964b6a4d818f7a48029758e0711b03eea",
+          "compressed_bytes": 6995504
+        },
+        "compatibility": {
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "4969a4f39b3a7855de3e09996de355b87e3626375df2f83d0b966d534faffb37"
+        },
+        "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "native_model_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461"
+      },
+      {
+        "model": "qwen3.5-4b",
+        "artifact": {
+          "id": "df6e6389e550671c3cd29eebc79161d03b9801a8fa8d52567796fcea8e0b2582",
+          "prefix": "switchyard/native-engine/preparation/df6e6389e550671c3cd29eebc79161d03b9801a8fa8d52567796fcea8e0b2582",
+          "compressed_bytes": 6995504
+        },
+        "compatibility": {
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "1f7cf76c9c41132553ea5c8c337a7cbb9a01d88ecd100f0cf49bfd37d9ad06cc"
+        },
+        "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "native_model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d"
+      }
+    ],
     "cache_families": [],
-    "cloud_allocations": []
+    "cloud_allocations": [
+      {
+        "receipt": "docs/receipts/native-f32-bake-host-rejection-01.json",
+        "pod_id": "zqlew8xhaaggso",
+        "confirmed_absent": true
+      },
+      {
+        "receipt": "docs/receipts/native-f32-bake-start-failure-01.json",
+        "pod_id": "8ie0o7seelcn50",
+        "confirmed_absent": true
+      }
+    ],
+    "runtime_compatibility": {
+      "architecture": "x86_64",
+      "os": "ubuntu24.04",
+      "cuda_build": "13.0.0",
+      "gpu_compute_capability": "8.9",
+      "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+      "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+      "cuda_compiler_target": "compute_89",
+      "cuda_compiler_version": "13.0.48"
+    }
   },
   "unresolved": [
-    "New Ubuntu SM89 binary and build inventory must include switchyard-engine-kernels embedded PTX.",
-    "Publish a new shared runtime and all model preparations; the old BF16 runtime/cache identities cannot be reused.",
     "Bake all three models for each desired exact driver and validate new F32 cloud serving.",
     "Candidate planning priors are copied assumptions and require matching F32 measurements before performance claims.",
     "Every F32 cloud bake must exactly match its retained complete local generation reference; differences require diagnosis and prevent publication."
@@ -85,12 +172,13 @@
   "preserved_bf16_fleet": "configs/runpod/native-fleet.json",
   "build_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
   "verification": {
-    "offline_rust_validation": "F32 candidate decoded and rejected for missing binary-pinned native runtime; no labels produced, credentials, network or allocation",
     "pinned_bf16_inputs_unchanged": true,
     "owned_pod_cleanup_http_status": 404,
     "cloud_bake_started": false,
-    "offline_controller_fixture_tests": 15,
-    "matrix_container_fixture_tests": 24
+    "offline_controller_fixture_tests": 17,
+    "matrix_container_fixture_tests": 24,
+    "unbound_candidate_validation": "F32 candidate decoded and rejected for missing binary-pinned native runtime; no labels produced, credentials, network or allocation",
+    "current_offline_rust_cache_bindings": "three models successfully derived against published shared runtime; no network or provisioning"
   },
   "bake_request_input": "configs/runpod/native/f32-prefix-bake-requests.json",
   "bake_request_input_sha256": "7ac728a57ee9bea132a786dfa38aa15d25328007f0b70c5190a92b9ad41d3b0d",

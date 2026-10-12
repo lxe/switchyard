@@ -1,0 +1,38 @@
+{
+  "format": "switchyard-native-f32-bake-start-failure-v1",
+  "allocation": "direct offline RunPod bake platform",
+  "requested_driver": "580.159.04",
+  "owned_pod": {
+    "id": "8ie0o7seelcn50",
+    "name": "switchyard-native-bake-04981fde1c3e",
+    "status": "RUNNING",
+    "cost": 0.89,
+    "dataCenterId": "EUR-IS-1",
+    "cudaVersion": "13.0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-ed9a5b96-512e-c705-84c3-7d514a2f88df",
+    "driver": "580.159.04",
+    "capability": "8.9",
+    "memory": "24564 MiB"
+  },
+  "status_before_start": {
+    "phase": "waiting",
+    "hardware": "NVIDIA GeForce RTX 4090, GPU-ed9a5b96-512e-c705-84c3-7d514a2f88df, 580.159.04, 8.9, 24564 MiB",
+    "error": null,
+    "exit_code": null,
+    "completed": []
+  },
+  "start_request_http_status": 404,
+  "response_body_retained": false,
+  "start_acknowledged": false,
+  "weights_transfer_start_established": false,
+  "published_cache_components": [],
+  "cleanup": {
+    "pod_id": "8ie0o7seelcn50",
+    "name": "switchyard-native-bake-04981fde1c3e",
+    "confirmed_absent": true
+  },
+  "cause": "not established; bounded idempotent start retry and sanitized response diagnostics added"
+}
