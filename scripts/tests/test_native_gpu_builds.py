@@ -27,6 +27,8 @@ class CompilerFixture:
         self.extra_bins = extra_bins
         self.commands = []
         self.target_dirs = []
+        self.native_wrong_arch = None
+        self.omit_native = False
 
     def __call__(self, command, *, cwd, env, log=None):
         self.commands.append(command)
@@ -49,6 +51,18 @@ class CompilerFixture:
                     "out_dir": str(out),
                 }
             ]
+            if not self.omit_native:
+                native_out = out / "native"
+                native_out.mkdir(exist_ok=True)
+                native_arch = self.native_wrong_arch or actual
+                (native_out / "paged_decode.ptx").write_text(
+                    f".version 8.8\n.target sm_{native_arch}\n.address_size 64\n"
+                )
+                messages.append({
+                    "reason": "build-script-executed",
+                    "package_id": "switchyard-engine-kernels",
+                    "out_dir": str(native_out),
+                })
             if self.include_bins:
                 for name in (
                     "switchyard-engine",
@@ -97,7 +111,14 @@ class BuildTests(unittest.TestCase):
             "source_inputs_sha256": "source-a",
         }
         self.metadata = {
-            "packages": [{"id": "candle-kernels", "name": "candle-kernels"}]
+            "packages": [
+                {
+                    "id": "candle-kernels",
+                    "name": "candle-kernels",
+                    "manifest_path": str(self.root / "candle/Cargo.toml"),
+                },
+                {"id": "switchyard-engine-kernels", "name": "switchyard-engine-kernels"},
+            ]
         }
         self.env = {"NATIVE_PTXAS": "ptxas", "NATIVE_CUOBJDUMP": "cuobjdump"}
 
@@ -122,6 +143,8 @@ class BuildTests(unittest.TestCase):
                 {
                     "kernels/ptx/unary.ptx",
                     "kernels/cubin/unary.cubin",
+                    "kernels/ptx/paged_decode.ptx",
+                    "kernels/cubin/paged_decode.cubin",
                     "kernels/libmoe.a",
                 },
             )
@@ -131,6 +154,34 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(
             {c[0] for c in compiler.commands}, {"cargo", "ptxas", "cuobjdump"}
         )
+
+    def test_native_kernel_target_is_inspected_independently(self):
+        compiler = CompilerFixture(self.root)
+        compiler.native_wrong_arch = "120a"
+        with self.assertRaisesRegex(RuntimeError, "PTX target differs"):
+            build.build_target(
+                self.args, "89", self.base, self.metadata, self.env, runner=compiler
+            )
+        self.assertFalse((self.args.out / "targets/sm_89/build.json").exists())
+
+    def test_missing_native_kernel_cannot_publish_a_target(self):
+        compiler = CompilerFixture(self.root)
+        compiler.omit_native = True
+        with self.assertRaisesRegex(RuntimeError, "native kernel build output"):
+            build.build_target(
+                self.args, "89", self.base, self.metadata, self.env, runner=compiler
+            )
+        self.assertFalse((self.args.out / "targets/sm_89/build.json").exists())
+
+    def test_native_source_changes_invalidate_compiler_identity(self):
+        for name in ("Cargo.toml", "Cargo.lock"):
+            (self.root / name).write_text("fixture")
+        kernel = self.root / "crates/switchyard-engine-kernels/src/paged_decode.cu"
+        kernel.parent.mkdir(parents=True)
+        kernel.write_text("kernel-v1")
+        first = build.source_inputs(self.root, self.metadata)
+        kernel.write_text("kernel-v2")
+        self.assertNotEqual(first, build.source_inputs(self.root, self.metadata))
 
     def test_mixed_architecture_ptx_cannot_publish_a_target_receipt(self):
         with self.assertRaisesRegex(RuntimeError, "PTX target differs"):

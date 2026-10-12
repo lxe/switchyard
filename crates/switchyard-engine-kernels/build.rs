@@ -17,7 +17,10 @@ fn main() {
     // explicitly, using the same architecture selection as Candle's kernels.
     let arch = env::var("CUDA_COMPUTE_CAP").unwrap_or_else(|_| "80".into());
     assert!(
-        arch.chars().all(|c| c.is_ascii_digit() || c == 'a'),
+        {
+            let base = arch.strip_suffix(['a', 'f']).unwrap_or(&arch);
+            (2..=3).contains(&base.len()) && base.chars().all(|c| c.is_ascii_digit())
+        },
         "invalid CUDA_COMPUTE_CAP"
     );
     let output = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR")).join("paged_decode.ptx");

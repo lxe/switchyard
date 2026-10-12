@@ -97,7 +97,10 @@ def source_inputs(workspace, metadata):
         name: file_info(workspace / name)["sha256"]
         for name in ("Cargo.toml", "Cargo.lock")
     }
-    roots = [("engine", workspace / "crates/switchyard-engine")]
+    roots = [
+        ("engine", workspace / "crates/switchyard-engine"),
+        ("engine-kernels", workspace / "crates/switchyard-engine-kernels"),
+    ]
     for package in metadata["packages"]:
         if package["name"] in {"candle-core", "candle-nn", "candle-kernels"}:
             roots.append((package["name"], Path(package["manifest_path"]).parent))
@@ -157,17 +160,26 @@ def collect_kernels(out_dir, destination, arch, *, cwd, env, cubins, runner=run)
             magic = stream.read(8)
     if not ptx_files or magic != b"!<arch>\n":
         raise RuntimeError("Candle build did not produce PTX and libmoe.a")
+    versions = collect_ptx(
+        ptx_files, destination, arch, cwd=cwd, env=env, cubins=cubins, runner=runner
+    )
+    shutil.copy2(archive, destination / archive.name)
+    inspect_device(archive, arch, cwd=cwd, env=env, runner=runner)
+    return versions
+
+
+def collect_ptx(ptx_files, destination, arch, *, cwd, env, cubins, runner=run):
     ptx = destination / "ptx"
-    ptx.mkdir(parents=True)
+    ptx.mkdir(parents=True, exist_ok=True)
     versions = set()
     for source in ptx_files:
         versions.add(ptx_target(source, arch))
+        if (ptx / source.name).exists():
+            raise RuntimeError(f"duplicate exported PTX name: {source.name}")
         shutil.copy2(source, ptx / source.name)
-    shutil.copy2(archive, destination / archive.name)
-    inspect_device(archive, arch, cwd=cwd, env=env, runner=runner)
     if cubins:
         binary = destination / "cubin"
-        binary.mkdir()
+        binary.mkdir(exist_ok=True)
         for source in ptx_files:
             output = binary / source.with_suffix(".cubin").name
             runner(
@@ -272,6 +284,25 @@ def build_target(args, arch, base, metadata, env, *, runner=run):
         cubins=not args.no_cubins,
         runner=runner,
     )
+    native_id = next(
+        p["id"] for p in metadata["packages"] if p["name"] == "switchyard-engine-kernels"
+    )
+    native_outputs = {
+        m["out_dir"]
+        for m in messages
+        if m.get("reason") == "build-script-executed"
+        and m.get("package_id") == native_id
+    }
+    if len(native_outputs) != 1:
+        raise RuntimeError("expected exactly one native kernel build output")
+    native_ptx = Path(native_outputs.pop()) / "paged_decode.ptx"
+    if not native_ptx.is_file():
+        raise RuntimeError("native kernel build did not produce paged_decode.ptx")
+    native_versions = collect_ptx(
+        [native_ptx], target / "kernels", arch, cwd=args.workspace, env=env,
+        cubins=not args.no_cubins, runner=runner,
+    )
+    versions = sorted(set(versions) | set(native_versions))
     runtime_requirements = {}
     excluded_binaries = []
     if not args.kernels_only:
@@ -524,7 +555,7 @@ def main():
     parser.add_argument(
         "--kernels-only",
         action="store_true",
-        help="compile Candle kernels without engine binaries",
+        help="compile Candle and native paged kernels without engine binaries",
     )
     parser.add_argument(
         "--no-cubins",

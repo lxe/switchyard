@@ -1,6 +1,6 @@
 # Native GPU build artifacts
 
-`scripts/build-native-gpu.py` compiles the native Candle backend for an explicit list of CUDA architectures in one invocation. Each target has its own Cargo build directory, PTX, static CUDA archive, optional standalone cubins, and compatibility receipt. The default job also exports the three native engine binaries. Compilation and inspection use CPU tools; the job never launches an engine, executes a GPU kernel, discovers the attached GPU, or runs a model bake.
+`scripts/build-native-gpu.py` compiles the native Candle backend and Switchyard paged-attention kernel for an explicit list of CUDA architectures in one invocation. Each target has its own Cargo build directory, PTX, static CUDA archive, optional standalone cubins, and compatibility receipt. The default job also exports the three native engine binaries. Compilation and inspection use CPU tools; the job never launches an engine, executes a GPU kernel, discovers the attached GPU, or runs a model bake.
 
 ## Build commands
 
@@ -36,7 +36,7 @@ python /home/lxe/switchyard/scripts/build-native-gpu-container.py \
 
 The image above is also the default. Docker must be available, and the builder needs network access to install Ubuntu build tools and Rust 1.98.1 and fetch locked Cargo dependencies. The image digest pins the CUDA base; Ubuntu package versions and compiler identities are recorded because package installation can change independently. CPU and memory limits apply to the container. Add `--plan` to inspect the source commit, image, target arguments, and Docker command without creating outputs or starting a container.
 
-The wrapper rejects uncommitted changes or untracked files under the Cargo manifests, `.cargo`, and `crates`. It archives the selected Git commit into a temporary source directory and mounts that snapshot read-only. The snapshot contains no `.git` directory, so the inner job receives the original commit through `--source-commit`; its receipt still hashes the actual engine and Candle input contents. The separately mounted build scripts are retained in `container-inputs`, and `producer.py` retains the exact inner matrix producer.
+The wrapper rejects uncommitted changes or untracked files under the Cargo manifests, `.cargo`, and `crates`. It archives the selected Git commit into a temporary source directory and mounts that snapshot read-only. The snapshot contains no `.git` directory, so the inner job receives the original commit through `--source-commit`; its receipt still hashes the actual engine, native-kernel and Candle input contents. The separately mounted build scripts are retained in `container-inputs`, and `producer.py` retains the exact inner matrix producer.
 
 The container receives no GPU devices and does not execute an engine or a bake. It retains `ubuntu-os-release.txt`, `ubuntu-packages.txt`, `ubuntu-libc.txt`, `ubuntu-rustc.txt`, and `ubuntu-nvcc.txt` at the output root. Its `container-evidence` directory contains the receipt helper's six required inputs: `nvcc-gpu-arch.txt`, `cuda-environment-version.txt`, `cuda-packages.txt`, `nvcc.txt`, `os-release.txt`, and `architecture.txt`. These come from the container's compiler, `CUDA_VERSION`, installed CUDA packages, OS release, and machine architecture. The runtime receipt validates agreement among them and records the toolkit release, compiler version, and installed package versions. Each target also keeps the matrix job's ELF library and symbol-version requirements. The wrapper validates the matrix and target identities, every exported executable and kernel file, and the retained producer hash before assembling that target's runtime.
 
@@ -52,14 +52,16 @@ For `--arch 89`, the output paths are:
 
 | Path | Contents and consumer |
 | --- | --- |
-| `targets/sm_89/bin/switchyard-engine` | Native serving executable with Candle's PTX embedded. |
+| `targets/sm_89/bin/switchyard-engine` | Native serving executable with Candle and native paged-attention PTX embedded. |
 | `targets/sm_89/bin/switchyard-engine-bake` | Separate GPU-dependent bake executable; building it does not run a bake. |
 | `targets/sm_89/bin/switchyard-engine-bench` | Benchmark executable; the build job never runs it. |
-| `targets/sm_89/kernels/ptx/*.ptx` | Candle-generated PTX, checked for target and PTX ISA version. |
+| `targets/sm_89/kernels/ptx/*.ptx` | Candle and native paged-attention PTX, checked for target and PTX ISA version. |
 | `targets/sm_89/kernels/libmoe.a` | Candle's static CUDA archive, inspected with `cuobjdump`. |
 | `targets/sm_89/kernels/cubin/*.cubin` | Optional offline `ptxas` outputs, inspected as CUDA ELF device code. |
 | `targets/sm_89/build.json` | Compatibility inputs, file hashes, artifact identity, runtime library requirements, and validation state. |
 | `build.json` | Completed target list and matrix identity. |
+
+The exporter independently inspects the `switchyard-engine-kernels` build output and includes `paged_decode.ptx` and its optional cubin. Native CUDA source and build-script changes invalidate compiler identities. A missing native build output or a mismatched native target prevents publication, including in `--kernels-only` mode.
 
 The matrix exporter requires the three binaries listed above and exports only those names. Additional Cargo binary targets, including the offline `switchyard-engine-merged-probe` and `switchyard-engine-mixed-bench` diagnostics, are recorded in `excluded_binary_targets` and omitted from the artifact. They may still be compiled by Cargo's `--bins` command. The Ubuntu wrapper's runtime directory contains the serving and bake binaries; the benchmark remains available only in the matrix target's `bin` directory.
 
@@ -73,7 +75,7 @@ Each target's `compatibility_key` hashes the following inputs. `artifact_id` add
 
 | Input | Why it is bound |
 | --- | --- |
-| Source commit and engine/Candle input-content hash | Prevents source changes, including untracked engine sources, from sharing a build cache. |
+| Source commit and engine/native-kernel/Candle input-content hash | Prevents source changes, including untracked engine sources, from sharing a build cache. |
 | Cargo.lock digest and Candle/Cudaforge/Cudarc versions and sources | Pins the backend and dependency resolution. |
 | Exact `sm_XX` or suffixed target | Keeps CUDA machine-code and PTX targets separate. |
 | Rust target, Rust compiler, host libc, and host C++ identity | Records host ABI and compiler dependencies. Engine receipts also list ELF library and symbol-version requirements. |
