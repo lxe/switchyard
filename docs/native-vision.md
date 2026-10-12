@@ -35,3 +35,7 @@ The inference owner decodes image bytes, computes embeddings and begins an indep
 ## Offline encoder probe
 
 Run `cargo run -p switchyard-engine --example vision_probe -- MODEL_ROOT MMPROJ IMAGE OUTPUT_DIR`. Use `-` for MMPROJ to read the original Hugging Face vision tensors. With the `cuda` feature, append `cuda` to use device zero. The probe writes patch and embedding NPY arrays and timing JSON for comparison with an independent oracle. It does not allocate cloud machines or route requests.
+
+## Released 2B and 4B encoder coverage
+
+The [2B/4B CPU receipt](receipts/native-vision-2b-4b-cpu.json) records actual complete encoder/merger comparisons for the released F16 projectors against selectively loaded original Hugging Face vision weights. Both use twenty-four 1024-channel vision blocks, with projector output widths of 2048 for 2B and 2560 for 4B. The fixed 256x256 image produces 64 embeddings. These gates include F16 parameter rounding and require maximum absolute error below 0.001 and relative L2 error below 0.0001. They validate these larger encoders; full image/text generation and HTTP serving for each larger model require separate receipts.
