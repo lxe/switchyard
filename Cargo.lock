@@ -2937,26 +2937,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "switchyard-cuda"
-version = "0.5.0"
-dependencies = [
- "axum",
- "clap",
- "cudarc",
- "futures-util",
- "half",
- "memmap2",
- "minijinja",
- "minijinja-contrib",
- "safetensors",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokenizers 0.22.2",
- "tokio",
-]
-
-[[package]]
 name = "switchyard-engine"
 version = "0.5.0"
 dependencies = [
