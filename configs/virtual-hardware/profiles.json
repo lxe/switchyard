@@ -1,0 +1,151 @@
+[
+  {
+    "id": "virtual-baseline",
+    "model": "demo-model",
+    "workload": "text",
+    "gpu": "virtual-baseline",
+    "usd_per_hour": 0.5,
+    "startup": {
+      "allocation_s": 1.0,
+      "container_s": 1.0,
+      "weights_s": 0,
+      "engine_s": 4,
+      "jitter": 0
+    },
+    "network_s": 0.03,
+    "network_bytes_per_s": 100000000.0,
+    "max_in_flight": 16,
+    "kv_tokens": 65536,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.75,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 80
+      },
+      {
+        "in_flight": 16,
+        "work_units_per_s": 600
+      }
+    ],
+    "evidence": "assumed: every hardware, startup, network, and price value is hypothetical; not a GPU or provider measurement",
+    "source": "Switchyard hypothetical hardware sensitivity fixture",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        100000000.0
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 4000000000,
+      "image_cache_probability": 0,
+      "model_cache_probability": 0,
+      "probe_duration_s": 1.0,
+      "measurement_noise": 0
+    }
+  },
+  {
+    "id": "virtual-fast",
+    "model": "demo-model",
+    "workload": "text",
+    "gpu": "virtual-fast",
+    "usd_per_hour": 3,
+    "startup": {
+      "allocation_s": 1,
+      "container_s": 1,
+      "weights_s": 0,
+      "engine_s": 2,
+      "jitter": 0
+    },
+    "network_s": 0.005,
+    "network_bytes_per_s": 1250000000,
+    "max_in_flight": 64,
+    "kv_tokens": 262144,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.75,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 160
+      },
+      {
+        "in_flight": 16,
+        "work_units_per_s": 1800
+      },
+      {
+        "in_flight": 64,
+        "work_units_per_s": 3600
+      }
+    ],
+    "evidence": "assumed: every hardware, startup, network, and price value is hypothetical; not a GPU or provider measurement",
+    "source": "Switchyard hypothetical hardware sensitivity fixture",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        1000000000
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 4000000000,
+      "image_cache_probability": 0,
+      "model_cache_probability": 0,
+      "probe_duration_s": 1.0,
+      "measurement_noise": 0
+    }
+  },
+  {
+    "id": "virtual-wide",
+    "model": "demo-model",
+    "workload": "text",
+    "gpu": "virtual-wide",
+    "usd_per_hour": 8,
+    "startup": {
+      "allocation_s": 1,
+      "container_s": 1,
+      "weights_s": 0,
+      "engine_s": 1,
+      "jitter": 0
+    },
+    "network_s": 0.002,
+    "network_bytes_per_s": 6250000000,
+    "max_in_flight": 128,
+    "kv_tokens": 1048576,
+    "input_work_per_token": 0.025,
+    "image_work_per_megapixel": 0.0,
+    "adapter_load_s": 0,
+    "multi_adapter_factor": 0.75,
+    "adapter_cache_slots": 8,
+    "minimum_bill_s": 1.0,
+    "curve": [
+      {
+        "in_flight": 1,
+        "work_units_per_s": 240
+      },
+      {
+        "in_flight": 32,
+        "work_units_per_s": 5400
+      },
+      {
+        "in_flight": 128,
+        "work_units_per_s": 9600
+      }
+    ],
+    "evidence": "assumed: every hardware, startup, network, and price value is hypothetical; not a GPU or provider measurement",
+    "source": "Switchyard hypothetical hardware sensitivity fixture",
+    "host": {
+      "volume_bandwidth_bytes_per_s": [
+        2000000000
+      ],
+      "container_image_bytes": 0,
+      "model_bytes": 4000000000,
+      "image_cache_probability": 0,
+      "model_cache_probability": 0,
+      "probe_duration_s": 1.0,
+      "measurement_noise": 0
+    }
+  }
+]

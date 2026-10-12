@@ -147,6 +147,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | --- | --- |
 | [Architecture](docs/ARCHITECTURE.md) | Package boundaries, event timing, physical approximations, and scheduling decisions |
 | [Configuration](docs/CONFIGURATION.md) | Fields, units, validity rules, and experiment controls |
+| [Virtual hardware](configs/virtual-hardware) | Editable hypothetical compute, memory, network, startup, and price tiers with a comparison example |
 | [API](docs/API.md) | Provider lifecycle, request admission, token streaming, and observations |
 | [Calibration](docs/CALIBRATION.md) | Measurement provenance and capacity-profile construction |
 | [Cloud observation replay](docs/EMPIRICAL_SIMULATION.md) | Configurable startup, availability, controller delays, and measured-versus-simulated serving results |
