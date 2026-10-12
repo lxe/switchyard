@@ -236,6 +236,7 @@ fn config() -> Config {
         batch_wait_ms: 0,
         cache: Default::default(),
         vision: None,
+        lora: None,
     }
 }
 fn engine(weights: switchyard_engine::models::qwen35::ModelForCausalLM, eos: u32) -> Engine {

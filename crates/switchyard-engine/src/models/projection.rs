@@ -7,6 +7,12 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub enum Linear {
     Dense(candle_nn::Linear),
+    Lora {
+        base: candle_nn::Linear,
+        a: candle_nn::Linear,
+        b: candle_nn::Linear,
+        scale: f64,
+    },
     Packed {
         operator: QMatMul,
         input_order: Option<Tensor>,
@@ -17,6 +23,11 @@ impl Module for Linear {
     fn forward(&self, input: &Tensor) -> Result<Tensor> {
         match self {
             Self::Dense(linear) => linear.forward(input),
+            Self::Lora { base, a, b, scale } => {
+                let original = base.forward(input)?;
+                let update = b.forward(&a.forward(&input.to_dtype(DType::F32)?)?)?;
+                (original.to_dtype(DType::F32)? + (update * *scale)?)?.to_dtype(original.dtype())
+            }
             Self::Packed {
                 operator,
                 input_order,
@@ -34,6 +45,43 @@ impl Module for Linear {
                 }
             }
         }
+    }
+}
+impl Linear {
+    pub(crate) fn attach_lora(
+        &mut self,
+        name: &str,
+        adapter: &super::lora::Adapter,
+        consumed: &mut std::collections::BTreeSet<String>,
+    ) -> crate::Result<()> {
+        let Some(pair) = adapter.pair(name) else {
+            return Ok(());
+        };
+        let Self::Dense(base) = self else {
+            return Err(crate::Error::Config(
+                "LoRA requires a dense unadapted base projection".into(),
+            ));
+        };
+        let (output, input) = base.weight().dims2()?;
+        let (rank, adapter_input) = pair.a.dims2()?;
+        if adapter_input != input || pair.b.dims() != [output, rank] {
+            return Err(crate::Error::Config(format!(
+                "LoRA shape disagrees with base projection: {name}"
+            )));
+        }
+        let convert = |tensor: &Tensor| {
+            tensor
+                .to_device(base.weight().device())?
+                .to_dtype(DType::F32)
+        };
+        *self = Self::Lora {
+            base: base.clone(),
+            a: candle_nn::Linear::new(convert(&pair.a)?, None),
+            b: candle_nn::Linear::new(convert(&pair.b)?, None),
+            scale: pair.scale,
+        };
+        consumed.insert(name.to_owned());
+        Ok(())
     }
 }
 #[derive(Clone, Debug)]

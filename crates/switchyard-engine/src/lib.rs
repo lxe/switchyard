@@ -1,4 +1,6 @@
 //! A bounded inference engine independent of GPU-cloud provisioning and hydration.
+mod adapter_transport;
+pub mod adapters;
 pub mod config;
 pub mod engine;
 pub mod models;

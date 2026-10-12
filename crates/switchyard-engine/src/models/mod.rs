@@ -1,5 +1,6 @@
 //! Model adapters share immutable weights; each batch owns its sequence state.
 mod gguf;
+pub mod lora;
 mod mixed;
 mod prefix;
 mod projection;
@@ -41,6 +42,14 @@ pub trait MixedModelSession: Send {
     fn release(&mut self, rows: &[usize]) -> Result<()>;
 }
 pub trait ModelFactory: Send {
+    fn adapter_dtype(&self) -> DType {
+        DType::F32
+    }
+    fn with_lora(&self, _: &lora::Adapter) -> Result<Box<dyn ModelFactory>> {
+        Err(Error::Config(
+            "Runtime LoRA unsupported by this model adapter".into(),
+        ))
+    }
     fn session(&self) -> Box<dyn ModelSession>;
     fn vision_session(&self) -> Result<Option<Box<dyn ModelSession>>> {
         Ok(None)
@@ -130,8 +139,25 @@ struct QwenFactory {
     eos: u32,
     cache: PrefixCache,
     vision: Option<(std::sync::Arc<vision::VisionModel>, usize)>,
+    cache_config: crate::config::CacheConfig,
+    telemetry: Telemetry,
 }
 impl ModelFactory for QwenFactory {
+    fn adapter_dtype(&self) -> DType {
+        DType::F32
+    }
+    fn with_lora(&self, adapter: &lora::Adapter) -> Result<Box<dyn ModelFactory>> {
+        Ok(Box::new(Self {
+            weights: self.weights.with_lora(adapter)?,
+            device: self.device.clone(),
+            vocab: self.vocab,
+            eos: self.eos,
+            cache: PrefixCache::new(self.cache_config.clone(), self.telemetry.clone())?,
+            vision: self.vision.clone(),
+            cache_config: self.cache_config.clone(),
+            telemetry: self.telemetry.clone(),
+        }))
+    }
     fn supports_vision(&self) -> bool {
         self.vision.is_some()
     }
@@ -286,5 +312,7 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
         eos,
         cache,
         vision,
+        cache_config: config.cache.clone(),
+        telemetry: telemetry.clone(),
     }))
 }

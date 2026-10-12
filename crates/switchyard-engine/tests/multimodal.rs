@@ -87,6 +87,7 @@ fn engine() -> (Engine, Calls) {
             batch_wait_ms: 0,
             cache: Default::default(),
             vision: Some(bounds()),
+            lora: None,
         },
         Box::new(Factory {
             calls: calls.clone(),

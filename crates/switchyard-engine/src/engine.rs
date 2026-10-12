@@ -28,6 +28,23 @@ pub struct Engine {
     sampler: crate::sampling::Greedy,
 }
 impl Engine {
+    pub(crate) fn telemetry(&self) -> Telemetry {
+        self.telemetry.clone()
+    }
+    pub fn adapter_dtype(&self) -> DType {
+        match self.config.dtype {
+            crate::config::Precision::F32 => DType::F32,
+            crate::config::Precision::Bf16 => DType::BF16,
+        }
+    }
+    /// Attach low-rank tensors while retaining the factory's shared base weights.
+    pub fn with_lora(&self, adapter: &crate::models::lora::Adapter) -> Result<Self> {
+        Self::new(
+            self.config.clone(),
+            self.model.with_lora(adapter)?,
+            self.telemetry.clone(),
+        )
+    }
     pub fn new(config: Config, model: Box<dyn ModelFactory>, telemetry: Telemetry) -> Result<Self> {
         let sampler = crate::sampling::Greedy::new(model.vocab_size(), model.device())?;
         Ok(Self {

@@ -613,6 +613,7 @@ fn native_launch_keeps_fixed_bounds_and_requires_pinned_runtime() {
     engine.extra_args.clear();
     engine.native = Some(NativeEngineConfig {
         cache: None,
+        lora: None,
         max_weight_bytes: 4 << 30,
         minimum_gpu_memory_bytes: 8 << 30,
         queue_capacity: 64,
@@ -685,4 +686,48 @@ fn native_launch_keeps_fixed_bounds_and_requires_pinned_runtime() {
     }
     cfg.models[0].engine.kind = EngineKind::Vllm;
     assert!(cfg.validate().is_err());
+}
+
+#[test]
+fn native_adapter_bounds_validate_and_pass_through_without_enabling_existing_fleets() {
+    let mut fleet: DeploymentConfig = serde_json::from_str(include_str!(
+        "../../../configs/runpod/native-fleet-f32-prefix-32g-candidate.json"
+    ))
+    .unwrap();
+    let before = switchyard_live::artifacts::engine_fingerprint(&fleet.models[0].engine).unwrap();
+    let model = &fleet.models[0];
+    let arguments = model.engine.args(model, "/published/model");
+    let original: serde_json::Value = serde_json::from_str(&arguments[1]).unwrap();
+    assert!(original.get("lora").is_none());
+    let bounds = serde_json::json!({"root":"/work/adapters","base_model_aliases":["Qwen/Qwen3.5-0.8B"],"max_loaded":2,"max_rank":16,"max_upload_bytes":67108864,"max_resident_bytes":134217728,"transfer_timeout_s":30});
+    fleet.models[0].engine.native.as_mut().unwrap().lora =
+        Some(serde_json::from_value(bounds.clone()).unwrap());
+    // Changing serving settings requires fresh cache identities; no old strict
+    // cache claims are reused for this hypothetical adapter-capable binary.
+    for model in &mut fleet.models {
+        model.caches.clear();
+    }
+    fleet.validate().unwrap();
+    let model = &fleet.models[0];
+    let arguments = model.engine.args(model, "/published/model");
+    let launch: serde_json::Value = serde_json::from_str(&arguments[1]).unwrap();
+    assert_eq!(launch["lora"], bounds);
+    assert_ne!(
+        before,
+        switchyard_live::artifacts::engine_fingerprint(&model.engine).unwrap()
+    );
+    for (field, value) in [
+        ("max_loaded", 0_u64),
+        ("max_rank", 257),
+        ("max_upload_bytes", (1 << 30) + 1),
+        ("max_resident_bytes", 0),
+        ("transfer_timeout_s", 601),
+    ] {
+        let mut invalid = fleet.clone();
+        let mut invalid_bounds = bounds.clone();
+        invalid_bounds[field] = serde_json::json!(value);
+        invalid.models[0].engine.native.as_mut().unwrap().lora =
+            Some(serde_json::from_value(invalid_bounds).unwrap());
+        assert!(invalid.validate().is_err(), "{field}");
+    }
 }

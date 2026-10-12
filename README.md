@@ -154,6 +154,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [Native live engine](docs/native-live-integration.md) | Fixed launch bounds, streamed usage, token planning, and the native gauntlet |
 | [Native GGUF serving](docs/native-gguf-serving.md) | Existing packed quants, model layout and numerical limits |
 | [Native image inference](docs/native-vision.md) | Full mmproj encoder/merger, bounded image requests and rotary positions |
+| [Native LoRA serving](docs/native-lora-serving.md) | Dynamic PEFT adapters, model aliases, bounded uploads and isolated prefix state |
 | [Native prefix caching](docs/native-prefix-cache.md) | Immutable attention pages, hybrid-state reuse, fixed cache limits and numerical/performance receipts |
 | [Native GPU builds](docs/native-gpu-builds.md) | Architecture matrices and separate GPU bake acceptance |
 | [Native CUDA cache lifecycle](docs/native-cache-registry.md) | Optional driver-cache reuse and collection from useful inference without dedicated GPU bake jobs |

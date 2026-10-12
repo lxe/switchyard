@@ -905,6 +905,7 @@ pub struct Model {
     norm: Qwen3_5RmsNorm,
     device: Device,
     dtype: DType,
+    lora_applied: bool,
     state_owner: Arc<()>,
     state_positions: Vec<usize>,
     max_positions: usize,
@@ -942,6 +943,7 @@ impl Model {
             norm,
             device: vb.device().clone(),
             dtype: vb.dtype(),
+            lora_applied: false,
             state_owner: Arc::new(()),
             state_positions: Vec::new(),
             max_positions: cfg.text_config.max_position_embeddings,
@@ -1110,6 +1112,67 @@ pub struct ModelForCausalLM {
 }
 
 impl ModelForCausalLM {
+    /// Creates an adapter-specific graph while sharing every immutable base
+    /// tensor. Sequence state and prefix checkpoints must remain adapter-local.
+    pub fn with_lora(&self, adapter: &super::lora::Adapter) -> crate::Result<Self> {
+        if self.base_model.lora_applied || !matches!(self.lm_head, Linear::Dense(_)) {
+            return Err(crate::Error::Config(
+                "LoRA requires a dense unadapted safetensors base model".into(),
+            ));
+        }
+        let mut model = self.clone();
+        model.clear_kv_cache();
+        model.base_model.state_owner = Arc::new(());
+        model.base_model.lora_applied = true;
+        let mut consumed = std::collections::BTreeSet::new();
+        for (index, layer) in model.base_model.layers.iter_mut().enumerate() {
+            let prefix = format!("model.language_model.layers.{index}");
+            for (name, projection) in [
+                ("gate_proj", &mut layer.mlp.gate_proj),
+                ("up_proj", &mut layer.mlp.up_proj),
+                ("down_proj", &mut layer.mlp.down_proj),
+            ] {
+                projection.attach_lora(&format!("{prefix}.mlp.{name}"), adapter, &mut consumed)?;
+            }
+            match &mut layer.token_mixer {
+                TokenMixer::FullAttention(attention) => {
+                    for (name, projection) in [
+                        ("q_proj", &mut attention.q_proj),
+                        ("k_proj", &mut attention.k_proj),
+                        ("v_proj", &mut attention.v_proj),
+                        ("o_proj", &mut attention.o_proj),
+                    ] {
+                        projection.attach_lora(
+                            &format!("{prefix}.self_attn.{name}"),
+                            adapter,
+                            &mut consumed,
+                        )?;
+                    }
+                }
+                TokenMixer::LinearAttention(attention) => {
+                    for (name, projection) in [
+                        ("in_proj_qkv", &mut attention.in_proj_qkv),
+                        ("in_proj_z", &mut attention.in_proj_z),
+                        ("in_proj_b", &mut attention.in_proj_b),
+                        ("in_proj_a", &mut attention.in_proj_a),
+                        ("out_proj", &mut attention.out_proj),
+                    ] {
+                        projection.attach_lora(
+                            &format!("{prefix}.linear_attn.{name}"),
+                            adapter,
+                            &mut consumed,
+                        )?;
+                    }
+                }
+            }
+        }
+        model
+            .lm_head
+            .attach_lora("lm_head", adapter, &mut consumed)?;
+        adapter.check_consumed(&consumed)?;
+        Ok(model)
+    }
+
     pub fn new(cfg: &Config, vb: VarBuilder) -> Result<Self> {
         Self::new_with_weights(cfg, ModelWeights::dense(vb))
     }

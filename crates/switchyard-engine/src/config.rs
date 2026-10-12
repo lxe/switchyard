@@ -20,6 +20,38 @@ pub struct Config {
     pub cache: CacheConfig,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vision: Option<crate::multimodal::ServingConfig>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lora: Option<LoraConfig>,
+}
+/// Dynamic PEFT adapter limits. Base weights remain shared; each adapter owns
+/// its low-rank tensors and a separately bounded prefix cache.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct LoraConfig {
+    pub root: PathBuf,
+    #[serde(default)]
+    pub base_model_aliases: Vec<String>,
+    pub max_loaded: usize,
+    pub max_rank: usize,
+    pub max_upload_bytes: u64,
+    pub max_resident_bytes: u64,
+    pub transfer_timeout_s: u64,
+}
+impl LoraConfig {
+    pub fn validate(&self) -> Result<()> {
+        if self.root.as_os_str().is_empty()
+            || !(1..=64).contains(&self.max_loaded)
+            || !(1..=256).contains(&self.max_rank)
+            || self.max_upload_bytes == 0
+            || self.max_upload_bytes > 1024 * 1024 * 1024
+            || self.max_resident_bytes == 0
+            || !(1..=600).contains(&self.transfer_timeout_s)
+            || self.base_model_aliases.iter().any(String::is_empty)
+        {
+            return Err(Error::Config("Invalid fixed LoRA admission bounds".into()));
+        }
+        Ok(())
+    }
 }
 /// Model storage contract; GGUF uses the companion HF config and tokenizer in model_root.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -105,6 +137,9 @@ pub enum Precision {
 impl Config {
     pub fn validate(&self) -> Result<()> {
         self.cache.validate()?;
+        if let Some(lora) = &self.lora {
+            lora.validate()?;
+        }
         if let Some(vision) = &self.vision {
             vision.validate()?;
         }

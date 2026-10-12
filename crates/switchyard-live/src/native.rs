@@ -17,6 +17,9 @@ pub(crate) fn args(engine: &EngineConfig, model: &ModelConfig, path: &str) -> Ve
     if let Some(cache) = &bounds.cache {
         config["cache"] = serde_json::to_value(cache).expect("Serializable native cache bounds");
     }
+    if let Some(lora) = &bounds.lora {
+        config["lora"] = serde_json::to_value(lora).expect("Serializable native adapter bounds");
+    }
     vec![
         "--config-json".into(),
         config.to_string(),

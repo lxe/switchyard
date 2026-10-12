@@ -217,6 +217,34 @@ pub struct NativeEngineConfig {
     pub cuda_ordinal: usize,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cache: Option<NativeCacheConfig>,
+    /// Optional native runtime adapter admission; no scheduler or bake behavior.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lora: Option<NativeLoraConfig>,
+}
+/// Fixed serving bounds passed unchanged to the native adapter registry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeLoraConfig {
+    pub root: std::path::PathBuf,
+    #[serde(default)]
+    pub base_model_aliases: Vec<String>,
+    pub max_loaded: usize,
+    pub max_rank: usize,
+    pub max_upload_bytes: u64,
+    pub max_resident_bytes: u64,
+    pub transfer_timeout_s: u64,
+}
+impl NativeLoraConfig {
+    fn valid(&self) -> bool {
+        !self.root.as_os_str().is_empty()
+            && (1..=64).contains(&self.max_loaded)
+            && (1..=256).contains(&self.max_rank)
+            && self.max_upload_bytes > 0
+            && self.max_upload_bytes <= 1 << 30
+            && self.max_resident_bytes > 0
+            && (1..=600).contains(&self.transfer_timeout_s)
+            && !self.base_model_aliases.iter().any(String::is_empty)
+    }
 }
 /// Native model-local cache bounds. These are serving configuration; GPU bake
 /// acquisition and provider capacity policy remain independent concerns.
@@ -257,6 +285,7 @@ impl EngineConfig {
             || native.minimum_gpu_memory_bytes == 0
             || native.queue_capacity < self.max_num_seqs
             || native.cache.as_ref().is_some_and(|cache| !cache.valid())
+            || native.lora.as_ref().is_some_and(|lora| !lora.valid())
             || native.batch_wait_ms > 1000
             || !matches!(self.dtype.as_str(), "bf16" | "f32")
             || self.gpu_memory_utilization != 0.0
