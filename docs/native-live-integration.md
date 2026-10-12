@@ -74,3 +74,14 @@ python deploy/native/run-gauntlet.py \
 ```
 
 Omit `--model` for the three-model experiment only after host-memory and fresh-serving gates cover that fleet. Interrupting the observer forwards Ctrl-C to the owned Rust process and lets its cleanup finish. The observer never claims cleanup on behalf of the provider; inspect per-model `outcome.json`, ownership journals and the provider state. If a process is lost, use the existing `live recover` command with that exact run directory. Desired-throughput misses remain in workload receipts.
+
+After the observer exits and writes its outcome, create a portable receipt with independent provider deletion checks:
+
+```sh
+python deploy/native/write-gauntlet-receipt.py \
+  --run results/native-f32-gauntlet-0.8b \
+  --env-file /path/to/provider.env \
+  --output results/native-f32-gauntlet-0.8b/public-receipt.json
+```
+
+The generator requires terminal execution and resolved allocation journals. It observes every owned pod through the provider API and refuses publication while any pod still exists. A missing workload, failed call, unfinished call or exceeded budget prevents a functional acceptance claim. Throughput targets have their own result fields. The receipt distinguishes the controller's checkout revision from its executable SHA, retains the pinned engine/platform identities, and reports overlapping hydration intervals and captured prefix-cache events without treating worker time as elapsed startup time.

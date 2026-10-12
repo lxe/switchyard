@@ -9,6 +9,7 @@
     "data_centers": [
       "EU-RO-1",
       "EUR-IS-2",
+      "EUR-IS-1",
       "US-GA-2"
     ],
     "min_cuda": "13.0",
