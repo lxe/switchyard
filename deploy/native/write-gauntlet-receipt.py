@@ -96,7 +96,7 @@ def pod_summary(directory, owner, observations):
             prefix["observed_events"] += 1
             for field in ("input_tokens", "computed_tokens", "reused_tokens"):
                 prefix[field] += event["details"].get(field, 0)
-        if event.get("event") == "batch_finished":
+        if event.get("event") in {"batch_finished", "mixed_batch_finished"}:
             size = str(event["details"]["batch_size"])
             batches[size] = batches.get(size, 0) + 1
     states = [
@@ -117,6 +117,7 @@ def pod_summary(directory, owner, observations):
         )
         if start is not None and finish is not None:
             hydration[role + "_elapsed_s"] = finish - start
+    transfers = state.get("model_transport", {}).get("transfers", [])
     return {
         "pod": owner["pod"],
         "allocated_s": owner["allocated_s"],
@@ -127,6 +128,13 @@ def pod_summary(directory, owner, observations):
         "inference_verified": state.get("inference_verified"),
         "agent_clock_milestones": milestones,
         "hydration": hydration,
+        "raw_model_transport": {
+            "observed_ranges": len(transfers),
+            "received_bytes": sum(row["received_bytes"] for row in transfers),
+            "written_bytes": sum(row["written_bytes"] for row in transfers),
+            "body_wait_worker_seconds": sum(row["body_wait_seconds"] for row in transfers),
+            "storage_write_worker_seconds": sum(row["storage_write_seconds"] for row in transfers),
+        } if transfers else None,
         "engine_clock_first_phase_events": phases,
         "host_memory_samples": memory,
         "captured_prefix_prefill": prefix,
@@ -157,6 +165,22 @@ def summarize(run, key):
         if selected is not None and model != selected:
             continue
         directory = run / model
+        if not directory.exists():
+            models.append({
+                "model": model,
+                "revision": config["revision"],
+                "engine": config["engine"],
+                "model_archive_sha256": config.get("archive_sha256"),
+                "model_artifact": config.get("model_artifact"),
+                "executed": False,
+                "functional_workloads_passed": False,
+                "workloads": [
+                    {"name": name, "expected_requests": count, "recorded": False}
+                    for name, count in expected.items()
+                ],
+                "cleanup": [],
+            })
+            continue
         outcome = read(directory / "outcome.json")
         owners = read(directory / "owned-pods.json")
         pending = read(directory / "pending-launches.json")
@@ -211,7 +235,9 @@ def summarize(run, key):
                 "model": model,
                 "revision": config["revision"],
                 "engine": config["engine"],
-                "model_archive_sha256": config["archive_sha256"],
+                "model_archive_sha256": config.get("archive_sha256"),
+                "model_artifact": config.get("model_artifact"),
+                "executed": True,
                 "functional_workloads_passed": complete
                 and outcome == {"error": None, "cleanup_error": None},
                 "outcome": outcome,

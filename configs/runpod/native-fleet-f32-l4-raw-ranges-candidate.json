@@ -26,6 +26,46 @@
   },
   "models": [
     {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 1610612736,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 35.2,
+        "kv_tokens": 1024
+      },
+      "caches": [],
+      "model_artifact": {
+        "kind": "files",
+        "prefix": "switchyard/native-engine/raw-models/6bd7045e79f40dc0a52cf112e084bc71b36c408d911e213a7b2c27f000cdc348",
+        "id": "6bd7045e79f40dc0a52cf112e084bc71b36c408d911e213a7b2c27f000cdc348",
+        "content_id": "53ace81977da5fc7c79bcf555b7f550d9aa3b7136fe0825f16f5d02564f41a48"
+      }
+    },
+    {
       "id": "qwen3.5-2b",
       "repository": "Qwen/Qwen3.5-2B",
       "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",

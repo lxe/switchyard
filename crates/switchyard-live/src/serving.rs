@@ -13,6 +13,7 @@ use std::{
 use tokio::sync::mpsc;
 
 mod cache_export;
+mod http_failure;
 
 pub(crate) fn completion_payload(model: &str, messages: &[Message], max_output: u64) -> Value {
     json!({"model":model,"messages":messages,"max_tokens":max_output,"temperature":0,"stream":true,
@@ -122,10 +123,7 @@ impl Endpoint {
         let response=self.client.post(format!("{}/tokenize",self.url)).json(&json!({"model":model,"messages":messages,"add_generation_prompt":true,"chat_template_kwargs":{"enable_thinking":false}}))
             .send().await.map_err(|_|Error::Request("engine tokenizer check".into()))?;
         if !response.status().is_success() {
-            return Err(Error::Request(format!(
-                "tokenizer HTTP {}",
-                response.status().as_u16()
-            )));
+            return Err(http_failure::failure("tokenizer", response).await);
         }
         let value: Value = response
             .json()
@@ -153,10 +151,7 @@ impl Endpoint {
             .await
             .map_err(|_| Error::Request("inference transport".into()))?;
         if !response.status().is_success() {
-            return Err(Error::Request(format!(
-                "inference HTTP {}",
-                response.status().as_u16()
-            )));
+            return Err(http_failure::failure("inference", response).await);
         }
         let mut decoder = SseDecoder::default();
         let mut stream = response.bytes_stream();

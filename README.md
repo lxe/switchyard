@@ -152,6 +152,7 @@ Implement `Scheduler::decide(&FleetView)` to test another controller. The schedu
 | [RunPod execution](docs/RUNPOD.md) | Checked-in fleet definitions, R2 hydration, live gauntlet, costs, and recovery |
 | [Serving hydration](docs/HYDRATION.md) | Runtime build inputs, separate model/cache artifacts, compatibility, and offline verification |
 | [Native live engine](docs/native-live-integration.md) | Fixed launch bounds, streamed usage, token planning, and the native gauntlet |
+| [Raw model hydration](docs/raw-model-hydration.md) | Immutable safetensors files, parallel HTTP ranges, shared transfer limits and fresh L4 timings |
 | [Native GGUF serving](docs/native-gguf-serving.md) | Existing packed quants, model layout and numerical limits |
 | [Native image inference](docs/native-vision.md) | Full mmproj encoder/merger, bounded image requests and rotary positions |
 | [Native LoRA serving](docs/native-lora-serving.md) | Dynamic PEFT adapters, model aliases, bounded uploads and isolated prefix state |

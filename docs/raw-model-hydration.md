@@ -20,7 +20,7 @@ switchyard artifacts publish-extents \
   --receipt PUBLICATION_RECEIPT
 ```
 
-The [L4 raw-range fleet configuration](../configs/runpod/native-fleet-f32-l4-raw-ranges-candidate.json) pins the published 2B and 4B files, frozen native runtime, static agent binary and concurrency budget. It retains F32 inference, fixed context and batch limits, and a fixed GPU admission floor. Its optional GPU cache registry is independent of model transport. A missing cache does not initiate a bake job.
+The [L4 raw-range fleet configuration](../configs/runpod/native-fleet-f32-l4-raw-ranges-candidate.json) pins the published 0.8B, 2B and 4B files, frozen native runtime, static agent binary and concurrency budget. It retains F32 inference, fixed context and batch limits, and a fixed GPU admission floor. Its optional GPU cache registry is independent of model transport. A missing cache does not initiate a bake job.
 
 ## Fresh serving measurements
 

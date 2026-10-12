@@ -121,6 +121,31 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             self.summarize()
 
+    def test_raw_files_keep_the_pinned_layout_and_content_identity(self):
+        fleet = json.loads((self.root / "fleet-source.json").read_text())
+        model = fleet["models"][0]
+        del model["archive_sha256"]
+        reference = {"kind": "files", "prefix": "weights/raw", "id": "layout", "content_id": "content"}
+        model["model_artifact"] = reference
+        self.save("fleet-source.json", fleet)
+        result = self.summarize()
+        self.assertTrue(result["functional_workloads_passed"])
+        self.assertEqual(result["models"][0]["model_artifact"], reference)
+        self.assertIsNone(result["models"][0]["model_archive_sha256"])
+
+    def test_stopped_multimodel_run_reports_unexecuted_models(self):
+        fleet = json.loads((self.root / "fleet-source.json").read_text())
+        fleet["models"].append({"id": "later", "revision": "revision", "engine": {}, "archive_sha256": "other"})
+        self.save("fleet-source.json", fleet)
+        self.save("observer-source.json", {"selected_model": None})
+        self.save("observer-outcome.json", {"returncode": 1})
+        result = self.summarize()
+        self.assertFalse(result["functional_workloads_passed"])
+        later = result["models"][1]
+        self.assertFalse(later["executed"])
+        self.assertFalse(later["workloads"][0]["recorded"])
+        self.assertEqual(later["cleanup"], [])
+
     def test_preallocation_failure_has_no_observations_or_owned_pods(self):
         self.save("model/owned-pods.json", [])
         self.save(
