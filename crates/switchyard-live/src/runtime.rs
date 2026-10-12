@@ -5,6 +5,7 @@
 
 mod bake;
 mod lifecycle;
+mod native_cache;
 mod profiles;
 mod report;
 mod routing;
@@ -99,6 +100,10 @@ struct Node {
     ticket_key: String,
     checked_tokenizer: bool,
     bandwidth: switchyard_core::probe::BandwidthWindow,
+    native_cache_binding: Option<crate::native_cache_registry::CacheBinding>,
+    successful_calls: u64,
+    cache_collection_attempted: bool,
+    cache_quiescence_known: bool,
 }
 
 /// Live execution translates observations and provider actions through the simulator's scheduling contract.
@@ -120,6 +125,7 @@ pub struct LiveRuntime<P: Provider> {
     component_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     cache_manifests: BTreeMap<String, switchyard_artifacts::Manifest>,
     cache_export: Option<switchyard_agent::export::CacheExportConfig>,
+    collected_native_caches: Vec<(usize, crate::native_cache_registry::CollectedCache)>,
     planners: BTreeMap<String, Arc<Planner>>,
     epoch: Instant,
     run_id: String,
@@ -201,6 +207,7 @@ impl<P: Provider> LiveRuntime<P> {
             component_manifests,
             cache_manifests,
             cache_export: None,
+            collected_native_caches: vec![],
             planners,
             epoch: Instant::now(),
             run_id: nonce()?[..16].into(),
@@ -266,6 +273,7 @@ impl<P: Provider> LiveRuntime<P> {
         let now = self.now();
         for node in &mut self.nodes {
             if !node.observed.active.is_empty() {
+                node.cache_quiescence_known = false;
                 node.observed.active.clear();
                 node.observed.last_used_s = now;
             }

@@ -102,6 +102,7 @@ impl Provider for MockProvider {
 #[derive(Clone, Default)]
 struct MockBake {
     fail_export: bool,
+    fail_publication: bool,
     state: Arc<Mutex<BakeState>>,
 }
 #[derive(Default)]
@@ -114,6 +115,7 @@ struct BakeState {
     token: Option<String>,
     requests: Vec<serde_json::Value>,
     events: Vec<String>,
+    completion_delay_ms: u64,
 }
 #[derive(Clone)]
 struct HttpFixture {
@@ -132,6 +134,9 @@ async fn object_get(State(state): State<HttpFixture>, Path(key): Path<String>) -
             .body(Body::from(bytes.clone()))
             .unwrap();
     }
+    if key.starts_with("registry/") || key.starts_with("learned/") {
+        return Response::builder().status(404).body(Body::empty()).unwrap();
+    }
     Response::builder()
         .header("content-type", "application/json")
         .body(Body::from(
@@ -145,11 +150,24 @@ async fn object_put(
     bytes: axum::body::Bytes,
 ) -> StatusCode {
     if let Some(bake) = &state.bake {
-        let ticket = serde_json::from_slice(&bytes).unwrap();
+        if bake.fail_publication && !key.starts_with("tickets/") {
+            return StatusCode::BAD_REQUEST;
+        }
         let mut state = bake.state.lock().unwrap();
-        state.events.push("ticket-put".into());
+        if key.starts_with("tickets/") {
+            state.events.push("ticket-put".into());
+            state.tickets.push(serde_json::from_slice(&bytes).unwrap());
+        } else {
+            state.events.push(
+                if key.starts_with("registry/") {
+                    "registry-put"
+                } else {
+                    "artifact-put"
+                }
+                .into(),
+            );
+        }
         state.objects.insert(key, bytes.to_vec());
-        state.tickets.push(ticket);
     }
     StatusCode::NO_CONTENT
 }
@@ -273,6 +291,15 @@ async fn fixture_with_cache_export(
     scheduling: Option<Scheduling>,
     bake: Option<MockBake>,
 ) -> Fixture {
+    fixture_internal(bad_usage, unknown, scheduling, bake, false).await
+}
+async fn fixture_internal(
+    bad_usage: bool,
+    unknown: bool,
+    scheduling: Option<Scheduling>,
+    bake: Option<MockBake>,
+    registry: bool,
+) -> Fixture {
     let out = std::env::temp_dir().join(format!(
         "switchyard-live-test-{}",
         switchyard_live::runtime::nonce().unwrap()
@@ -387,15 +414,21 @@ async fn fixture_with_cache_export(
             std::fs::Permissions::from_mode(0o755),
         )
         .unwrap();
+        if registry {
+            config.models[0].engine = serde_json::from_value(json!({"kind":"native","max_model_len":100,"max_num_seqs":8,"gpu_memory_utilization":0.0,"dtype":"f32","language_model_only":true,"extra_args":[],"native":{"max_weight_bytes":1000,"minimum_gpu_memory_bytes":1000,"queue_capacity":8,"batch_wait_ms":0,"cuda_ordinal":0}})).unwrap();
+            config.bootstrap.native_cache_registry = Some(serde_json::from_value(json!({"name":"gpu-kernels","registry_prefix":"registry/v1","artifact_prefix":"learned/v1","compatibility":{"native_driver_cache_layout":"native-cuda-driver-family-v1"},"publication_timeout_s":1})).unwrap());
+        }
+        let mut runtime_labels =
+            BTreeMap::from([("architecture".into(), std::env::consts::ARCH.into())]);
+        if registry {
+            runtime_labels.insert("engine_sha256".into(), "c".repeat(64));
+        }
         let runtime_manifest = pack(
             &source,
             &out.join("runtime-packed"),
             Metadata {
                 kind: "runtime".into(),
-                compatibility: BTreeMap::from([(
-                    "architecture".into(),
-                    std::env::consts::ARCH.into(),
-                )]),
+                compatibility: runtime_labels,
                 attributes: BTreeMap::new(),
             },
             PackOptions::default(),
@@ -411,17 +444,32 @@ async fn fixture_with_cache_export(
             compatibility: runtime_manifest.metadata.compatibility.clone(),
             program: "bin/serve".into(),
             args: vec!["--fixture".into()],
-            environment: BTreeMap::from([("VLLM_FIXTURE".into(), "1".into())]),
+            environment: if registry {
+                BTreeMap::from([("NATIVE_ENGINE_CACHE_POLICY".into(), "opportunistic".into())])
+            } else {
+                BTreeMap::from([("VLLM_FIXTURE".into(), "1".into())])
+            },
         });
         config.limits.max_instances = 1;
         config.limits.run_timeout_s = 60;
-        let compatibility = switchyard_live::artifacts::cache_requirements(
-            &bake_compatibility(),
-            "mock",
-            config.bootstrap.runtime.as_ref().unwrap(),
-            &config.models[0],
-        )
-        .unwrap();
+        let compatibility = if registry {
+            config
+                .bootstrap
+                .native_cache_registry
+                .as_ref()
+                .unwrap()
+                .binding(&config.execution(), &config.models[0], "mock")
+                .unwrap()
+                .compatibility
+        } else {
+            switchyard_live::artifacts::cache_requirements(
+                &bake_compatibility(),
+                "mock",
+                config.bootstrap.runtime.as_ref().unwrap(),
+                &config.models[0],
+            )
+            .unwrap()
+        };
         let source = out.join("cache-source");
         std::fs::create_dir_all(source.join("torch")).unwrap();
         std::fs::write(
@@ -487,11 +535,15 @@ async fn completion(
     State(state): State<HttpFixture>,
     Json(request): Json<serde_json::Value>,
 ) -> Response<Body> {
-    if let Some(bake) = &state.bake {
+    let delay = if let Some(bake) = &state.bake {
         let mut state = bake.state.lock().unwrap();
         state.requests.push(request);
         state.events.push("completion".into());
-    }
+        state.completion_delay_ms
+    } else {
+        0
+    };
+    tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
     let bad = state.bad_usage;
     let chunks = [
         json!({"choices":[{"delta":{"content":"world"},"finish_reason":null}]}),
@@ -1241,6 +1293,249 @@ async fn cache_bake_rejects_missing_standard_class_before_any_paid_allocation() 
     assert!(!out.join("cache-bake-plan.json").exists());
     assert!(!out.join("cache-artifact").exists());
     runtime.cleanup().await.unwrap();
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+}
+
+#[tokio::test]
+async fn native_registry_learns_real_work_after_cleanup_and_reuses_next_launch() {
+    let bake = MockBake::default();
+    let (mut runtime, provider, out, server) =
+        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+    let report = runtime
+        .run_workload("real-client", &calls(1), 1.0, 5.0)
+        .await
+        .unwrap();
+    assert_eq!(report.completed, 1);
+    {
+        let state = bake.state.lock().unwrap();
+        let runtime = state.tickets[0].runtime.as_ref().unwrap();
+        assert!(runtime.caches.is_empty());
+        assert_eq!(runtime.cache_export.as_ref().unwrap().name, "gpu-kernels");
+        assert!(!state.events.iter().any(|event| event == "export-start"));
+    }
+    runtime.cleanup().await.unwrap();
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
+    );
+    {
+        let state = bake.state.lock().unwrap();
+        let terminate = state
+            .events
+            .iter()
+            .position(|event| event == "terminate")
+            .unwrap();
+        let publish = state
+            .events
+            .iter()
+            .position(|event| event == "artifact-put")
+            .unwrap();
+        let record = state
+            .events
+            .iter()
+            .position(|event| event == "registry-put")
+            .unwrap();
+        assert!(terminate < publish && publish < record);
+        assert_eq!(state.requests.len(), 1); // No synthetic warmup or readiness inference.
+    }
+    assert!(
+        std::fs::read_to_string(out.join("native-cache-registry.ndjson"))
+            .unwrap()
+            .contains("\"phase\":\"miss\"")
+    );
+    let (mut next, next_provider, next_out, next_server) =
+        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+    assert_eq!(
+        next.run_workload("next-real-client", &calls(1), 1.0, 5.0)
+            .await
+            .unwrap()
+            .completed,
+        1
+    );
+    {
+        let state = bake.state.lock().unwrap();
+        let caches = &state.tickets[1].runtime.as_ref().unwrap().caches;
+        assert_eq!(caches.len(), 1);
+        assert_eq!(
+            caches[0].artifact.manifest.id,
+            state.manifest.as_ref().unwrap().id
+        );
+    }
+    next.cleanup().await.unwrap();
+    assert!(
+        next_provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
+    );
+    assert!(
+        std::fs::read_to_string(next_out.join("native-cache-registry.ndjson"))
+            .unwrap()
+            .contains("\"phase\":\"hit\"")
+    );
+    server.abort();
+    next_server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+    std::fs::remove_dir_all(next_out).unwrap();
+}
+
+#[tokio::test]
+async fn native_registry_collection_and_publication_failure_do_not_leak_owned_pods() {
+    for fail_export in [true, false] {
+        let bake = MockBake {
+            fail_export,
+            fail_publication: !fail_export,
+            ..Default::default()
+        };
+        let (mut runtime, provider, out, server) =
+            fixture_internal(false, false, None, Some(bake.clone()), true).await;
+        assert_eq!(
+            runtime
+                .run_workload("real-client", &calls(1), 1.0, 5.0)
+                .await
+                .unwrap()
+                .completed,
+            1
+        );
+        runtime.cleanup().await.unwrap();
+        assert!(
+            provider
+                .pods
+                .lock()
+                .unwrap()
+                .iter()
+                .all(|pod| pod.status.is_terminated())
+        );
+        let telemetry = std::fs::read_to_string(out.join("native-cache-registry.ndjson")).unwrap();
+        assert!(telemetry.contains(if fail_export {
+            "collection_failed"
+        } else {
+            "publication_"
+        }));
+        assert!(
+            !bake
+                .state
+                .lock()
+                .unwrap()
+                .objects
+                .keys()
+                .any(|key| key.starts_with("registry/"))
+        );
+        server.abort();
+        std::fs::remove_dir_all(out).unwrap();
+    }
+}
+
+#[tokio::test]
+async fn native_registry_bad_binding_is_a_visible_cold_jit_miss() {
+    use switchyard_live::native_cache_registry::CacheRegistryEntry;
+    let bake = MockBake::default();
+    let (mut runtime, provider, out, server) =
+        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+    let config: switchyard_live::config::ExecutionConfig =
+        serde_json::from_slice(&std::fs::read(out.join("configuration.json")).unwrap()).unwrap();
+    let registry = config.bootstrap.native_cache_registry.as_ref().unwrap();
+    let mut binding = registry
+        .binding(&config, &config.models[0], "mock")
+        .unwrap();
+    let key = format!("{}/{}.json", registry.registry_prefix, binding.identity);
+    binding
+        .compatibility
+        .insert("gpu".into(), "different-gpu".into());
+    {
+        let mut state = bake.state.lock().unwrap();
+        let id = state.manifest.as_ref().unwrap().id.clone();
+        state.objects.insert(
+            key,
+            serde_json::to_vec(&CacheRegistryEntry {
+                version: 1,
+                binding,
+                artifact: switchyard_live::artifacts::ArtifactRef {
+                    id: id.clone(),
+                    prefix: format!("learned/v1/{id}"),
+                },
+            })
+            .unwrap(),
+        );
+    }
+    assert_eq!(
+        runtime
+            .run_workload("real-client", &calls(1), 1.0, 5.0)
+            .await
+            .unwrap()
+            .completed,
+        1
+    );
+    assert!(
+        bake.state.lock().unwrap().tickets[0]
+            .runtime
+            .as_ref()
+            .unwrap()
+            .caches
+            .is_empty()
+    );
+    assert!(
+        std::fs::read_to_string(out.join("native-cache-registry.ndjson"))
+            .unwrap()
+            .contains("lookup_failed")
+    );
+    runtime.cleanup().await.unwrap();
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
+    );
+    server.abort();
+    std::fs::remove_dir_all(out).unwrap();
+}
+
+#[tokio::test]
+async fn native_registry_does_not_export_after_canceling_an_active_remote_request() {
+    let bake = MockBake::default();
+    let (mut runtime, provider, out, server) =
+        fixture_internal(false, false, None, Some(bake.clone()), true).await;
+    assert_eq!(
+        runtime
+            .run_workload("completed", &calls(1), 1.0, 5.0)
+            .await
+            .unwrap()
+            .completed,
+        1
+    );
+    bake.state.lock().unwrap().completion_delay_ms = 1000;
+    let canceled = runtime
+        .run_workload("canceled", &calls(1), 1.0, 0.05)
+        .await
+        .unwrap();
+    assert!(canceled.budget_exceeded);
+    runtime.cleanup().await.unwrap();
+    assert!(
+        provider
+            .pods
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|pod| pod.status.is_terminated())
+    );
+    assert!(
+        !bake
+            .state
+            .lock()
+            .unwrap()
+            .events
+            .iter()
+            .any(|event| event == "export-start")
+    );
     server.abort();
     std::fs::remove_dir_all(out).unwrap();
 }

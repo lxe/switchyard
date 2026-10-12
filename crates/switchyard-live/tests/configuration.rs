@@ -64,6 +64,7 @@ fn config() -> DeploymentConfig {
             ticket_prefix: "switchyard/tickets".into(),
             startup: Default::default(),
             runtime: None,
+            native_cache_registry: None,
         },
         storage: storage("https://objects.example.test"),
         models: vec![ModelConfig {

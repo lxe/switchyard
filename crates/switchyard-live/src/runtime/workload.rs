@@ -144,6 +144,7 @@ impl<P: Provider> LiveRuntime<P> {
                         Event::Completed { request, result } => {
                             for node in &mut self.nodes {
                                 if node.observed.active.iter().any(|a| a.id == request) {
+                                    if result.is_ok() { node.successful_calls = node.successful_calls.saturating_add(1); }
                                     node.observed.active.retain(|a| a.id != request);
                                     node.observed.last_used_s = now;
                                 }

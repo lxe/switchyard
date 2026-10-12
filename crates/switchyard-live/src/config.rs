@@ -125,6 +125,9 @@ pub struct BootstrapConfig {
     pub startup: switchyard_agent::startup::StartupPolicy,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runtime: Option<crate::artifacts::ServingRuntimeConfig>,
+    /// Optional performance cache learned from completed native requests.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_cache_registry: Option<crate::native_cache_registry::NativeCacheRegistryConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -347,6 +350,9 @@ impl ExecutionConfig {
                     ));
                 }
             }
+        }
+        if let Some(registry) = &self.bootstrap.native_cache_registry {
+            registry.validate(self)?;
         }
         self.storage.validate()?;
         validate_endpoint(&self.bootstrap.agent_url)?;

@@ -41,12 +41,14 @@ impl<P: Provider> LiveRuntime<P> {
             return Ok(false);
         }
         self.limits()?;
+        let p = p.clone();
         let model = self
             .config
             .models
             .iter()
             .find(|m| m.id == p.model)
-            .ok_or_else(|| Error::Config("profile model missing".into()))?;
+            .ok_or_else(|| Error::Config("profile model missing".into()))?
+            .clone();
         let offering = self.profile_offerings[profile].clone();
         let name = format!("switchyard-{}-{}", self.run_id, self.pending.len());
         let ticket_key = format!("{}/{name}.json", self.config.bootstrap.ticket_prefix);
@@ -58,12 +60,28 @@ impl<P: Provider> LiveRuntime<P> {
         self.save("pending-launches.json", &self.pending)?;
         let manifest = self.manifests[&model.id].clone();
         let source = model.artifact.ticket(&self.storage, manifest)?;
+        let (native_cache_binding, learned_cache) =
+            self.lookup_native_cache(&model, &offering.gpu).await;
+        let learned_export = self
+            .config
+            .bootstrap
+            .native_cache_registry
+            .as_ref()
+            .zip(native_cache_binding.as_ref())
+            .map(
+                |(registry, binding)| switchyard_agent::export::CacheExportConfig {
+                    name: registry.name.clone(),
+                    compatibility: binding.compatibility.clone(),
+                    drain_timeout_s: 1,
+                    shutdown_timeout_s: 5,
+                },
+            );
         let ticket = Ticket {
             source,
             model: model.id.clone(),
             revision: model.revision.clone(),
             engine_args: model.engine.args(
-                model,
+                &model,
                 &self
                     .config
                     .bootstrap
@@ -84,8 +102,11 @@ impl<P: Provider> LiveRuntime<P> {
                             &self.storage,
                             self.cache_manifests[&cache.artifact.id].clone(),
                         )?,
-                        compatibility: cache.requirements(runtime, model)?,
+                        compatibility: cache.requirements(runtime, &model)?,
                     });
+                }
+                if let Some(cache) = learned_cache {
+                    caches.push(cache);
                 }
                 Some(switchyard_agent::runtime::RuntimeTicket {
                     components: runtime
@@ -112,7 +133,7 @@ impl<P: Provider> LiveRuntime<P> {
                     args: runtime.args.clone(),
                     environment: runtime.environment.clone(),
                     caches,
-                    cache_export: self.cache_export.clone(),
+                    cache_export: self.cache_export.clone().or(learned_export),
                 })
             } else {
                 None
@@ -200,6 +221,10 @@ impl<P: Provider> LiveRuntime<P> {
             ticket_key,
             checked_tokenizer: false,
             bandwidth: BandwidthWindow::default(),
+            native_cache_binding,
+            successful_calls: 0,
+            cache_collection_attempted: false,
+            cache_quiescence_known: true,
         });
         self.pending.last_mut().expect("journaled launch").resolved = true;
         self.save("pending-launches.json", &self.pending)?;
@@ -389,6 +414,9 @@ impl<P: Provider> LiveRuntime<P> {
             self.invalid += 1;
             return Ok(());
         }
+        if let Some(cache) = self.collect_native_cache(id).await {
+            self.collected_native_caches.push((id, cache));
+        }
         self.terminate_node(id).await?;
         self.storage.delete(&self.nodes[id].ticket_key).await?;
         self.journal()
@@ -396,7 +424,19 @@ impl<P: Provider> LiveRuntime<P> {
 
     /// Terminate every owned allocation even when a ticket or receipt cannot be written.
     pub async fn cleanup(&mut self) -> Result<()> {
+        // Remember active requests before cancellation; an aborted client is not
+        // proof that the remote engine has finished it. Such nodes skip export.
+        let collectable = self
+            .nodes
+            .iter()
+            .map(|node| node.observed.active.is_empty())
+            .collect::<Vec<_>>();
         self.abort_requests().await;
+        for (id, allowed) in collectable.into_iter().enumerate() {
+            if allowed && let Some(cache) = self.collect_native_cache(id).await {
+                self.collected_native_caches.push((id, cache));
+            }
+        }
 
         let mut failures = vec![];
         for id in 0..self.nodes.len() {
@@ -423,6 +463,16 @@ impl<P: Provider> LiveRuntime<P> {
         .await
         {
             failures.push(error.to_string());
+        }
+        // Do not inject object publication into the scheduler's routing loop.
+        // Terminal cleanup publishes only after all known and ambiguous owned
+        // allocations have been reconciled; no paid host waits for uploads.
+        if self.nodes.iter().all(|node| node.owned.ended_s.is_some())
+            && self.pending.iter().all(|launch| launch.resolved)
+        {
+            for (id, cache) in std::mem::take(&mut self.collected_native_caches) {
+                self.publish_native_cache(id, &cache).await;
+            }
         }
         // Reconciliation also deletes pending tickets. Keep deletion idempotent for nodes
         // restored from an ownership journal that predates a pending-launch record.

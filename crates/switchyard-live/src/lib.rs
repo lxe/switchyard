@@ -6,6 +6,7 @@ pub mod cli;
 pub mod config;
 pub mod model;
 mod native;
+pub mod native_cache_registry;
 mod ownership;
 pub mod planner;
 pub mod runtime;

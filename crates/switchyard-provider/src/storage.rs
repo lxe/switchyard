@@ -169,6 +169,31 @@ impl Storage {
             .await
             .map_err(|_| Error::Response("object JSON".into()))
     }
+    /// Read a small control-plane document without an unbounded response allocation.
+    pub async fn get_json_bounded<T: serde::de::DeserializeOwned>(
+        &self,
+        key: &str,
+        max_bytes: usize,
+    ) -> Result<T> {
+        use futures_util::StreamExt;
+        let response = self.request(Method::GET, key, vec![]).await?;
+        if response
+            .content_length()
+            .is_some_and(|length| length > max_bytes as u64)
+        {
+            return Err(Error::Response("object JSON exceeds size bound".into()));
+        }
+        let mut bytes = Vec::new();
+        let mut stream = response.bytes_stream();
+        while let Some(part) = stream.next().await {
+            let part = part.map_err(|_| Error::Transport("object JSON stream".into()))?;
+            if part.len() > max_bytes.saturating_sub(bytes.len()) {
+                return Err(Error::Response("object JSON exceeds size bound".into()));
+            }
+            bytes.extend_from_slice(&part);
+        }
+        serde_json::from_slice(&bytes).map_err(|_| Error::Response("object JSON".into()))
+    }
     pub async fn put_json<T: serde::Serialize>(&self, key: &str, value: &T) -> Result<()> {
         let bytes =
             serde_json::to_vec(value).map_err(|_| Error::Config("object serialization".into()))?;
@@ -244,5 +269,45 @@ mod tests {
             assert!(store().presign(key).is_err(), "{key}");
         }
         assert!(store().presign("models/a b+c%.bin").is_ok());
+    }
+    #[tokio::test]
+    async fn control_json_enforces_bounds_with_and_without_content_length() {
+        use axum::{
+            Router,
+            body::{Body, Bytes},
+            routing::get,
+        };
+        let app = Router::new()
+            .route("/bucket/small", get(|| async { "{\"ok\":true}" }))
+            .route(
+                "/bucket/known-large",
+                get(|| async { "{\"padding\":\"0123456789\"}" }),
+            )
+            .route(
+                "/bucket/streamed-large",
+                get(|| async {
+                    Body::from_stream(futures_util::stream::iter([
+                        Ok::<_, std::io::Error>(Bytes::from_static(b"{\"padding\":\"")),
+                        Ok(Bytes::from_static(b"0123456789\"}")),
+                    ]))
+                }),
+            );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let mut config = store().config;
+        config.endpoint = format!("http://{address}");
+        let storage = Storage::with_keys(&config, "fixture".into(), "fixture".into()).unwrap();
+        let document: serde_json::Value = storage.get_json_bounded("small", 16).await.unwrap();
+        assert_eq!(document["ok"], true);
+        for key in ["known-large", "streamed-large"] {
+            assert!(
+                storage
+                    .get_json_bounded::<serde_json::Value>(key, 16)
+                    .await
+                    .is_err()
+            );
+        }
+        server.abort();
     }
 }
