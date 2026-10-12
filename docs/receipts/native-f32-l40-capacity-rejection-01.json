@@ -1,0 +1,28 @@
+{
+  "format": "switchyard-native-f32-l40-capacity-rejection-v1",
+  "platform_configuration": "configs/runpod/native/bake-platform-l40-64g-driver178.json",
+  "requested_driver": "580.178.04",
+  "models": [
+    "qwen3.5-0.8b",
+    "qwen3.5-2b",
+    "qwen3.5-4b"
+  ],
+  "owned_pod_created": false,
+  "artifact_published": false,
+  "attempts": [
+    {
+      "attempt": "bake-models-l40-f32-driver178-01",
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      }
+    },
+    {
+      "attempt": "bake-models-l40-f32-driver178-02",
+      "allocation_rejection": {
+        "http_status": 400,
+        "detail": "{\"detail\":\"There are no longer any instances available with the requested specifications. Please refresh and try again.\",\"status\":400,\"title\":\"Bad Request\"}\n"
+      }
+    }
+  ]
+}

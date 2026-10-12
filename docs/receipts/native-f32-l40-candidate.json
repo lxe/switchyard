@@ -1,0 +1,284 @@
+{
+  "format": "switchyard-native-f32-l40-candidate-v1",
+  "fleet_input": "configs/runpod/native-fleet-f32-l40-candidate.json",
+  "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+  "engine_freeze_commit": "5e9850e170f18470836245e5722557ea95219ea3",
+  "state": "L40 full-generation gates passed for allthree models and driver580.159.04 families published; first serving rejected uncovered580.178.04; two targeted bake requests lacked capacity; serving acceptance incomplete",
+  "runtime": {
+    "id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+    "prefix": "switchyard/native-engine/runtime/05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+    "compressed_bytes": 452853014
+  },
+  "runtime_compatibility": {
+    "architecture": "x86_64",
+    "os": "ubuntu24.04",
+    "cuda_build": "13.0.0",
+    "gpu_compute_capability": "8.9",
+    "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+    "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+    "cuda_compiler_target": "compute_89",
+    "cuda_compiler_version": "13.0.48"
+  },
+  "runtime_launch_configuration": {
+    "hydration": {
+      "retries": 0
+    },
+    "artifact": {
+      "id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+      "prefix": "switchyard/native-engine/runtime/05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "os": "ubuntu24.04",
+      "cuda_build": "13.0.0",
+      "gpu_compute_capability": "8.9",
+      "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+      "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+      "cuda_compiler_target": "compute_89",
+      "cuda_compiler_version": "13.0.48"
+    },
+    "program": "bin/launch-engine.sh",
+    "args": [],
+    "environment": {
+      "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+      "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+      "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA L40",
+      "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+      "CUDA_CACHE_DISABLE": "0",
+      "CUDA_CACHE_MAXSIZE": "536870912"
+    }
+  },
+  "fixed_platform": {
+    "gpu": "NVIDIA L40",
+    "compute_capability": "8.9",
+    "minimum_host_ram_gb": 64,
+    "minimum_gpu_memory_bytes": 21474836480,
+    "min_vcpus": 8,
+    "disk_gb": 30,
+    "max_active_owned_pods": 1,
+    "max_hourly_usd": 1,
+    "pod_timeout_s": 600,
+    "data_centers": [
+      "EUR-IS-2",
+      "US-KS-2"
+    ]
+  },
+  "models": [
+    {
+      "model": "qwen3.5-0.8b",
+      "configuration": "configs/runpod/native/qwen3.5-0.8b-l40-f32-prefix-candidate.json",
+      "native_model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+      "local_generation_reference": "docs/receipts/native-f32-generation-reference-0.8b.json",
+      "local_generation_reference_sha256": "9994c6f998af301ace759aecde71614cbe4f60d9da8f619fcf39568904111af6",
+      "offline_bindings": {
+        "engine_configuration": "1df0504850723eb41db082f25a7bd71723ff073772538f9ab3eceb8f8cbd3be7",
+        "gpu": "NVIDIA L40",
+        "model_archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+        "model_repository": "Qwen/Qwen3.5-0.8B",
+        "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "runtime_launch_configuration": "db41315efaa3773d4cbdc6f70438c48f852e4b3cf7d21fe0c89c805819e99d5e"
+      },
+      "cross_gpu_generation_parity_passed": true
+    },
+    {
+      "model": "qwen3.5-2b",
+      "configuration": "configs/runpod/native/qwen3.5-2b-l40-f32-prefix-candidate.json",
+      "native_model_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461",
+      "local_generation_reference": "docs/receipts/native-f32-generation-reference-2b.json",
+      "local_generation_reference_sha256": "3a997312a4dd0dac11a0d51f1aaae1a169096fa2ca0b8cc3585bfc7b40f10530",
+      "offline_bindings": {
+        "engine_configuration": "0ac9e0bb8c87300512e6ee50aa7b603fdc0fd742eeb728187c0d4b6fafc39874",
+        "gpu": "NVIDIA L40",
+        "model_archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+        "model_repository": "Qwen/Qwen3.5-2B",
+        "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "runtime_launch_configuration": "db41315efaa3773d4cbdc6f70438c48f852e4b3cf7d21fe0c89c805819e99d5e"
+      },
+      "cross_gpu_generation_parity_passed": true
+    },
+    {
+      "model": "qwen3.5-4b",
+      "configuration": "configs/runpod/native/qwen3.5-4b-l40-f32-prefix-candidate.json",
+      "native_model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+      "local_generation_reference": "docs/receipts/native-f32-generation-reference-4b.json",
+      "local_generation_reference_sha256": "0cd32015d155f7dd3bb8b426b3b3a6e9943c8bdbfd695ca92db61c82777fce2e",
+      "offline_bindings": {
+        "engine_configuration": "cf325308a027e2cf6aca982fd7d9f2fdd496f01b7b324fea5fae9996a850bbd1",
+        "gpu": "NVIDIA L40",
+        "model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+        "model_repository": "Qwen/Qwen3.5-4B",
+        "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+        "runtime_launch_configuration": "db41315efaa3773d4cbdc6f70438c48f852e4b3cf7d21fe0c89c805819e99d5e"
+      },
+      "cross_gpu_generation_parity_passed": true
+    }
+  ],
+  "publication": {
+    "cache_families": [
+      {
+        "model": "qwen3.5-0.8b",
+        "artifact": {
+          "id": "4fd59bec18a147cb79c88fa2b3f2f7a7c49bc6f3ae1eb3bd215df42e98df4e19",
+          "prefix": "switchyard/native-engine/cache-families/4fd59bec18a147cb79c88fa2b3f2f7a7c49bc6f3ae1eb3bd215df42e98df4e19",
+          "compressed_bytes": 515525
+        },
+        "drivers": [
+          "580.159.04"
+        ],
+        "compatibility": {
+          "engine_configuration": "1df0504850723eb41db082f25a7bd71723ff073772538f9ab3eceb8f8cbd3be7",
+          "gpu": "NVIDIA L40",
+          "model_archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+          "model_repository": "Qwen/Qwen3.5-0.8B",
+          "model_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+          "runtime_launch_configuration": "db41315efaa3773d4cbdc6f70438c48f852e4b3cf7d21fe0c89c805819e99d5e",
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "fc1f1b61c4ef1efd80af335ea5e6ee26b4ef4a21dd9d355955fa6e26c55d7715",
+          "model_artifact_id": "22f52b7d3b85199f03b820bf502db7f92a51469e1e0ddc77389beda2ef20f7db",
+          "native_driver_cache_layout": "native-cuda-driver-family-v1"
+        }
+      },
+      {
+        "model": "qwen3.5-2b",
+        "artifact": {
+          "id": "a41d39d708451e108910609933907ac16ec4900409ece06eca8af89c2c919789",
+          "prefix": "switchyard/native-engine/cache-families/a41d39d708451e108910609933907ac16ec4900409ece06eca8af89c2c919789",
+          "compressed_bytes": 515632
+        },
+        "drivers": [
+          "580.159.04"
+        ],
+        "compatibility": {
+          "engine_configuration": "0ac9e0bb8c87300512e6ee50aa7b603fdc0fd742eeb728187c0d4b6fafc39874",
+          "gpu": "NVIDIA L40",
+          "model_archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+          "model_repository": "Qwen/Qwen3.5-2B",
+          "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+          "runtime_launch_configuration": "db41315efaa3773d4cbdc6f70438c48f852e4b3cf7d21fe0c89c805819e99d5e",
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "4969a4f39b3a7855de3e09996de355b87e3626375df2f83d0b966d534faffb37",
+          "model_artifact_id": "decb292da62bd8e34547d5abd8178dd8b771e877f66132521fc4f51288265461",
+          "native_driver_cache_layout": "native-cuda-driver-family-v1"
+        }
+      },
+      {
+        "model": "qwen3.5-4b",
+        "artifact": {
+          "id": "b317ada6e8459b923e100443af756cc5ca754858a78bd07bb9bfc062edc246d6",
+          "prefix": "switchyard/native-engine/cache-families/b317ada6e8459b923e100443af756cc5ca754858a78bd07bb9bfc062edc246d6",
+          "compressed_bytes": 515626
+        },
+        "drivers": [
+          "580.159.04"
+        ],
+        "compatibility": {
+          "engine_configuration": "cf325308a027e2cf6aca982fd7d9f2fdd496f01b7b324fea5fae9996a850bbd1",
+          "gpu": "NVIDIA L40",
+          "model_archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+          "model_repository": "Qwen/Qwen3.5-4B",
+          "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "runtime_id": "05f47556f16e7983ae5b056dd3834e9540e87170a1fc850d40a5eb41dc7d0a82",
+          "runtime_launch_configuration": "db41315efaa3773d4cbdc6f70438c48f852e4b3cf7d21fe0c89c805819e99d5e",
+          "architecture": "x86_64",
+          "os": "ubuntu24.04",
+          "cuda_build": "13.0.0",
+          "gpu_compute_capability": "8.9",
+          "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+          "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+          "cuda_compiler_target": "compute_89",
+          "cuda_compiler_version": "13.0.48",
+          "native_config_sha256": "1f7cf76c9c41132553ea5c8c337a7cbb9a01d88ecd100f0cf49bfd37d9ad06cc",
+          "model_artifact_id": "9448ab7ce0ff02e86fc4a7032d2ccfffbcaf55e30820269c1d0293e2c9c8896d",
+          "native_driver_cache_layout": "native-cuda-driver-family-v1"
+        }
+      }
+    ],
+    "cache_components": [
+      {
+        "model": "qwen3.5-0.8b",
+        "driver": "580.159.04",
+        "artifact": {
+          "id": "3fd57e2e782205374582a925d8c7c133b4144c9a2b9372339d2730fb7fdf80d4",
+          "prefix": "switchyard/native-engine/caches/3fd57e2e782205374582a925d8c7c133b4144c9a2b9372339d2730fb7fdf80d4",
+          "compressed_bytes": 513795
+        }
+      },
+      {
+        "model": "qwen3.5-2b",
+        "driver": "580.159.04",
+        "artifact": {
+          "id": "8033ae219f0e152ddba183294f0df8bb4f761eec59b1801e9e17506558899d07",
+          "prefix": "switchyard/native-engine/caches/8033ae219f0e152ddba183294f0df8bb4f761eec59b1801e9e17506558899d07",
+          "compressed_bytes": 513895
+        }
+      },
+      {
+        "model": "qwen3.5-4b",
+        "driver": "580.159.04",
+        "artifact": {
+          "id": "a1b17c2bf1be751aa10240d72d9126f58718bf9cfed8a51ddd2f12379e9f7429",
+          "prefix": "switchyard/native-engine/caches/a1b17c2bf1be751aa10240d72d9126f58718bf9cfed8a51ddd2f12379e9f7429",
+          "compressed_bytes": 513878
+        }
+      }
+    ]
+  },
+  "quality_acceptance": {
+    "f32_reference": "local released-model teacher/reference and complete cached/uncached gates; complete local bake requests retained",
+    "l40_full_generation_parity_passed": true,
+    "bf16_cache_enabled_accepted": false,
+    "cross_gpu_generation_receipts": [
+      "docs/receipts/native-f32-l40-bake-01.json"
+    ],
+    "verified_drivers": [
+      "580.159.04"
+    ]
+  },
+  "planning_priors": "copied input assumptions; fresh L40 measurements pending",
+  "cloud_allocations": [
+    {
+      "receipt": "docs/receipts/native-f32-l40-bake-01.json",
+      "pod_id": "6scsnarterm3v7",
+      "cleanup_confirmed": true
+    },
+    {
+      "receipt": "docs/receipts/native-f32-l40-serving-driver-rejection-01.json",
+      "pod_id": "jhsgjrz490oa86",
+      "cleanup_confirmed": true
+    }
+  ],
+  "unresolved": [
+    "580.178.04 remains uncovered; two targeted64GB bake requests returned no capacity.",
+    "Fresh64GB L40 serving/cgroup receipts for allthree models remain pending; no serving success is inferred from offline generation."
+  ],
+  "capacity_rejections": [
+    "docs/receipts/native-f32-l40-capacity-rejection-01.json"
+  ],
+  "verification": {
+    "rebuilt_cli_family_bindings_match": true,
+    "cli_sha256": "f0f36f81c6b201642234e5cbe91667066d962446e55405ce252011f234110d63",
+    "active_worker_pods": 0,
+    "active_worker_controllers": 0
+  },
+  "cleanup_audit": "docs/receipts/native-f32-l40-owned-cleanup-audit-01.json",
+  "allocation_ownership": "root"
+}

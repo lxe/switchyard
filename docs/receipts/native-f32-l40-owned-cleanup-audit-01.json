@@ -1,0 +1,21 @@
+{
+  "format": "switchyard-native-f32-l40-owned-cleanup-audit-v1",
+  "observed_utc": "2026-10-12T01:56:21.208963+00:00",
+  "pods": [
+    {
+      "pod_id": "6scsnarterm3v7",
+      "name": "switchyard-native-bake-87eb109bc737",
+      "http_status": 404,
+      "receipt": "docs/receipts/native-f32-l40-bake-01.json"
+    },
+    {
+      "pod_id": "jhsgjrz490oa86",
+      "name": "switchyard-native-launch-f051a4382485",
+      "http_status": 404,
+      "receipt": "docs/receipts/native-f32-l40-serving-driver-rejection-01.json"
+    }
+  ],
+  "active_worker_pods": 0,
+  "active_worker_controllers": 0,
+  "allocation_ownership": "root"
+}

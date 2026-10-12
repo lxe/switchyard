@@ -1,0 +1,44 @@
+{
+  "format": "switchyard-native-f32-l40-serving-driver-rejection-v1",
+  "model": "qwen3.5-0.8b",
+  "configuration": "configs/runpod/native/qwen3.5-0.8b-l40-f32-prefix-candidate.json",
+  "owned_pod": {
+    "id": "jhsgjrz490oa86",
+    "name": "switchyard-native-launch-f051a4382485",
+    "status": "RUNNING",
+    "cost": 0.82,
+    "dataCenterId": "US-KS-2",
+    "cudaVersion": "13.0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA L40",
+    "uuid": "GPU-45d1c0aa-c879-5776-0ad6-e928bb33e75e",
+    "driver": "580.178.04",
+    "compute_capability": "8.9",
+    "memory": "46068 MiB"
+  },
+  "covered_drivers": [
+    "580.159.04"
+  ],
+  "bootstrap_error": "driver_mismatch",
+  "engine_started": false,
+  "host_memory_samples": [
+    {
+      "wall_s": 1791769833.9944167,
+      "cgroup_version": "v2",
+      "scope": "process_cgroup",
+      "current_bytes": 11857920,
+      "peak_bytes": 42262528,
+      "limit_bytes": 249999998976,
+      "swap_current_bytes": 0,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  ],
+  "cleanup": {
+    "pod_id": "jhsgjrz490oa86",
+    "name": "switchyard-native-launch-f051a4382485",
+    "confirmed_absent": true
+  },
+  "scope": "Fresh L40 serving rejected missing580.178.04 component before engine startup. No fallback or serving performance for that driver."
+}
