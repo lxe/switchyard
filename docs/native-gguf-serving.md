@@ -47,6 +47,8 @@ The independent oracle is [gguf_hf_reference.py](../crates/switchyard-engine/ben
 
 Remaining work includes a quantized numerical/performance acceptance policy, comparing kernel precision across platforms, and validating additional tensor encodings on real full models. Synthetic projection tests cover Q4_0, Q8_0, Q4_K, Q5_K and Q6_K; real model receipts cover the mixed encodings present in the selected Q4_K_M and Q8_0 files. GGUF execution is available, while exact-parity production admission remains unproven.
 
+The [image HTTP receipt](receipts/native-vision-http-rtx5090.json) tests the final integrated binary after the EOS correction. It covers Q4_K_M plus F16 mmproj on all three sizes and Q8_0 plus F16 mmproj on 0.8B, including concurrent requests, usage accounting and a following text request. These functional checks do not change the quantized numerical acceptance limits above.
+
 ## Existing implementation references
 
 The model layout contract derives from [llama.cpp's Qwen converter](https://github.com/ggml-org/llama.cpp/blob/f2cc7282ce0042641df55e0e563b75e824e2b647/conversion/qwen.py) and [Qwen3.5 graph](https://github.com/ggml-org/llama.cpp/blob/f2cc7282ce0042641df55e0e563b75e824e2b647/src/models/qwen35.cpp), under MIT. Packed arithmetic and row lookup use the existing [Candle quantized backend](https://github.com/huggingface/candle/tree/c68b24997319b8d76e5a4e775dab197c7f26322a/candle-core/src/quantized), under Apache-2.0 OR MIT. No dependency revision was changed.
