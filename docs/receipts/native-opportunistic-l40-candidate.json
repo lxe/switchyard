@@ -1,0 +1,166 @@
+{
+  "format": "switchyard-native-opportunistic-candidate-v1",
+  "state": "runtime published and CPU policy checks passed; coordinated serving smoke pending",
+  "fleet_input": "configs/runpod/native-fleet-f32-l40-opportunistic-candidate.json",
+  "wrapper_commit": "9af7856",
+  "policy": "opportunistic",
+  "legacy_policy_default": "strict",
+  "runtime": {
+    "id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+    "prefix": "switchyard/native-engine/runtime/3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+    "compressed_bytes": 452843976
+  },
+  "runtime_compatibility": {
+    "architecture": "x86_64",
+    "os": "ubuntu24.04",
+    "cuda_build": "13.0.0",
+    "gpu_compute_capability": "8.9",
+    "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+    "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+    "cuda_compiler_target": "compute_89",
+    "cuda_compiler_version": "13.0.48"
+  },
+  "runtime_launch_configuration": {
+    "hydration": {
+      "retries": 0
+    },
+    "artifact": {
+      "id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+      "prefix": "switchyard/native-engine/runtime/3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46"
+    },
+    "compatibility": {
+      "architecture": "x86_64",
+      "os": "ubuntu24.04",
+      "cuda_build": "13.0.0",
+      "gpu_compute_capability": "8.9",
+      "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+      "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+      "cuda_compiler_target": "compute_89",
+      "cuda_compiler_version": "13.0.48"
+    },
+    "program": "bin/launch-engine.sh",
+    "args": [],
+    "environment": {
+      "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+      "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+      "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA L40",
+      "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+      "CUDA_CACHE_DISABLE": "0",
+      "CUDA_CACHE_MAXSIZE": "536870912",
+      "NATIVE_ENGINE_CACHE_POLICY": "opportunistic"
+    }
+  },
+  "runtime_inventory": {
+    "changed_files": [
+      "bin/launch-engine.sh"
+    ],
+    "files": [
+      {
+        "path": "bin/launch-engine.sh",
+        "sha256": "5113815a9f39ed52430bd9431523b6b7b657b08df2b15932296179ddf3f171f8",
+        "previous_sha256": "b162aa372bc95b0c2e0c6172069a7a9877f547cd40d52dbbd91e0bbf54195476",
+        "unchanged": false,
+        "bytes": 4407
+      },
+      {
+        "path": "bin/switchyard-engine",
+        "sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+        "previous_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+        "unchanged": true,
+        "bytes": 67020456
+      },
+      {
+        "path": "lib/libcublas.so.13",
+        "sha256": "ea443b3d282af9c82e16be974860b5ba993020bbe98988a7be201bf0c0215e88",
+        "previous_sha256": "ea443b3d282af9c82e16be974860b5ba993020bbe98988a7be201bf0c0215e88",
+        "unchanged": true,
+        "bytes": 52941016
+      },
+      {
+        "path": "lib/libcublasLt.so.13",
+        "sha256": "c92c4c24c257d638a61130f8a5f7f31eb6d6262c24f8e19816ff56b58b73a857",
+        "previous_sha256": "c92c4c24c257d638a61130f8a5f7f31eb6d6262c24f8e19816ff56b58b73a857",
+        "unchanged": true,
+        "bytes": 538836848
+      },
+      {
+        "path": "lib/libcudart.so.13",
+        "sha256": "6876f4841bdbe30b187dcf8d7a7d2d6579bf12a36eeb430c7b28484ccdeed89a",
+        "previous_sha256": "6876f4841bdbe30b187dcf8d7a7d2d6579bf12a36eeb430c7b28484ccdeed89a",
+        "unchanged": true,
+        "bytes": 704288
+      },
+      {
+        "path": "lib/libcurand.so.10",
+        "sha256": "b53732a66b302b11926e00f762e2c2ba67058347ff93cf4ae709de45e93e06da",
+        "previous_sha256": "b53732a66b302b11926e00f762e2c2ba67058347ff93cf4ae709de45e93e06da",
+        "unchanged": true,
+        "bytes": 132698328
+      },
+      {
+        "path": "lib/libgcc_s.so.1",
+        "sha256": "02f3f192bf5f79b811f1e34a650fea443d407408703448906585232383957f60",
+        "previous_sha256": "02f3f192bf5f79b811f1e34a650fea443d407408703448906585232383957f60",
+        "unchanged": true,
+        "bytes": 183024
+      },
+      {
+        "path": "lib/libstdc++.so.6",
+        "sha256": "a68762c86d371e6041f03f03a33a78fa235809ae7d81c90185940c93c3535aed",
+        "previous_sha256": "a68762c86d371e6041f03f03a33a78fa235809ae7d81c90185940c93c3535aed",
+        "unchanged": true,
+        "bytes": 2592224
+      }
+    ]
+  },
+  "publication": {
+    "manifest_download_matched_local": true,
+    "manifest_sha256": "ed442ce58c7c2a0cc71c5886d06286b7e9ba30446a45aa59dddea2af178f80d0",
+    "chunks": 4,
+    "manifest_published_last": true
+  },
+  "cache_layout": {
+    "version": "native-cuda-driver-family-v1",
+    "driver_directory": "drivers/<actual numeric NVIDIA driver>/cuda",
+    "identity_file": "drivers/<actual numeric NVIDIA driver>/identity.tsv",
+    "identity_fields": [
+      "actual GPU name",
+      "actual NVIDIA driver",
+      "actual compute capability"
+    ],
+    "miss_initialization": "private sibling staging outside export root, atomic no-clobber rename before engine launch",
+    "invalid_existing_component": "fatal; no fallback or driver relabeling"
+  },
+  "cache_registry": {
+    "name": "gpu-kernels",
+    "registry_prefix": "switchyard/native-engine/cuda-registry/v1",
+    "artifact_prefix": "switchyard/native-engine/observed-cuda-caches/v1",
+    "compatibility": {
+      "native_driver_cache_layout": "native-cuda-driver-family-v1"
+    },
+    "lookup_timeout_s": 3,
+    "collection_timeout_s": 30,
+    "publication_timeout_s": 60,
+    "max_artifact_bytes": 536870912,
+    "transfer_concurrency": 4
+  },
+  "static_cache_count": 0,
+  "cold_compilation": "ordinary CUDA driver JIT during real model requests",
+  "dedicated_gpu_bake_required": false,
+  "serving_python": false,
+  "vllm": false,
+  "warmup_requests_added": false,
+  "new_shape_coverage_claimed": false,
+  "gpu_allocations_for_this_publication": 0,
+  "validation": {
+    "controller_unit_tests": 29,
+    "bash_syntax": true,
+    "ruff": true,
+    "engine_and_libraries_unchanged": true
+  },
+  "limitations": [
+    "End-to-end miss, request, export, publication, and subsequent cache hit remain to be measured by the coordinated serving smoke.",
+    "A driver directory hit confirms matching identity and available cache files; it does not imply every future kernel shape is cached.",
+    "Observed caches use the new runtime binding; prior strict cache artifacts are not relabeled."
+  ]
+}

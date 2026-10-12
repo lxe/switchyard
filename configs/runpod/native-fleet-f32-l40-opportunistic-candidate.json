@@ -1,0 +1,211 @@
+{
+  "compute": {
+    "api_url": "https://api.runpod.io/v2",
+    "key_env": "RUNPOD_API_KEY",
+    "cloud": "SECURE",
+    "gpu_types": [
+      "NVIDIA L40"
+    ],
+    "data_centers": [
+      "EUR-IS-2",
+      "US-KS-2"
+    ],
+    "min_cuda": "13.0",
+    "disk_gb": 30,
+    "disk_usd_per_gb_month": 0.1,
+    "billing_hours_per_month": 730,
+    "min_ram_per_gpu_gb": 64,
+    "min_vcpu_count_per_gpu": 8
+  },
+  "storage": {
+    "endpoint": "https://fd390209d565a1e61cc9455b1312fe12.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "podtrain",
+    "access_key_env": "PODTRAIN_R2_ACCESS_KEY_ID",
+    "secret_key_env": "PODTRAIN_R2_SECRET_ACCESS_KEY",
+    "url_lifetime_s": 3600
+  },
+  "models": [
+    {
+      "id": "qwen3.5-0.8b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "archive_prefix": "switchyard/native-engine/live-models/3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 1610612736,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 35.2,
+        "kv_tokens": 1024
+      },
+      "archive_sha256": "3aade82123c1ba3f3bcdf346147fd4c54594ac9d951cacd09504b17438a96f1b",
+      "caches": []
+    },
+    {
+      "id": "qwen3.5-2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "archive_prefix": "switchyard/native-engine/live-models/37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 8589934592,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "single_output_tps": 40,
+        "aggregate_output_tps": 160,
+        "input_work_per_token": 0.05,
+        "startup_s": 59.71,
+        "kv_tokens": 1024
+      },
+      "archive_sha256": "37912f31468d56957a089c1c99ec9550582fd64d6b44407eeeb228dac37f1f43",
+      "caches": []
+    },
+    {
+      "id": "qwen3.5-4b",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "archive_prefix": "switchyard/native-engine/live-models/5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+      "engine": {
+        "kind": "native",
+        "max_model_len": 128,
+        "max_num_seqs": 8,
+        "dtype": "f32",
+        "language_model_only": true,
+        "extra_args": [],
+        "native": {
+          "max_weight_bytes": 12884901888,
+          "minimum_gpu_memory_bytes": 21474836480,
+          "queue_capacity": 64,
+          "batch_wait_ms": 2,
+          "cuda_ordinal": 0,
+          "cache": {
+            "page_tokens": 16,
+            "checkpoint_tokens": 32,
+            "max_bytes": 268435456,
+            "max_entries": 16
+          }
+        }
+      },
+      "prior": {
+        "single_output_tps": 25,
+        "aggregate_output_tps": 100,
+        "input_work_per_token": 0.05,
+        "startup_s": 172.17,
+        "kv_tokens": 1024
+      },
+      "archive_sha256": "5962b413bfe1ab24628b496a97d40f53f8ba6ebf50b59ffcd330da4e5ded47c1",
+      "caches": []
+    }
+  ],
+  "limits": {
+    "max_instances": 3,
+    "max_usd_per_hour": 2.8,
+    "max_run_usd": 1.0,
+    "run_timeout_s": 1200,
+    "startup_timeout_s": 600,
+    "request_timeout_s": 120,
+    "hydration_concurrency": 20,
+    "hydration_stall_s": 20,
+    "poll_ms": 100,
+    "max_experiment_usd": 3.0,
+    "experiment_timeout_s": 3600
+  },
+  "scheduling": {
+    "maximum_startup_s": 600,
+    "minimum_hydration_bytes_per_s": 5000000,
+    "retry_cooldown_s": 60
+  },
+  "bootstrap": {
+    "image": "ghcr.io/lxe/switchyard-runtime@sha256:a1b9a820d3a864628fce77c44182f0e7ce15b91d641ae88f243b298a810b9136",
+    "agent_url": "https://github.com/lxe/switchyard/releases/download/agent-v0.5.0-rc.3/switchyard-agent-x86_64-linux-musl",
+    "agent_sha256": "8c32c2bc05ca76485a8208af288fa63cbf22bcaec2b63f623b61b7196e8f2e4f",
+    "ticket_prefix": "switchyard/bootstrap",
+    "startup": {
+      "mode": "trusted_streaming",
+      "model_root": "/work/switchyard",
+      "require_model_ram": false,
+      "early_launch": false
+    },
+    "runtime": {
+      "hydration": {
+        "retries": 0
+      },
+      "artifact": {
+        "id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+        "prefix": "switchyard/native-engine/runtime/3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46"
+      },
+      "compatibility": {
+        "architecture": "x86_64",
+        "os": "ubuntu24.04",
+        "cuda_build": "13.0.0",
+        "gpu_compute_capability": "8.9",
+        "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+        "engine_source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "cuda_compiler_target": "compute_89",
+        "cuda_compiler_version": "13.0.48"
+      },
+      "program": "bin/launch-engine.sh",
+      "args": [],
+      "environment": {
+        "LD_LIBRARY_PATH": "{runtime_root}/lib:/usr/local/nvidia/lib64:/usr/local/nvidia/lib",
+        "NATIVE_ENGINE_CACHE_ROOT": "{cache_root}/gpu-kernels",
+        "NATIVE_ENGINE_EXPECTED_GPU": "NVIDIA L40",
+        "NATIVE_ENGINE_EXPECTED_COMPUTE_CAP": "8.9",
+        "CUDA_CACHE_DISABLE": "0",
+        "CUDA_CACHE_MAXSIZE": "536870912",
+        "NATIVE_ENGINE_CACHE_POLICY": "opportunistic"
+      }
+    },
+    "native_cache_registry": {
+      "name": "gpu-kernels",
+      "registry_prefix": "switchyard/native-engine/cuda-registry/v1",
+      "artifact_prefix": "switchyard/native-engine/observed-cuda-caches/v1",
+      "compatibility": {
+        "native_driver_cache_layout": "native-cuda-driver-family-v1"
+      },
+      "lookup_timeout_s": 3,
+      "collection_timeout_s": 30,
+      "publication_timeout_s": 60,
+      "max_artifact_bytes": 536870912,
+      "transfer_concurrency": 4
+    }
+  }
+}
