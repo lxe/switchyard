@@ -6,7 +6,7 @@ pub(crate) fn args(engine: &EngineConfig, model: &ModelConfig, path: &str) -> Ve
         .native
         .as_ref()
         .expect("validated native engine bounds");
-    let config = serde_json::json!({
+    let mut config = serde_json::json!({
         "model":model.id, "model_root":path,
         "device":{"kind":"cuda", "ordinal":bounds.cuda_ordinal},
         "dtype":engine.dtype, "max_context":engine.max_model_len,
@@ -14,6 +14,9 @@ pub(crate) fn args(engine: &EngineConfig, model: &ModelConfig, path: &str) -> Ve
         "max_batch_size":engine.max_num_seqs, "queue_capacity":bounds.queue_capacity,
         "batch_wait_ms":bounds.batch_wait_ms
     });
+    if let Some(cache) = &bounds.cache {
+        config["cache"] = serde_json::to_value(cache).expect("Serializable native cache bounds");
+    }
     vec![
         "--config-json".into(),
         config.to_string(),

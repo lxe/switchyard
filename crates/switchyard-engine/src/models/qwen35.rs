@@ -4,6 +4,8 @@ use candle_core::{D, DType, Device, Module, Result, Tensor};
 use candle_nn::{Activation, Conv1d, Conv1dConfig, VarBuilder, conv1d_no_bias};
 use candle_nn::{Linear, linear_b, linear_no_bias};
 use std::sync::Arc;
+mod paged;
+mod paged_cuda;
 mod state;
 pub use state::SequenceState;
 
@@ -145,6 +147,11 @@ fn repeat_interleave(x: &Tensor, n: usize, dim: usize) -> Result<Tensor> {
     expanded.reshape(final_dims.as_slice())
 }
 
+struct RecurrentInput<'a> {
+    state: Option<&'a Tensor>,
+    prefill: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct Qwen3_5GatedDeltaNet {
     num_v_heads: usize,
@@ -262,13 +269,13 @@ impl Qwen3_5GatedDeltaNet {
         value: &Tensor,
         g: &Tensor,
         beta: &Tensor,
-        initial_state: Option<&Tensor>,
+        initial: RecurrentInput<'_>,
     ) -> Result<(Tensor, Tensor)> {
         let mut query_normalized = l2_norm(&query.to_dtype(DType::F32)?)?;
         let mut key_normalized = l2_norm(&key.to_dtype(DType::F32)?)?;
         // Native vLLM prefill stores normalized Q/K in the activation dtype;
         // its recurrent decode kernel keeps this normalization in F32.
-        if initial_state.is_none() {
+        if initial.prefill {
             query_normalized = query_normalized
                 .to_dtype(query.dtype())?
                 .to_dtype(DType::F32)?;
@@ -292,7 +299,7 @@ impl Qwen3_5GatedDeltaNet {
         let mut core_attn_out_vec = Vec::with_capacity(seq_len);
 
         // We MUST use F32 for the recurrent state to avoid numerical drift
-        let mut last_recurrent_state = match initial_state {
+        let mut last_recurrent_state = match initial.state {
             Some(state) => state.to_dtype(DType::F32)?,
             None => Tensor::zeros(
                 (batch_size, num_heads, k_head_dim, v_head_dim),
@@ -335,6 +342,11 @@ impl Qwen3_5GatedDeltaNet {
     }
 
     pub fn forward(&mut self, hidden_states: &Tensor) -> Result<Tensor> {
+        let prefill = self.recurrent_state.is_none() || hidden_states.dim(1)? > 1;
+        self.forward_internal(hidden_states, prefill)
+    }
+
+    fn forward_internal(&mut self, hidden_states: &Tensor, prefill: bool) -> Result<Tensor> {
         let (batch_size, seq_len, _) = hidden_states.dims3()?;
         let hidden_states = hidden_states.contiguous()?;
         let initial_dtype = hidden_states.dtype();
@@ -347,12 +359,12 @@ impl Qwen3_5GatedDeltaNet {
         let b = self.in_proj_b.forward(&hidden_states)?;
         let a = self.in_proj_a.forward(&hidden_states)?;
 
-        let use_precomputed_states = self.conv_state.is_some() && seq_len == 1;
+        let use_precomputed_states = self.conv_state.is_some();
 
         let mixed_qkv = if use_precomputed_states {
             let conv_state = self.conv_state.as_mut().unwrap();
             let conv_state_data = Tensor::cat(&[&*conv_state, &mixed_qkv], 2)?;
-            *conv_state = conv_state_data.narrow(2, 1, self.conv_kernel_size - 1)?;
+            *conv_state = conv_state_data.narrow(2, seq_len, self.conv_kernel_size - 1)?;
             let out = depthwise_conv(&conv_state_data, self.conv1d.weight())?;
             candle_nn::ops::silu(&out)?.to_dtype(initial_dtype)?
         } else {
@@ -397,8 +409,17 @@ impl Qwen3_5GatedDeltaNet {
             None
         };
 
-        let (core_attn_out, new_state) =
-            self.torch_recurrent_gated_delta_rule(&q, &k, &v, &g, &beta, initial_state)?;
+        let (core_attn_out, new_state) = self.torch_recurrent_gated_delta_rule(
+            &q,
+            &k,
+            &v,
+            &g,
+            &beta,
+            RecurrentInput {
+                state: initial_state,
+                prefill,
+            },
+        )?;
         self.recurrent_state = Some(new_state);
 
         let core_attn_out = core_attn_out.to_dtype(initial_dtype)?;
@@ -495,7 +516,8 @@ pub struct Qwen3_5Attention {
     num_kv_groups: usize,
     head_dim: usize,
     rotary_emb: Arc<Qwen3_5TextRotaryEmbedding>,
-    kv_cache: Option<(Tensor, Tensor)>,
+    kv_cache: Option<Vec<paged::PagedKv>>,
+    kv_page_tokens: usize,
 }
 
 impl Qwen3_5Attention {
@@ -550,6 +572,7 @@ impl Qwen3_5Attention {
             head_dim,
             rotary_emb,
             kv_cache: None,
+            kv_page_tokens: 16,
         })
     }
 
@@ -618,43 +641,69 @@ impl Qwen3_5Attention {
             c.push(("k_rope".into(), key_states.clone()));
         }
 
-        let (key_states, value_states) = match &self.kv_cache {
-            None => (key_states, value_states),
-            Some((prev_k, prev_v)) => {
-                let k = Tensor::cat(&[prev_k, &key_states], 2)?;
-                let v = Tensor::cat(&[prev_v, &value_states], 2)?;
-                (k, v)
-            }
-        };
-        self.kv_cache = Some((key_states.clone(), value_states.clone()));
-
-        let key_states = repeat_interleave(&key_states, self.num_kv_groups, 1)?.contiguous()?;
-        let value_states = repeat_interleave(&value_states, self.num_kv_groups, 1)?.contiguous()?;
-
+        let fresh = self.kv_cache.is_none();
+        let mut pages = self.kv_cache.clone().unwrap_or_else(|| {
+            (0..b_sz)
+                .map(|_| paged::PagedKv::new(self.kv_page_tokens))
+                .collect()
+        });
+        if pages.len() != b_sz {
+            candle_core::bail!("Attention state row mismatch");
+        }
+        for (row, cache) in pages.iter_mut().enumerate() {
+            cache.append(
+                &key_states.narrow(0, row, 1)?,
+                &value_states.narrow(0, row, 1)?,
+            )?;
+        }
         let scale = 1f64 / f64::sqrt(self.head_dim as f64);
-        let attn_weights = (query_states
-            .to_dtype(DType::F32)?
-            .contiguous()?
-            .matmul(&key_states.to_dtype(DType::F32)?.transpose(2, 3)?)?
-            * scale)?;
-
-        let attn_weights = match attention_mask {
-            None => attn_weights,
-            Some(mask) => attn_weights.broadcast_add(&mask.to_dtype(DType::F32)?)?,
+        let attn_output = if fresh {
+            // Keep batched initial prefill on the established dense path. Only
+            // newly projected keys and values are materialized here.
+            let keys = repeat_interleave(&key_states, self.num_kv_groups, 1)?.contiguous()?;
+            let values = repeat_interleave(&value_states, self.num_kv_groups, 1)?.contiguous()?;
+            let scores = (query_states
+                .to_dtype(DType::F32)?
+                .contiguous()?
+                .matmul(&keys.to_dtype(DType::F32)?.transpose(2, 3)?)?
+                * scale)?;
+            let scores = match attention_mask {
+                None => scores,
+                Some(mask) => scores.broadcast_add(&mask.to_dtype(DType::F32)?)?,
+            };
+            let exponentials = scores
+                .broadcast_sub(&scores.max_keepdim(D::Minus1)?)?
+                .exp()?;
+            let denominator = exponentials.sum_keepdim(D::Minus1)?;
+            exponentials
+                .to_dtype(values.dtype())?
+                .to_dtype(DType::F32)?
+                .matmul(&values.to_dtype(DType::F32)?)?
+                .broadcast_div(&denominator)?
+                .to_dtype(hidden_states.dtype())?
+        } else if q_len == 1 && attention_mask.is_none() {
+            match paged_cuda::attention(&query_states, &pages, self.num_kv_groups)? {
+                Some(output) => output.to_dtype(hidden_states.dtype())?,
+                None => paged::attention(
+                    &query_states,
+                    &pages,
+                    self.num_kv_groups,
+                    None,
+                    scale,
+                    hidden_states.dtype(),
+                )?,
+            }
+        } else {
+            paged::attention(
+                &query_states,
+                &pages,
+                self.num_kv_groups,
+                attention_mask,
+                scale,
+                hidden_states.dtype(),
+            )?
         };
-        // Keep scores and softmax accumulation in F32. The reference attention
-        // kernel rounds unnormalized exponentials for the value product and
-        // divides the F32 accumulator by its F32 denominator afterward.
-        let exponentials = attn_weights
-            .broadcast_sub(&attn_weights.max_keepdim(D::Minus1)?)?
-            .exp()?;
-        let denominator = exponentials.sum_keepdim(D::Minus1)?;
-        let attn_output = exponentials
-            .to_dtype(value_states.dtype())?
-            .to_dtype(DType::F32)?
-            .matmul(&value_states.to_dtype(DType::F32)?)?
-            .broadcast_div(&denominator)?
-            .to_dtype(hidden_states.dtype())?;
+        self.kv_cache = Some(pages);
 
         let attn_output =
             attn_output
@@ -769,6 +818,7 @@ impl Qwen3_5DecoderLayer {
         attention_mask: Option<&Tensor>,
         positions: Positions<'_>,
         captured: Option<&mut super::LayerTrace>,
+        prefill: bool,
     ) -> Result<(Tensor, Tensor)> {
         let (norm_hidden_states, residual) = match residual {
             Some(residual) => self.input_layernorm.add(hidden_states, residual)?,
@@ -782,7 +832,9 @@ impl Qwen3_5DecoderLayer {
             TokenMixer::FullAttention(attn) => {
                 attn.forward_internal(&norm_hidden_states, attention_mask, positions, captured)?
             }
-            TokenMixer::LinearAttention(attn) => attn.forward(&norm_hidden_states)?,
+            TokenMixer::LinearAttention(attn) => {
+                attn.forward_internal(&norm_hidden_states, prefill)?
+            }
         };
 
         let (norm_hidden_states, residual) = self
@@ -866,7 +918,7 @@ impl Model {
             .collect();
         let mask = Tensor::from_slice(&mask, (tgt_len, tgt_len), &self.device)?;
         let mask = if seqlen_offset > 0 {
-            let mask0 = Tensor::zeros((tgt_len, seqlen_offset), self.dtype, &self.device)?;
+            let mask0 = Tensor::zeros((tgt_len, seqlen_offset), mask.dtype(), &self.device)?;
             Tensor::cat(&[&mask0, &mask], D::Minus1)?
         } else {
             mask
@@ -879,11 +931,26 @@ impl Model {
         self.forward_internal(input_ids, seqlen_offset, None)
     }
 
+    pub fn prefill(&mut self, input_ids: &Tensor, seqlen_offset: usize) -> Result<Tensor> {
+        self.forward_mode(input_ids, seqlen_offset, None, true)
+    }
+
     pub(crate) fn forward_internal(
         &mut self,
         input_ids: &Tensor,
         seqlen_offset: usize,
         captured: Option<&mut super::LayerTrace>,
+    ) -> Result<Tensor> {
+        let prefill = seqlen_offset == 0 || input_ids.dim(1)? > 1;
+        self.forward_mode(input_ids, seqlen_offset, captured, prefill)
+    }
+
+    fn forward_mode(
+        &mut self,
+        input_ids: &Tensor,
+        seqlen_offset: usize,
+        captured: Option<&mut super::LayerTrace>,
+        prefill: bool,
     ) -> Result<Tensor> {
         let (b_size, seq_len) = input_ids.dims2()?;
         let end = seqlen_offset
@@ -894,6 +961,11 @@ impl Model {
             })?;
         if b_size == 0 || seq_len == 0 {
             candle_core::bail!("Empty sequence cohort");
+        }
+        if (seqlen_offset == 0 && !self.state_positions.is_empty())
+            || (seqlen_offset != 0 && self.state_positions != vec![seqlen_offset; b_size])
+        {
+            candle_core::bail!("Forward position does not match owned sequence state");
         }
         let attention_mask = if seq_len <= 1 {
             None
@@ -906,6 +978,7 @@ impl Model {
             attention_mask.as_ref(),
             Positions::Shared(seqlen_offset),
             captured,
+            prefill,
         )?;
         self.state_positions = vec![end; b_size];
         Ok(output)
@@ -917,6 +990,7 @@ impl Model {
         attention_mask: Option<&Tensor>,
         positions: Positions<'_>,
         mut captured: Option<&mut super::LayerTrace>,
+        prefill: bool,
     ) -> Result<Tensor> {
         let mut xs = self.embed_tokens.forward(input_ids)?;
         if let Some(captured) = captured.as_mut() {
@@ -933,8 +1007,14 @@ impl Model {
             } else {
                 None
             };
-            let (hidden, next_residual) =
-                layer.forward(&xs, residual.as_ref(), attention_mask, positions, tap)?;
+            let (hidden, next_residual) = layer.forward(
+                &xs,
+                residual.as_ref(),
+                attention_mask,
+                positions,
+                tap,
+                prefill,
+            )?;
             xs = hidden;
             residual = Some(next_residual);
             if let Some(captured) = captured.as_mut() {
@@ -948,6 +1028,19 @@ impl Model {
             Some(residual) => Ok(self.norm.add(&xs, &residual)?.0),
             None => self.norm.forward(&xs),
         }
+    }
+
+    /// Choose a fixed page size before any session state is created.
+    pub fn set_kv_page_tokens(&mut self, tokens: usize) -> Result<()> {
+        if tokens == 0 || tokens > 4096 || !self.state_positions.is_empty() {
+            candle_core::bail!("KV page size must be 1..=4096 on an empty model");
+        }
+        for layer in &mut self.layers {
+            if let TokenMixer::FullAttention(attention) = &mut layer.token_mixer {
+                attention.kv_page_tokens = tokens;
+            }
+        }
+        Ok(())
     }
 
     pub fn clear_kv_cache(&mut self) {
@@ -987,6 +1080,15 @@ impl ModelForCausalLM {
         let (_b_size, seq_len) = input_ids.dims2()?;
         self.base_model
             .forward(input_ids, seqlen_offset)?
+            .narrow(1, seq_len - 1, 1)?
+            .apply(&self.lm_head)
+    }
+
+    /// Prompt continuation retains prefill normalization even for one token.
+    pub fn prefill(&mut self, input_ids: &Tensor, seqlen_offset: usize) -> Result<Tensor> {
+        let seq_len = input_ids.dim(1)?;
+        self.base_model
+            .prefill(input_ids, seqlen_offset)?
             .narrow(1, seq_len - 1, 1)?
             .apply(&self.lm_head)
     }

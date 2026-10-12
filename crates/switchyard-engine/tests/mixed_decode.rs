@@ -233,6 +233,7 @@ fn config() -> Config {
         max_batch_size: 3,
         queue_capacity: 6,
         batch_wait_ms: 0,
+        cache: Default::default(),
     }
 }
 fn engine(weights: switchyard_engine::models::qwen35::ModelForCausalLM, eos: u32) -> Engine {

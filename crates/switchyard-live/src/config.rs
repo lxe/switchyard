@@ -212,6 +212,26 @@ pub struct NativeEngineConfig {
     pub queue_capacity: usize,
     pub batch_wait_ms: u64,
     pub cuda_ordinal: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache: Option<NativeCacheConfig>,
+}
+/// Native model-local cache bounds. These are serving configuration; GPU bake
+/// acquisition and provider capacity policy remain independent concerns.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeCacheConfig {
+    pub page_tokens: usize,
+    pub checkpoint_tokens: usize,
+    pub max_bytes: usize,
+    pub max_entries: usize,
+}
+impl NativeCacheConfig {
+    fn valid(&self) -> bool {
+        (1..=4096).contains(&self.page_tokens)
+            && (1..=4096).contains(&self.checkpoint_tokens)
+            && self.max_entries <= 4096
+            && (self.max_bytes == 0) == (self.max_entries == 0)
+    }
 }
 impl EngineConfig {
     fn validate_native(
@@ -233,6 +253,7 @@ impl EngineConfig {
         if native.max_weight_bytes == 0
             || native.minimum_gpu_memory_bytes == 0
             || native.queue_capacity < self.max_num_seqs
+            || native.cache.as_ref().is_some_and(|cache| !cache.valid())
             || native.batch_wait_ms > 1000
             || !matches!(self.dtype.as_str(), "bf16" | "f32")
             || self.gpu_memory_utilization != 0.0

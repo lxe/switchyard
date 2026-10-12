@@ -2781,9 +2781,18 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "switchyard-engine-kernels",
  "thiserror 2.0.21",
  "tokenizers 0.22.2",
  "tokio",
+]
+
+[[package]]
+name = "switchyard-engine-kernels"
+version = "0.5.0"
+dependencies = [
+ "candle-core",
+ "half",
 ]
 
 [[package]]

@@ -16,6 +16,7 @@ The same event engine supports offline trace replay and an incremental provider 
 | [`switchyard-agent`](../crates/switchyard-agent) | Bounded model/runtime hydration, startup observations, and authenticated serving proxy |
 | [`switchyard-live`](../crates/switchyard-live) | Token planning, live admission, streamed usage receipts, and owned-resource recovery |
 | [`switchyard-engine`](../crates/switchyard-engine) | Native Rust model execution through Candle/CUDA, bounded batching, and streamed text generation |
+| [`switchyard-engine-kernels`](../crates/switchyard-engine-kernels) | Validated CUDA launch boundary and embedded paged decode kernel |
 | Root `switchyard` package | CLI, library facade, and runnable examples |
 
 The scheduler depends only on the shared contracts. The simulator accepts any implementation of `Scheduler`; its convenience replay and HTTP front door also depend on the reference scheduler package. The gauntlet composes these packages, and its integration tests exercise their boundaries. Workspace dependencies, compiler requirements, and lints are declared in the root manifest.
@@ -140,7 +141,7 @@ An allocation downloads a small static agent, which hydrates independently publi
 
 The engine initializes CUDA and loads weights while a separate thread prepares the tokenizer and chat renderer. Fixed configuration bounds context length, batch size, queued jobs, and host weight bytes. The GPU memory minimum filters eligible hosts; it does not impose a hard allocator ceiling. The HTTP listener opens after its required dependencies finish, without a dummy inference or automatic memory-sizing pass.
 
-Each admitted group owns its sequence state while sharing immutable model weights. Equal-length prompt rows prefill together. Varied-length groups then join shared decoding with per-row positions, masked attention padding, and private recurrent state. Mixed decode removes completed rows and compacts surviving state. New requests wait until the admitted group finishes; continuous admission, shared-prefix reuse, and paged KV allocation are not implemented.
+Each admitted group owns its recurrent and convolution state while sharing immutable model weights and attention pages. A bounded model-local prefix cache retains exact token checkpoints with all hybrid state and final logits. Equal-length prompt rows deduplicate shared prefixes; varied-length groups join shared decoding through true-length page tables and per-row positions. Releasing rows drops their page handles and compacts private recurrent tensors. New requests wait until the admitted group finishes; continuous admission and a preallocated page slab remain work. See [attention pages and prefix caching](native-prefix-cache.md) for retention bounds and accuracy limitations.
 
 The native backend supports bounded greedy text requests and streamed OpenAI-compatible completion/usage events for the pinned 0.8B, 2B, and 4B models. F32 mathematical gates and BF16 endpoint measurements have different scopes: passing endpoint receipts do not establish strict BF16 numerical parity. See [native fleet execution](native-live-integration.md), [model accuracy](native-engine-accuracy.md), and [RunPod artifact deployment](native-runpod.md) for their configuration and evidence boundaries.
 

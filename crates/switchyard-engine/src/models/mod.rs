@@ -1,5 +1,6 @@
 //! Model adapters share immutable weights; each batch owns its sequence state.
 mod mixed;
+mod prefix;
 pub mod qwen35;
 use crate::weights::Weights;
 use crate::{
@@ -9,6 +10,7 @@ use crate::{
 };
 use candle_core::{DType, Device, Tensor};
 pub use mixed::QwenMixedSession;
+pub use prefix::{PrefixCache, PrefixCacheStats};
 pub type LayerTrace = Vec<(String, Tensor)>;
 
 /// Execution contract for one cohort of equal-length token sequences.
@@ -27,6 +29,16 @@ pub trait MixedModelSession: Send {
 }
 pub trait ModelFactory: Send {
     fn session(&self) -> Box<dyn ModelSession>;
+    /// Offline reference path bypassing prefix lookup and checkpoint retention.
+    fn uncached_session(&self) -> Box<dyn ModelSession> {
+        self.session()
+    }
+    fn clear_prefix_cache(&self) -> Result<()> {
+        Ok(())
+    }
+    fn prefix_cache_stats(&self) -> Result<Option<PrefixCacheStats>> {
+        Ok(None)
+    }
     fn device(&self) -> &Device;
     fn vocab_size(&self) -> usize;
     fn eos_token(&self) -> u32;
@@ -45,6 +57,7 @@ pub struct QwenSession {
     model: qwen35::ModelForCausalLM,
     position: usize,
     rows: Option<usize>,
+    cache: Option<PrefixCache>,
 }
 impl QwenSession {
     pub fn new(mut model: qwen35::ModelForCausalLM) -> Self {
@@ -53,7 +66,13 @@ impl QwenSession {
             model,
             position: 0,
             rows: None,
+            cache: None,
         }
+    }
+    pub fn with_cache(model: qwen35::ModelForCausalLM, cache: PrefixCache) -> Self {
+        let mut session = Self::new(model);
+        session.cache = cache.enabled().then_some(cache);
+        session
     }
 }
 impl ModelSession for QwenSession {
@@ -69,7 +88,17 @@ impl ModelSession for QwenSession {
                     .into(),
             ));
         }
-        let logits = self.model.forward(tokens, position)?.squeeze(1)?;
+        let logits = if position == 0
+            && let Some(cache) = &self.cache
+        {
+            let (logits, states) = cache.prefill(&self.model, tokens)?;
+            self.model
+                .base_model
+                .restore_sequences(&states.iter().collect::<Vec<_>>())?;
+            logits
+        } else {
+            self.model.forward(tokens, position)?.squeeze(1)?
+        };
         self.position += length;
         self.rows = Some(rows);
         Ok(logits)
@@ -80,10 +109,23 @@ struct QwenFactory {
     device: Device,
     vocab: usize,
     eos: u32,
+    cache: PrefixCache,
 }
 impl ModelFactory for QwenFactory {
     fn session(&self) -> Box<dyn ModelSession> {
+        Box::new(QwenSession::with_cache(
+            self.weights.clone(),
+            self.cache.clone(),
+        ))
+    }
+    fn uncached_session(&self) -> Box<dyn ModelSession> {
         Box::new(QwenSession::new(self.weights.clone()))
+    }
+    fn clear_prefix_cache(&self) -> Result<()> {
+        self.cache.clear()
+    }
+    fn prefix_cache_stats(&self) -> Result<Option<PrefixCacheStats>> {
+        Ok(Some(self.cache.stats()?))
     }
     fn device(&self) -> &Device {
         &self.device
@@ -95,9 +137,10 @@ impl ModelFactory for QwenFactory {
         self.eos
     }
     fn mixed_session(&self, max_rows: usize) -> Result<Option<Box<dyn MixedModelSession>>> {
-        Ok(Some(Box::new(QwenMixedSession::new(
+        Ok(Some(Box::new(QwenMixedSession::with_cache(
             self.weights.clone(),
             max_rows,
+            self.cache.clone(),
         )?)))
     }
     fn inspect_layers(&self, tokens: &Tensor) -> Result<LayerTrace> {
@@ -146,7 +189,11 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
     };
     let vb = Weights::read(&config.model_root, config.max_weight_bytes, telemetry)?
         .builder(dtype, &device);
-    let weights = qwen35::ModelForCausalLM::new(&model_config, vb)?;
+    let mut weights = qwen35::ModelForCausalLM::new(&model_config, vb)?;
+    weights
+        .base_model
+        .set_kv_page_tokens(config.cache.page_tokens)?;
+    let cache = PrefixCache::new(config.cache.clone(), telemetry.clone())?;
     device.synchronize()?;
     telemetry.event("model_loaded", serde_json::json!({"vocab":model_config.text_config.vocab_size,"layers":model_config.text_config.num_hidden_layers}));
     Ok(Box::new(QwenFactory {
@@ -154,5 +201,6 @@ pub fn load(config: &Config, telemetry: &Telemetry) -> Result<Box<dyn ModelFacto
         device,
         vocab: model_config.text_config.vocab_size,
         eos,
+        cache,
     }))
 }

@@ -2,6 +2,8 @@
 
 The dense Qwen adapter decodes requests with different prompt lengths in one tensor batch after completing their equal-length prefill cohorts. `MixedModelSession` identifies rows by request ID and accepts one input token and one absolute position per active row. The existing engine uses this adapter when an admitted request group contains different prompt lengths. Single requests, equal-length groups and factories without this adapter retain their original path.
 
+This report records the original dense, padded implementation and its numerical evidence. The current engine uses [immutable attention pages and prefix checkpoints](native-prefix-cache.md); its recurrent-state ownership and admission contracts retain the behavior described here. Padding and cropping below describe the measured historical implementation.
+
 ## Sequence state
 
 `SequenceState` contains one row's attention KV tensors, GDN convolution history, recurrent state and next absolute position. Its fields are private, and its immutable model owner is checked before restoration. Model clones share that owner and weights; an independently constructed model cannot restore the state even when its shapes match.

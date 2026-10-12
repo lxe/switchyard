@@ -39,6 +39,8 @@ def main():
         "queue_capacity": native["queue_capacity"],
         "batch_wait_ms": native["batch_wait_ms"],
     }
+    if "cache" in native:
+        expected_configuration["cache"] = native["cache"]
     args.output.mkdir(parents=True, exist_ok=False)
     # Rust validates the typed fleet and derives every generic fingerprint.
     labels_path = args.output / "cache-bindings.json"

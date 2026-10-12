@@ -1,11 +1,20 @@
 {
   "model": "qwen3.5-0.8b",
   "model_root": "data/qwen3.5-0.8b",
-  "device": { "kind": "cuda", "ordinal": 0 },
-  "dtype": "bf16",
+  "device": {
+    "kind": "cuda",
+    "ordinal": 0
+  },
+  "dtype": "f32",
   "max_context": 128,
   "max_weight_bytes": 4294967296,
   "max_batch_size": 8,
   "queue_capacity": 64,
-  "batch_wait_ms": 2
+  "batch_wait_ms": 2,
+  "cache": {
+    "page_tokens": 16,
+    "checkpoint_tokens": 32,
+    "max_bytes": 268435456,
+    "max_entries": 16
+  }
 }

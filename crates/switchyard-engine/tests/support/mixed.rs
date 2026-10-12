@@ -9,6 +9,9 @@ use switchyard_engine::{
 };
 
 pub fn model(value_heads: usize) -> ModelForCausalLM {
+    model_dtype(value_heads, DType::F32)
+}
+pub fn model_dtype(value_heads: usize, dtype: DType) -> ModelForCausalLM {
     let cfg: Config = serde_json::from_value(serde_json::json!({"text_config":{
         "vocab_size":32,"hidden_size":16,"intermediate_size":24,
         "num_hidden_layers":4,"num_attention_heads":2,"num_key_value_heads":1,
@@ -40,15 +43,14 @@ pub fn model(value_heads: usize) -> ModelForCausalLM {
                 .collect::<Vec<_>>();
             (
                 name.clone(),
-                Tensor::from_vec(data, var.shape(), &Device::Cpu).unwrap(),
+                Tensor::from_vec(data, var.shape(), &Device::Cpu)
+                    .unwrap()
+                    .to_dtype(dtype)
+                    .unwrap(),
             )
         })
         .collect();
-    ModelForCausalLM::new(
-        &cfg,
-        VarBuilder::from_tensors(tensors, DType::F32, &Device::Cpu),
-    )
-    .unwrap()
+    ModelForCausalLM::new(&cfg, VarBuilder::from_tensors(tensors, dtype, &Device::Cpu)).unwrap()
 }
 pub fn prompt(length: usize, seed: u32) -> Vec<u32> {
     (0..length).map(|i| ((i as u32 * 7) + seed) % 32).collect()

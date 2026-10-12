@@ -1,0 +1,22 @@
+[package]
+name = "switchyard-engine-kernels"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "Audited CUDA launch boundary for native paged inference"
+
+[dependencies]
+candle-core = { git = "https://github.com/huggingface/candle", rev = "c68b24997319b8d76e5a4e775dab197c7f26322a" }
+half = "2"
+
+[features]
+default = []
+cuda = ["candle-core/cuda"]
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = "warn"

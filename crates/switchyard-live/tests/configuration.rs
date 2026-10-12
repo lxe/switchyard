@@ -611,6 +611,7 @@ fn native_launch_keeps_fixed_bounds_and_requires_pinned_runtime() {
     engine.dtype = "bf16".into();
     engine.extra_args.clear();
     engine.native = Some(NativeEngineConfig {
+        cache: None,
         max_weight_bytes: 4 << 30,
         minimum_gpu_memory_bytes: 8 << 30,
         queue_capacity: 64,
@@ -642,6 +643,33 @@ fn native_launch_keeps_fixed_bounds_and_requires_pinned_runtime() {
     assert_eq!(&args[2..], ["serve", "--bind", "127.0.0.1:8000"]);
     let encoded = serde_json::to_value(&model.engine).unwrap();
     assert!(encoded.get("gpu_memory_utilization").is_none());
+    let mut cached = cfg.clone();
+    cached.models[0].engine.native.as_mut().unwrap().cache = Some(NativeCacheConfig {
+        page_tokens: 16,
+        checkpoint_tokens: 32,
+        max_bytes: 268435456,
+        max_entries: 16,
+    });
+    cached.validate().unwrap();
+    let args = cached.models[0]
+        .engine
+        .args(&cached.models[0], "/published/model");
+    let launch: serde_json::Value = serde_json::from_str(&args[1]).unwrap();
+    assert_eq!(launch["cache"]["max_bytes"], 268435456);
+    assert_ne!(
+        switchyard_live::artifacts::engine_fingerprint(&cfg.models[0].engine).unwrap(),
+        switchyard_live::artifacts::engine_fingerprint(&cached.models[0].engine).unwrap()
+    );
+    cached.models[0]
+        .engine
+        .native
+        .as_mut()
+        .unwrap()
+        .cache
+        .as_mut()
+        .unwrap()
+        .page_tokens = 0;
+    assert!(cached.validate().is_err());
     for mutation in 0..5 {
         let mut invalid = cfg.clone();
         let engine = &mut invalid.models[0].engine;

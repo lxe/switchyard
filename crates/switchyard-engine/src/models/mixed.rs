@@ -1,6 +1,6 @@
 //! Per-cohort request/state ownership, separate from Qwen mathematical operations.
 use super::{
-    MixedModelSession,
+    MixedModelSession, PrefixCache,
     qwen35::{ModelForCausalLM, SequenceState},
 };
 use crate::{Error, Result};
@@ -14,6 +14,7 @@ pub struct QwenMixedSession {
     active: Vec<usize>,
     max_rows: usize,
     decoding: bool,
+    cache: Option<PrefixCache>,
 }
 impl QwenMixedSession {
     pub fn new(mut model: ModelForCausalLM, max_rows: usize) -> Result<Self> {
@@ -28,7 +29,17 @@ impl QwenMixedSession {
             active: Vec::new(),
             max_rows,
             decoding: false,
+            cache: None,
         })
+    }
+    pub fn with_cache(
+        model: ModelForCausalLM,
+        max_rows: usize,
+        cache: PrefixCache,
+    ) -> Result<Self> {
+        let mut session = Self::new(model, max_rows)?;
+        session.cache = cache.enabled().then_some(cache);
+        Ok(session)
     }
     pub fn state_rows(&self) -> usize {
         if self.decoding {
@@ -65,10 +76,14 @@ impl MixedModelSession for QwenMixedSession {
                     .into(),
             ));
         }
-        let mut cohort = self.model.clone();
-        cohort.clear_kv_cache();
-        let logits = cohort.forward(tokens, 0)?.squeeze(1)?;
-        let states = cohort.base_model.sequence_states()?;
+        let (logits, states) = if let Some(cache) = &self.cache {
+            cache.prefill(&self.model, tokens)?
+        } else {
+            let mut cohort = self.model.clone();
+            cohort.clear_kv_cache();
+            let logits = cohort.forward(tokens, 0)?.squeeze(1)?;
+            (logits, cohort.base_model.sequence_states()?)
+        };
         for (&id, state) in rows.iter().zip(states) {
             self.pending.insert(id, state);
             self.seen.insert(id);

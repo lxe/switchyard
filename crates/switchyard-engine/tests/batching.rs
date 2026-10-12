@@ -44,6 +44,7 @@ fn engine() -> Engine {
             max_batch_size: 4,
             queue_capacity: 8,
             batch_wait_ms: 0,
+            cache: Default::default(),
         },
         Box::new(Counter),
         Telemetry::default(),
