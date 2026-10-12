@@ -123,3 +123,14 @@ The [Ubuntu matrix receipt](receipts/native-gpu-builds-ubuntu.json) records the 
 These identities differ from the earlier local CUDA 13.4 engine. Each requires its own exact-binary driver-cache bake and hardware acceptance; earlier caches and serving measurements cannot be relabeled for this build.
 
 The [SM120a local fleet acceptance](receipts/native-fleet-ubuntu-rtx5090.json) separately records fresh driver-cache bakes, fresh-process HTTP first-token measurements and 51 useful live-client streams across 0.8B, 2B and 4B on an RTX 5090 with driver 615.71.09. The executable used its exported CUDA 13.0 libraries. These BF16 serving measurements do not repeat the F32 reference gate or establish SM89 cloud acceptance.
+
+## Paged engine matrix
+
+The [paged engine Ubuntu receipt](receipts/native-paged-gpu-builds-ubuntu.json) records source `aa67c22` built with the same digest-pinned CUDA 13.0 Ubuntu builder. Both targets now export 12 PTX files, 12 standalone cubins, one static archive and three executables. All 56 exported file hashes, both assembled runtime inventories and the producer hash were independently verified; the owned CPU builder was removed.
+
+| Target | Serving binary SHA-256 | Runtime bytes including offline bake helper |
+| --- | --- | ---: |
+| SM89 | `deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e` | 832,088,032 |
+| SM120a | `37774358815f7fa83b495912655676a238cdaa89a090ab0aa302e659ddff94f8` | 856,977,504 |
+
+These binaries include native paged decode. Their identities supersede earlier binaries only for deployments that explicitly select the new runtime and compatible model/cache configuration. The completed matrix does not establish GPU numerical parity, driver-cache coverage, R2 publication or RunPod serving acceptance. Old runtime families remain pinned to their original binaries.

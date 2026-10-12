@@ -1,0 +1,660 @@
+{
+  "format": "switchyard-native-ubuntu-paged-gpu-build-evidence-v1",
+  "recorded_utc": "2026-10-12T00:32:50.093555+00:00",
+  "matrix": {
+    "artifact_id": "8ccc132d978f6cde72e6ca4ef1c2d65a302fbebb4b35309d774ad8461f7a7cd8",
+    "format": "switchyard-native-gpu-build-v1",
+    "gpu_execution_validated": false,
+    "targets": [
+      {
+        "architecture": "sm_89",
+        "artifact_id": "7f4544d502552a8868f7695f992272d0384a9dc1d5819424ebd69c450a7950c8",
+        "compatibility_key": "02996b209b07c1f38c6d491964acd1763a5516c787bf2e307a9fe0b9bdb2866d",
+        "path": "targets/sm_89"
+      },
+      {
+        "architecture": "sm_120a",
+        "artifact_id": "0be7892f9404ae8cdc858eaa8dc65445ee94a39c9af300113b4dd2c61e112f49",
+        "compatibility_key": "67208e523abc5d58e4d78cca41758efa3f23ae0cd516bae610193673a3b24e74",
+        "path": "targets/sm_120a"
+      }
+    ]
+  },
+  "targets": [
+    {
+      "architecture": "sm_89",
+      "artifact_id": "7f4544d502552a8868f7695f992272d0384a9dc1d5819424ebd69c450a7950c8",
+      "compatibility": {
+        "backend": "candle-cuda",
+        "build_environment": {
+          "CARGO_ENCODED_RUSTFLAGS": "",
+          "CC": "",
+          "CFLAGS": "",
+          "CXX": "",
+          "CXXFLAGS": "",
+          "LIBRARY_PATH": "/usr/local/cuda-13.0/lib64/stubs:/usr/local/cuda-13.0/lib64:/usr/local/cuda/lib64/stubs",
+          "NVCC_CCBIN": "",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": ""
+        },
+        "build_job_sha256": "b7c807f688d2cea95112b0bf7249491bb5ab5a9dbdfb640e9232732db931df13",
+        "builder_identity": "nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d",
+        "cargo_configuration": {},
+        "cargo_lock_sha256": "f00dc779d7d046553dfc608b1f6f716d122ac9f04ff6decef3328a8e2dea7094",
+        "dependencies": {
+          "candle-core": {
+            "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+            "version": "0.11.0"
+          },
+          "candle-kernels": {
+            "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+            "version": "0.11.0"
+          },
+          "candle-nn": {
+            "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+            "version": "0.11.0"
+          },
+          "cudaforge": {
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "version": "0.1.6"
+          },
+          "cudarc": {
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "version": "0.19.10"
+          }
+        },
+        "gpu_architecture": "sm_89",
+        "host_cxx": {
+          "bytes": 1027128,
+          "path": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "sha256": "52f1ddb33fe78b9441e0f42e9cd22c571f1101938e046c8a26582494e041cc73",
+          "version": "x86_64-linux-gnu-g++-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+        },
+        "host_libc": [
+          "glibc",
+          "2.39"
+        ],
+        "kernels_only": false,
+        "rust_target": "x86_64-unknown-linux-gnu",
+        "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8",
+        "source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "source_inputs_sha256": "63fb4eaef891217aa9b7750d027e7703a55f73723daacfa7bf905bd503a27884",
+        "standalone_cubins": true,
+        "toolchain": {
+          "cuobjdump": {
+            "bytes": 700560,
+            "path": "/usr/local/cuda-13.0/bin/cuobjdump",
+            "sha256": "bce9e37cc2b344a62f1c43b678f8aab0780b2a5807f69fdd699d7bd440d5c8c6",
+            "version": "cuobjdump: NVIDIA (R) fat binary listing tool\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Jul__2_10:42:27_AM_PDT_2025\nCuda compilation tools, release 13.0, V13.0.39\nBuild cuda_13.0.r13.0/compiler.36195134_0"
+          },
+          "nvcc": {
+            "bytes": 30161576,
+            "path": "/usr/local/cuda-13.0/bin/nvcc",
+            "sha256": "0cc55cc74c52e16af787abac2f6901230ac13a8c3ebe9682d25a473eb6e830a4",
+            "version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Jul_16_07:30:01_PM_PDT_2025\nCuda compilation tools, release 13.0, V13.0.48\nBuild cuda_13.0.r13.0/compiler.36260728_0"
+          },
+          "ptxas": {
+            "bytes": 37741528,
+            "path": "/usr/local/cuda-13.0/bin/ptxas",
+            "sha256": "99c8028201054e57e8ef83cf320f240a55c3422e6a5ae389b3acda13fd0482e1",
+            "version": "ptxas: NVIDIA (R) Ptx optimizing assembler\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Jul_16_07:24:57_PM_PDT_2025\nCuda compilation tools, release 13.0, V13.0.48\nBuild cuda_13.0.r13.0/compiler.36260728_0"
+          }
+        }
+      },
+      "files": {
+        "bin/switchyard-engine": {
+          "bytes": 67020456,
+          "sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e"
+        },
+        "bin/switchyard-engine-bake": {
+          "bytes": 37111848,
+          "sha256": "57f77e387f967f8d621c2dd7737ed218570a34b94e5e8ddc5acc45f1576d530a"
+        },
+        "bin/switchyard-engine-bench": {
+          "bytes": 44114968,
+          "sha256": "ef4e3d79f553e906933dcbfa6f43ce5365543dc4393d07c2c0324e43d59271fc"
+        },
+        "kernels/cubin/affine.cubin": {
+          "bytes": 57064,
+          "sha256": "4051fd286b3f40b35458c10b76aa54c154ddfb5f7e1ee14d58dfe5d171320f28"
+        },
+        "kernels/cubin/binary.cubin": {
+          "bytes": 2118504,
+          "sha256": "cd038e42fb496af7b0c4a7009eb4e66236dcce8bfed4b8e6a87ed50a7cc97df0"
+        },
+        "kernels/cubin/cast.cubin": {
+          "bytes": 292328,
+          "sha256": "e6c83e41ba12736919700de772a6d6a670c1af775bc6568c2a868ef6dbc04ac1"
+        },
+        "kernels/cubin/conv.cubin": {
+          "bytes": 733032,
+          "sha256": "2ee7718fa617c9acbb65f2a926400471f119e018c1e89012dbc7288a94b9a9bc"
+        },
+        "kernels/cubin/fill.cubin": {
+          "bytes": 68584,
+          "sha256": "2d480407cc01fede2fcfcea59c78f45d23e110159c45382410968ec022753e10"
+        },
+        "kernels/cubin/indexing.cubin": {
+          "bytes": 829376,
+          "sha256": "5549186047dfb62ad73d91314548fc62c8a506501797016f601f7f8341c3a82b"
+        },
+        "kernels/cubin/paged_decode.cubin": {
+          "bytes": 34592,
+          "sha256": "df042263076c40e4663547806c8e42d2f4d401cf673a7b896d10c3a53d672a78"
+        },
+        "kernels/cubin/quantized.cubin": {
+          "bytes": 1725920,
+          "sha256": "b755ed45655b36a653c26dfce11c7128bda60425a13b0a16a8a640ba32c52a20"
+        },
+        "kernels/cubin/reduce.cubin": {
+          "bytes": 427360,
+          "sha256": "93ac82b299a35bddfecb6c1aa75772e597a79c6d83e8bf0f5860f2fc1fee91ce"
+        },
+        "kernels/cubin/sort.cubin": {
+          "bytes": 47904,
+          "sha256": "87ece40094627eee8387a280654f3a24836c90fecbd4941a819f384f5b5ffaba"
+        },
+        "kernels/cubin/ternary.cubin": {
+          "bytes": 218216,
+          "sha256": "1c443092716011b55d898276e9527f57809cb5193f2a7ef0daf2d72a70173d02"
+        },
+        "kernels/cubin/unary.cubin": {
+          "bytes": 863624,
+          "sha256": "305eccc6d28ced578cc819180bc87c30c2278163a26be9646ebf2eeed2771005"
+        },
+        "kernels/libmoe.a": {
+          "bytes": 35767072,
+          "sha256": "17c5fb406b5886101db051cb1f6364c68deede5463333da1e87f2a3e2733d3a2"
+        },
+        "kernels/ptx/affine.ptx": {
+          "bytes": 49830,
+          "sha256": "c0de780844b61637d621994e1e7b2780f7712b7e982a9f03f5bd6022622c0bfe"
+        },
+        "kernels/ptx/binary.ptx": {
+          "bytes": 2268162,
+          "sha256": "680296fd7f5062f5513ac0116c4e4aefdfbe8d884dc540590dea20a6b09bc4c7"
+        },
+        "kernels/ptx/cast.ptx": {
+          "bytes": 245364,
+          "sha256": "dcd2551601dbe6c84010b5a420dd88472371acd3d95310576b212424855d0770"
+        },
+        "kernels/ptx/conv.ptx": {
+          "bytes": 454029,
+          "sha256": "af0146a394b5b88c00c9da78f445ddcec912f18506d6e573f8b9d3414c4f9a02"
+        },
+        "kernels/ptx/fill.ptx": {
+          "bytes": 45363,
+          "sha256": "4647960c03d88f9c74092635af949b9db19fc33105a468aec8d5d14d9aace6c2"
+        },
+        "kernels/ptx/indexing.ptx": {
+          "bytes": 626902,
+          "sha256": "9cf0693f68b21e252431ec7a568aebe3b5881a8db8a938c5a4f8e63ae48dadbc"
+        },
+        "kernels/ptx/paged_decode.ptx": {
+          "bytes": 33385,
+          "sha256": "810be86ab8035de0e5989b2d224a23e6f9c1521754eb974d48624c883c189730"
+        },
+        "kernels/ptx/quantized.ptx": {
+          "bytes": 5766982,
+          "sha256": "3f8e551d244828728780b9269d04e7a02409a47bf66c68ce08680045700f3288"
+        },
+        "kernels/ptx/reduce.ptx": {
+          "bytes": 385658,
+          "sha256": "4420f0c766bbdc2589d9d54ac19690f6143b65845534f1e002292e5ba9ae8e97"
+        },
+        "kernels/ptx/sort.ptx": {
+          "bytes": 52096,
+          "sha256": "859ca8bc19560ef05ed326498851336ed21ed48cf33f5b7ddcdfc8c32cb358bb"
+        },
+        "kernels/ptx/ternary.ptx": {
+          "bytes": 210696,
+          "sha256": "5920da4feb93b7baea39ee56557ac72d5c451d18badd3e15d8da4ae10a6595ca"
+        },
+        "kernels/ptx/unary.ptx": {
+          "bytes": 1115708,
+          "sha256": "9322dd9650b999309b636c04c69727f62402ad4fd9d05c82bfda6e6667ef2029"
+        }
+      },
+      "ptx_isa_versions": [
+        "9.0"
+      ],
+      "runtime_build": {
+        "format": "switchyard-native-runtime-build-v1",
+        "source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "builder_image": "nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d",
+        "os": "ubuntu24.04",
+        "architecture": "x86_64",
+        "cuda_build": "13.0.0",
+        "cuda_build_version_origin": "builder CUDA_VERSION with installed compiler validation",
+        "cuda_compiler_version": "13.0.48",
+        "cuda_compiler_target": "compute_89",
+        "cuda_package_versions": {
+          "cuda-cccl-13-0": "13.0.50-1",
+          "cuda-command-line-tools-13-0": "13.0.0-1",
+          "cuda-compat-13-0": "580.65.06-0ubuntu1",
+          "cuda-compiler-13-0": "13.0.0-1",
+          "cuda-crt-13-0": "13.0.48-1",
+          "cuda-cub-13-0": "",
+          "cuda-cudart-11-2": "",
+          "cuda-cudart-13-0": "13.0.48-1",
+          "cuda-cudart-dev-13-0": "13.0.48-1",
+          "cuda-culibos-dev-13-0": "13.0.39-1",
+          "cuda-cuobjdump-13-0": "13.0.39-1",
+          "cuda-cupti-13-0": "13.0.48-1",
+          "cuda-cupti-dev-13-0": "13.0.48-1",
+          "cuda-cuxxfilt-13-0": "13.0.39-1",
+          "cuda-driver-dev-13-0": "13.0.48-1",
+          "cuda-gdb-13-0": "13.0.39-1",
+          "cuda-libraries-13-0": "13.0.0-1",
+          "cuda-libraries-dev-13-0": "13.0.0-1",
+          "cuda-minimal-build-13-0": "13.0.0-1",
+          "cuda-nsight-compute-13-0": "13.0.0-1",
+          "cuda-nvcc-13": "",
+          "cuda-nvcc-13-0": "13.0.48-1",
+          "cuda-nvdisasm-13-0": "13.0.39-1",
+          "cuda-nvml-dev-13-0": "13.0.39-1",
+          "cuda-nvprune-13-0": "13.0.39-1",
+          "cuda-nvrtc-13-0": "13.0.48-1",
+          "cuda-nvrtc-dev-13-0": "13.0.48-1",
+          "cuda-nvtx-13-0": "13.0.39-1",
+          "cuda-opencl-13-0": "13.0.39-1",
+          "cuda-profiler-api-13-0": "13.0.39-1",
+          "cuda-sandbox-dev-13-0": "13.0.39-1",
+          "cuda-sanitizer-13-0": "13.0.48-1",
+          "cuda-thrust-13-0": "",
+          "cuda-toolkit-13-0-config-common": "13.0.48-1",
+          "cuda-toolkit-13-config-common": "13.0.48-1",
+          "cuda-toolkit-config-common": "13.0.48-1"
+        },
+        "gpu_compute_capability": "8.9",
+        "files": [
+          {
+            "path": "bin/switchyard-engine",
+            "bytes": 67020456,
+            "sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e"
+          },
+          {
+            "path": "bin/switchyard-engine-bake",
+            "bytes": 37111848,
+            "sha256": "57f77e387f967f8d621c2dd7737ed218570a34b94e5e8ddc5acc45f1576d530a"
+          },
+          {
+            "path": "lib/libcublas.so.13",
+            "bytes": 52941016,
+            "sha256": "ea443b3d282af9c82e16be974860b5ba993020bbe98988a7be201bf0c0215e88"
+          },
+          {
+            "path": "lib/libcublasLt.so.13",
+            "bytes": 538836848,
+            "sha256": "c92c4c24c257d638a61130f8a5f7f31eb6d6262c24f8e19816ff56b58b73a857"
+          },
+          {
+            "path": "lib/libcudart.so.13",
+            "bytes": 704288,
+            "sha256": "6876f4841bdbe30b187dcf8d7a7d2d6579bf12a36eeb430c7b28484ccdeed89a"
+          },
+          {
+            "path": "lib/libcurand.so.10",
+            "bytes": 132698328,
+            "sha256": "b53732a66b302b11926e00f762e2c2ba67058347ff93cf4ae709de45e93e06da"
+          },
+          {
+            "path": "lib/libgcc_s.so.1",
+            "bytes": 183024,
+            "sha256": "02f3f192bf5f79b811f1e34a650fea443d407408703448906585232383957f60"
+          },
+          {
+            "path": "lib/libstdc++.so.6",
+            "bytes": 2592224,
+            "sha256": "a68762c86d371e6041f03f03a33a78fa235809ae7d81c90185940c93c3535aed"
+          }
+        ],
+        "runtime_bytes": 832088032,
+        "numerical_accuracy": "see source commit accuracy receipt; not measured by build",
+        "serving_python": false,
+        "torch": false,
+        "vllm": false,
+        "criu": false,
+        "gpu_process_snapshot": false
+      },
+      "excluded_binary_targets": [
+        "switchyard-engine-cache-bench",
+        "switchyard-engine-merged-probe",
+        "switchyard-engine-mixed-bench"
+      ]
+    },
+    {
+      "architecture": "sm_120a",
+      "artifact_id": "0be7892f9404ae8cdc858eaa8dc65445ee94a39c9af300113b4dd2c61e112f49",
+      "compatibility": {
+        "backend": "candle-cuda",
+        "build_environment": {
+          "CARGO_ENCODED_RUSTFLAGS": "",
+          "CC": "",
+          "CFLAGS": "",
+          "CXX": "",
+          "CXXFLAGS": "",
+          "LIBRARY_PATH": "/usr/local/cuda-13.0/lib64/stubs:/usr/local/cuda-13.0/lib64:/usr/local/cuda/lib64/stubs",
+          "NVCC_CCBIN": "",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": ""
+        },
+        "build_job_sha256": "b7c807f688d2cea95112b0bf7249491bb5ab5a9dbdfb640e9232732db931df13",
+        "builder_identity": "nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d",
+        "cargo_configuration": {},
+        "cargo_lock_sha256": "f00dc779d7d046553dfc608b1f6f716d122ac9f04ff6decef3328a8e2dea7094",
+        "dependencies": {
+          "candle-core": {
+            "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+            "version": "0.11.0"
+          },
+          "candle-kernels": {
+            "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+            "version": "0.11.0"
+          },
+          "candle-nn": {
+            "source": "git+https://github.com/huggingface/candle?rev=c68b24997319b8d76e5a4e775dab197c7f26322a#c68b24997319b8d76e5a4e775dab197c7f26322a",
+            "version": "0.11.0"
+          },
+          "cudaforge": {
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "version": "0.1.6"
+          },
+          "cudarc": {
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "version": "0.19.10"
+          }
+        },
+        "gpu_architecture": "sm_120a",
+        "host_cxx": {
+          "bytes": 1027128,
+          "path": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "sha256": "52f1ddb33fe78b9441e0f42e9cd22c571f1101938e046c8a26582494e041cc73",
+          "version": "x86_64-linux-gnu-g++-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+        },
+        "host_libc": [
+          "glibc",
+          "2.39"
+        ],
+        "kernels_only": false,
+        "rust_target": "x86_64-unknown-linux-gnu",
+        "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8",
+        "source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "source_inputs_sha256": "63fb4eaef891217aa9b7750d027e7703a55f73723daacfa7bf905bd503a27884",
+        "standalone_cubins": true,
+        "toolchain": {
+          "cuobjdump": {
+            "bytes": 700560,
+            "path": "/usr/local/cuda-13.0/bin/cuobjdump",
+            "sha256": "bce9e37cc2b344a62f1c43b678f8aab0780b2a5807f69fdd699d7bd440d5c8c6",
+            "version": "cuobjdump: NVIDIA (R) fat binary listing tool\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Jul__2_10:42:27_AM_PDT_2025\nCuda compilation tools, release 13.0, V13.0.39\nBuild cuda_13.0.r13.0/compiler.36195134_0"
+          },
+          "nvcc": {
+            "bytes": 30161576,
+            "path": "/usr/local/cuda-13.0/bin/nvcc",
+            "sha256": "0cc55cc74c52e16af787abac2f6901230ac13a8c3ebe9682d25a473eb6e830a4",
+            "version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Jul_16_07:30:01_PM_PDT_2025\nCuda compilation tools, release 13.0, V13.0.48\nBuild cuda_13.0.r13.0/compiler.36260728_0"
+          },
+          "ptxas": {
+            "bytes": 37741528,
+            "path": "/usr/local/cuda-13.0/bin/ptxas",
+            "sha256": "99c8028201054e57e8ef83cf320f240a55c3422e6a5ae389b3acda13fd0482e1",
+            "version": "ptxas: NVIDIA (R) Ptx optimizing assembler\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Jul_16_07:24:57_PM_PDT_2025\nCuda compilation tools, release 13.0, V13.0.48\nBuild cuda_13.0.r13.0/compiler.36260728_0"
+          }
+        }
+      },
+      "files": {
+        "bin/switchyard-engine": {
+          "bytes": 84028592,
+          "sha256": "37774358815f7fa83b495912655676a238cdaa89a090ab0aa302e659ddff94f8"
+        },
+        "bin/switchyard-engine-bake": {
+          "bytes": 44993184,
+          "sha256": "204756cb19538a244fe31946624f09064cfc35fece1c3db80e9d148974e99642"
+        },
+        "bin/switchyard-engine-bench": {
+          "bytes": 51996288,
+          "sha256": "f5509368a6ed1dfe7b12f1db12ace1952386ce23fe0b69e182755ccad3ba90a5"
+        },
+        "kernels/cubin/affine.cubin": {
+          "bytes": 88200,
+          "sha256": "9156ab6bc0f9c3d493da778ae40856cde8f1cebefbb27895aeeb13985294ffa6"
+        },
+        "kernels/cubin/binary.cubin": {
+          "bytes": 4517288,
+          "sha256": "2c2134b066e938774534b2caaf3f00b80468ee9cc1096d1ec41027d873985a87"
+        },
+        "kernels/cubin/cast.cubin": {
+          "bytes": 446448,
+          "sha256": "37aa3da2627d666f1c9efe7120562efa044cb7565de2b484616af238b34e58b4"
+        },
+        "kernels/cubin/conv.cubin": {
+          "bytes": 1024200,
+          "sha256": "1e4c64b5f4b9cbdd9eaf939e989843dff9f90e35b67ab9d3cb83de4061c21faa"
+        },
+        "kernels/cubin/fill.cubin": {
+          "bytes": 114208,
+          "sha256": "efbadb5aa42c992d7cb717983999ce2bb22d381f6469f62c493e4149c1130a14"
+        },
+        "kernels/cubin/indexing.cubin": {
+          "bytes": 1284376,
+          "sha256": "54743dcbd4fd08d337571ab521508648bd94d83574317fd3529888054942d5a0"
+        },
+        "kernels/cubin/paged_decode.cubin": {
+          "bytes": 43808,
+          "sha256": "eb5385fff60d13e67f56da5d509c865a5b7c71eef9c2d9812bac84de97b2ac5b"
+        },
+        "kernels/cubin/quantized.cubin": {
+          "bytes": 2142448,
+          "sha256": "b1e54e4034714e76f7e03e38a18ddcc0369b42e57689b1df3836b96e7d9b1185"
+        },
+        "kernels/cubin/reduce.cubin": {
+          "bytes": 676808,
+          "sha256": "9e4d0daa108780b0854464a9eecfc904f46e92a3d6166721ae66c09f04c671f4"
+        },
+        "kernels/cubin/sort.cubin": {
+          "bytes": 78120,
+          "sha256": "1660a981487f32d8a9ff545ef87f6d4cc367e9482ec4263f380b95e77ecd430f"
+        },
+        "kernels/cubin/ternary.cubin": {
+          "bytes": 307792,
+          "sha256": "5e301d079a1be84ca65ddc072e47034ae63c884a8654a38a2bc11d00cadc1680"
+        },
+        "kernels/cubin/unary.cubin": {
+          "bytes": 1407408,
+          "sha256": "9cd97868057aa9ffd306c4ea5710ac25cc1c0f81f38e9b1b49ff2fa473b9a478"
+        },
+        "kernels/libmoe.a": {
+          "bytes": 43648968,
+          "sha256": "847d3b86cded859e049519a27eed163ce0a0f0b9995b97cf66c13f2ccc71d169"
+        },
+        "kernels/ptx/affine.ptx": {
+          "bytes": 49425,
+          "sha256": "19c91c7125b77655c82b0e72e3977754c43ff971527a3a62a989e8be92c25193"
+        },
+        "kernels/ptx/binary.ptx": {
+          "bytes": 4526746,
+          "sha256": "f2128590b9cdc0d1df9d96969947ee2ce1bb011690a7e7acbd44a5828f24b802"
+        },
+        "kernels/ptx/cast.ptx": {
+          "bytes": 229696,
+          "sha256": "5c7341568e773be34675f7483b517a8fbf85d5a7d6585fef812fcfa229fc6900"
+        },
+        "kernels/ptx/conv.ptx": {
+          "bytes": 516851,
+          "sha256": "d46a8130033eb30da25ae0cd0c8cf8b621528ef69a9cfcdf230cedf3f79e5c34"
+        },
+        "kernels/ptx/fill.ptx": {
+          "bytes": 45007,
+          "sha256": "9fd68ec2c3500e77da6c34317a8d328f9a02463bba6c7be69432aae094a180e9"
+        },
+        "kernels/ptx/indexing.ptx": {
+          "bytes": 671346,
+          "sha256": "6fb867acf268be0625351f765dd06a70298e583746a642c13597989eba5c4600"
+        },
+        "kernels/ptx/paged_decode.ptx": {
+          "bytes": 42868,
+          "sha256": "208c30edbb4211138b883e79c8282139eac92942a7024f3cd80ca84fd6e50576"
+        },
+        "kernels/ptx/quantized.ptx": {
+          "bytes": 7367339,
+          "sha256": "14e14bffd4c74189a2d08efb65124950aa8a1c89a8fca6d1703a42ec21777ae0"
+        },
+        "kernels/ptx/reduce.ptx": {
+          "bytes": 454926,
+          "sha256": "39692fa73c0d8b908160763d525ebf9fb40932b62dbe5dc9e53ebad8fb7a2b0b"
+        },
+        "kernels/ptx/sort.ptx": {
+          "bytes": 50984,
+          "sha256": "d771d6306dec7f43e89587c5b3eb1dc62f7c05e233f3910b0693b049dca31a78"
+        },
+        "kernels/ptx/ternary.ptx": {
+          "bytes": 208935,
+          "sha256": "5ccc0d4353548c50890b23a7b1c8ef9a5692b767af3408fff3acee6928065930"
+        },
+        "kernels/ptx/unary.ptx": {
+          "bytes": 1065361,
+          "sha256": "c96ef23946542355b6487d8dee471cd6e262d18a473eb680b012f7d4bdc6b9b9"
+        }
+      },
+      "ptx_isa_versions": [
+        "9.0"
+      ],
+      "runtime_build": {
+        "format": "switchyard-native-runtime-build-v1",
+        "source_commit": "aa67c22378ac8a034ff49ba631f8bc8584525fec",
+        "builder_image": "nvidia/cuda:13.0.0-devel-ubuntu24.04@sha256:1e8ac7a54c184a1af8ef2167f28fa98281892a835c981ebcddb1fad04bdd452d",
+        "os": "ubuntu24.04",
+        "architecture": "x86_64",
+        "cuda_build": "13.0.0",
+        "cuda_build_version_origin": "builder CUDA_VERSION with installed compiler validation",
+        "cuda_compiler_version": "13.0.48",
+        "cuda_compiler_target": "compute_120a",
+        "cuda_package_versions": {
+          "cuda-cccl-13-0": "13.0.50-1",
+          "cuda-command-line-tools-13-0": "13.0.0-1",
+          "cuda-compat-13-0": "580.65.06-0ubuntu1",
+          "cuda-compiler-13-0": "13.0.0-1",
+          "cuda-crt-13-0": "13.0.48-1",
+          "cuda-cub-13-0": "",
+          "cuda-cudart-11-2": "",
+          "cuda-cudart-13-0": "13.0.48-1",
+          "cuda-cudart-dev-13-0": "13.0.48-1",
+          "cuda-culibos-dev-13-0": "13.0.39-1",
+          "cuda-cuobjdump-13-0": "13.0.39-1",
+          "cuda-cupti-13-0": "13.0.48-1",
+          "cuda-cupti-dev-13-0": "13.0.48-1",
+          "cuda-cuxxfilt-13-0": "13.0.39-1",
+          "cuda-driver-dev-13-0": "13.0.48-1",
+          "cuda-gdb-13-0": "13.0.39-1",
+          "cuda-libraries-13-0": "13.0.0-1",
+          "cuda-libraries-dev-13-0": "13.0.0-1",
+          "cuda-minimal-build-13-0": "13.0.0-1",
+          "cuda-nsight-compute-13-0": "13.0.0-1",
+          "cuda-nvcc-13": "",
+          "cuda-nvcc-13-0": "13.0.48-1",
+          "cuda-nvdisasm-13-0": "13.0.39-1",
+          "cuda-nvml-dev-13-0": "13.0.39-1",
+          "cuda-nvprune-13-0": "13.0.39-1",
+          "cuda-nvrtc-13-0": "13.0.48-1",
+          "cuda-nvrtc-dev-13-0": "13.0.48-1",
+          "cuda-nvtx-13-0": "13.0.39-1",
+          "cuda-opencl-13-0": "13.0.39-1",
+          "cuda-profiler-api-13-0": "13.0.39-1",
+          "cuda-sandbox-dev-13-0": "13.0.39-1",
+          "cuda-sanitizer-13-0": "13.0.48-1",
+          "cuda-thrust-13-0": "",
+          "cuda-toolkit-13-0-config-common": "13.0.48-1",
+          "cuda-toolkit-13-config-common": "13.0.48-1",
+          "cuda-toolkit-config-common": "13.0.48-1"
+        },
+        "gpu_compute_capability": "12.0",
+        "files": [
+          {
+            "path": "bin/switchyard-engine",
+            "bytes": 84028592,
+            "sha256": "37774358815f7fa83b495912655676a238cdaa89a090ab0aa302e659ddff94f8"
+          },
+          {
+            "path": "bin/switchyard-engine-bake",
+            "bytes": 44993184,
+            "sha256": "204756cb19538a244fe31946624f09064cfc35fece1c3db80e9d148974e99642"
+          },
+          {
+            "path": "lib/libcublas.so.13",
+            "bytes": 52941016,
+            "sha256": "ea443b3d282af9c82e16be974860b5ba993020bbe98988a7be201bf0c0215e88"
+          },
+          {
+            "path": "lib/libcublasLt.so.13",
+            "bytes": 538836848,
+            "sha256": "c92c4c24c257d638a61130f8a5f7f31eb6d6262c24f8e19816ff56b58b73a857"
+          },
+          {
+            "path": "lib/libcudart.so.13",
+            "bytes": 704288,
+            "sha256": "6876f4841bdbe30b187dcf8d7a7d2d6579bf12a36eeb430c7b28484ccdeed89a"
+          },
+          {
+            "path": "lib/libcurand.so.10",
+            "bytes": 132698328,
+            "sha256": "b53732a66b302b11926e00f762e2c2ba67058347ff93cf4ae709de45e93e06da"
+          },
+          {
+            "path": "lib/libgcc_s.so.1",
+            "bytes": 183024,
+            "sha256": "02f3f192bf5f79b811f1e34a650fea443d407408703448906585232383957f60"
+          },
+          {
+            "path": "lib/libstdc++.so.6",
+            "bytes": 2592224,
+            "sha256": "a68762c86d371e6041f03f03a33a78fa235809ae7d81c90185940c93c3535aed"
+          }
+        ],
+        "runtime_bytes": 856977504,
+        "numerical_accuracy": "see source commit accuracy receipt; not measured by build",
+        "serving_python": false,
+        "torch": false,
+        "vllm": false,
+        "criu": false,
+        "gpu_process_snapshot": false
+      },
+      "excluded_binary_targets": [
+        "switchyard-engine-cache-bench",
+        "switchyard-engine-merged-probe",
+        "switchyard-engine-mixed-bench"
+      ]
+    }
+  ],
+  "verification": {
+    "exported_files_verified": 56,
+    "runtime_inventory_files_verified": 16,
+    "producer_sha256": "b7c807f688d2cea95112b0bf7249491bb5ab5a9dbdfb640e9232732db931df13",
+    "completion_marker_identity_verified": true,
+    "owned_cpu_builder_removed": true,
+    "gpu_exposed_to_builder": false,
+    "cpu_limit": 2,
+    "memory_limit_gib": 8,
+    "matrix_container_cpu_tests": 24
+  },
+  "scope": "Compilation, exact PTX/device-code target inspection and runtime inventories only; GPU numerical, serving, driver-cache and RunPod acceptance remain separate.",
+  "raw_matrix_path": "results/native-gpu-builds/ubuntu13-paged-01",
+  "driver_discovery_cleanup_audit": {
+    "recorded_utc": "2026-10-12T00:28:14.934210+00:00",
+    "scope": "Read-only recheck of worker-owned completed driver-discovery bake; no deletion or provider mutation",
+    "pods": [
+      {
+        "pod_id": "pr2fu7hf0w36vp",
+        "http_status": 404,
+        "state": null,
+        "ownership_sources": [
+          "bake-models-sm89-driver-05/owned-pod.json",
+          "bake-models-sm89-driver-05-recovered/owned-pod.json"
+        ]
+      }
+    ],
+    "request_headers_note": "Uses the existing Control client User-Agent and JSON headers; credentials omitted."
+  }
+}
