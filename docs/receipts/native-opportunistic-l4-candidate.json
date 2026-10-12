@@ -1,0 +1,50 @@
+{
+  "format": "switchyard-native-opportunistic-l4-candidate-v1",
+  "fleet_input": "configs/runpod/native-fleet-f32-l4-opportunistic-candidate.json",
+  "fleet_sha256": "1f0920342fb67c0ef94acd0199f1b7eaa9884498094f13f80c087ca5c14d1c78",
+  "runtime": {
+    "id": "3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46",
+    "prefix": "switchyard/native-engine/runtime/3619b871be6b33fa7293db07186694d6a9004447d78df885a2b54625f9bb0d46"
+  },
+  "engine_sha256": "deddcde553ba5308e38c201c1933e90c6cbf16a57ac09894348c8f8d6dc3f26e",
+  "platform": {
+    "gpu": "NVIDIA L4",
+    "compute_capability": "8.9",
+    "min_host_ram_gb": 64,
+    "min_vcpus": 8
+  },
+  "quoted_offerings": [
+    {
+      "gpu": "NVIDIA L4",
+      "gpu_memory_gb": 24,
+      "data_center": "EU-RO-1",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 0.59,
+      "disk_usd_per_hour": 0.00410958904109589,
+      "quoted_at_unix_s": 1791771942
+    },
+    {
+      "gpu": "NVIDIA L4",
+      "gpu_memory_gb": 24,
+      "data_center": "EUR-IS-2",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 0.59,
+      "disk_usd_per_hour": 0.00410958904109589,
+      "quoted_at_unix_s": 1791771942
+    },
+    {
+      "gpu": "NVIDIA L4",
+      "gpu_memory_gb": 24,
+      "data_center": "US-GA-2",
+      "availability": "LOW",
+      "gpu_usd_per_hour": 0.59,
+      "disk_usd_per_hour": 0.00410958904109589,
+      "quoted_at_unix_s": 1791771942
+    }
+  ],
+  "static_caches_empty": true,
+  "hydration_concurrency": 20,
+  "planning_priors": "Unchanged configured assumptions, not measured L4 throughput.",
+  "cloud_serving_accepted": false,
+  "scope": "GPU selection and launch expected-GPU label only; existing reviewed SM89 runtime and complete model/request bounds unchanged. No dedicated cache bake."
+}
